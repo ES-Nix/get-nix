@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 
 # See https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
-set -euxo pipefail
+#set -euxo pipefail
+set -eux
 
 
 test -d /nix || sudo mkdir --mode=0755 /nix \
