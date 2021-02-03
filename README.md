@@ -4,7 +4,7 @@ Is a unofficial wrapper of the nix installer, unstable for now.
 
 
 ```
-curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/58f35094a75cfedbd4e683d1c356ee31833b2124/get-nix.sh | sh
+curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/f7c5a63df0c998f0c27d4756d2a410b68ea68102/get-nix.sh | sh
 . "$HOME"/.nix-profile/etc/profile.d/nix.sh
 . ~/.bashrc
 flake
