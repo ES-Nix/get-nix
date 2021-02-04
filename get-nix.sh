@@ -16,6 +16,6 @@ test -d /nix || sudo mkdir --mode=0755 /nix \
 && cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix \
 && cat ~/.bashrc | grep 'flake' >/dev/null && /bin/true || echo "alias flake='nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes'" >> ~/.bashrc \
 && cat ~/.bashrc | grep 'collect' >/dev/null && /bin/true || echo "alias nd='nix-collect-garbage --delete-old'" >> ~/.bashrc \
-&& cat ~/.bashrc | grep 'collect' >/dev/null && /bin/true || echo "alias develop=\"nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop'\"" >> ~/.bashrc \
+&& cat ~/.bashrc | grep 'develop' >/dev/null && /bin/true || echo "alias develop=\"nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop'\"" >> ~/.bashrc \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc
