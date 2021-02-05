@@ -18,17 +18,13 @@ test -d /nix || sudo mkdir --mode=0755 /nix \
 && . ~/.bashrc
 
 
-#&& cat ~/.bashrc | grep 'flake' >/dev/null && /bin/true || echo "alias flake='nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes'" >> ~/.bashrc \
-#&& cat ~/.bashrc | grep 'collect' >/dev/null && /bin/true || echo "alias nd='nix-collect-garbage --delete-old'" >> ~/.bashrc \
-#&& cat ~/.bashrc | grep 'develop' >/dev/null && /bin/true || echo "alias develop=\"nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop'\"" >> ~/.bashrc \
-
-
 # Main ideia from: https://stackoverflow.com/a/1655389
-read -r -d '' PROFILE_NIX_FUNCTIONS <<-'EOF'
+PROFILE_NIX_FUNCTIONS=$(cat <<-EOF
     flake()
     {
         echo "Entering the nix + flake shell."
-        nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes "$@"
+        # Would it be usefull to have the "$@" to pass arguments?
+        nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes
     }
     export -f flake
 
@@ -44,11 +40,11 @@ read -r -d '' PROFILE_NIX_FUNCTIONS <<-'EOF'
         nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop'
     }
     export -f develop
-    EOF
-
+EOF
+)
 
 if [ ! -f ~/.profile ]; then
-  cat "$PROFILE_NIX_FUNCTIONS" > ~/.profile
+  echo "$PROFILE_NIX_FUNCTIONS" > ~/.profile
 else
-  grep 'flake' ~/.profile --quiet || cat "$PROFILE_NIX_FUNCTIONS" >> ~/.profile
+  grep 'flake' ~/.profile --quiet || echo "$PROFILE_NIX_FUNCTIONS" >> ~/.profile
 fi
