@@ -4,13 +4,12 @@ Is a unofficial wrapper of the nix installer, unstable for now.
 
 
 ```
-curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/9f55ec4ff27ad64e2704855bfcc4bd1dd697b460/get-nix.sh | sh
-. "$HOME"/.nix-profile/etc/profile.d/nix.sh
-. ~/.bashrc
-flake
-nix --version
+test -d /nix || sudo mkdir --mode=0755 /nix \
+&& sudo chown "$USER": /nix \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/bc848b1e30df8ba2ec391e95639235e9051bc6ca/get-nix.sh | sh \
+&& . ~/.profile \
+&& nix --version
 ```
-
 
 You may need to install curl (sad, i know):
 ```
