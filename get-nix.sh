@@ -3,7 +3,7 @@
 # See https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
 #set -euxo pipefail
 
-set -x
+#set -x
 
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
@@ -48,3 +48,5 @@ if [ ! -f ~/.profile ]; then
 else
   grep 'flake' ~/.profile --quiet || echo "$PROFILE_NIX_FUNCTIONS" >> ~/.profile
 fi
+
+. ~/.profile
