@@ -17,7 +17,7 @@ command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
 #&& . ~/.bashrc
 
 
-# Main ideia from: https://stackoverflow.com/a/1655389
+# Main ideia from: https://stackoverflow.com/a/1167849
 PROFILE_NIX_FUNCTIONS=$(cat <<-EOF
     flake()
     {
@@ -42,6 +42,9 @@ PROFILE_NIX_FUNCTIONS=$(cat <<-EOF
 EOF
 )
 
+# Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
+# https://stackoverflow.com/a/18126699
+# To preserve the format of the echoed code.
 if [ ! -f ~/.profile ]; then
   echo "$PROFILE_NIX_FUNCTIONS" > ~/.profile
 else

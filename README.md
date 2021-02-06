@@ -283,3 +283,7 @@ Duration 6 seconds [Using Nix in production for the last two years by Domen Kož
 
 
 TODO: this thing must be a flake!
+
+
+TODO: Transform this in a test [Sometimes you will want to turn an alias into a function, but when you source the bashrc file, a weird error may occur:](https://unix.stackexchange.com/a/383807)
+, so it looks like is possible to have problem with the installer.
