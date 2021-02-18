@@ -11,11 +11,10 @@ command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
 && cat ~/.config/nix/nix.conf | grep 'flakes' >/dev/null && /bin/true || echo 'experimental-features = nix-command flakes ca-references' >> ~/.config/nix/nix.conf \
 && cat ~/.config/nix/nix.conf | grep 'trace' >/dev/null && /bin/true || echo 'show-trace = true' >> ~/.config/nix/nix.conf \
 && test -d ~/.config/nixpkgs || mkdir --parent --mode=755 ~/.config/nixpkgs && touch ~/.config/nixpkgs/config.nix \
-&& cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix \
-&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
-&& . ~/.bashrc
+&& cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
 
-# It looks like it does not work
+# It it does not work, i think it is because source inside subshells can not bring some
+# thing to parent shell because of security problems.
 #&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 #&& . ~/.bashrc
 
