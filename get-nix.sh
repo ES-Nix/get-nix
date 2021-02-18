@@ -11,13 +11,16 @@ command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
 && cat ~/.config/nix/nix.conf | grep 'flakes' >/dev/null && /bin/true || echo 'experimental-features = nix-command flakes ca-references' >> ~/.config/nix/nix.conf \
 && cat ~/.config/nix/nix.conf | grep 'trace' >/dev/null && /bin/true || echo 'show-trace = true' >> ~/.config/nix/nix.conf \
 && test -d ~/.config/nixpkgs || mkdir --parent --mode=755 ~/.config/nixpkgs && touch ~/.config/nixpkgs/config.nix \
-&& cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
+&& cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix \
+&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& . ~/.bashrc
 
+# It looks like it does not work
 #&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 #&& . ~/.bashrc
 
 
-# Main ideia from: https://stackoverflow.com/a/1167849
+# Main idea from: https://stackoverflow.com/a/1167849
 BASHRC_NIX_FUNCTIONS=$(cat <<-EOF
 flake () {
     echo "Entering the nix + flake shell."
