@@ -1,13 +1,13 @@
 # get-nix
 
-Is a unofficial wrapper of the nix installer, unstable for now.
+Is a unofficial wrapper of the nix installer, unstable for now!
 
 
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/bc848b1e30df8ba2ec391e95639235e9051bc6ca/get-nix.sh | sh \
-&& . ~/.profile \
+&& . ~/.bashrc \
 && nix --version
 ```
 
@@ -29,6 +29,9 @@ For check memory:
 
 
 ## Troubleshoot commands
+
+
+`nix shell nixpkgs#nix-info --command nix-info --markdown`
 
 TODO: `nix show-config` really cool!
 
@@ -63,8 +66,10 @@ https://github.com/actions/virtual-environments/issues/183#issuecomment-58099233
 https://github.com/sickcodes/Docker-OSX/issues/15#issuecomment-640088527
 https://minikube.sigs.k8s.io/docs/drivers/kvm2/#installing-prerequisites
 
-That is insane to possible, but it is:
-nix shell nixpkgs#{rustc,python39,julia,gcc10,gcc6,gfortran10,gfortran6,nodejs14,poetry,yarn}
+That is insane to be possible, but it is, well hope it does not brake for you:
+
+```
+$ nix shell nixpkgs#{rustc,python39,julia,gcc10,gcc6,gfortran10,gfortran6,nodejs14,poetry,yarn}
 rustc --version
 python39 --version
 julia15 --version
@@ -72,9 +77,9 @@ node --version
 rustc --version
 gcc10 --version
 g++ --version
+```
 
-
-TODO: make a flake with all this and more thigs hard to install and with a level of controll of revisons of commits!
+TODO: make a flake with all this and more things hard to install and with a level of controll of revisions of commits!
 
 
 ## 
@@ -202,6 +207,32 @@ curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/e47ab707cfd099a6669e
 flake
 ```
 
+## TMP, TMPDIR, XDG_RUNTIME_DIR
+
+WIP:
+
+env | grep TMP
+env | grep TMPDIR
+env | grep XDG_RUNTIME_DIR
+unset TMP
+unset TMPDIR
+
+https://unix.stackexchange.com/a/80153
+echo -e ${PATH//:/\\n}
+mount | grep /run/user
+
+https://unix.stackexchange.com/a/118476
+df --print-type /tmp
+
+mount | grep /run/user
+
+https://unix.stackexchange.com/a/214386
+https://superuser.com/a/542772
+
+MKTEMP=$(mktemp --directory)
+TMP={TMP:-"$MKTEMP"}
+TMPDIR={TMPDIR:-"$MKTEMP"}
+
 
 ## Podman 
 
@@ -246,7 +277,7 @@ https://github.com/numpy/numpy/blob/76930e7d0c22e227c9ff9249a90a6254c5a6b547/doc
 - Make the installer be as POSIX as possible, and instalable in the [toybox](http://landley.net/toybox/about.html) 
    and his talk [Toybox: Writing a New Command Line From Scratch](https://www.youtube.com/watch?v=SGmtP5Lg_t0). 
    Looks like [nix has one static binary now](https://discourse.nixos.org/t/tweag-nix-dev-update-6/11195), how to 
-   throw it in a OCI image?
+   throw it in an OCI image?
 
 
 
@@ -257,7 +288,7 @@ Really amazing thing:
 
 [Using Nix in production for the last two years by Domen Kožar (NixCon 2017)](https://www.youtube.com/embed/6TBpB-BEiIg?start=1310&end=1543&version=3)
 
-"We were doing snab high-speed networking protocol and and  
+"We were doing snab high-speed networking protocol"  
 
 TODO: slice this in a sane, ready to copy paste url citation thing.
 

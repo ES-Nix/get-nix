@@ -18,36 +18,30 @@ command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
 
 
 # Main ideia from: https://stackoverflow.com/a/1167849
-PROFILE_NIX_FUNCTIONS=$(cat <<-EOF
-    flake()
-    {
-        echo "Entering the nix + flake shell."
-        # Would it be usefull to have the "$@" to pass arguments?
-        nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes
-    }
-    export -f flake
+BASHRC_NIX_FUNCTIONS=$(cat <<-EOF
+flake () {
+    echo "Entering the nix + flake shell."
+    # Would it be usefull to have the "" to pass arguments?
+    nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes
+}
 
-    nd()
-    {
-        nix-collect-garbage --delete-old
-    }
-    export -f nd
+nd () {
+   nix-collect-garbage --delete-old
+}
 
-    develop()
-    {
-        echo "Entering the nix + flake development shell."
-        nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop'
-    }
-    export -f develop
+develop () {
+    echo "Entering the nix + flake development shell."
+    nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop'
+}
 EOF
 )
 
 # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
 # https://stackoverflow.com/a/18126699
 # To preserve the format of the echoed code.
-if [ ! -f ~/.profile ]; then
-  echo "$PROFILE_NIX_FUNCTIONS" > ~/.profile
+if [ ! -f ~/.bashrc ]; then
+  echo "$BASHRC_NIX_FUNCTIONS" > ~/.bashrc
 else
-  grep 'flake' ~/.profile --quiet || echo "$PROFILE_NIX_FUNCTIONS" >> ~/.profile
+  grep 'flake' ~/.bashrc --quiet || echo "$BASHRC_NIX_FUNCTIONS" >> ~/.bashrc
 fi
 
