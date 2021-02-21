@@ -1,20 +1,24 @@
 # get-nix
 
-Is a unofficial wrapper of the nix installer, unstable for now!
+Is an unofficial wrapper of the nix installer, unstable for now!
 
+TODO
+https://nixos.org/manual/nix/stable/#sect-single-user-installation
 
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/bc848b1e30df8ba2ec391e95639235e9051bc6ca/get-nix.sh | sh \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/a22e399aefafa3434ce6ade0147d4de27d0044f3/get-nix.sh | sh \
+&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
 && nix --version
 ```
 
-You may need to install curl (sad, i know):
+
+You may need to install curl (sad, i know, but it might be the last time):
 ```
-apt-get update
-apt-get install -y curl
+sudo apt-get update
+sudo apt-get install -y curl
 ```
 
 Some times usefull:
@@ -29,7 +33,7 @@ For check memory:
 
 
 ## Troubleshoot commands
-
+nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix --version'
 
 `nix shell nixpkgs#nix-info --command nix-info --markdown`
 
@@ -234,6 +238,22 @@ TMP={TMP:-"$MKTEMP"}
 TMPDIR={TMPDIR:-"$MKTEMP"}
 
 
+TODOs:
+- https://github.com/NixOS/nixpkgs/issues/54707#issuecomment-522566108
+- help in this: https://github.com/NixOS/nixpkgs/issues/31133
+- https://www.reddit.com/r/NixOS/comments/g46m05/no_space_left_on_device_during_nixinstall/
+
+Explanation: cd https://github.com/NixOS/nixpkgs/issues/34091#issuecomment-399680215
+
+
+# Uninstalling nix
+
+
+`rm -rf ~/.cache/nix`
+
+[Eelco in discourse.nixos](https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/18)
+
+
 ## Podman 
 
 ```
@@ -318,3 +338,72 @@ TODO: this thing must be a flake!
 
 TODO: Transform this in a test [Sometimes you will want to turn an alias into a function, but when you source the bashrc file, a weird error may occur:](https://unix.stackexchange.com/a/383807)
 , so it looks like is possible to have problem with the installer.
+
+
+## Building a statically linked nix for hpc environments
+
+Note that there is a single-file statically linked Nix distribution now. You can get it as follows:
+
+curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
+chmod +x ./nix
+
+and use it with a non-standard Nix store as follows:
+
+NIX_REMOTE='local?store=/home/eelco/nix/store&state=/home/eelco/nix/var/nix&log=/home/eelco/nix/var/log/nix' nix \
+  --experimental-features 'nix-command flakes' \
+  build nixpkgs#hello 
+
+https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/16
+
+
+``` 
+apk add --no-cache curl
+curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
+chmod +x ./nix
+NIX_REMOTE="local?store=$HOME/nix/store&state=/home/eelco/nix/var/nix&log=$HOMEnix/var/log/nix" $(pwd)/nix \
+  --experimental-features 'nix-command flakes' \
+  build nixpkgs#hello
+```
+
+mkdir /nix
+
+
+### WIP
+
+nix-build -A pkgsStatic.nix
+
+From: https://github.com/NixOS/nixpkgs/pull/56281
+
+
+TODO: make tests for this in QEMU
+https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
+
+
+TODO: it is probably going to be usefull
+https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-466804361
+
+
+In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment-717568914)
+[see too](https://matthewbauer.us/blog/static-nix.html).
+nix build github:NixOS/nix#nix-static
+
+It worked!
+
+./result/bin/nix --version
+
+file result/bin/nix
+
+stat result/bin/nix 
+wc --bytes < result/bin/nix
+
+
+```
+du --human-readable result/bin/nix
+du --apparent-size --block-size=1 result/bin/nix
+echo '----------------------------------------'
+du --apparent-size --block-size=1K result/bin/nix
+du --block-size=1K result/bin/nix
+echo
+```
+
+Adapted from: https://unix.stackexchange.com/a/16645

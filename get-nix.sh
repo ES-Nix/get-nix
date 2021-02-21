@@ -13,6 +13,9 @@ command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
 && test -d ~/.config/nixpkgs || mkdir --parent --mode=755 ~/.config/nixpkgs && touch ~/.config/nixpkgs/config.nix \
 && cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
 
+# It forces the evaluation, so the user waits more in first time and almost zero when invoking flake in fake first
+nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix --version'
+
 # It it does not work, i think it is because source inside subshells can not bring some
 # thing to parent shell because of security problems.
 #&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
