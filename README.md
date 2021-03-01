@@ -8,7 +8,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/90a199f192fbf1c4a7e781d57e79b305bf4eb983/get-nix.sh | sh \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/701429d8c79c475d20eae8aea499a5e389165987/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
 && nix --version
