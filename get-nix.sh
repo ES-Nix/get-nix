@@ -25,7 +25,7 @@ command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
 # Main idea from: https://stackoverflow.com/a/1167849
 BASHRC_NIX_FUNCTIONS=$(cat <<-EOF
 flake () {
-    echo "Entering the nix + flake shell."
+    echo "Entering the nix + flake shell.";
     # Would it be usefull to have the "" to pass arguments?
     nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes;
 }
@@ -35,7 +35,7 @@ nd () {
 }
 
 develop () {
-    echo "Entering the nix + flake development shell."
+    echo "Entering the nix + flake development shell.";
     nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop';
 }
 EOF
