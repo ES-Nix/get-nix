@@ -27,16 +27,16 @@ BASHRC_NIX_FUNCTIONS=$(cat <<-EOF
 flake () {
     echo "Entering the nix + flake shell."
     # Would it be usefull to have the "" to pass arguments?
-    nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes
+    nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes;
 }
 
 nd () {
-   nix-collect-garbage --delete-old
+   nix-collect-garbage --delete-old;
 }
 
 develop () {
     echo "Entering the nix + flake development shell."
-    nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop'
+    nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop';
 }
 EOF
 )
