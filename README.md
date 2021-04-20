@@ -8,7 +8,8 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/701429d8c79c475d20eae8aea499a5e389165987/get-nix.sh | sh \
+&& GIT_REV_SHA=288cc322ea5e925d993eb654667ceaa607575a38 \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$GIT_REV_SHA"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
 && nix --version
@@ -246,6 +247,8 @@ mount | grep /run/user
 
 https://unix.stackexchange.com/a/118476
 df --print-type /tmp
+
+df --human-readable --print-type "$TMPDIR"
 
 mount | grep /run/user
 

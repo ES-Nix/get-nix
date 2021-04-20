@@ -24,6 +24,8 @@ command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
 
 # Main idea from: https://stackoverflow.com/a/1167849
 BASHRC_NIX_FUNCTIONS=$(cat <<-EOF
+
+# It was inserted by the get-nix installer
 flake () {
     echo "Entering the nix + flake shell.";
     # Would it be usefull to have the "" to pass arguments?
@@ -41,6 +43,7 @@ develop () {
 
 export TMPDIR=/tmp
 . "$HOME"/.nix-profile/etc/profile.d/nix.sh
+# End of inserted by the get-nix installer
 EOF
 )
 
