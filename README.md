@@ -8,11 +8,13 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& GIT_REV_SHA=288cc322ea5e925d993eb654667ceaa607575a38 \
-&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$GIT_REV_SHA"/get-nix.sh | sh \
+&& SHA256=21592dddb73b3dd96cb89ff29da31886ed7fa578 \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
-&& nix --version
+&& nix --version \
+&& nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'echo Worked!' \
+&& nix-collect-garbage --delete-old
 ```
 
 
@@ -141,8 +143,8 @@ nix-store --query --graph --include-outputs $(nix-store --query --deriver $(whic
 ```
 
 
-nix shell nixpkgs#{graphviz,okular,hello,curl,wget}
-nix-store --query --graph $(nix-store --query $(which hello)) | dot -Tps > graph.ps
+nix shell nixpkgs#{coreutils,graphviz,hello,which} \
+--command nix-store --query --graph $(nix-store --query $(which hello)) | dot -Tps > graph.ps && sha256sum graph.ps
 
 nix shell nixpkgs#{graphviz,okular,qgis}
 nix-store --query --graph $(nix-store --query $(which qgis)) | dot -Tps > graph.ps
@@ -280,21 +282,6 @@ Explanation: cd https://github.com/NixOS/nixpkgs/issues/34091#issuecomment-39968
 ## The new CLI commands
 
 [Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
-
-
-
-## Podman 
-
-```
-podman \
-run \
---interactive=true \
---runtime $(which runc) \
---signature-policy policy.json \
---tty=true \
---rm=true \
-docker.io/lnl7/nix:2.3.7 bash -c 'nix-env --install --attr nixpkgs.curl && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/e47ab707cfd099a6669e7a2e47aeebd36e1c101d/install-lnl7-oci.sh | sh && . ~/.bashrc && flake'
-```
 
 
 ## chroot and others
@@ -466,4 +453,18 @@ run \
 alpine:3.13.0 \
 sh \
 -c 'uname --all && apk add --no-cache git && git init'
+```
+
+
+## Podman 
+
+```
+podman \
+run \
+--interactive=true \
+--runtime $(which runc) \
+--signature-policy policy.json \
+--tty=true \
+--rm=true \
+docker.io/lnl7/nix:2.3.7 bash -c 'nix-env --install --attr nixpkgs.curl && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/e47ab707cfd099a6669e7a2e47aeebd36e1c101d/install-lnl7-oci.sh | sh && . ~/.bashrc && flake'
 ```
