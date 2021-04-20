@@ -38,6 +38,9 @@ develop () {
     echo "Entering the nix + flake development shell.";
     nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix develop';
 }
+
+export TMPDIR=/tmp
+. "$HOME"/.nix-profile/etc/profile.d/nix.sh
 EOF
 )
 

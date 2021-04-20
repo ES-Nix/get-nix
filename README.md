@@ -39,7 +39,7 @@ nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix --versi
 
 TODO: `nix show-config` really cool!
 
-See too nix --option` and `nix --help-config`.
+See too `nix --option` and `nix --help-config`.
 
 
 Broken:
@@ -73,14 +73,30 @@ https://minikube.sigs.k8s.io/docs/drivers/kvm2/#installing-prerequisites
 That is insane to be possible, but it is, well hope it does not brake for you:
 
 ```
-$ nix shell nixpkgs#{rustc,python39,julia,gcc10,gcc6,gfortran10,gfortran6,nodejs14,poetry,yarn}
+$ nix shell nixpkgs#{\
+gcc10,\
+gcc6,\
+gfortran10,\
+gfortran6,\
+julia,\
+nodejs,\
+poetry,\
+python39,\
+rustc,\
+yarn\
+}
+
+gcc --version
+#gcc6 --version
+gfortran10 --version
+gfortran6 --version
+julia --version
+nodejs --version
+poetry --version
+python3 --version
 rustc --version
-python39 --version
-julia15 --version
-node --version
-rustc --version
-gcc10 --version
-g++ --version
+yarn --version
+
 ```
 
 TODO: make a flake with all this and more things hard to install and with a level of controll of revisions of commits!
@@ -144,6 +160,9 @@ du --human-readable --summarize --total $(nix-store --query --requisites $(which
 unshare --user --pid echo YES
 
 
+TODO: nix path-info --human-readable --closure-size nixpkgs#jq
+
+file /home/ubuntu/.nix-profile, it can be a symbolic link broken!
 
 TODO: how to test it?
 [platform_machine targetMachine](https://github.com/nix-community/poetry2nix/pull/242#discussion_r567281097)
@@ -253,16 +272,24 @@ Explanation: cd https://github.com/NixOS/nixpkgs/issues/34091#issuecomment-39968
 
 [Eelco in discourse.nixos](https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/18)
 
+[Nix Portable: Nix - Static, Permissionless, Install-free, Pre-configured](https://discourse.nixos.org/t/nix-portable-nix-static-permissionless-install-free-pre-configured/11719)
+
+## The new CLI commands
+
+[Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
+
+
 
 ## Podman 
 
 ```
-podman run \
---interactive \
+podman \
+run \
+--interactive=true \
 --runtime $(which runc) \
 --signature-policy policy.json \
---tty \
---rm \
+--tty=true \
+--rm=true \
 docker.io/lnl7/nix:2.3.7 bash -c 'nix-env --install --attr nixpkgs.curl && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/e47ab707cfd099a6669e7a2e47aeebd36e1c101d/install-lnl7-oci.sh | sh && . ~/.bashrc && flake'
 ```
 
@@ -340,34 +367,6 @@ TODO: Transform this in a test [Sometimes you will want to turn an alias into a 
 , so it looks like is possible to have problem with the installer.
 
 
-## Building a statically linked nix for hpc environments
-
-Note that there is a single-file statically linked Nix distribution now. You can get it as follows:
-
-curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
-chmod +x ./nix
-
-and use it with a non-standard Nix store as follows:
-
-NIX_REMOTE='local?store=/home/eelco/nix/store&state=/home/eelco/nix/var/nix&log=/home/eelco/nix/var/log/nix' nix \
-  --experimental-features 'nix-command flakes' \
-  build nixpkgs#hello 
-
-https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/16
-
-
-``` 
-apk add --no-cache curl
-curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
-chmod +x ./nix
-NIX_REMOTE="local?store=$HOME/nix/store&state=/home/eelco/nix/var/nix&log=$HOMEnix/var/log/nix" $(pwd)/nix \
-  --experimental-features 'nix-command flakes' \
-  build nixpkgs#hello
-```
-
-mkdir /nix
-
-
 ### WIP
 
 nix-build -A pkgsStatic.nix
@@ -381,6 +380,26 @@ https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
 
 TODO: it is probably going to be usefull
 https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-466804361
+
+TODO: test it :/ 
+[Nix-anywhere: run nix-shell script in nix-user-chroot](https://discourse.nixos.org/t/nix-anywhere-run-nix-shell-script-in-nix-user-chroot/2594)
+
+
+TODO: test it :]
+[Nix without (p)root: error getting status of `/nix`](https://discourse.nixos.org/t/nix-without-p-root-error-getting-status-of-nix/9858)
+
+TODO: try it
+https://github.com/freuk/awesome-nix-hpc
+
+TODO:
+Matthew shows how using statically linked Nix in a 5MB binary, one can use Nix without root. With an one-liner shell, you can use Nix to install any software on a Linux machine.
+[Static Nix: a command-line swiss army knife](https://matthewbauer.us/blog/static-nix.html)
+
+
+
+
+> Oh yeah, chroot stores won’t work on macOS. Neither will proot. Having a flat-file binary cache in the shared dir and copying to/from that will be your only option there.
+[How to use a local directory as a nix binary cache?](https://discourse.nixos.org/t/how-to-use-a-local-directory-as-a-nix-binary-cache/655/14)
 
 
 In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment-717568914)
@@ -407,3 +426,41 @@ echo
 ```
 
 Adapted from: https://unix.stackexchange.com/a/16645
+
+
+where nix is the static nix from https://matthewbauer.us/nix and a pkgsStatic.busybox
+RUN ln -sf /bin/busybox /bin/sh
+https://discourse.nixos.org/t/dockertools-buildimage-and-user-writable-tmp/5397/8
+
+TODO: use this to troubleshoot
+- https://stackoverflow.com/a/22686512
+- https://serverfault.com/a/615344
+
+
+TODO: `umask` 
+https://github.com/NixOS/nix/issues/2377#issuecomment-633165541
+https://ivanix.wordpress.com/tag/umask/
+
+
+## Tests
+
+```
+nix \
+build \
+github:ES-Nix/nixosTest/2f37db3fe507e725f5e94b42a942cdfef30e5d75#checks.x86_64-linux.test-nixos
+```
+
+
+```
+nix \
+develop \
+github:ES-Nix/nix-flakes-shellHook-writeShellScriptBin-defaultPackage/65e9e5a64e3cc9096c78c452b51cc234aa36c24f \
+--command \
+podman \
+run \
+--interactive=true \
+--tty=true \
+alpine:3.13.0 \
+sh \
+-c 'uname --all && apk add --no-cache git && git init'
+```
