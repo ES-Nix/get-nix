@@ -51,6 +51,7 @@ nix show-config --json
 nix verify
 nix doctor 
 nix path-info
+nix flake metadata
 ```
 
 See too `nix --option`.
