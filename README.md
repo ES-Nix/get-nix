@@ -2,7 +2,10 @@
 
 Is an unofficial wrapper of the nix installer, unstable for now!
 
-TODO
+
+## Single user
+
+
 https://nixos.org/manual/nix/stable/#sect-single-user-installation
 
 ```
@@ -13,7 +16,7 @@ test -d /nix || sudo mkdir --mode=0755 /nix \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
 && nix --version \
-&& nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'echo Worked!' \
+&& nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'echo Worked! && nix store gc' \
 && nix-collect-garbage --delete-old
 ```
 
@@ -36,13 +39,21 @@ For check memory:
 
 
 ## Troubleshoot commands
+
+
 nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix --version'
 
-`nix shell nixpkgs#nix-info --command nix-info --markdown`
+```
+nix shell nixpkgs#nix-info --command nix-info --markdown
+nix show-config
+nix show-config --json
 
-TODO: `nix show-config` really cool!
+nix verify
+nix doctor 
+nix path-info
+```
 
-See too `nix --option` and `nix --help-config`.
+See too `nix --option`.
 
 
 Broken:
@@ -50,7 +61,8 @@ nix shell nixpkgs#jq --command "nix show-config --json | jq -S 'keys' | wc"
 
 TODO: create tests asserting for each key an expected value?! 
 Use a fixed output derivation to test this output?
-nix show-config --json | jq -M '."warn-dirty"[]
+nix shell nixpkgs#jq
+nix show-config --json | jq -M '."warn-dirty"[]'
 
 [Processing JSON using jq](https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4)
 [jqplay](https://jqplay.org/s/K_-O_YrxD5)
@@ -68,6 +80,7 @@ For detect KVM:
 egrep -c '(vmx|svm)' /proc/cpuinfo
 egrep -q 'vmx|svm' /proc/cpuinfo && echo yes || echo no
 ```
+
 TODO: use ripgrep?
 https://github.com/actions/virtual-environments/issues/183#issuecomment-580992331
 https://github.com/sickcodes/Docker-OSX/issues/15#issuecomment-640088527
@@ -76,7 +89,7 @@ https://minikube.sigs.k8s.io/docs/drivers/kvm2/#installing-prerequisites
 That is insane to be possible, but it is, well hope it does not brake for you:
 
 ```
-$ nix shell nixpkgs#{\
+$ nix shell nixpkgs/7138a338b58713e0dea22ddab6a6785abec7376a#{\
 gcc10,\
 gcc6,\
 gfortran10,\
@@ -109,9 +122,6 @@ TODO: make a flake with all this and more things hard to install and with a leve
 
 Many commands to check/help to troubleshoot:
 ```
-nix verify
-nix doctor 
-nix path-info
 nix-store --verify --check-contents
 nix-store --verify-path $(nix-store --query --requisites $(which nix))
 nix-build '<nixpkgs>' --attr nix --check --keep-failed
@@ -126,9 +136,6 @@ nix-store --gc --print-roots
 nix-store --gc --print-live
 nix-store --gc --print-dead
 
-
-nix optimise-store
-
 nix-store --gc --print-roots
 nix-store --gc --print-live
 nix-store --gc --print-dead
@@ -136,9 +143,7 @@ nix-store --gc --print-dead
 nix-store --query --requisites $(which nix) | cat
 nix-store --query --requisites --include-outputs $(which nix) | cat
 
-
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which nix)) | cat
-
 nix-store --query --graph --include-outputs $(nix-store --query --deriver $(which nix)) | dot -Tps > graph.ps
 ```
 
@@ -148,6 +153,8 @@ nix shell nixpkgs#{coreutils,graphviz,hello,which} \
 
 nix shell nixpkgs#{graphviz,okular,qgis}
 nix-store --query --graph $(nix-store --query $(which qgis)) | dot -Tps > graph.ps
+
+nix store --query $(which qgis)
 
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which nixFlakes)) | cat
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which commonsCompress)) | cat
@@ -208,30 +215,6 @@ From: https://discourse.nixos.org/t/mach-nix-create-python-environments-quick-an
 
 nix build github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso
 
-TODO: test it, a think it is broken :facepalm:
-```
-docker run \
---interactive \
---tty \
---rm \
-lnl7/nix:2.3.7 bash -c 'nix-env --install --attr nixpkgs.curl && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/e47ab707cfd099a6669e7a2e47aeebd36e1c101d/install-lnl7-oci.sh | sh && . ~/.bashrc && flake'
-```
-
-Splited in two steps: 
-```
-docker run \
---interactive \
---tty \
---rm \
-lnl7/nix:2.3.7 bash
-```
-
-```
-nix-env --install --attr nixpkgs.curl
-curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/e47ab707cfd099a6669e7a2e47aeebd36e1c101d/install-lnl7-oci.sh | sh
-. ~/.bashrc
-flake
-```
 
 ## TMP, TMPDIR, XDG_RUNTIME_DIR
 
@@ -277,6 +260,8 @@ Explanation: cd https://github.com/NixOS/nixpkgs/issues/34091#issuecomment-39968
 
 [Eelco in discourse.nixos](https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/18)
 
+TODO: https://youtu.be/Ndn5xM1FgrY?t=329 and https://youtu.be/Ndn5xM1FgrY?t=439
+
 [Nix Portable: Nix - Static, Permissionless, Install-free, Pre-configured](https://discourse.nixos.org/t/nix-portable-nix-static-permissionless-install-free-pre-configured/11719)
 
 ## The new CLI commands
@@ -316,7 +301,7 @@ https://github.com/numpy/numpy/blob/76930e7d0c22e227c9ff9249a90a6254c5a6b547/doc
    Looks like [nix has one static binary now](https://discourse.nixos.org/t/tweag-nix-dev-update-6/11195), how to 
    throw it in an OCI image?
 
-
+[Packaging with Nix](https://youtu.be/Ndn5xM1FgrY?t=1882)
 
 
 Not sure it is a good place to it:
@@ -357,10 +342,31 @@ TODO: Transform this in a test [Sometimes you will want to turn an alias into a 
 , so it looks like is possible to have problem with the installer.
 
 
-### WIP
+### nix statically built WIP
+
+```
+SHA256=c5a6c463214b8ab6891a20a13bf9e56aa906a9d5 \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
+&& . ~/.bashrc \
+&& nix --version \
+&& nix store gc
+```
+
+```
+nix \
+build \
+github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp
+```
+
+`[0/1 built] Real-time signal 0` why?
+
+https://stackoverflow.com/questions/6345973/who-uses-posix-realtime-signals-and-why
+
+strings $HOME/bin/nix | grep Real
+
+
 
 nix-build -A pkgsStatic.nix
-
 From: https://github.com/NixOS/nixpkgs/pull/56281
 
 
@@ -395,27 +401,6 @@ Matthew shows how using statically linked Nix in a 5MB binary, one can use Nix w
 In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment-717568914)
 [see too](https://matthewbauer.us/blog/static-nix.html).
 nix build github:NixOS/nix#nix-static
-
-It worked!
-
-./result/bin/nix --version
-
-file result/bin/nix
-
-stat result/bin/nix 
-wc --bytes < result/bin/nix
-
-
-```
-du --human-readable result/bin/nix
-du --apparent-size --block-size=1 result/bin/nix
-echo '----------------------------------------'
-du --apparent-size --block-size=1K result/bin/nix
-du --block-size=1K result/bin/nix
-echo
-```
-
-Adapted from: https://unix.stackexchange.com/a/16645
 
 
 where nix is the static nix from https://matthewbauer.us/nix and a pkgsStatic.busybox
@@ -453,18 +438,4 @@ run \
 alpine:3.13.0 \
 sh \
 -c 'uname --all && apk add --no-cache git && git init'
-```
-
-
-## Podman 
-
-```
-podman \
-run \
---interactive=true \
---runtime $(which runc) \
---signature-policy policy.json \
---tty=true \
---rm=true \
-docker.io/lnl7/nix:2.3.7 bash -c 'nix-env --install --attr nixpkgs.curl && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/e47ab707cfd099a6669e7a2e47aeebd36e1c101d/install-lnl7-oci.sh | sh && . ~/.bashrc && flake'
 ```

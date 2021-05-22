@@ -5,40 +5,28 @@
 
 #set -x
 
-# What is the best, more compatible, way?
-# cd ~
-# cd "$HOME"
-cd /home/"$USER"
+sudo su
 
-toybox --version || curl -L http://landley.net/toybox/downloads/binaries/0.8.4/toybox-x86_64 > toybox && chmod 0755 toybox
+curl -L http://landley.net/toybox/downloads/binaries/0.8.4/toybox-x86_64 > toybox
+chmod 0755 toybox
+mv toybox /bin/
 
-toybox --version && ./toybox mv toybox /home/"$USER"/bin/ && export PATH=/home/"$USER"/bin:"$PATH"
+toybox test -d /home/nix_user/.config/nix || toybox mkdir --parent --mode=755 /home/nix_user/.config/nix && toybox touch /home/nix_user/.config/nix/nix.conf
 
-# curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
-toybox which nix || curl -L https://hydra.nixos.org/build/142388707/download/2/nix > /home/"$USER"/bin/nix
-toybox chmod 0700 /home/"$USER"/bin/nix
-toybox sha1sum /home/"$USER"/bin/nix
-
-toybox test -d /home/"$USER"/.config/nix || toybox mkdir -p -m 0755 /home/"$USER"/.config/nix && toybox touch /home/"$USER"/.config/nix/nix.conf
-
-toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'nixos' || toybox echo 'system-features = kvm nixos-test' >> /home/"$USER"/.config/nix/nix.conf
-toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'flakes' || toybox echo 'experimental-features = nix-command flakes ca-references' >> /home/"$USER"/.config/nix/nix.conf
-toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'trace' || toybox echo 'show-trace = true' >> /home/"$USER"/.config/nix/nix.conf
+toybox cat /home/nix_user/.config/nix/nix.conf | toybox grep 'nixos' && toybox echo 'system-features = kvm nixos-test' >> /home/nix_user/.config/nix/nix.conf
+toybox cat /home/nix_user/.config/nix/nix.conf | toybox grep 'flakes' && toybox echo 'experimental-features = nix-command flakes ca-references' >> /home/nix_user/.config/nix/nix.conf
+toybox cat /home/nix_user/.config/nix/nix.conf | toybox grep 'trace' && toybox echo 'show-trace = true' >> /home/nix_user/.config/nix/nix.conf
 
 
-toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'derivations' || toybox echo 'keep-derivations = true' >> /home/"$USER"/.config/nix/nix.conf
-toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'outputs' || toybox echo 'keep-outputs = true' >> /home/"$USER"/.config/nix/nix.conf
-
-
-toybox test -d /home/"$USER"/.config/nixpkgs || toybox mkdir -p -m 0755 /home/"$USER"/.config/nixpkgs && toybox touch /home/"$USER"/.config/nixpkgs/config.nix
-toybox cat /home/"$USER"/.config/nixpkgs/config.nix | toybox grep 'allowUnfree' || toybox echo '{ allowUnfree = true; }' >> /home/"$USER"/.config/nixpkgs/config.nix
+toybox test -d /home/nix_user/.config/nixpkgs || toybox mkdir --parent --mode=755 /home/nix_user/.config/nixpkgs && toybox touch /home/nix_user/.config/nixpkgs/config.nix
+toybox cat /home/nix_user/.config/nixpkgs/config.nix | toybox grep 'allowUnfree' && toybox echo '{ allowUnfree = true; }' >> /home/nix_user/.config/nixpkgs/config.nix
 
 
 # Main idea from: https://stackoverflow.com/a/1167849
-BASHRC_NIX_FUNCTIONS=$(toybox cat <<-EOF
+BASHRC_NIX_FUNCTIONS=$(cat <<-EOF
 # It was inserted by the get-nix installer
 export TMPDIR=/tmp
-export PATH=/home/"\$USER"/bin:"\$PATH"
+export PATH=/home/nix_user/bin:"$PATH"
 # End of inserted by the get-nix installer
 EOF
 )
@@ -47,14 +35,16 @@ EOF
 # https://stackoverflow.com/a/18126699
 # To preserve the format of the echoed code.
 if [ ! -f /home/nix_user/.bashrc ]; then
-  echo "$BASHRC_NIX_FUNCTIONS" > /home/"$USER"/.bashrc
+  echo "$BASHRC_NIX_FUNCTIONS" > /home/nix_user/.bashrc
 else
-  toybox grep 'flake' /home/"$USER"/.bashrc -q || echo "$BASHRC_NIX_FUNCTIONS" >> /home/"$USER"/.bashrc
+  toybox grep 'flake' /home/nix_user/.bashrc --quiet || echo "$BASHRC_NIX_FUNCTIONS" >> /home/nix_user/.bashrc
 fi
 
-cd /home/"$USER"/bin
-sudo su << COMMANDS
-./toybox cat << 'EOF' >> /etc/passwd
+toybox mkdir -p /home/nix_user
+cd /home/nix_user
+
+cat << 'EOF' >> /etc/passwd
+nix_user:x:6789:12345::/home/nix_user:/bin/bash
 nixbld1:x:122:30000:Nix build user 1:/var/empty:/sbin/nologin
 nixbld2:x:121:30000:Nix build user 2:/var/empty:/sbin/nologin
 nixbld3:x:120:30000:Nix build user 3:/var/empty:/sbin/nologin
@@ -89,20 +79,43 @@ nixbld31:x:991:30000:Nix build user 31:/var/empty:/sbin/nologin
 nixbld32:x:990:30000:Nix build user 32:/var/empty:/sbin/nologin
 EOF
 
-./toybox cat << 'EOF' >> /etc/group
+cat << 'EOF' >> /etc/group
+nix_group:x:12345:
 nixbld:x:30000:nixbld1,nixbld2,nixbld3,nixbld4,nixbld5,nixbld6,nixbld7,nixbld8,nixbld9,nixbld10,nixbld11,nixbld12,nixbld13,nixbld14,nixbld15,nixbld16,nixbld17,nixbld18,nixbld19,nixbld20,nixbld21,nixbld22,nixbld23,nixbld24,nixbld25,nixbld26,nixbld27,nixbld28,nixbld29,nixbld30,nixbld31,nixbld32
 EOF
 
-./toybox mkdir -p /nix
+echo "nix_user:123" | chpasswd
 
-# ./toybox mkdir -p /home/"$USER"/nix/var/nix/profiles/per-user
-# ./toybox mkdir -p /home/"$USER"/nix/var/nix/temproots
-# ./toybox mkdir -p /home/"$USER"/nix/var/nix/gcroots
-# ./toybox mkdir -p /home/"$USER"/nix/var/nix/db
-# ./toybox mkdir -p /home/"$USER"/nix/store/.links
 
-./toybox chown \
+toybox mkdir -p /home/nix_user/nix/var/nix/profiles/per-user
+toybox mkdir -p /home/nix_user/nix/var/nix/temproots
+toybox mkdir -p /home/nix_user/nix/var/nix/gcroots
+toybox mkdir -p /home/nix_user/nix/var/nix/db
+toybox mkdir -p /home/nix_user/nix/store/.links
+toybox mkdir -p /home/nix_user/bin
+
+toybox cd /home/nix_user/bin
+# curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
+toybox which nix || curl -L https://hydra.nixos.org/build/142388707/download/2/nix > nix
+toybox sha1sum nix
+toybox chmod 0700 ./nix
+toybox sha1sum /home/nix_user/bin/nix
+
+toybox chown \
    -R \
-   $(./toybox echo "$USER"): \
+   nix_user:nix_group \
+   /home/nix_user \
+   /tmp \
    /nix
-COMMANDS
+
+toybox chmod --recursive 0700 /home/nix_user
+
+su nix_user
+cd /home/nix_user
+
+
+nix \
+--store \
+/home/nix_user/ \
+build \
+github:NixOS/nix#nix-static
