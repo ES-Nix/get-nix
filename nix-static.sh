@@ -12,7 +12,8 @@ cd /home/"$USER"
 
 toybox --version || curl -L http://landley.net/toybox/downloads/binaries/0.8.4/toybox-x86_64 > toybox && chmod 0755 toybox
 
-toybox --version && ./toybox mv toybox /home/"$USER"/bin/ && export PATH=/home/"$USER"/bin:"$PATH"
+./toybox test -d /home/"$USER"/bin || ./toybox mkdir -m 0755 /home/"$USER"/bin
+toybox --version || ./toybox mv toybox /home/"$USER"/bin/ && export PATH=/home/"$USER"/bin:"$PATH"
 
 # curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
 toybox which nix || curl -L https://hydra.nixos.org/build/142388707/download/2/nix > /home/"$USER"/bin/nix
