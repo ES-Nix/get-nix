@@ -435,6 +435,22 @@ https://github.com/NixOS/nix/issues/2377#issuecomment-633165541
 https://ivanix.wordpress.com/tag/umask/
 
 
+### Install direnv and nix-direnv using nix + flakes
+
+```bash
+SHA256=24c5a7070458586e4d605e196af8f70809a1f7b1 \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
+&& . ~/.bashrc \
+&& . ~/.direnvrc \
+&& direnv --version
+```
+
+```bash
+SHA256=24c5a7070458586e4d605e196af8f70809a1f7b1 \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/test_install_direnv_nix_direnv.sh | sh
+```
+
+
 ## Tests
 
 ```
