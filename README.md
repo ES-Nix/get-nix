@@ -460,10 +460,24 @@ github:ES-Nix/nixosTest/2f37db3fe507e725f5e94b42a942cdfef30e5d75#checks.x86_64-l
 ```
 
 
-```
+```bash
 nix \
 develop \
 github:ES-Nix/nix-flakes-shellHook-writeShellScriptBin-defaultPackage/65e9e5a64e3cc9096c78c452b51cc234aa36c24f \
+--command \
+podman \
+run \
+--interactive=true \
+--tty=true \
+alpine:3.13.0 \
+sh \
+-c 'uname --all && apk add --no-cache git && git init'
+```
+
+```bash
+nix \
+develop \
+github:ES-Nix/podman-rootless/feature/composable-flake \
 --command \
 podman \
 run \
