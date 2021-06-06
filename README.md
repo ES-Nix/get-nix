@@ -351,7 +351,7 @@ TODO: Transform this in a test [Sometimes you will want to turn an alias into a 
 ### nix statically built WIP
 
 ```
-SHA256=c5a6c463214b8ab6891a20a13bf9e56aa906a9d5 \
+SHA256=fd1f59eaf2f5f5a13de867a7d49558a25b4cfcff \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.bashrc \
 && nix --version \
