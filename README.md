@@ -20,6 +20,18 @@ test -d /nix || sudo mkdir --mode=0755 /nix \
 && nix-collect-garbage --delete-old
 ```
 
+nix \
+develop \
+github:ES-Nix/nix-flakes-shellHook-writeShellScriptBin-defaultPackage/65e9e5a64e3cc9096c78c452b51cc234aa36c24f \
+--command \
+podman \
+run \
+--interactive=true \
+--tty=true \
+alpine:3.13.0 \
+sh \
+-c 'uname --all && apk add --no-cache git && git init'
+
 
 You may need to install curl (sad, i know, but it might be the last time):
 ```
