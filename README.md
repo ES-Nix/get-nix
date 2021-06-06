@@ -80,12 +80,17 @@ For detect KVM:
 ```
 egrep -c '(vmx|svm)' /proc/cpuinfo
 egrep -q 'vmx|svm' /proc/cpuinfo && echo yes || echo no
+egrep '^flags.*(vmx|svm)' /proc/cpuinfo
+rg 'vmx|svm' /proc/cpuinfo
+ls -l /dev/kvm
 ```
 
 TODO: use ripgrep?
 https://github.com/actions/virtual-environments/issues/183#issuecomment-580992331
 https://github.com/sickcodes/Docker-OSX/issues/15#issuecomment-640088527
 https://minikube.sigs.k8s.io/docs/drivers/kvm2/#installing-prerequisites
+https://docs.fedoraproject.org/en-US/quick-docs/getting-started-with-virtualization/#installing-virtualization-software
+https://github.com/aerokube/windows-images#system-requirements
 
 That is insane to be possible, but it is, well hope it does not brake for you:
 
