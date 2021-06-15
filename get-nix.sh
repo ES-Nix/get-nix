@@ -47,7 +47,8 @@ export TMPDIR=/tmp
 EOF
 )
 
-# Tried it, but did not work
+# Tried it, but did not work, but need to test it again.
+# Maybe use this to source ~/.zshrc or ~/.bashrc?
 # CURRENT_USER_SHELL=$(ps -ocomm= -q $$)
 # https://stackoverflow.com/questions/3327013/how-to-determine-the-current-shell-im-working-on#comment83000217_11097703
 
