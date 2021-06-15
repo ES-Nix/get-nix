@@ -11,7 +11,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& SHA256=21592dddb73b3dd96cb89ff29da31886ed7fa578 \
+&& SHA256=5cac72685dec16ed8bffc7e5640a27f3e5b1fff1 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
@@ -20,6 +20,9 @@ test -d /nix || sudo mkdir --mode=0755 /nix \
 && nix-collect-garbage --delete-old
 ```
 
+Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
+
+```
 nix \
 develop \
 github:ES-Nix/nix-flakes-shellHook-writeShellScriptBin-defaultPackage/65e9e5a64e3cc9096c78c452b51cc234aa36c24f \
@@ -31,7 +34,7 @@ run \
 alpine:3.13.0 \
 sh \
 -c 'uname --all && apk add --no-cache git && git init'
-
+```
 
 You may need to install curl (sad, i know, but it might be the last time):
 ```
