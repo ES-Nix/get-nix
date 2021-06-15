@@ -48,8 +48,7 @@ EOF
 )
 
 
-CURRENT_USER_SHELL="$(echo $0)"
-if [[ "$CURRENT_USER_SHELL" == "-bash" ]]
+if [ ! -z ${ZSH+x} ];
 then
 
   # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
@@ -61,7 +60,7 @@ then
     grep 'flake' ~/.bashrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.bashrc
   fi
 
-elif [[ "$CURRENT_USER_SHELL" == "-zsh"]]
+elif [ ! -z ${BASH+x} ]
 then
 
   if [ ! -f ~/.zshrc ]; then
