@@ -23,7 +23,7 @@ command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
 
 
 # Main idea from: https://stackoverflow.com/a/1167849
-BASHRC_NIX_FUNCTIONS=$(cat <<-EOF
+NIX_HELPER_FUNCTIONS=$(cat <<-EOF
 
 # It was inserted by the get-nix installer
 flake () {
@@ -47,12 +47,30 @@ export TMPDIR=/tmp
 EOF
 )
 
-# Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
-# https://stackoverflow.com/a/18126699
-# To preserve the format of the echoed code.
-if [ ! -f ~/.bashrc ]; then
-  echo "$BASHRC_NIX_FUNCTIONS" > ~/.bashrc
-else
-  grep 'flake' ~/.bashrc --quiet || echo "$BASHRC_NIX_FUNCTIONS" >> ~/.bashrc
-fi
 
+CURRENT_USER_SHELL="$(echo $0)"
+if [[ "$CURRENT_USER_SHELL" == "-bash" ]]
+then
+
+  # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
+  # https://stackoverflow.com/a/18126699
+  # To preserve the format of the echoed code.
+  if [ ! -f ~/.bashrc ]; then
+    echo "$NIX_HELPER_FUNCTIONS" > ~/.bashrc
+  else
+    grep 'flake' ~/.bashrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.bashrc
+  fi
+
+elif [[ "$CURRENT_USER_SHELL" == "-zsh"]]
+then
+
+  if [ ! -f ~/.zshrc ]; then
+    echo "$NIX_HELPER_FUNCTIONS" > ~/.zshrc
+  else
+    grep 'flake' ~/.zshrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.zshrc
+  fi
+
+else
+  echo "Your current shell is not suported, sorry"
+  exit 123
+fi
