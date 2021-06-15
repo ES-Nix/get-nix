@@ -47,8 +47,20 @@ export TMPDIR=/tmp
 EOF
 )
 
+# Tried it, but did not work
+# CURRENT_USER_SHELL=$(ps -ocomm= -q $$)
+# https://stackoverflow.com/questions/3327013/how-to-determine-the-current-shell-im-working-on#comment83000217_11097703
 
 if [ ! -z ${ZSH+x} ];
+then
+
+  if [ ! -f ~/.zshrc ]; then
+    echo "$NIX_HELPER_FUNCTIONS" > ~/.zshrc
+  else
+    grep 'flake' ~/.zshrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.zshrc
+  fi
+
+elif [ ! -z ${BASH+x} ]
 then
 
   # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
@@ -58,15 +70,6 @@ then
     echo "$NIX_HELPER_FUNCTIONS" > ~/.bashrc
   else
     grep 'flake' ~/.bashrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.bashrc
-  fi
-
-elif [ ! -z ${BASH+x} ]
-then
-
-  if [ ! -f ~/.zshrc ]; then
-    echo "$NIX_HELPER_FUNCTIONS" > ~/.zshrc
-  else
-    grep 'flake' ~/.zshrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.zshrc
   fi
 
 else
