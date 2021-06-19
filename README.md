@@ -490,3 +490,34 @@ alpine:3.13.0 \
 sh \
 -c 'uname --all && apk add --no-cache git && git init'
 ```
+
+
+### Install zsh
+
+```bash
+sudo su -c 'apt-get update && apt-get install -y zsh' \
+&& echo \
+&& cat /etc/passwd | grep sh \
+&& chsh -s /usr/bin/zsh \
+&& cat /etc/passwd | grep sh \
+&& echo \
+&& curl -LO https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh \
+&& chmod +x install.sh \
+&& yes | ./install.sh \
+&& rm install.sh \
+&& zsh
+```
+From: https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH
+From: https://ohmyz.sh/#install
+
+
+#### Debug and troubleshoot
+
+
+`env | sort`
+`ps -aux | grep apt`
+
+cat /etc/passwd | grep sh
+From: https://askubuntu.com/a/1206350
+
+stat "$(which chsh)"

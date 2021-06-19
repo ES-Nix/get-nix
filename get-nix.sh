@@ -52,7 +52,10 @@ EOF
 # CURRENT_USER_SHELL=$(ps -ocomm= -q $$)
 # https://stackoverflow.com/questions/3327013/how-to-determine-the-current-shell-im-working-on#comment83000217_11097703
 
-if [ ! -z ${ZSH+x} ];
+# NIX_GUESSED_SHELL=$(ps -p "$$" -o 'comm=')
+NIX_GUESSED_SHELL=$(echo $0)
+
+if [ $NIX_GUESSED_SHELL == 'zsh' ];
 then
 
   if [ ! -f ~/.zshrc ]; then
@@ -61,7 +64,7 @@ then
     grep 'flake' ~/.zshrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.zshrc
   fi
 
-elif [ ! -z ${BASH+x} ]
+elif [ $NIX_GUESSED_SHELL == 'bash' ]
 then
 
   # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
@@ -74,6 +77,6 @@ then
   fi
 
 else
-  echo "Your current shell is not suported, sorry"
+  echo "Your current shell is not suported, sorry."
   exit 123
 fi
