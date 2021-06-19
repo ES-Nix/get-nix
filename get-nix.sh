@@ -53,9 +53,11 @@ EOF
 # https://stackoverflow.com/questions/3327013/how-to-determine-the-current-shell-im-working-on#comment83000217_11097703
 
 # NIX_GUESSED_SHELL=$(ps -p "$$" -o 'comm=')
-NIX_GUESSED_SHELL=$(echo $0)
+# NIX_GUESSED_SHELL=$(echo $0)
+# https://unix.stackexchange.com/a/352430
+NIX_GUESSED_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))"
 
-if [ $NIX_GUESSED_SHELL == 'zsh' ];
+if [ "$NIX_GUESSED_SHELL" = 'zsh' ];
 then
 
   if [ ! -f ~/.zshrc ]; then
@@ -64,7 +66,7 @@ then
     grep 'flake' ~/.zshrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.zshrc
   fi
 
-elif [ $NIX_GUESSED_SHELL == 'bash' ]
+elif [ "$NIX_GUESSED_SHELL" = 'bash' ]
 then
 
   # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
