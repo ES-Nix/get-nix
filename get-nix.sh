@@ -44,7 +44,7 @@ develop () {
 export TMPDIR=/tmp
 . "\$HOME"/.nix-profile/etc/profile.d/nix.sh
 
-NIX_FLAKE_PATH=\$(dirname "\$(nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix eval --raw nixpkgs#nixFlakes')")
+NIX_FLAKE_PATH="\$(nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix eval --raw nixpkgs#nixFlakes')"/bin
 export PATH="\$NIX_FLAKE_PATH:\$PATH"
 
 # End of inserted by the get-nix installer
@@ -86,3 +86,9 @@ else
   echo "Your current shell is not suported, sorry."
   exit 123
 fi
+
+chmod 0755 "$HOME"/.nix-profile/etc/profile.d/nix.sh
+
+
+
+chmod 0444 "$HOME"/.nix-profile/etc/profile.d/nix.sh
