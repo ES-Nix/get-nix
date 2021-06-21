@@ -11,7 +11,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& SHA256=eb694a6cda52b73a882a3840ea7ae6b5863018d7 \
+&& SHA256=42cb730b3bc1d4b6082de79a7d45ea05242a81c5 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
@@ -27,20 +27,6 @@ test -d /nix || sudo mkdir --mode=0755 /nix \
 ```
 
 Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
-
-```
-nix \
-develop \
-github:ES-Nix/nix-flakes-shellHook-writeShellScriptBin-defaultPackage/65e9e5a64e3cc9096c78c452b51cc234aa36c24f \
---command \
-podman \
-run \
---interactive=true \
---tty=true \
-alpine:3.13.0 \
-sh \
--c 'uname --all && apk add --no-cache git && git init'
-```
 
 You may need to install curl (sad, i know, but it might be the last time):
 ```
@@ -61,8 +47,14 @@ For check memory:
 
 ## Troubleshoot commands
 
-
-nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix --version'
+```bash
+nix-shell \
+-I nixpkgs=channel:nixos-21.05 \
+--packages \
+nixFlakes \
+--run \
+'nix --version'
+```
 
 ```bash
 nix shell nixpkgs#nix-info --command nix-info --markdown
@@ -76,7 +68,6 @@ nix flake metadata nixpkgs
 nix shell nixpkgs#neofetch --command neofetch
 ```
 
-See too `nix --option`.
 
 ```bash
 nix \
@@ -129,37 +120,6 @@ https://github.com/sickcodes/Docker-OSX/issues/15#issuecomment-640088527
 https://minikube.sigs.k8s.io/docs/drivers/kvm2/#installing-prerequisites
 https://docs.fedoraproject.org/en-US/quick-docs/getting-started-with-virtualization/#installing-virtualization-software
 https://github.com/aerokube/windows-images#system-requirements
-
-That is insane to be possible, but it is, well hope it does not brake for you:
-
-```
-$ nix shell nixpkgs/7138a338b58713e0dea22ddab6a6785abec7376a#{\
-gcc10,\
-gcc6,\
-gfortran10,\
-gfortran6,\
-julia,\
-nodejs,\
-poetry,\
-python39,\
-rustc,\
-yarn\
-}
-
-gcc --version
-#gcc6 --version
-gfortran10 --version
-gfortran6 --version
-julia --version
-nodejs --version
-poetry --version
-python3 --version
-rustc --version
-yarn --version
-
-```
-
-TODO: make a flake with all this and more things hard to install and with a level of controll of revisions of commits!
 
 
 ## 
@@ -441,7 +401,6 @@ https://stackoverflow.com/questions/6345973/who-uses-posix-realtime-signals-and-
 strings $HOME/bin/nix | grep Real
 
 
-
 nix-build -A pkgsStatic.nix
 From: https://github.com/NixOS/nixpkgs/pull/56281
 
@@ -653,6 +612,34 @@ build \
 github:ES-Nix/nixosTest/2f37db3fe507e725f5e94b42a942cdfef30e5d75#checks.x86_64-linux.test-nixos
 ```
 
+
+That is insane to be possible, but it is, well hope it does not brake for you:
+
+```
+$ nix shell nixpkgs/7138a338b58713e0dea22ddab6a6785abec7376a#{\
+gcc10,\
+gcc6,\
+gfortran10,\
+gfortran6,\
+julia,\
+nodejs,\
+poetry,\
+python39,\
+rustc,\
+yarn\
+}
+
+gcc --version
+#gcc6 --version
+gfortran10 --version
+gfortran6 --version
+julia --version
+nodejs --version
+poetry --version
+python3 --version
+rustc --version
+yarn --version
+```
 
 
 ### Install zsh
