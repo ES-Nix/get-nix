@@ -44,9 +44,6 @@ develop () {
 export TMPDIR=/tmp
 . "\$HOME"/.nix-profile/etc/profile.d/nix.sh
 
-NIX_FLAKE_PATH="\$(nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix eval --raw nixpkgs#nixFlakes')"/bin
-export PATH="\$NIX_FLAKE_PATH:\$PATH"
-
 # End of inserted by the get-nix installer
 EOF
 )
