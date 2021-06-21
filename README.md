@@ -11,7 +11,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& SHA256=55ab0cc94ce727c7797dfc4396e70535254aa6b3 \
+&& SHA256=eb694a6cda52b73a882a3840ea7ae6b5863018d7 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
@@ -454,7 +454,7 @@ https://ivanix.wordpress.com/tag/umask/
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=55ab0cc94ce727c7797dfc4396e70535254aa6b3 \
+SHA256=eb694a6cda52b73a882a3840ea7ae6b5863018d7 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/.bashrc \
 && . ~/.direnvrc \
@@ -462,7 +462,7 @@ SHA256=55ab0cc94ce727c7797dfc4396e70535254aa6b3 \
 ```
 
 ```bash
-SHA256=55ab0cc94ce727c7797dfc4396e70535254aa6b3 \
+SHA256=eb694a6cda52b73a882a3840ea7ae6b5863018d7 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/test_install_direnv_nix_direnv.sh | sh
 ```
 
