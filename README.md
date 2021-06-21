@@ -11,13 +11,19 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& SHA256=ae42bf4cd9c4354822647302f6b4c502b9312fc4 \
+&& SHA256=55ab0cc94ce727c7797dfc4396e70535254aa6b3 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/.bashrc \
-&& nix --version \
-&& nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'echo Worked! && nix store gc' \
-&& nix-collect-garbage --delete-old
+&& export TMPDIR=/tmp \
+&& cd "$TMPDIR" \
+&& echo "$(readlink -f $(which nix-env))" > old_nix_path \
+&& nix-shell -I nixpkgs=channel:nixos-21.05 --packages nixFlakes --run 'nix-env --uninstall $(cat old_nix_path) && nix profile install nixpkgs#nixFlakes' \
+&& rm -rfv old_nix_path \
+&& cd ~ \
+&& nix-collect-garbage --delete-old \
+&& nix store gc \
+&& nix flake --version
 ```
 
 Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
@@ -90,6 +96,12 @@ stat $(readlink /nix/var/nix/gcroots/booted-system)
 stat $(echo $(echo $NIX_PATH) | cut --delimiter='=' --field=2)
 echo -e " "'"$ENV->"'"$ENV\n" '"$NIX_PATH"->'"$NIX_PATH\n" '"$PATH"->'"$PATH\n" '"$USER"->' "$USER\n"
 ```
+
+Excelent:
+```bash
+echo "${PATH//:/$'\n'}"
+```
+From: https://askubuntu.com/a/600028
 
 For detect KVM:
 ```
@@ -186,6 +198,7 @@ nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which
 Really cool:
 ```
 du --human-readable --summarize --total $(nix-store --query --requisites $(which nix)) | sort --human-numeric-sort
+du --human-readable --summarize --total /nix
 ```
 
 unshare --user --pid echo YES
@@ -441,7 +454,7 @@ https://ivanix.wordpress.com/tag/umask/
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=24c5a7070458586e4d605e196af8f70809a1f7b1 \
+SHA256=55ab0cc94ce727c7797dfc4396e70535254aa6b3 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/.bashrc \
 && . ~/.direnvrc \
@@ -449,19 +462,118 @@ SHA256=24c5a7070458586e4d605e196af8f70809a1f7b1 \
 ```
 
 ```bash
-SHA256=24c5a7070458586e4d605e196af8f70809a1f7b1 \
+SHA256=55ab0cc94ce727c7797dfc4396e70535254aa6b3 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/test_install_direnv_nix_direnv.sh | sh
 ```
+
+```bash
+hello
+```
+
+```bash
+sed \
+-i \
+'s/hello/hello figlet/' \
+flake.nix
+```
+
+```bash
+hello | figlet
+```
+
+```bash
+sed \
+-i \
+'s/hello figlet/figlet/' \
+flake.nix
+```
+
+Tried, but does not work:
+```bash
+timeout 20 bash -c 'until command -v hello; do sleep 1; echo "Waiting for hello..."; done' || true
+timeout 20 bash -c 'until command -v figlet; do sleep 1; echo "Waiting for figlet..."; done'
+```
+
+
+#### Troubleshoot direnv and nix-direnv
+
+nano /nix/store/*-nix-direnv-1.2.6/share/nix-direnv/direnvrc
+
+NIX_BIN_PREFIX=$(dirname "$(nix-shell -I nixpkgs=channel:nixos-20.09 --packages which nixFlakes gnugrep --run 'which nix | grep -v warning')")
+
+echo "$(nix eval --raw nixpkgs#nix)"
+echo "$(nix eval --raw nixpkgs#nixFlakes)"
+
+nix profile install nixpkgs#nixFlakes
+
+nix-shell -I nixpkgs=channel:nixos-21.05 --packages nixFlakes --run 'nix profile install nixpkgs#nixFlakes'
+
+$(nix-shell -I nixpkgs=channel:nixos-21.05 --packages nixFlakes --run 'nix eval --raw nixpkgs#nixFlakes')/bin/nix profile install nixpkgs#nixFlakes
+
+nix-env --install --attr nixpkgs.nixFlakes
+
+nix-env --uninstall "$(readlink -f $(which nix-env))"
+
+nix-shell -I nixpkgs=channel:nixos-21.05 --packages nixFlakes --run 'nix profile install nixpkgs#nixFlakes'
+
+nix flake --version
+readlink -f $(which nix)
+
 
 
 ## Tests
 
-```
-nix \
-build \
-github:ES-Nix/nixosTest/2f37db3fe507e725f5e94b42a942cdfef30e5d75#checks.x86_64-linux.test-nixos
-```
 
+```bash
+mkdir -p ~/.config/containers
+cat << 'EOF' >> ~/.config/containers/policy.json
+{
+    "default": [
+        {
+            "type": "insecureAcceptAnything"
+        }
+    ],
+    "transports":
+        {
+            "docker-daemon":
+                {
+                    "": [{"type":"insecureAcceptAnything"}]
+                }
+        }
+}
+EOF
+
+mkdir -p ~/.config/containers
+cat << 'EOF' >> ~/.config/containers/registries.conf
+[registries.search]
+registries = ['docker.io']
+[registries.block]
+registries = []
+EOF
+
+nix \
+shell \
+nixpkgs#podman \
+--command \
+podman \
+run \
+--privileged=true \
+--device=/dev/fuse \
+--env=DISPLAY=':0.0' \
+--interactive=true \
+--network=host \
+--mount=type=tmpfs,destination=/var/lib/containers \
+--tty=true \
+--rm=true \
+--user=0 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume=/etc/localtime:/etc/localtime:ro \
+--volume=/dev:/dev \
+docker.nix-community.org/nixpkgs/nix-flakes \
+bash \
+-c \
+'id'
+```
 
 ```bash
 nix \
@@ -477,19 +589,13 @@ sh \
 -c 'uname --all && apk add --no-cache git && git init'
 ```
 
-```bash
-nix \
-develop \
-github:ES-Nix/podman-rootless/feature/composable-flake \
---command \
-podman \
-run \
---interactive=true \
---tty=true \
-alpine:3.13.0 \
-sh \
--c 'uname --all && apk add --no-cache git && git init'
+
 ```
+nix \
+build \
+github:ES-Nix/nixosTest/2f37db3fe507e725f5e94b42a942cdfef30e5d75#checks.x86_64-linux.test-nixos
+```
+
 
 
 ### Install zsh

@@ -13,14 +13,14 @@ cat <<WRAP > flake.nix
       pkgs = nixpkgs.legacyPackages.\${system};
     in {
       devShell = pkgs.mkShell {
-        nativeBuildInputs = [ pkgs.hello ];
+        buildInputs = with pkgs; [ hello ];
       };
     });
 }
 WRAP
 
-echo 'use flake' >> .envrc
-direnv allow
-cd ..
-cd -
-hello
+echo 'use flake' >> .envrc \
+&& direnv allow \
+&& cd .. \
+&& cd -
+
