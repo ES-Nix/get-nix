@@ -64,7 +64,7 @@ For check memory:
 
 nix-shell -I nixpkgs=channel:nixos-20.09 --packages nixFlakes --run 'nix --version'
 
-```
+```bash
 nix shell nixpkgs#nix-info --command nix-info --markdown
 nix show-config
 nix show-config --json
@@ -72,25 +72,36 @@ nix show-config --json
 nix verify
 nix doctor 
 nix path-info
-nix flake metadata
+nix flake metadata nixpkgs
+nix shell nixpkgs#neofetch --command neofetch
 ```
 
 See too `nix --option`.
 
+```bash
+nix \
+shell \
+nixpkgs#jq \
+--command \
+echo $(nix show-config --json) | jq -S 'keys' | wc
+```
 
-Broken:
-nix shell nixpkgs#jq --command "nix show-config --json | jq -S 'keys' | wc"
 
+```bash
+nix \
+shell \
+nixpkgs#jq \
+--command \
+echo $(nix show-config --json) | jq -M '."warn-dirty"[]'
+```
 TODO: create tests asserting for each key an expected value?! 
 Use a fixed output derivation to test this output?
-nix shell nixpkgs#jq
-nix show-config --json | jq -M '."warn-dirty"[]'
 
 [Processing JSON using jq](https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4)
 [jqplay](https://jqplay.org/s/K_-O_YrxD5)
 
 Usefull for debug:
-```
+```bash
 stat $(readlink /root/.nix-defexpr/nixpkgs)
 stat $(readlink /nix/var/nix/gcroots/booted-system)
 stat $(echo $(echo $NIX_PATH) | cut --delimiter='=' --field=2)
@@ -108,7 +119,7 @@ For detect KVM:
 egrep -c '(vmx|svm)' /proc/cpuinfo
 egrep -q 'vmx|svm' /proc/cpuinfo && echo yes || echo no
 egrep '^flags.*(vmx|svm)' /proc/cpuinfo
-rg 'vmx|svm' /proc/cpuinfo
+nix shell nixpkgs#ripgrep --command rg 'vmx|svm' /proc/cpuinfo
 ls -l /dev/kvm
 ```
 
@@ -154,7 +165,7 @@ TODO: make a flake with all this and more things hard to install and with a leve
 ## 
 
 Many commands to check/help to troubleshoot:
-```
+```bash
 nix-store --verify --check-contents
 nix-store --verify-path $(nix-store --query --requisites $(which nix))
 nix-build '<nixpkgs>' --attr nix --check --keep-failed
@@ -180,31 +191,49 @@ nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which
 nix-store --query --graph --include-outputs $(nix-store --query --deriver $(which nix)) | dot -Tps > graph.ps
 ```
 
+```bash
+nix \
+shell \
+nixpkgs#{coreutils,graphviz,hello,which} \
+--command \
+echo $(nix-store --query --graph $(nix-store --query $(which hello))) | dot -Tps > graph.ps \
+&& sha256sum graph.ps
+```
 
-nix shell nixpkgs#{coreutils,graphviz,hello,which} \
---command nix-store --query --graph $(nix-store --query $(which hello)) | dot -Tps > graph.ps && sha256sum graph.ps
 
-nix shell nixpkgs#{graphviz,okular,qgis}
-nix-store --query --graph $(nix-store --query $(which qgis)) | dot -Tps > graph.ps
-
-nix store --query $(which qgis)
-
+```bash
+nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which nix)) | cat
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which nixFlakes)) | cat
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which commonsCompress)) | cat
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which gnutar)) | cat
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which lzma.bin)) | cat
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which git)) | cat
+```
+
+TODO: https://github.com/NixOS/nix/issues/1918#issuecomment-444110195
+
+TODO: 
+```bash
+nix \
+build \
+nixpkgs#nix
+
+nix \
+path-info \
+--human-readable \
+--closure-size \
+nixpkgs#nix
+```
 
 Really cool:
-```
-du --human-readable --summarize --total $(nix-store --query --requisites $(which nix)) | sort --human-numeric-sort
+```bash
 du --human-readable --summarize --total /nix
+du --human-readable --summarize --total $(nix-store --query --requisites $(which nix)) | sort --human-numeric-sort
 ```
 
 unshare --user --pid echo YES
 
 
-TODO: nix path-info --human-readable --closure-size nixpkgs#jq
 
 file /home/ubuntu/.nix-profile, it can be a symbolic link broken!
 
@@ -254,15 +283,23 @@ nix build github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#is
 
 WIP:
 
+```bash
 env | grep TMP
 env | grep TMPDIR
 env | grep XDG_RUNTIME_DIR
 unset TMP
 unset TMPDIR
+env | grep TMP
+env | grep TMPDIR
+```
 
-https://unix.stackexchange.com/a/80153
+```bash
 echo -e ${PATH//:/\\n}
+echo "${PATH//:/$'\n'}"
 mount | grep /run/user
+```
+From: https://unix.stackexchange.com/a/80153
+
 
 https://unix.stackexchange.com/a/118476
 df --print-type /tmp
@@ -290,18 +327,23 @@ Explanation: cd https://github.com/NixOS/nixpkgs/issues/34091#issuecomment-39968
 # Uninstalling nix
 
 
-`rm -rf ~/.cache/nix`
+```bash
+rm -rfv "$HOME"/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs,.cache/nix}
+sudo rm -rfv /nix
+```
+https://stackoverflow.com/questions/51929461/how-to-uninstall-nix#comment119190356_51935794
 
-[Eelco in discourse.nixos](https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/18)
-
-TODO: https://youtu.be/Ndn5xM1FgrY?t=329 and https://youtu.be/Ndn5xM1FgrY?t=439
-
-[Nix Portable: Nix - Static, Permissionless, Install-free, Pre-configured](https://discourse.nixos.org/t/nix-portable-nix-static-permissionless-install-free-pre-configured/11719)
 
 ## The new CLI commands
 
 [Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
 
+```bash
+nix \
+flake \
+update \ 
+--override-input nixpkgs
+```
 
 ## chroot and others
 [Local Nix without Root (HPC)](https://www.reddit.com/r/NixOS/comments/iod7wi/local_nix_without_root_hpc/)
@@ -426,6 +468,11 @@ Matthew shows how using statically linked Nix in a 5MB binary, one can use Nix w
 [Static Nix: a command-line swiss army knife](https://matthewbauer.us/blog/static-nix.html)
 
 
+[Eelco in discourse.nixos](https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/18)
+
+TODO: https://youtu.be/Ndn5xM1FgrY?t=329 and https://youtu.be/Ndn5xM1FgrY?t=439
+
+[Nix Portable: Nix - Static, Permissionless, Install-free, Pre-configured](https://discourse.nixos.org/t/nix-portable-nix-static-permissionless-install-free-pre-configured/11719)
 
 
 > Oh yeah, chroot stores won’t work on macOS. Neither will proot. Having a flat-file binary cache in the shared dir and copying to/from that will be your only option there.
@@ -435,7 +482,6 @@ Matthew shows how using statically linked Nix in a 5MB binary, one can use Nix w
 In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment-717568914)
 [see too](https://matthewbauer.us/blog/static-nix.html).
 nix build github:NixOS/nix#nix-static
-
 
 where nix is the static nix from https://matthewbauer.us/nix and a pkgsStatic.busybox
 RUN ln -sf /bin/busybox /bin/sh
@@ -589,8 +635,19 @@ sh \
 -c 'uname --all && apk add --no-cache git && git init'
 ```
 
-
+```bash
+nix \
+build \
+github:ES-Nix/poetry2nix-examples/2cb6663e145bbf8bf270f2f45c869d69c657fef2#poetry2nixOCIImage
 ```
+
+```bash
+nix \
+build \
+github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso
+```
+
+```bash
 nix \
 build \
 github:ES-Nix/nixosTest/2f37db3fe507e725f5e94b42a942cdfef30e5d75#checks.x86_64-linux.test-nixos
@@ -615,9 +672,6 @@ sudo su -c 'apt-get update && apt-get install -y zsh' \
 ```
 From: https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH
 From: https://ohmyz.sh/#install
-
-
-#### Debug and troubleshoot
 
 
 `env | sort`
