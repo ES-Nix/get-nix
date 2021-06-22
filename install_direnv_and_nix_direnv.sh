@@ -8,7 +8,7 @@ NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))
 
 echo 'The installer has identified the runnig shell as: '"$NIX_GUESSED_USER_SHELL"
 
-GUESSED_SHELL_RC='~/.'"$NIX_GUESSED_USER_SHELL"'rc'
+GUESSED_SHELL_RC=~/."$NIX_GUESSED_USER_SHELL"rc
 
 nix profile install nixpkgs#direnv
 nix profile install nixpkgs#nix-direnv
