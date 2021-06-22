@@ -50,7 +50,7 @@ EOF
 # https://unix.stackexchange.com/a/352430
 # NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))"
 
-NIX_GUESSED_USER_SHELL=$(ps -ocomm= -q $$')
+NIX_GUESSED_USER_SHELL=$(ps -ocomm= -q $$)
 
 if [ "$NIX_GUESSED_USER_SHELL" = 'zsh' ];
 then
