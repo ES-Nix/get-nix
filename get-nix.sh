@@ -42,15 +42,17 @@ EOF
 
 # Tried it, but did not work, but need to test it again.
 # Maybe use this to source ~/.zshrc or ~/.bashrc?
-# CURRENT_USER_SHELL=$(ps -ocomm= -q $$)
+# NIX_GUESSED_USER_SHELL=$(ps -ocomm= -q $$)
 # https://stackoverflow.com/questions/3327013/how-to-determine-the-current-shell-im-working-on#comment83000217_11097703
 
-# NIX_GUESSED_SHELL=$(ps -p "$$" -o 'comm=')
-# NIX_GUESSED_SHELL=$(echo $0)
+# NIX_GUESSED_USER_SHELL==$(ps -p "$$" -o 'comm=')
+# NIX_GUESSED_USER_SHELL=$(echo $0)
 # https://unix.stackexchange.com/a/352430
-NIX_GUESSED_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))"
+# NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))"
 
-if [ "$NIX_GUESSED_SHELL" = 'zsh' ];
+NIX_GUESSED_USER_SHELL=$(ps -ocomm= -q $$')
+
+if [ "$NIX_GUESSED_USER_SHELL" = 'zsh' ];
 then
 
   if [ ! -f ~/.zshrc ]; then
@@ -59,7 +61,7 @@ then
     grep 'flake' ~/.zshrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.zshrc
   fi
 
-elif [ "$NIX_GUESSED_SHELL" = 'bash' ]
+elif [ "$NIX_GUESSED_USER_SHELL" = 'bash' ]
 then
 
   # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
