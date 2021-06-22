@@ -10,6 +10,8 @@ echo 'The installer has identified the runnig shell as: '"$NIX_GUESSED_USER_SHEL
 
 GUESSED_SHELL_RC=~/."$NIX_GUESSED_USER_SHELL"rc
 
+echo 'Debuging the GUESSED_SHELL_RC='"$GUESSED_SHELL_RC"
+
 nix profile install nixpkgs#direnv
 nix profile install nixpkgs#nix-direnv
 echo 'source $(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc' >> ~/.direnvrc

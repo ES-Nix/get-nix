@@ -11,10 +11,10 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& SHA256=42cb730b3bc1d4b6082de79a7d45ea05242a81c5 \
+&& SHA256=4fbc7498d5b08c4543ad040463eb0bf212acc70f \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
-&& . ~/.bashrc \
+&& . ~/."$(ps -ocomm= -q $$)"rc \
 && export TMPDIR=/tmp \
 && cd "$TMPDIR" \
 && echo "$(readlink -f $(which nix-env))" > old_nix_path \
@@ -459,17 +459,21 @@ https://ivanix.wordpress.com/tag/umask/
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=eb694a6cda52b73a882a3840ea7ae6b5863018d7 \
+SHA256=4fbc7498d5b08c4543ad040463eb0bf212acc70f \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
-&& . ~/.bashrc \
+&& . ~/."$(ps -ocomm= -q $$)"rc \
 && . ~/.direnvrc \
 && direnv --version
 ```
 
+#### Testing the direnv's instalation
+
 ```bash
-SHA256=eb694a6cda52b73a882a3840ea7ae6b5863018d7 \
+SHA256=4fbc7498d5b08c4543ad040463eb0bf212acc70f \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/test_install_direnv_nix_direnv.sh | sh
 ```
+
+You may need `cd ~/foo-bar`.
 
 ```bash
 hello
