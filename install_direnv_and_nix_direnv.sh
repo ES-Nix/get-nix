@@ -20,7 +20,7 @@ echo 'export PATH=$(nix eval --raw nixpkgs#direnv)/bin:"$PATH"' >> "$GUESSED_SHE
 echo 'export PATH=$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc:"$PATH"' >> "$GUESSED_SHELL_RC"
 
 #
-echo 'eval "$(direnv hook '"$NIX_GUESSED_USER_SHELL"'')"' >> "$GUESSED_SHELL_RC"
+echo 'eval "$(direnv hook '"$NIX_GUESSED_USER_SHELL"')"' >> "$GUESSED_SHELL_RC"
 
 . "$GUESSED_SHELL_RC"
 . ~/.direnvrc
