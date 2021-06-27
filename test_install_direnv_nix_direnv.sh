@@ -25,6 +25,7 @@ WRAP
 echo 'use flake' >> .envrc \
 && direnv allow \
 && git add . \
+&& echo "$(pwd)" \
 && cd .. \
 && cd -
 
