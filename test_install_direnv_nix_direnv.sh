@@ -21,7 +21,6 @@ cat <<WRAP > flake.nix
 }
 WRAP
 
-nix flake lock
 
 echo 'use flake' >> .envrc \
 && direnv allow \
