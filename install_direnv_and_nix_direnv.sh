@@ -13,8 +13,7 @@ NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))
 && echo 'source $(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc' >> ~/.direnvrc \
 && echo 'export PATH=$(nix eval --raw nixpkgs#direnv)/bin:"$PATH"' >> "$GUESSED_SHELL_RC" \
 && echo 'export PATH=$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc:"$PATH"' >> "$GUESSED_SHELL_RC" \
-&& echo 'eval "$(direnv hook '"$NIX_GUESSED_USER_SHELL"')"' >> "$GUESSED_SHELL_RC" \
-&& sudo rm -fv /nix/store/*-nix-2.3.12/bin/nix
+&& echo 'eval "$(direnv hook '"$NIX_GUESSED_USER_SHELL"')"' >> "$GUESSED_SHELL_RC"
 
 nix profile install nixpkgs#gnused
 sudo su <<COMMANDS
