@@ -21,7 +21,9 @@ cat <<WRAP > ~/foo-bar/flake.nix
 }
 WRAP
 
-nix flake lock \
+&& git add . \
+&& nix flake lock \
+&& git add . \
 && echo 'use flake' >> .envrc \
 && direnv allow \
 && git add . \
