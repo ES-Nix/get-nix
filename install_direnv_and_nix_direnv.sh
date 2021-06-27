@@ -16,6 +16,10 @@ nix profile install nixpkgs#direnv
 nix profile install nixpkgs#nix-direnv
 echo 'WWWWWW'
 echo 'source $(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc' >> ~/.direnvrc
+
+# https://stackoverflow.com/a/29685539
+sed -i '/^[^#]/ s/\(^.*plugins.*$\)/#\ \1/' "$GUESSED_SHELL_RC"
+
 echo 'export DIRENV_BASH=$(which bash)' >> "$GUESSED_SHELL_RC"
 echo 'export PATH=$(nix eval --raw nixpkgs#direnv)/bin:"$PATH"' >> "$GUESSED_SHELL_RC"
 echo 'export PATH=$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc:"$PATH"' >> "$GUESSED_SHELL_RC"
