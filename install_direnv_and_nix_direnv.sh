@@ -11,7 +11,6 @@ NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))
 && nix profile install nixpkgs#nix-direnv \
 && echo 'source $(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc' >> ~/.direnvrc \
 && stat ~/.direnvrc \
-&& echo 'export DIRENV_BASH=$(which bash)' >> "$GUESSED_SHELL_RC" \
 && echo 'export PATH=$(nix eval --raw nixpkgs#direnv)/bin:"$PATH"' >> "$GUESSED_SHELL_RC" \
 && echo 'export PATH=$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc:"$PATH"' >> "$GUESSED_SHELL_RC" \
 && echo 'eval "$(direnv hook '"$NIX_GUESSED_USER_SHELL"')"' >> "$GUESSED_SHELL_RC" \
