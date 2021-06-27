@@ -19,7 +19,7 @@ NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))
 && direnv --version
 
 nix profile install nixpkgs#gnused
-sudo su << COMMANDS
+sudo su <<COMMANDS
 sed \
 -i \
 's/NIX_BIN_PREFIX=.*/NIX_BIN_PREFIX=\"\$(nix eval --raw nixpkgs#nixFlakes)\"\/bin\//' \
