@@ -16,12 +16,13 @@ nix profile install nixpkgs#direnv
 nix profile install nixpkgs#nix-direnv
 echo 'WWWWWW'
 echo 'source $(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc' >> ~/.direnvrc
+echo 'export DIRENV_BASH=$(which bash)' >> "$GUESSED_SHELL_RC"
 echo 'export PATH=$(nix eval --raw nixpkgs#direnv)/bin:"$PATH"' >> "$GUESSED_SHELL_RC"
 echo 'export PATH=$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc:"$PATH"' >> "$GUESSED_SHELL_RC"
 echo 'AAAAA' \
 && echo 'eval "$(direnv hook '"$NIX_GUESSED_USER_SHELL"')"' >> "$GUESSED_SHELL_RC" \
 && echo '#####' \
-&& cat "$GUESSED_SHELL_RC" \
+&& GUESSED_SHELL_RC=~/."$NIX_GUESSED_USER_SHELL"rc \
 && . "$GUESSED_SHELL_RC" \
 && echo 'RRRRRRR' \
 . ~/.direnvrc

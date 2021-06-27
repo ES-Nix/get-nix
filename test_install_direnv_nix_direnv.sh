@@ -3,6 +3,8 @@ mkdir foo-bar
 
 cd foo-bar
 
+git init
+
 cat <<WRAP > flake.nix
 {
   description = "A very basic flake";
@@ -19,8 +21,11 @@ cat <<WRAP > flake.nix
 }
 WRAP
 
+nix flake lock
+
 echo 'use flake' >> .envrc \
 && direnv allow \
+&& git add . \
 && cd .. \
 && cd -
 
