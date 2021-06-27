@@ -1,11 +1,11 @@
-cd ~
-mkdir foo-bar
 
-cd foo-bar
+mkdir ~/foo-bar
+
+cd ~/foo-bar
 
 git init
 
-cat <<WRAP > flake.nix
+cat <<WRAP > ~/foo-bar/flake.nix
 {
   description = "A very basic flake";
   # Provides abstraction to boiler-code when specifying multi-platform outputs.
@@ -21,11 +21,10 @@ cat <<WRAP > flake.nix
 }
 WRAP
 
-
-echo 'use flake' >> .envrc \
+nix flake lock \
+&& echo 'use flake' >> .envrc \
 && direnv allow \
 && git add . \
 && echo "$(pwd)" \
 && cd .. \
-&& cd -
-
+&& cd ~/foo-bar
