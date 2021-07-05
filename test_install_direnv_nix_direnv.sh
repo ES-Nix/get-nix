@@ -3,6 +3,7 @@ mkdir ~/foo-bar
 
 cd ~/foo-bar
 
+command -v git >/dev/null 2>&1 || nix profile install nixpkgs#git
 git init
 
 cat <<WRAP > ~/foo-bar/flake.nix
