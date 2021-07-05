@@ -58,15 +58,27 @@ nixFlakes \
 ```bash
 nix shell nixpkgs#nix-info --command nix-info --markdown
 nix show-config
-nix show-config --json
+nix profile install nixpkgs#jq
+nix show-config --json | jq .
 
 nix verify
 nix doctor 
 nix path-info
 nix flake metadata nixpkgs
+nix profile install nixpkgs#jq
+nix flake metadata nixpkgs --json | jq .
 nix shell nixpkgs#neofetch --command neofetch
 ```
 
+```bash
+nix flake show nixpkgs
+nix flake show github:nixos/nixpkgs
+nix flake show github:nixos/nixpkgs/nixpkgs-unstable
+
+nix flake metadata nixpkgs
+nix flake metadata github:nixos/nixpkgs
+nix flake metadata github:nixos/nixpkgs/nixpkgs-unstable
+```
 
 ```bash
 nix \
@@ -101,6 +113,7 @@ echo -e " "'"$ENV->"'"$ENV\n" '"$NIX_PATH"->'"$NIX_PATH\n" '"$PATH"->'"$PATH\n" 
 Excelent:
 ```bash
 echo "${PATH//:/$'\n'}"
+ls -al "$HOME".nix-profile/bin
 ```
 From: https://askubuntu.com/a/600028
 
@@ -335,9 +348,14 @@ https://github.com/numpy/numpy/blob/76930e7d0c22e227c9ff9249a90a6254c5a6b547/doc
    and his talk [Toybox: Writing a New Command Line From Scratch](https://www.youtube.com/watch?v=SGmtP5Lg_t0). 
    Looks like [nix has one static binary now](https://discourse.nixos.org/t/tweag-nix-dev-update-6/11195), how to 
    throw it in an OCI image?
+   
+- TODO: https://github.com/NixOS/nixpkgs/issues/37157
 
 [Packaging with Nix](https://youtu.be/Ndn5xM1FgrY?t=1882)
 
+
+TODO: help with it https://github.com/NixOS/nixpkgs/issues/18089
+https://github.com/NixOS/nix/issues/2659
 
 Not sure it is a good place to it:
 
@@ -440,6 +458,7 @@ TODO: https://youtu.be/Ndn5xM1FgrY?t=329 and https://youtu.be/Ndn5xM1FgrY?t=439
 In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment-717568914)
 [see too](https://matthewbauer.us/blog/static-nix.html).
 nix build github:NixOS/nix#nix-static
+nix build github:NixOS/nix/9feca5cdf64b82bfb06dfda07d19d007a2dfa1c1#nix-static
 
 where nix is the static nix from https://matthewbauer.us/nix and a pkgsStatic.busybox
 RUN ln -sf /bin/busybox /bin/sh
@@ -449,6 +468,10 @@ TODO: use this to troubleshoot
 - https://stackoverflow.com/a/22686512
 - https://serverfault.com/a/615344
 
+```bash
+nix build nixpkgs#pkgsStatic.busybox
+result/bin/busybox sh -c 'echo $$ && uname --all'
+```
 
 TODO: `umask` 
 https://github.com/NixOS/nix/issues/2377#issuecomment-633165541
