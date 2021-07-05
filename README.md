@@ -11,16 +11,15 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& SHA256=36cda47c6811aca34b0031ae355a656bdaeff790 \
+&& SHA256=adf595ee99c71a0a9b885d0d57dd683011e00764 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && export TMPDIR=/tmp \
-&& cd "$TMPDIR" \
-&& echo "$(readlink -f $(which nix-env))" > old_nix_path \
-&& nix-shell -I nixpkgs=channel:nixos-21.05 --packages nixFlakes --run 'nix-env --uninstall $(cat old_nix_path) && nix profile install nixpkgs#nixFlakes' \
-&& rm -rfv old_nix_path \
-&& cd ~ \
+&& export OLD_NIX_PATH="$(readlink -f $(which nix-env))" \
+&& nix-shell -I nixpkgs=channel:nixos-21.05 --keep OLD_NIX_PATH --packages nixFlakes --run 'nix-env --uninstall $OLD_NIX_PATH && nix-collect-garbage --delete-old && nix profile install nixpkgs#nixFlakes' \
+&& sudo rm -fv /nix/store/*-nix-2.3.1*/bin/nix \
+&& unset OLD_NIX_PATH \
 && nix-collect-garbage --delete-old \
 && nix store gc \
 && nix flake --version
@@ -381,7 +380,7 @@ TODO: Transform this in a test [Sometimes you will want to turn an alias into a 
 ### nix statically built WIP
 
 ```
-SHA256=fd1f59eaf2f5f5a13de867a7d49558a25b4cfcff \
+SHA256=adf595ee99c71a0a9b885d0d57dd683011e00764 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.bashrc \
 && nix --version \
@@ -459,7 +458,7 @@ https://ivanix.wordpress.com/tag/umask/
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=36cda47c6811aca34b0031ae355a656bdaeff790 \
+SHA256=adf595ee99c71a0a9b885d0d57dd683011e00764 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && . ~/.direnvrc \
@@ -469,7 +468,7 @@ SHA256=36cda47c6811aca34b0031ae355a656bdaeff790 \
 #### Testing the direnv's instalation
 
 ```bash
-SHA256=36cda47c6811aca34b0031ae355a656bdaeff790 \
+SHA256=adf595ee99c71a0a9b885d0d57dd683011e00764 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/test_install_direnv_nix_direnv.sh | sh
 ```
 
