@@ -398,11 +398,12 @@ not hardcoding the profile number.
 ### nix statically built WIP
 
 ```bash
-SHA256=adf595ee99c71a0a9b885d0d57dd683011e00764 \
+SHA256=c53aafe2fb1e88820af9e9fa73701d567d36b906 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.profile \
 && nix --version \
-&& nix store gc --verbose
+&& nix --store "$HOME" flake metadata nixpkgs \
+&& nix --store "$HOME"/store store gc --verbose
 ```
 
 ```bash
@@ -416,9 +417,10 @@ nixpkgs#hello
 ls -al $(readlink -f "$HOME"/.nix-profile)
 ```
 
-```
+```bash
 nix \
 build \
+--store "$HOME" \
 github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp
 ```
 
