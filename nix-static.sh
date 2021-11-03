@@ -15,7 +15,7 @@ toybox --version 1> /dev/null 2> /dev/null || curl -L http://landley.net/toybox/
 BASE="$HOME"/.local/bin
 
 ./toybox test -d "$BASE" || ./toybox mkdir -v -p -m 0755 "$BASE"
-toybox --version || ./toybox mv toybox "$BASE" && export PATH="$BASE":"$PATH"
+toybox --version 1> /dev/null 2> /dev/null || ./toybox mv toybox "$BASE" && export PATH="$BASE":"$PATH"
 
 # curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
 toybox which nix || curl -L https://hydra.nixos.org/build/156399089/download/2/nix > "$BASE"/nix
