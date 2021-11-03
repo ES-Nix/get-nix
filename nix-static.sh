@@ -10,7 +10,7 @@
 # cd "$HOME"
 cd /home/"$USER"
 
-toybox --version || curl -L http://landley.net/toybox/downloads/binaries/0.8.5/toybox-x86_64 > toybox && chmod 0755 toybox
+toybox --version 1> /dev/null 2> /dev/null || curl -L http://landley.net/toybox/downloads/binaries/0.8.5/toybox-x86_64 > toybox && chmod 0755 toybox
 
 BASE="$HOME"/.local/bin
 
