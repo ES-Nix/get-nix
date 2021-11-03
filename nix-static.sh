@@ -20,7 +20,6 @@ toybox --version || ./toybox mv toybox "$BASE" && export PATH="$BASE":"$PATH"
 # curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
 toybox which nix || curl -L https://hydra.nixos.org/build/156399089/download/2/nix > "$BASE"/nix
 toybox chmod -v 0700 "$BASE"/nix
-toybox sha1sum "$BASE"/nix
 
 toybox test -d /home/"$USER"/nix || toybox mkdir -v -p -m 0755 /home/"$USER"/nix
 
@@ -56,6 +55,8 @@ if [ ! -f /home/nix_user/.profile ]; then
 else
   toybox grep 'flake' /home/"$USER"/.profile -q || echo "$BASHRC_NIX_FUNCTIONS" >> /home/"$USER"/.profile
 fi
+
+toybox rm -fv "$BASE"/toybox
 
 # . $HOME/.profile
 

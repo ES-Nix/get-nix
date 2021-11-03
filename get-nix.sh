@@ -4,9 +4,13 @@
 #set -euxo pipefail
 
 #set -x
+export NIX_VERSION_URL='nix-2.5pre20211026_5667822'
+export URL_TO_CURL="https://github.com/numtide/nix-flakes-installer/releases/download/"$NIX_VERSION_URL"/install"
+command -v nix >/dev/null 2>&1 || curl -fsSL "$URL_TO_CURL" | sh
+unset NIX_VERSION_URL
+unset URL_TO_CURL
 
-command -v nix >/dev/null 2>&1 || curl -L https://nixos.org/nix/install | sh \
-&& test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.config/nix/nix.conf \
+test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.config/nix/nix.conf \
 && cat ~/.config/nix/nix.conf | grep 'nixos' >/dev/null && /bin/true || echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
 && cat ~/.config/nix/nix.conf | grep 'flakes' >/dev/null && /bin/true || echo 'experimental-features = nix-command flakes ca-references ca-derivations' >> ~/.config/nix/nix.conf \
 && cat ~/.config/nix/nix.conf | grep 'trace' >/dev/null && /bin/true || echo 'show-trace = true' >> ~/.config/nix/nix.conf \
