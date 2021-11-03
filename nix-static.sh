@@ -43,6 +43,7 @@ BASHRC_NIX_FUNCTIONS=$(toybox cat <<-EOF
 # It was inserted by the get-nix installer
 export TMPDIR=/tmp
 export PATH="\$HOME"/.local/bin:"\$PATH"
+export NIX_PROFILES="/nix/var/nix/profiles/default /home/"\$USER"/.nix-profile"
 # End of inserted by the get-nix installer
 EOF
 )

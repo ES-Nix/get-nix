@@ -409,11 +409,48 @@ SHA256=c53aafe2fb1e88820af9e9fa73701d567d36b906 \
 nix \
 profile \
 install \
+--store "$HOME" \
 nixpkgs#hello
 ```
 
 ```bash
+nix \
+shell \
+--store "$HOME" \
+nixpkgs#hello \
+--command \
+hello
+```
+```bash
+nix \
+shell \
+--store "$HOME" \
+nixpkgs#podman \
+--command \
+podman \
+--version
+```
+
+
+```bash
 ls -al $(readlink -f "$HOME"/.nix-profile)
+```
+
+```bash
+nix \
+flake \
+show \
+--store "$HOME" \
+github:GNU-ES/hello
+```
+
+```bash
+nix \
+shell
+--store "$HOME" \
+github:GNU-ES/hello \
+--command \
+hello
 ```
 
 ```bash
