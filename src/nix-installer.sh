@@ -7,7 +7,7 @@ set -x
 
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& SHA256=eccef9a426fd8d7fa4c7e4a8c1191ba1cd00a4f7 \
+&& SHA256=f49101a5b311dc65c509f32cd45f710a28eaedb4 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export TMPDIR=/tmp \
