@@ -18,6 +18,21 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 && cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
 
 
+export aux='    export PATH='"$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"/bin:'"$PATH"'
+sed 's|unset NIX_LINK|&\n'"${aux}"'|'
+
+
+chmod 0755 "$HOME"
+chmod 0755 "$HOME"/.nix-profile
+chmod 0755 "$HOME"/.nix-profile/bin
+chmod 0755 "$HOME"/.nix-profile/bin/nix
+
+mv "$HOME"/.nix-profile/bin/nix "$HOME"/.nix-profile/bin/aux_nix
+rm -fv "$HOME"/.nix-profile/bin/nix
+
+mv "$HOME"/.nix-profile/bin/aux_nix "${aux}"
+mv "${aux}"/aux_nix "${aux}"/nix
+
 # Main idea from: https://stackoverflow.com/a/1167849
 NIX_HELPER_FUNCTIONS=$(cat <<-EOF
 

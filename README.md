@@ -45,6 +45,21 @@ sudo apt-get install -y curl
 `nix` it self if you run `nix profile remove '.*'`.
 
 
+### Testing your installation
+
+```bash
+nix develop .# --command echo 'End.'
+```
+
+
+```bash
+nix flake check github:ES-Nix/get-nix/draft-in-wip
+```
+
+```bash
+nix develop github:ES-Nix/get-nix/draft-in-wip --command echo 'End.'
+```
+
 ## Troubleshoot commands
 
 
@@ -397,13 +412,33 @@ not hardcoding the profile number.
 ### nix statically built WIP
 
 ```bash
-SHA256=c53aafe2fb1e88820af9e9fa73701d567d36b906 \
+sudo mkdir -v /nix
+sudo chown "$(id -u)":"$(id -g)" -v /nix
+sudo -k
+
+SHA256=7429196f21cea77a70341bc46614bba3c5cad6b5 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.profile \
 && nix --version \
+&& nix flake metadata nixpkgs \
+&& nix store gc --verbose
+```
+
+
+```bash
+nix \
+run \
+nixpkgs#hello
+```
+
+```bash
+nix \
+develop \
+github:ES-Nix/fhs-environment/enter-fhs
+```
+
 && nix --store "$HOME" flake metadata nixpkgs \
 && nix --store "$HOME"/store store gc --verbose
-```
 
 ```bash
 nix \
@@ -481,6 +516,18 @@ From: https://stackoverflow.com/a/37231726
 
 TODO: make tests for this in QEMU
 https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
+
+
+t=$(mktemp -d) \
+&& curl https://matthewbauer.us/nix > $t/nix.sh \
+&& (cd $t && bash nix.sh --extract) \
+&& mkdir -p $HOME/bin/ $HOME/share/nix/corepkgs/ \
+&& mv $t/dat/nix-x86_64 $HOME/bin/nix \
+&& mv $t/dat/share/nix/corepkgs/* $HOME/share/nix/corepkgs/ \
+&& echo export 'PATH=$HOME/bin:$PATH' >> $HOME/.profile \
+&& echo export 'NIX_DATA_DIR=$HOME/share' >> $HOME/.profile \
+&& source $HOME/.profile \
+&& rm -rf $t
 
 
 TODO: it is probably going to be usefull
@@ -799,6 +846,32 @@ docker.nix-community.org/nixpkgs/nix-flakes \
 bash \
 -c \
 'id'
+```
+
+
+#### Non nixpkgs flakes tests
+
+
+```bash
+nix \
+flake \
+show \
+github:GNU-ES/hello
+```
+
+```bash
+nix \
+shell \
+github:GNU-ES/hello \
+--command \
+hello
+```
+
+```bash
+nix \
+build \
+--store "$HOME" \
+github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp
 ```
 
 ```bash
