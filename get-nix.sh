@@ -17,8 +17,6 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 && test -d ~/.config/nixpkgs || mkdir --parent --mode=0755 ~/.config/nixpkgs && touch ~/.config/nixpkgs/config.nix \
 && cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
 
-. "$HOME"/.nix-profile/etc/profile.d/nix.sh
-
 export OLD_NIX_PATH="$(readlink -f $(which nix))" \
 && echo $OLD_NIX_PATH \
 && nix-shell \
