@@ -19,7 +19,7 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 
 
 export aux='    export PATH='"$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"/bin:'"$PATH"'
-sed 's|unset NIX_LINK|&\n'"${aux}"'|'
+sed -i 's|unset NIX_LINK|&\n'"${aux}"'|' "$HOME"/.nix-profile/etc/profile.d/nix.sh
 
 
 chmod 0755 "$HOME"
