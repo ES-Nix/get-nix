@@ -147,7 +147,7 @@ echo 'experimental-features = nix-command flakes ca-references ca-derivations' >
 
 nix build github:NixOS/nix/4a2b7cc68c7d11ec126bc412ffea838e629345af#nix-static
 
-echo 'ec74eb0971c4f54a8e3c25344db051640ead538292d566fa526430eb2579fffe result/bin/nix' | sha256sum -c
+echo -n ec74eb0971c4f54a8e3c25344db051640ead538292d566fa526430eb2579fffe result/bin/nix | sha256sum --check
 
 du -hs result/bin/nix
 cp result/bin/nix /code
@@ -163,7 +163,22 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 && mkdir --parent --mode=0755 "$HOME"/store
 
 
-echo 'ec74eb0971c4f54a8e3c25344db051640ead538292d566fa526430eb2579fffe nix' | sha256sum -c
+#nix build github:NixOS/nix/4a2b7cc68c7d11ec126bc412ffea838e629345af#nix-static
+
+sudo rm "$(readlink -f "$(which nix)")"
+#./nix profile install nixpkgs#hello
+#./nix develop github:ES-Nix/fhs-environment/enter-fhs
+#
+#find / -name '*nix*' \
+#  -not \( -path "/home/ubuntu/code/*" \) \
+#  -not \( -path "/proc/*" \) \
+#  -not \( -path "/usr/*" \) \
+#  -not \( -path "/tmp/*" \) \
+#  -not \( -path "/snap/*" \) \
+#  -not \( -path "/etc/*" \) \
+#  -not \( -path "/boot/*" \) \
+#  -not \( -path "/sys/*" \) \
+#  -exec echo -- {} + 2>/dev/null
 
 # https://unix.stackexchange.com/a/651928
 mkdir -p "$HOME"/.local/bin
@@ -188,7 +203,7 @@ nix run --store "$HOME" nixpkgs#nix-info --markdown
 
 # Broken
 #nix --store "$HOME" flake metadata github:edolstra/dwarffs
-
+nix flake metadata github:edolstra/dwarffs
 nix --store "$HOME" doctor
 nix --store "$HOME" store verify --all
 nix --store "$HOME" store optimise
@@ -204,6 +219,17 @@ nix --store "$HOME" flake show github:NixOS/nixpkgs/478cfa6f4bec2ee1fb7df8ef38e3
 #nix --store "$HOME" flake show github:NixOS/nixpkgs/478cfa6f4bec2ee1fb7df8ef38e3b80cbbdcecc5 --legacy
 
 # Building a copy of itself
+
+nix \
+build \
+github:NixOS/nix/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nix-static \
+&& result/bin/nix flake --version \
+&& echo -n ec74eb0971c4f54a8e3c25344db051640ead538292d566fa526430eb2579fffe result/bin/nix | sha256sum --check \
+&& rm -frv result \
+&& nix store gc # --verbose
+
+
+
 
 nix \
 --store \
@@ -244,7 +270,6 @@ nix --store "$HOME" shell nixpkgs#kvm --command qemu-kvm --version
 
 nix \
 shell \
---store "$HOME" \
 nixpkgs/a3f85aedb1d66266b82d9f8c0a80457b4db5850c#{\
 gcc10,\
 gcc6,\

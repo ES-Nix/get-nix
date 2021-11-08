@@ -851,6 +851,11 @@ bash \
 
 #### Non nixpkgs flakes tests
 
+```bash
+nix \
+run \
+github:edolstra/dwarffs -- --version
+```
 
 ```bash
 nix \
@@ -898,6 +903,12 @@ github:ES-Nix/poetry2nix-examples/2cb6663e145bbf8bf270f2f45c869d69c657fef2#poetr
 nix \
 build \
 github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp
+```
+
+```bash
+nix \
+develop \
+github:ES-Nix/fhs-environment/enter-fhs
 ```
 
 ```bash
