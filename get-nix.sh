@@ -37,13 +37,15 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 && chmod 0755 -v "$HOME"/.nix-profile/etc/profile.d \
 && chmod 0755 -v "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export aux1="$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"'/bin' \
-&& export aux2='    export PATH='"${aux1}"'/bin:"$PATH"' \
+&& export aux2='    export PATH='"${aux1}"':"$PATH"' \
 && stat "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && sed -i 's|unset NIX_LINK|&\n'"${aux2}"'|' "$HOME"/.nix-profile/etc/profile.d/nix.sh \
-&& echo \
-&& mv "$HOME"/.nix-profile/bin/nix "${aux1}"/nix_ \
-&& rm -fv "$HOME"/.nix-profile/bin/nix \
-&& mv "${aux1}"/nix_ "${aux1}"/nix
+&& echo
+
+#\
+#&& mv "$HOME"/.nix-profile/bin/nix "${aux1}"/nix_ \
+#&& rm -fv "$HOME"/.nix-profile/bin/nix \
+#&& mv "${aux1}"/nix_ "${aux1}"/nix
 
 # Main idea from: https://stackoverflow.com/a/1167849
 NIX_HELPER_FUNCTIONS=$(cat <<-EOF
