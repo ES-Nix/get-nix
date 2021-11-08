@@ -36,14 +36,15 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 && chmod 0755 -v "$HOME"/.nix-profile/etc \
 && chmod 0755 -v "$HOME"/.nix-profile/etc/profile.d \
 && chmod 0755 -v "$HOME"/.nix-profile/etc/profile.d/nix.sh \
-&& export aux='    export PATH='"$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"'/bin:"$PATH"' \
+&& export aux1="$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"'/bin' \
+&& export aux2='    export PATH='"${aux1}"'/bin:"$PATH"' \
 && stat "$HOME"/.nix-profile/etc/profile.d/nix.sh \
-&& sed -i 's|unset NIX_LINK|&\nexport PATH=/nix/store/6bh7cnb068mwygb2hz39aibdkkpmmlks-nix-2.5pre20211007_844dd90/bin:"$PATH"|' "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& sed -i 's|unset NIX_LINK|&\n'"${aux2}"'|' "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && echo \
 && mv "$HOME"/.nix-profile/bin/nix "$HOME"/.nix-profile/bin/aux_nix \
 && rm -fv "$HOME"/.nix-profile/bin/nix \
-&& mv "$HOME"/.nix-profile/bin/aux_nix "${aux}" \
-&& mv "${aux}"/aux_nix "${aux}"/nix
+&& mv "$HOME"/.nix-profile/bin/aux_nix "${aux1}" \
+&& mv "${aux1}"/aux_nix "${aux1}"/nix
 
 # Main idea from: https://stackoverflow.com/a/1167849
 NIX_HELPER_FUNCTIONS=$(cat <<-EOF
