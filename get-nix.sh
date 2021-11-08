@@ -32,6 +32,8 @@ export OLD_NIX_PATH="$(readlink -f $(which nix))" \
 && nix store gc --verbose \
 && nix flake --version
 
+
+stat "$HOME"/.nix-profile/etc/profile.d/nix.sh
 export aux='    export PATH='"$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"/bin:'"$PATH"'
 sed -i 's|unset NIX_LINK|&\n'"${aux}"'|' "$HOME"/.nix-profile/etc/profile.d/nix.sh
 
