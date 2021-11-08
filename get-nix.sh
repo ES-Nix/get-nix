@@ -41,8 +41,9 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 && stat "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && sed -i 's|unset NIX_LINK|&\n'"${aux2}"'|' "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && echo \
-&& mv "$HOME"/.nix-profile/bin/nix "${aux1}"/nix \
-&& rm -fv "$HOME"/.nix-profile/bin/nix
+&& mv "$HOME"/.nix-profile/bin/nix "${aux1}"/nix_ \
+&& rm -fv "$HOME"/.nix-profile/bin/nix \
+&& mv "${aux1}"/nix "${aux1}"/nix
 
 # Main idea from: https://stackoverflow.com/a/1167849
 NIX_HELPER_FUNCTIONS=$(cat <<-EOF
