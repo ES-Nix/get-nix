@@ -32,7 +32,7 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 && nix flake --version \
 && stat "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export aux='    export PATH='"$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"'/bin:"$PATH"' \
-&& sed -i 's|unset NIX_LINK|&\n'"${aux}"'|' "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& sed -i 's|unset NIX_LINK|&\nexport PATH=/nix/store/6bh7cnb068mwygb2hz39aibdkkpmmlks-nix-2.5pre20211007_844dd90/bin:"$PATH"|' "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && chmod 0755 -v "$HOME" \
 && chmod 0755 -v "$HOME"/.nix-profile \
 && chmod 0755 -v "$HOME"/.nix-profile/bin \
