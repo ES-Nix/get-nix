@@ -17,9 +17,8 @@ test -d ~/.config/nix || mkdir --parent --mode=0755 ~/.config/nix && touch ~/.co
 && test -d ~/.config/nixpkgs || mkdir --parent --mode=0755 ~/.config/nixpkgs && touch ~/.config/nixpkgs/config.nix \
 && cat ~/.config/nixpkgs/config.nix | grep 'allowUnfree' >/dev/null && /bin/true || echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
 
-. "$HOME"/.nix-profile/etc/profile.d/nix.sh
-
-export OLD_NIX_PATH="$(readlink -f $(which nix))" \
+. "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& export OLD_NIX_PATH="$(readlink -f $(which nix))" \
 && echo $OLD_NIX_PATH \
 && nix-shell \
     --arg pkgs 'import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/refs/tags/20.09.tar.gz") {}' \
@@ -30,24 +29,19 @@ export OLD_NIX_PATH="$(readlink -f $(which nix))" \
 && unset OLD_NIX_PATH \
 && nix-collect-garbage --delete-old --verbose \
 && nix store gc --verbose \
-&& nix flake --version
-
-
-stat "$HOME"/.nix-profile/etc/profile.d/nix.sh
-export aux='    export PATH='"$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"'/bin:"$PATH"'
-sed -i 's|unset NIX_LINK|&\n'"${aux}"'|' "$HOME"/.nix-profile/etc/profile.d/nix.sh
-
-
-chmod 0755 -v "$HOME"
-chmod 0755 -v "$HOME"/.nix-profile
-chmod 0755 -v "$HOME"/.nix-profile/bin
-chmod 0755 -v "$HOME"/.nix-profile/bin/nix
-
-mv "$HOME"/.nix-profile/bin/nix "$HOME"/.nix-profile/bin/aux_nix
-rm -fv "$HOME"/.nix-profile/bin/nix
-
-mv "$HOME"/.nix-profile/bin/aux_nix "${aux}"
-mv "${aux}"/aux_nix "${aux}"/nix
+&& nix flake --version \
+&& stat "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& export aux='    export PATH='"$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"'/bin:"$PATH"' \
+&& sed -i 's|unset NIX_LINK|&\n'"${aux}"'|' "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& chmod 0755 -v "$HOME" \
+&& chmod 0755 -v "$HOME"/.nix-profile \
+&& chmod 0755 -v "$HOME"/.nix-profile/bin \
+&& chmod 0755 -v "$HOME"/.nix-profile/bin/nix \
+&& echo \
+&& mv "$HOME"/.nix-profile/bin/nix "$HOME"/.nix-profile/bin/aux_nix \
+&& rm -fv "$HOME"/.nix-profile/bin/nix \
+&& mv "$HOME"/.nix-profile/bin/aux_nix "${aux}" \
+&& mv "${aux}"/aux_nix "${aux}"/nix
 
 # Main idea from: https://stackoverflow.com/a/1167849
 NIX_HELPER_FUNCTIONS=$(cat <<-EOF
