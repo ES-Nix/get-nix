@@ -15,22 +15,20 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```bash
 test -d /nix || sudo mkdir --mode=0755 /nix \
 && sudo chown "$USER": /nix \
-&& SHA256=eccef9a426fd8d7fa4c7e4a8c1191ba1cd00a4f7 \
+&& SHA256=d5599fb1b3926fddf360468b776c34d00a099da3 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
-&& export TMPDIR=/tmp \
-&& export OLD_NIX_PATH="$(readlink -f $(which nix))" \
-&& echo $OLD_NIX_PATH \
-&& nix-shell \
-    --arg pkgs 'import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/refs/tags/20.09.tar.gz") {}' \
-    --keep OLD_NIX_PATH \
-    --packages nixFlakes \
-    --run 'nix-env --uninstall $OLD_NIX_PATH && nix-collect-garbage --delete-old && nix profile install github:NixOS/nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes' \
-&& sudo rm -frv /nix/store/*-nix-2.3.* \
-&& unset OLD_NIX_PATH \
-&& nix-collect-garbage --delete-old --verbose \
+&& export TMPDIR=/tmp 
+```
+
+To test your installation:
+```bash
+nix flake check github:ES-Nix/get-nix/draft-in-wip \
+&& nix develop github:ES-Nix/get-nix/draft-in-wip --command echo 'End.' \
 && nix store gc --verbose \
-&& nix flake --version
+&& nix store optimise --verbose \
+&& nix flake --version \
+&& nix flake metadata nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc
 ```
 
 Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
@@ -114,6 +112,9 @@ nixFlakes \
 ```
 
 ```bash
+nix \
+run \
+nixpkgs#nix-info -- --markdown
 nix shell nixpkgs#nix-info --command nix-info --markdown
 nix show-config
 jq --version || nix profile install nixpkgs#jq
@@ -279,13 +280,31 @@ https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-why-depends.html#
 nix-store --query --requisites $(readlink -f $(which nix)) | cat
 nix-store --query --requisites --include-outputs $(readlink -f $(which nix)) | cat
 
+nix-store --query --requisites "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)" | cat 
+nix-store --query --referrers "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)" | cat
+ 
+nix-store --query --requisites --include-outputs "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)" | cat 
+nix-store --query --referrers --include-outputs "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)" | cat
+ 
+nix-store --query --deriver "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"/bin/nix
+
+nix-store --query --hash "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"/bin/nix
+
+nix-store --query --requisites --include-outputs "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)" | xargs nix-store --query --hash 
+
+nix-store --query --referrers-closure --include-outputs "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)" | wc -l
+--referrers-closure
+--use-output
+
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(readlink -f  $(which nix))) | cat
+nix-store --query --requisites --tree --include-outputs $(nix-store --query --deriver $(readlink -f  $(which nix))) | cat
 nix-store --query --graph --include-outputs $(nix-store --query --deriver $(readlink -f $(which nix))) | dot -Tps > graph.ps
 ```
 
 
 ```bash
 nix why-depends --all --derivation nixpkgs#gcc nixpkgs#glibc | cat
+nix why-depends --all --derivation nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes | cat
 ```
 
 TODO: 
@@ -396,6 +415,30 @@ nix \
 flake \
 update \
 --override-input nixpkgs
+```
+
+```bash
+nix-store \
+--gc \
+--print-dead \
+--option \
+keep-derivations true
+```
+
+```bash
+nix \
+--experimental-features 'nix-command flakes ca-references ca-derivations' \
+profile \
+install \
+nixpkgs#toybox
+
+echo
+
+nix \
+--experimental-features 'nix-command flakes ca-references ca-derivations' \
+profile \
+remove \
+$(nix eval --raw nixpkgs#toybox)
 ```
 
 ## chroot and others
@@ -517,7 +560,7 @@ From: https://stackoverflow.com/a/37231726
 TODO: make tests for this in QEMU
 https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
 
-
+```bash
 t=$(mktemp -d) \
 && curl https://matthewbauer.us/nix > $t/nix.sh \
 && (cd $t && bash nix.sh --extract) \
@@ -528,7 +571,7 @@ t=$(mktemp -d) \
 && echo export 'NIX_DATA_DIR=$HOME/share' >> $HOME/.profile \
 && source $HOME/.profile \
 && rm -rf $t
-
+```
 
 TODO: it is probably going to be usefull
 https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-466804361
@@ -667,7 +710,7 @@ https://ivanix.wordpress.com/tag/umask/
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=7c60027233ae556d73592d97c074bc4f3fea451d \
+SHA256=d5599fb1b3926fddf360468b776c34d00a099da3 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && . ~/.direnvrc \

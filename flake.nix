@@ -15,9 +15,9 @@
           config = { allowUnfree = true; };
         };
 
-        tests = pkgsAllowUnfree.writeShellScriptBin "tests" ''
-          ./src/tests/tests.sh
-        '';
+#        tests = pkgsAllowUnfree.writeShellScriptBin "tests" ''
+#          ./src/tests/tests.sh
+#        '';
 
         sha256sumNixFlakeVersion = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-flake-version" ''
           # How to use a shebang here like ${pkgsAllowUnfree.coreutils}?
@@ -35,7 +35,6 @@
           echo -n 6c9efc7738afde14a2a33e4827858007fa31d667124f9c3b8a225d7b64e61b68 "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
         '';
-
 
         sha256sumNixStoreQueryRequisites = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-store-query-requisites" ''
           nix_tmp="$(mktemp)"
@@ -62,6 +61,63 @@
           # sha256sum "$nix_tmp"
           echo -n 5886497eaf6c4336e909c80b0fceaca4d58729ed0c4d9256fc4dd0f81aae6fed "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
+        '';
+
+        testNix = pkgsAllowUnfree.writeShellScriptBin "test-nix" ''
+          set -ex
+
+          nix \
+          run \
+          github:edolstra/dwarffs -- --version
+          nix store gc --verbose
+
+          nix \
+          flake \
+          show \
+          github:GNU-ES/hello
+          nix store gc --verbose
+
+          nix \
+          build \
+          nixpkgs#hello \
+          --no-out-link
+
+          nix \
+          shell \
+          github:GNU-ES/hello \
+          --command \
+          hello
+          nix store gc --verbose
+
+          nix \
+          build \
+          github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp
+          nix store gc --verbose
+
+          nix \
+          build \
+          github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso
+          nix store gc --verbose
+
+        '';
+
+        run = pkgsAllowUnfree.writeShellScriptBin "run" ''
+          "$@"
+        '';
+
+        testConfig1 = pkgsAllowUnfree.writeShellScriptBin "test_config_1" ''
+          system_features="$(busybox mktemp)"
+          nix show-config | busybox grep 'system-features' | busybox cut -d ' ' -f3- | busybox tr ' ' '\n' | busybox sort > "$system_features"
+          #busybox sha256sum "$system_features"
+          busybox echo "e409ceb415ad70f19d7ac63f5c1000e6ec73d9b2e5d8a055c4f6d0e425d3a9f2  $system_features" | busybox sha256sum -c
+          busybox rm "$system_features"
+
+
+          experimental_features="$(mktemp)"
+          nix show-config | busybox grep 'experimental-features' | busybox cut -d ' ' -f3- | busybox tr ' ' '\n' | busybox sort > "$system_features"
+          #busybox sha256sum "$experimental_features"
+          busybox echo "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  $experimental_features" | busybox sha256sum -c
+          busybox rm "$experimental_features"
         '';
 
         buildOCI = pkgsAllowUnfree.writeShellScriptBin "build-oci" ''
@@ -111,6 +167,10 @@
             sha256sumnixProfileInstallHello
             sha256sumRawEvalNixFlakes
 
+            run
+            testNix
+            testConfig1
+
           ]
           ++
           # Why nix fllake check is broken if aarch64-darwin is not excluded??
@@ -121,11 +181,13 @@
             # cat "$(echo $(type build-oci) | cut -d' ' -f3)"
             # echo abc "${ toString isDarwin}"
 
-            sha256sum-nix-flake-version
-            sha256sum-nix-show-config-json
-            sha256sum-nix-store-query-requisites
-            sha256sum-nix-profile-install-hello
-            sha256sum-raw-eval-nixFlakes
+#            sha256sum-nix-flake-version
+#            sha256sum-nix-show-config-json
+#            sha256sum-nix-store-query-requisites
+#            sha256sum-nix-profile-install-hello
+#            sha256sum-raw-eval-nixFlakes
+#            test-nix
+#            run
           '';
         };
 
