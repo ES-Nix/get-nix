@@ -196,7 +196,7 @@
 
         allTests = pkgsAllowUnfree.writeShellScriptBin "all-tests" ''
           sha256sum-nix-flake-version
-          sha256sum-nix-show-config-json
+          # sha256sum-nix-show-config-json
           sha256sum-nix-store-query-requisites
           sha256sum-nix-profile-install-hello
           sha256sum-raw-eval-nixFlakes
