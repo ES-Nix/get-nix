@@ -15,21 +15,22 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```bash
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
-&& SHA256=855c8e8faf79ff3e2b8293c564e6f5ab94a8b3f1 \
+&& SHA256=423b4973b6cc349c01d4e14d18aaceb47e9d1e19 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export TMPDIR=/tmp  \
 && nix flake --version
 ```
 
-To test your installation:
+Optional: to test your installation.
+Note: it needs lots of memory and internet and time, it needs some improvements.
 ```bash
 nix \
 develop \
 --refresh \
 github:ES-Nix/get-nix/draft-in-wip \
 --command \
-"run all-tests"
+run all-tests
 ```
 
 ```bash
@@ -53,6 +54,8 @@ sudo apt-get install -y curl
 *Warning:* installed in this way (in a profile) nix + flakes is not ideal because it is possible to break
 `nix` it self if you run `nix profile remove '.*'`.
 
+
+About the 2.4 release: [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-released/15822)
 
 ### Testing your installation
 
@@ -809,6 +812,14 @@ nix flake --version
 readlink -f $(which nix)
 ```
 
+TODO:
+```bash
+nix-store \
+--gc \
+--print-dead \
+--option keep-derivations false \
+--option keep-outputs true
+```
 
 ## Tests
 
