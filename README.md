@@ -15,7 +15,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```bash
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
-&& SHA256=423b4973b6cc349c01d4e14d18aaceb47e9d1e19 \
+&& SHA256=18d925e25f042b27be33345b7af10c51d39d14b3 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export TMPDIR=/tmp  \
@@ -473,7 +473,7 @@ sudo mkdir -v /nix
 sudo chown "$(id -u)":"$(id -g)" -v /nix
 sudo -k
 
-SHA256=855c8e8faf79ff3e2b8293c564e6f5ab94a8b3f1 \
+SHA256=18d925e25f042b27be33345b7af10c51d39d14b3 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.profile \
 && nix --version \
