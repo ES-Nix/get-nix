@@ -36,8 +36,8 @@
 
           nix_tmp="$(mktemp)"
           nix show-config --json > "$nix_tmp"
-          # sha256sum"$nix_tmp"
-          echo -n a7e3e554d7f09c4a424395811a49e42a468ac4d149d3f4cf33c242d0ff272d9d "$nix_tmp" | sha256sum --check
+          # sha256sum "$nix_tmp"
+          echo -n d4d1992e16f698b21050c3cd1450d3a75e2a5bdeb32c98c3299ac50b05128ea1 "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
         '';
 
