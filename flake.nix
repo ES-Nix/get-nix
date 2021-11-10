@@ -159,7 +159,6 @@
 
             buildOCI
             OCIUbuntu
-            tests
 
             sha256sumNixFlakeVersion
             sha256sumNixShowConfigJSON
