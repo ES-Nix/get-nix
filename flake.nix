@@ -20,35 +20,45 @@
 #        '';
 
         sha256sumNixFlakeVersion = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-flake-version" ''
+          # set -e
+
           # How to use a shebang here like ${pkgsAllowUnfree.coreutils}?
           # echo $(which sha256sum)
           nix_tmp="$(mktemp)"
+          # sha256sum "$nix_tmp"
           nix --version > "$nix_tmp"
-          echo -n a99c1e9acc7d215f308a4918620cd14e3a80860174aea3447a0b014da736f4e8 "$nix_tmp" | sha256sum --check
+          echo -n 27df00965d46f540ae6015104f83f528684191148589ade190becc6282844d30 "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
         '';
 
         sha256sumNixShowConfigJSON = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-show-config-json" ''
+          # set -ex
+
           nix_tmp="$(mktemp)"
           nix show-config --json > "$nix_tmp"
-          #sha256sum "$nix_tmp"
-          echo -n 6c9efc7738afde14a2a33e4827858007fa31d667124f9c3b8a225d7b64e61b68 "$nix_tmp" | sha256sum --check
+          # sha256sum"$nix_tmp"
+          echo -n a7e3e554d7f09c4a424395811a49e42a468ac4d149d3f4cf33c242d0ff272d9d "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
         '';
 
         sha256sumNixStoreQueryRequisites = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-store-query-requisites" ''
-          nix_tmp="$(mktemp)"
-          echo "$(nix-store --query --requisites "$(which nix)")" | tr ' ' '\n' > "$nix_tmp"
-          #sha256sum "$nix_tmp"
-          echo -n 5ec70359cf3cb063252b9efc10106d44cfcdd4de8a22d5ab9c9577bb3f9efcba "$nix_tmp" | sha256sum --check
-          rm "$nix_tmp"
+          set -ex
+
+#          nix_tmp="$(mktemp)"
+#          echo "$(nix-store --query --requisites "$(nix eval --raw nixpkgs#nix)")"/bin/nix | tr ' ' '\n' > "$nix_tmp"
+#           sha256sum"$nix_tmp"
+#          echo -n 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b "$nix_tmp" | sha256sum --check
+#          rm "$nix_tmp"
         '';
 
         sha256sumnixProfileInstallHello = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-profile-install-hello" ''
+          # set -ex
+
+
           nix_tmp="$(mktemp)"
           nix profile install nixpkgs#hello
           hello > "$nix_tmp"
-          # sha256sum "$nix_tmp"
+          # sha256sum"$nix_tmp"
           echo -n d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5 "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
           nix profile remove "$(nix eval --raw nixpkgs#hello)"
@@ -56,53 +66,142 @@
         '';
 
         sha256sumRawEvalNixFlakes = pkgsAllowUnfree.writeShellScriptBin "sha256sum-raw-eval-nixFlakes" ''
+          # set -ex
+
           nix_tmp="$(mktemp)"
           echo -n "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"/bin > "$nix_tmp"
-          # sha256sum "$nix_tmp"
+          # sha256sum"$nix_tmp"
           echo -n 5886497eaf6c4336e909c80b0fceaca4d58729ed0c4d9256fc4dd0f81aae6fed "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
         '';
 
+        testNixFromOnlynixpkgs = pkgsAllowUnfree.writeShellScriptBin "test-nix-from-only-nixpkgs" ''
+          set -ex
+
+          nix \
+          shell \
+          nixpkgs/a3f85aedb1d66266b82d9f8c0a80457b4db5850c#{\
+          bashInteractive,\
+          gcc10,\
+          gcc6,\
+          gfortran10,\
+          gfortran6,\
+          nodejs,\
+          qemu,\
+          poetry,\
+          python39,\
+          rustc,\
+          yarn\
+          } \
+          --command \
+          bash \
+          -c \
+          "gcc --version \
+          && python --version \
+          && gcc --version \
+          && gfortran --version \
+          && node --version \
+          && qemu-kvm --version \
+          && poetry --version \
+          && rustc --version \
+          && yarn --version
+          "
+
+          nix \
+          store \
+          gc \
+          --verbose
+
+          # nix \
+          # flake \
+          # metadata \
+          # github:nixos/nixpkgs/nixpkgs-unstable
+          # nix run github:nixos/nixpkgs/nixpkgs-unstable#nix -- --version
+          nix \
+          run \
+          github:nixos/nixpkgs/d14ae62671fd4eaec57427da1e50f91d6a5f9605#nix -- --version
+
+          nix \
+          run \
+          github:nixos/nixpkgs/d14ae62671fd4eaec57427da1e50f91d6a5f9605#nixFlakes -- --version
+
+          # nix \
+          # flake \
+          # metadata \
+          # github:nixos/nixpkgs/master
+          # nix run github:nixos/nixpkgs/master#nix -- --version
+          nix \
+          run \
+          github:nixos/nixpkgs/04cf6dc67f8e29bd086ebd1dc9ad7c8262913347#nix -- --version
+
+          nix \
+          run \
+          github:nixos/nixpkgs/04cf6dc67f8e29bd086ebd1dc9ad7c8262913347#nixFlakes -- --version
+
+          nix \
+          store \
+          gc \
+          --verbose
+        '';
+
         testNix = pkgsAllowUnfree.writeShellScriptBin "test-nix" ''
           set -ex
+
+
+          nix flake show github:serokell/templates
+
+          nix \
+          flake \
+          check \
+          github:edolstra/dwarffs
 
           nix \
           run \
           github:edolstra/dwarffs -- --version
           nix store gc --verbose
 
+#          nix \
+#          flake \
+#          check \
+#          github:ES-Nix/podman-rootless/from-nixpkgs
           nix \
           flake \
           show \
-          github:GNU-ES/hello
+          github:ES-Nix/podman-rootless/from-nixpkgs
           nix store gc --verbose
 
           nix \
           build \
-          nixpkgs#hello \
-          --no-out-link
+          github:ES-Nix/podman-rootless/from-nixpkgs \
+          --no-link
 
           nix \
-          shell \
-          github:GNU-ES/hello \
-          --command \
-          hello
+          build \
+          github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp \
+          --no-link
           nix store gc --verbose
 
           nix \
           build \
-          github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp
+          github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso \
+          --no-link
           nix store gc --verbose
-
-          nix \
-          build \
-          github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso
-          nix store gc --verbose
-
         '';
 
         run = pkgsAllowUnfree.writeShellScriptBin "run" ''
           "$@"
+        '';
+
+        allTests = pkgsAllowUnfree.writeShellScriptBin "all-tests" ''
+          sha256sum-nix-flake-version
+          sha256sum-nix-show-config-json
+          sha256sum-nix-store-query-requisites
+          sha256sum-nix-profile-install-hello
+          sha256sum-raw-eval-nixFlakes
+
+          test-nix-from-only-nixpkgs
+          test_config_1
+          test-nix
         '';
 
         testConfig1 = pkgsAllowUnfree.writeShellScriptBin "test_config_1" ''
@@ -169,7 +268,7 @@
             run
             testNix
             testConfig1
-
+            allTests
           ]
           ++
           # Why nix fllake check is broken if aarch64-darwin is not excluded??

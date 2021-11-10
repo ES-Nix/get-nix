@@ -13,18 +13,29 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 
 
 ```bash
-test -d /nix || sudo mkdir --mode=0755 /nix \
-&& sudo chown "$USER": /nix \
-&& SHA256=d5599fb1b3926fddf360468b776c34d00a099da3 \
+test -d /nix || sudo mkdir -m 0755 /nix \
+&& sudo -k chown "$USER": /nix \
+&& SHA256=855c8e8faf79ff3e2b8293c564e6f5ab94a8b3f1 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
-&& export TMPDIR=/tmp 
+&& export TMPDIR=/tmp  \
+&& nix flake --version
 ```
 
 To test your installation:
 ```bash
+nix \
+develop \
+--refresh \
+github:ES-Nix/get-nix/draft-in-wip \
+--command \
+"run all-tests"
+```
+
+```bash
 nix flake check github:ES-Nix/get-nix/draft-in-wip \
 && nix develop github:ES-Nix/get-nix/draft-in-wip --command echo 'End.' \
+&& nix develop github:ES-Nix/get-nix/draft-in-wip --command run test_config_1 \
 && nix store gc --verbose \
 && nix store optimise --verbose \
 && nix flake --version \
@@ -459,7 +470,7 @@ sudo mkdir -v /nix
 sudo chown "$(id -u)":"$(id -g)" -v /nix
 sudo -k
 
-SHA256=7429196f21cea77a70341bc46614bba3c5cad6b5 \
+SHA256=855c8e8faf79ff3e2b8293c564e6f5ab94a8b3f1 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.profile \
 && nix --version \
