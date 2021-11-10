@@ -31,15 +31,17 @@
           rm "$nix_tmp"
         '';
 
-        sha256sumNixShowConfigJSON = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-show-config-json" ''
-          # set -ex
-
-          nix_tmp="$(mktemp)"
-          nix show-config --json > "$nix_tmp"
-          # sha256sum "$nix_tmp"
-          echo -n d4d1992e16f698b21050c3cd1450d3a75e2a5bdeb32c98c3299ac50b05128ea1 "$nix_tmp" | sha256sum --check
-          rm "$nix_tmp"
-        '';
+         # TODO: needs some more thinking about this, maybe not use --json and filter
+         # some impure key's value?
+#        sha256sumNixShowConfigJSON = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-show-config-json" ''
+#          # set -ex
+#
+#          nix_tmp="$(mktemp)"
+#          nix show-config --json > "$nix_tmp"
+#           sha256sum "$nix_tmp"
+#          echo -n d4d1992e16f698b21050c3cd1450d3a75e2a5bdeb32c98c3299ac50b05128ea1 "$nix_tmp" | sha256sum --check
+#          rm "$nix_tmp"
+#        '';
 
         sha256sumNixStoreQueryRequisites = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-store-query-requisites" ''
           set -ex
@@ -205,18 +207,29 @@
         '';
 
         testConfig1 = pkgsAllowUnfree.writeShellScriptBin "test_config_1" ''
+          set -ex
+
+          nix \
+          profile \
+          install \
+          nixpkgs#busybox
+
           system_features="$(busybox mktemp)"
           nix show-config | busybox grep 'system-features' | busybox cut -d ' ' -f3- | busybox tr ' ' '\n' | busybox sort > "$system_features"
           #busybox sha256sum "$system_features"
           busybox echo "e409ceb415ad70f19d7ac63f5c1000e6ec73d9b2e5d8a055c4f6d0e425d3a9f2  $system_features" | busybox sha256sum -c
           busybox rm "$system_features"
 
-
           experimental_features="$(mktemp)"
           nix show-config | busybox grep 'experimental-features' | busybox cut -d ' ' -f3- | busybox tr ' ' '\n' | busybox sort > "$system_features"
           #busybox sha256sum "$experimental_features"
           busybox echo "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  $experimental_features" | busybox sha256sum -c
           busybox rm "$experimental_features"
+
+          nix \
+          profile \
+          remove \
+          "$(nix eval --raw nixpkgs#busybox)"
         '';
 
         buildOCI = pkgsAllowUnfree.writeShellScriptBin "build-oci" ''
@@ -260,13 +273,14 @@
             OCIUbuntu
 
             sha256sumNixFlakeVersion
-            sha256sumNixShowConfigJSON
+#            sha256sumNixShowConfigJSON
             sha256sumNixStoreQueryRequisites
             sha256sumnixProfileInstallHello
             sha256sumRawEvalNixFlakes
 
             run
             testNix
+            testNixFromOnlynixpkgs
             testConfig1
             allTests
           ]
@@ -278,14 +292,6 @@
             export TMPDIR=/tmp
             # cat "$(echo $(type build-oci) | cut -d' ' -f3)"
             # echo abc "${ toString isDarwin}"
-
-#            sha256sum-nix-flake-version
-#            sha256sum-nix-show-config-json
-#            sha256sum-nix-store-query-requisites
-#            sha256sum-nix-profile-install-hello
-#            sha256sum-raw-eval-nixFlakes
-#            test-nix
-#            run
           '';
         };
 
@@ -302,6 +308,3 @@
       }
     );
 }
-
-
-
