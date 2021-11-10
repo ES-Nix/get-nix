@@ -29,7 +29,7 @@
 #&& busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
 
 
-sh <(curl -L https://nixos.org/nix/install)
+curl -L https://nixos.org/nix/install | sh
 
 . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export TMPDIR=/tmp
