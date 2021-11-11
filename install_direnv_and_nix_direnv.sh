@@ -15,15 +15,3 @@ NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))
 && echo 'export PATH=$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc:"$PATH"' >> "$GUESSED_SHELL_RC" \
 && echo 'eval "$(direnv hook '"$NIX_GUESSED_USER_SHELL"')"' >> "$GUESSED_SHELL_RC"
 
-nix profile install nixpkgs#gnused
-sudo su <<COMMANDS
-sed \
--i \
-'s/NIX_BIN_PREFIX=.*/NIX_BIN_PREFIX=\"\$(nix eval --raw nixpkgs#nixFlakes)\"\/bin\//' \
-$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc \
-&& sed \
--i \
-'/.*NIX_BIN_PREFIX=\$(command -v nix-shell)/d' \
-$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc
-COMMANDS
-nix profile remove nixpkgs#gnused
