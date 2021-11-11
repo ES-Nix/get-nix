@@ -15,13 +15,25 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 ```bash
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
-&& SHA256=18d925e25f042b27be33345b7af10c51d39d14b3 \
+&& SHA256=922441bf004884f96558bde64c522304f091fdb2 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && export TMPDIR=/tmp  \
 && nix flake --version
 ```
+
+Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
+
+You may need to install curl (sad, i know, but it might be the last time):
+```bash
+sudo apt-get update
+sudo apt-get install -y curl
+```
+
+About the 2.4 release: [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-released/15822)
+
+### Testing your installation
 
 Optional: to test your installation.
 Note: it needs lots of memory and internet and time, it needs some improvements.
@@ -44,22 +56,6 @@ nix flake check github:ES-Nix/get-nix/draft-in-wip \
 && nix flake metadata nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc
 ```
 
-Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
-
-You may need to install curl (sad, i know, but it might be the last time):
-```bash
-sudo apt-get update
-sudo apt-get install -y curl
-```
-
-*Warning:* installed in this way (in a profile) nix + flakes is not ideal because it is possible to break
-`nix` it self if you run `nix profile remove '.*'`.
-
-
-About the 2.4 release: [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-released/15822)
-
-### Testing your installation
-
 ```bash
 nix develop .# --command echo 'End.'
 ```
@@ -76,14 +72,19 @@ nix develop github:ES-Nix/get-nix/draft-in-wip --command echo 'End.'
 ## Troubleshoot commands
 
 
-Some times usefull:
+
+### Remove nix
+
+Sometimes useful:
 ```bash
 rm -rfv "$HOME"/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs,.cache/nix}
 sudo rm -fr /nix
 ```
 
-When you get a error like this (only after many huge builds, but depends how much memory you have)
+When you get an error like this (only after many huge builds, but depends on how much memory you have)
 `error: committing transaction: database or disk is full (in '/nix/var/nix/db/db.sqlite')`
+
+### About memory
 
 For check memory:
 ```bash
@@ -101,12 +102,18 @@ nix path-info --json --all | jq 'map(.narSize) | add'
 ```
 
 ```bash
-"$(dirname "$(dirname "$(readlink -f "$(which nix)")")")"
+echo "$(dirname "$(dirname "$(readlink -f "$(which nix)")")")"
 ```
 
 ```bash
 nix shell nixpkgs#libselinux --command getenforce
 ```
+
+Remove all things in an profile:
+```bash
+nix profile remove '.*'
+```
+
 
 ```bash
 nix-shell \
@@ -474,7 +481,7 @@ sudo mkdir -v /nix
 sudo chown "$(id -u)":"$(id -g)" -v /nix
 sudo -k
 
-SHA256=18d925e25f042b27be33345b7af10c51d39d14b3 \
+SHA256=922441bf004884f96558bde64c522304f091fdb2 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.profile \
 && nix --version \
@@ -725,7 +732,7 @@ https://ivanix.wordpress.com/tag/umask/
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=d5599fb1b3926fddf360468b776c34d00a099da3 \
+SHA256=922441bf004884f96558bde64c522304f091fdb2 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && . ~/.direnvrc \
@@ -738,14 +745,13 @@ rm -rfv ~/.direnvrc
 ```
 
 
-#### Testing the direnv's instalation
+#### Testing the direnv's installation
 
 ```bash
-SHA256=7c60027233ae556d73592d97c074bc4f3fea451d \
-&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/test_install_direnv_nix_direnv.sh | sh
+SHA256=922441bf004884f96558bde64c522304f091fdb2 \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/src/tests/test_install_direnv_nix_direnv.sh | sh \
+&& cd ~/foo-bar
 ```
-
-You may need `cd ~/foo-bar`.
 
 ```bash
 hello
