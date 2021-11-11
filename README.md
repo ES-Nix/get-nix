@@ -18,6 +18,7 @@ test -d /nix || sudo mkdir -m 0755 /nix \
 && SHA256=18d925e25f042b27be33345b7af10c51d39d14b3 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& . ~/."$(ps -ocomm= -q $$)"rc \
 && export TMPDIR=/tmp  \
 && nix flake --version
 ```
