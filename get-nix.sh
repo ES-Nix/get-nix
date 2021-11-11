@@ -62,7 +62,7 @@ NIX_HELPER_FUNCTIONS=$(cat <<-EOF
 # It was inserted by the get-nix installer
 develop () {
     echo "Entering the nix + flake development shell.";
-    nix develop "$@";
+    nix develop "\$@";
 }
 
 export TMPDIR=/tmp
