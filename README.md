@@ -743,7 +743,16 @@ SHA256=6a017688ec5f1a07c04b4fce96eb0f7d850cd7f3 \
 
 To remove:
 ```bash
+nix profile remove "$(nix eval --raw nixpkgs#direnv)"
+nix profile remove "$(nix eval --raw nixpkgs#nix-direnv)"
+
 rm -rfv ~/.direnvrc
+```
+
+You might want to run this one to:
+```bash
+nix store gc --verbose \
+&& nix store optimise --verbose
 ```
 
 
