@@ -31,7 +31,9 @@ sudo apt-get update
 sudo apt-get install -y curl
 ```
 
-About the 2.4 release: [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-released/15822)
+About the 2.4 release: [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-released/15822), 
+https://github.com/NixOS/nix/pull/5247#issuecomment-920207863, https://github.com/NixOS/nix/milestone/11, 
+https://github.com/NixOS/nix/releases/tag/2.4.
 
 ### Testing your installation
 
