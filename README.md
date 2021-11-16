@@ -150,6 +150,8 @@ nix path-info
 nix flake metadata nixpkgs
 jq --version || nix profile install nixpkgs#jq
 nix flake metadata nixpkgs --json | jq .
+
+nix run nixpkgs#neofetch
 nix shell nixpkgs#neofetch --command neofetch
 ```
 
@@ -192,7 +194,7 @@ Excellent:
 echo "${PATH//:/$'\n'}"
 ls -al "$HOME".nix-profile/bin
 ls -al $(echo "$PATH" | cut -d ':' -f 1 | cut -d '=' -f 1 )
-nix profile list | tr ' ' "\n"
+nix profile list | tr ' ' '\n'
 ```
 From: https://askubuntu.com/a/600028
 
