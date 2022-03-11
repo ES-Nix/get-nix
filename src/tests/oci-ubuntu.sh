@@ -26,8 +26,34 @@ run \
 --user=nixuser \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 --volume=/etc/localtime:/etc/localtime:ro \
---volume=/sys/fs/cgroup:/sys/fs/cgroup:ro \
+--volume=/sys/fs/cgroup:/sys/fs/cgroup:rw \
 --volume=/dev/shm:/dev/shm:ro \
 --volume=/dev/snd:/dev/snd:ro \
---volume="$(pwd)":/code:rw \
+--volume="$(pwd)":/home/nixuser/code:rw \
+--workdir=/home/nixuser \
 localhost/test-nix-installer
+
+
+
+
+
+sudo \
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--log-level=error \
+--privileged=true \
+--tty=true \
+--rm=true \
+--user=nixuser \
+--volume=/lib/modules:/lib/modules:ro \
+--volume=/dev/mapper:/dev/mapper:rw \
+--volume="$(pwd)":/home/nixuser/code:rw \
+--volume=/sys/fs/cgroup:/sys/fs/cgroup:rw \
+--workdir=/home/nixuser \
+localhost/test-nix-installer
+
+
+
+

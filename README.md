@@ -136,6 +136,19 @@ nixFlakes \
 ```
 
 ```bash
+nix-shell \
+-I nixpkgs=channel:nixos-21.11 \
+--packages \
+nixFlakes \
+--run \
+"nix --version && nix flake metadata nixpkgs"
+```
+
+```bash
+nix flake metadata github:NixOS/nixpkgs/nixos-21.11
+```
+
+```bash
 nix \
 run \
 nixpkgs#nix-info -- --markdown
@@ -152,6 +165,7 @@ jq --version || nix profile install nixpkgs#jq
 nix flake metadata nixpkgs --json | jq .
 
 nix run nixpkgs#neofetch
+nix run nixpkgs#neofetch -- --json
 nix shell nixpkgs#neofetch --command neofetch
 ```
 
@@ -288,6 +302,27 @@ nixpkgs#{coreutils,graphviz,which} \
 echo $(nix-store --query --graph $(nix-store --query $(readlink -f $(which nix)))) | dot -Tps > graph.ps 
 ```
 
+echo $(nix-store --query --graph $(nix eval --raw github:NixOS/nix#nix-static))
+```bash
+echo $(nix-store --query --graph $(nix eval --raw github:NixOS/nix#nix-static)) | dot -Tpdf > nix-static.pdf
+echo $(nix-store --query --graph $(nix eval --raw github:NixOS/nix#nix-static.drvPath)) | dot -Tpdf > nix-static-drvPath.pdf
+```
+
+```bash
+nix path-info --derivation nixpkgs#hello
+nix eval --raw nixpkgs#hello.drvPath
+
+echo $(nix-store --query --graph $(nix eval --raw nixpkgs#hello.drvPath)) | dot -Tpdf > hello.pdf
+```
+
+
+```bash
+nix show-derivation nixpkgs#hello
+```
+
+```bash
+nix path-info -hS /run/current-system
+```
 
 ```bash
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which nix)) | cat
@@ -326,6 +361,60 @@ nix-store --query --tree --include-outputs $(nix-store --query --deriver $(readl
 nix-store --query --requisites --tree --include-outputs $(nix-store --query --deriver $(readlink -f  $(which nix))) | cat
 nix-store --query --graph --include-outputs $(nix-store --query --deriver $(readlink -f $(which nix))) | dot -Tps > graph.ps
 ```
+
+```bash
+nix eval nix#checks --apply builtins.attrNames
+nix eval nix#checks.x86_64-linux --apply builtins.attrNames
+```
+
+Needs `dot`, `jq`, `tr`, `wc`:
+```bash
+nix eval --raw /etc/nixos#nixosConfigurations."$(hostname)".config.system.build.toplevel
+nix eval /etc/nixos#nixosConfigurations."$(hostname)".config.environment --apply builtins.attrNames | tr ' ' '\n'
+
+nix-store --query --requisites --include-outputs $(nix eval --raw /etc/nixos#nixosConfigurations."$(hostname)".config.system.build.toplevel)
+echo $(nix-store --query --requisites --include-outputs $(nix eval --raw /etc/nixos#nixosConfigurations."$(hostname)".config.system.build.toplevel)) | tr ' ' '\n' | wc -l
+echo $(nix-store --query --graph --include-outputs $(nix eval --raw /etc/nixos#nixosConfigurations.pedroregispoar.config.system.build.toplevel)) | dot -Tpdf > system.pdf
+
+nix-instantiate --strict "<nixpkgs/nixos>" -A system
+nix-instantiate --strict --json --eval -E 'builtins.map (p: p.name) (import <nixpkgs/nixos> {}).config.environment.systemPackages' | jq -c | jq -r '.[]' | sort -u
+
+nix eval --impure --expr 'with import <nixpkgs>{}; idea.pycharm-community.outPath'
+
+nix eval --impure --expr 'with import <nixpkgs/nixos>{}; /etc/nixos#nixosConfigurations."$(hostname)".config.environment.systemPackages.outPath'
+
+nix eval --impure --json --expr 'builtins.map (p: p.name) (import <nixpkgs/nixos> {}).config.environment.systemPackages' | jq -c | jq -r '.[]' | sort -u
+
+nix eval --raw nixpkgs#git.outPath; echo
+nix realisation info nixpkgs#hello --json
+
+nix eval --expr '(import <nixpkgs> {}).vscode.version'
+nix eval --impure --expr '(import <nixpkgs> {}).vscode.version'
+nix build --impure --expr '(import <nixpkgs> {}).vscode' 
+nix build nixpkgs#vscode
+ 
+export NIXPKGS_ALLOW_UNFREE=1 \
+&& nix eval --impure --file '<nixpkgs>' 'vscode.outPath'
+
+nix path-info -r /run/current-system
+
+nix-store --query /run/current-system
+nix-store --query --requisites /run/current-system
+
+nix profile list
+ls -al ~/.nix-profile/bin/
+ls -al /run/current-system/sw/bin/
+```
+Refs.:
+- https://search.nixos.org/options?channel=21.11&show=environment.systemPackages&from=0&size=50&sort=relevance&type=packages&query=environment.systemPackages
+- https://www.reddit.com/r/NixOS/comments/fsummx/how_to_list_all_installed_packages_on_nixos/
+- https://discourse.nixos.org/t/can-i-inspect-the-installed-versions-of-system-packages/2763/8
+- https://functor.tokyo/blog/2018-02-20-show-packages-installed-on-nixos
+- https://stackoverflow.com/a/46173041
+- https://discourse.nixos.org/t/nix-eval-raw-nixos-package-outpath-prints-wrong-path/15103
+- https://discourse.nixos.org/t/can-i-run-nix-instantiate-eval-strict-on-my-configuration-nix/7105/2
+- https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-realisation-info.html#examples
+- https://discourse.nixos.org/t/eval-nix-expression-from-the-command-line/8993/2
 
 
 ```bash
@@ -506,8 +595,10 @@ develop \
 github:ES-Nix/fhs-environment/enter-fhs
 ```
 
-&& nix --store "$HOME" flake metadata nixpkgs \
+```bash
+nix --store "$HOME" flake metadata nixpkgs \
 && nix --store "$HOME"/store store gc --verbose
+```
 
 ```bash
 nix \
@@ -525,6 +616,7 @@ nixpkgs#hello \
 --command \
 hello
 ```
+
 ```bash
 nix \
 shell \
@@ -535,6 +627,9 @@ podman \
 --version
 ```
 
+
+TODO: with some flakes I got this same error 
+https://github.com/NixOS/nix/issues/2794
 
 ```bash
 ls -al $(readlink -f "$HOME"/.nix-profile)
@@ -731,6 +826,9 @@ result/bin/busybox sh -c 'echo $$ && uname --all'
 TODO: `umask` 
 https://github.com/NixOS/nix/issues/2377#issuecomment-633165541
 https://ivanix.wordpress.com/tag/umask/
+
+TODO:
+- https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510 and https://github.com/lethalman/nix-user-chroot/pull/13#issuecomment-462200418
 
 
 ### Install direnv and nix-direnv using nix + flakes
@@ -1139,4 +1237,177 @@ TODO:
 TODO: 
 - help with it https://github.com/NixOS/nixpkgs/issues/18089
 - https://github.com/NixOS/nix/issues/2659
+
+
+
+```bash
+mkdir -pv ~/my-nixpkgs \
+&& nix flake clone github:PedroRegisPOAR/nixpkgs/nixpkgs-unstable --dest my-nixpkgs \
+&& cd ~/my-nixpkgs
+
+
+
+git rev-list -n 20 21.11 | rg $(git rev-list -n 1 21.11)
+git checkout $(git rev-list -n 1 21.11)
+git show -s 47cd6702934434dd02bc53a67dbce3e5493e33a2
+
+
+# https://git-scm.com/docs/pretty-formats
+git show -s $(git rev-list -n 1 21.11) --pretty='format:%at' | cat
+git show -s 47cd6702934434dd02bc53a67dbce3e5493e33a2 --pretty='format:%at' | cat
+
+
+git log origin/nixos-21.11 | tail -1
+
+
+git ls-remote git://github.com/NixOS/nixpkgs.git nixos-21.11 | tail -1 | cut -f 1
+
+
+SHA256=$(git ls-remote git://github.com/NixOS/nixpkgs.git nixos-21.11 | tail -1 | cut -f 1)
+
+nix flake metadata github:NixOS/nixpkgs/"${SHA256}"
+
+
+github:NixOS/nixpkgs/47cd6702934434dd02bc53a67dbce3e5493e33a2
+
+nix flake update --override-input nixpkgs github:NixOS/nixpkgs/47cd6702934434dd02bc53a67dbce3e5493e33a2
+
+
+nix run github:NixOS/nixpkgs/47cd6702934434dd02bc53a67dbce3e5493e33a2#nodejs-12_x -- --version
+
+
+
+nix flake metadata github:NixOS/nixpkgs/nixos-21.11 --json | jq --join-output '.revision'
+
+
+# Did not work! The - infront of committerdate does not work.
+# git ls-remote git://github.com/NixOS/nixpkgs.git nixos-unstable --sort=-committerdate
+
+LATEST_COMMIT_SHA256_IN_BRANCH=git ls-remote --heads origin nixos-21.11
+47cd6702934434dd02bc53a67dbce3e5493e33a2
+
+git ls-remote git://github.com/
+
+
+# git ls-remote --tags git://github.com/NixOS/nixpkgs.git "refs/tags/21.11^{}" | cut -f 1
+# https://stackoverflow.com/questions/64268055/when-listing-remote-tags-in-git-what-does-signify
+FIRST_COMMIT_SHA256_IN_BRANCH=$(git ls-remote --tags git://github.com/NixOS/nixpkgs.git "refs/tags/21.11" | cut -f 1)
+
+
+git log --pretty=oneline nixpkgs-unstable > 1
+git log --pretty=oneline nixos-21.11 > 2
+
+
+git rev-parse "$(diff 1 2 | tail -1 | cut -c 3-42)"^
+
+
+diff -u <(echo 'a\nb\n') <(echo 'a\nb\nc')
+diff -u <(echo 'a\nb\n') <(echo 'a\nb\nc\nd\ne')
+comm <(echo 'a\nb\n') <(echo 'a\nb\nc\nd\ne')
+
+diff -y -b --suppress-common-lines <(echo 'a\nb\nx\ny\nz') <(echo 'a\nb\nc\nd\ne\nm\nn\no') | head -1 | cut -d'|' -f2 | tr -d '\t'
+
+
+diff -u <(git rev-list --first-parent nixos-21.11 | sort) <(git rev-list --first-parent nixpkgs-unstable | sort)
+
+git log --pretty=oneline nixos-21.11 | head -n 20
+
+
+comm -3 <(git rev-list --first-parent nixos-21.11 | sort) <(git rev-list --first-parent nixpkgs-unstable | sort)
+
+
+diff -y -b --suppress-common-lines <(git rev-list --first-parent nixos-21.11 | sort) <(git rev-list --first-parent nixpkgs-unstable | sort) | cut -f1 | head -1
+diff -y -b --suppress-common-lines <(git rev-list --first-parent nixpkgs-unstable | sort) <(git rev-list --first-parent nixos-21.11 | sort) | cut -f1 | head -1
+
+diff -y -b --suppress-common-lines <(git rev-list --first-parent nixpkgs-unstable) <(git rev-list --first-parent nixos-21.11) | cut -f1 | head -1
+diff -y -b --suppress-common-lines <(git rev-list --first-parent nixos-21.11) <(git rev-list --first-parent nixpkgs-unstable) | cut -f1 | head -1
+
+
+git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | tail -n 1
+git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 1
+
+
+function n() {
+    git log --reverse --pretty=%H nixos-21.11 | grep -A 1 $(git rev-parse HEAD) | tail -n1 | xargs git checkout
+}
+
+
+nix flake metadata --refresh github:NixOS/nixpkgs/$(git ls-remote git://github.com/NixOS/nixpkgs.git nixos-21.11 | tail -1 | cut -f 1)
+
+git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 10
+
+
+nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#nodejs-12_x -- --version
+nix run github:NixOS/nixpkgs/7a200487a17af17a0774257533c979a1daba858d#nodejs-12_x -- --version
+nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#nodejs-12_x -- --version
+
+nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python3 -- --version
+nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python3 -- --version
+
+nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python37 -- --version
+nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python37 -- --version
+
+nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python38 -- --version
+nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python38 -- --version
+
+nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python39 -- --version
+nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python39 -- --version
+
+
+nix run github:NixOS/nixpkgs/nixos-20.03#python3 -- --version
+nix run github:NixOS/nixpkgs/nixos-20.09#python3 -- --version
+nix run github:NixOS/nixpkgs/nixos-21.05#python3 -- --version
+nix run github:NixOS/nixpkgs/nixos-21.11#python3 -- --version
+nix run github:NixOS/nixpkgs/nixpkgs-unstable#python3 -- --version
+
+nix run github:NixOS/nixpkgs/nixos-21.11#pkgsStatic.nix
+nix run github:NixOS/nixpkgs/nixpkgs-unstable#pkgsStatic.nix
+
+nix run github:NixOS/nix#nix-static -- flake metadata github:NixOS/nixpkgs/nixos-21.11
+
+nix run github:NixOS/nix#nix-static -- run github:NixOS/nixpkgs/nixos-21.11#python3 -- --version
+
+
+```
+
+
+
+nix run --impure --expr 'with (import <nixpkgs> {}); let               
+  overlay = final: prev: {
+    hello = prev.hello.overrideAttrs (oldAttrs: with final; {
+      postInstall = oldAttrs.postInstall + "${prev.hello}/bin/hello Installation complete";
+    });
+  };
+
+  pkgs = import <nixpkgs> { overlays = [ overlay ]; };
+
+in
+  pkgs.hello'
+
+
+nix run --impure --expr 'with (import <nixpkgs> {}); let               
+  overlay = final: prev: {
+    openssl = prev.openssl.override {
+      static = true;
+    };
+  };
+
+  pkgs = import <nixpkgs> { overlays = [ overlay ]; };
+
+in
+  pkgs.hello'
+
+nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).hello'
+nix build --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).openssl'
+nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { aclSupport = false; })]; }).coreutils'
+
+nix build --impure --expr '(import <nixpkgs> {                                                                      
+  overlays = [
+    (self: super: {
+      firefox-unwrapped = super.firefox-unwrapped.overrideAttrs (oldAttrs: {
+        makeFlags = oldAttrs.makeFlags ++ [ "BUILD_OFFICIAL=1" ];
+      });
+    })
+  ];
+}).firefox-unwrapped'
 

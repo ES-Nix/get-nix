@@ -48,7 +48,7 @@
 
 #          nix_tmp="$(mktemp)"
 #          echo "$(nix-store --query --requisites "$(nix eval --raw nixpkgs#nix)")"/bin/nix | tr ' ' '\n' > "$nix_tmp"
-#           sha256sum"$nix_tmp"
+#           sha256sum "$nix_tmp"
 #          echo -n 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b "$nix_tmp" | sha256sum --check
 #          rm "$nix_tmp"
         '';
@@ -60,7 +60,7 @@
           nix_tmp="$(mktemp)"
           nix profile install nixpkgs#hello
           hello > "$nix_tmp"
-          # sha256sum"$nix_tmp"
+          # sha256sum "$nix_tmp"
           echo -n d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5 "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
           nix profile remove "$(nix eval --raw nixpkgs#hello)"
@@ -72,7 +72,7 @@
 
           nix_tmp="$(mktemp)"
           echo -n "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"/bin > "$nix_tmp"
-          # sha256sum"$nix_tmp"
+          # sha256sum "$nix_tmp"
           echo -n 5886497eaf6c4336e909c80b0fceaca4d58729ed0c4d9256fc4dd0f81aae6fed "$nix_tmp" | sha256sum --check
           rm "$nix_tmp"
         '';
@@ -285,7 +285,7 @@
             allTests
           ]
           ++
-          # Why nix fllake check is broken if aarch64-darwin is not excluded??
+          # Why nix flake check is broken if aarch64-darwin is not excluded??
           (if !isDarwin then [ self.inputs.podman-rootless.defaultPackage.${system} ] else [ ]);
 
           shellHook = ''
