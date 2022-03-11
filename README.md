@@ -725,8 +725,13 @@ In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment
 [see too](https://matthewbauer.us/blog/static-nix.html).
 
 ```bash
+nix build nixpkgs#nix
+
 nix build github:NixOS/nix#nix-static
 nix build github:NixOS/nix/9feca5cdf64b82bfb06dfda07d19d007a2dfa1c1#nix-static
+
+nix build nixpkgs#pkgsStatic.nix
+
 ```
 
 ```bash
@@ -750,6 +755,13 @@ install \
 --store "~" \
 nixpkgs#hello
 ```
+
+nix \
+profile \
+install \
+--store "${HOME}" \
+nixpkgs#hello
+
 
 && export PATH="$HOME":"$PATH" \
 

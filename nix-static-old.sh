@@ -18,22 +18,10 @@ BASE="$HOME"/.local/bin
 toybox --version 1> /dev/null 2> /dev/null || ./toybox mv toybox "$BASE" && export PATH="$BASE":"$PATH"
 
 # curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
-#toybox which nix || curl -L https://hydra.nixos.org/build/156399089/download/2/nix > "$BASE"/nix
-
-curl -L 'https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.7.0pre20220225_fd4b693/install' | sh
-
+toybox which nix || curl -L https://hydra.nixos.org/build/156399089/download/2/nix > "$BASE"/nix
 toybox chmod -v 0700 "$BASE"/nix
 
 toybox test -d /home/"$USER"/nix || toybox mkdir -v -p -m 0755 /home/"$USER"/nix
-
-
-nix \
-  profile \
-  install \
-  github:NixOS/nixpkgs/3e644bd62489b516292c816f70bf0052c693b3c7#pkgsStatic.nix \
-  --profile ~/.nix-static \
-  --option \
-  experimental-features 'nix-command flakes ca-derivations'
 
 toybox test -d "$HOME"/.config/nix || toybox mkdir -p -m 0755 "$HOME"/.config/nix && toybox touch "$HOME"/.config/nix/nix.conf
 
@@ -110,10 +98,6 @@ else
 fi
 
 toybox rm -fv "$BASE"/toybox
-
-
-# rm -rfv "$HOME"/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs,.cache/nix}
-# sudo rm -fr /nix
 
 # . $HOME/.profile
 
