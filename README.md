@@ -574,7 +574,7 @@ sudo mkdir -v /nix
 sudo chown "$(id -u)":"$(id -g)" -v /nix
 sudo -k
 
-SHA256=6a017688ec5f1a07c04b4fce96eb0f7d850cd7f3 \
+SHA256=ac279d34a77864dd54f74c89783d0e9d315330c8 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.profile \
 && nix --version \
