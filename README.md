@@ -847,10 +847,9 @@ TODO:
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=805ff180c6b05537027028d6a9b10236517da0dd \
+SHA256=6239abd50920f030acb164fe4226ca422e65bbbe \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
-&& . ~/.direnvrc \
 && direnv --version
 ```
 
@@ -889,7 +888,7 @@ echo $?
 #### Testing the direnv's installation
 
 ```bash
-SHA256=805ff180c6b05537027028d6a9b10236517da0dd \
+SHA256=6239abd50920f030acb164fe4226ca422e65bbbe \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/src/tests/test_install_direnv_nix_direnv.sh | sh \
 && cd ~/foo-bar
 ```
