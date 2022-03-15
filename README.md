@@ -111,9 +111,10 @@ echo "$(dirname "$(dirname "$(readlink -f "$(which nix)")")")"
 nix shell nixpkgs#libselinux --command getenforce
 ```
 
-Remove all things in an profile:
+Remove all things in an profile and garbage collect it:
 ```bash
-nix profile remove '.*'
+nix profile remove '.*' \
+&& nix store gc
 ```
 
 
@@ -867,6 +868,23 @@ nix store gc --verbose \
 && nix store optimise --verbose
 ```
 
+```bash
+string='/nix/store/d71am745ykqnhniz19hxncxz0yfrhclj-nix-direnv-1.6.0/share/nix-direnv/direnvrc'
+SEARCH_REGEX= '/nix/store/[0-9a-z]\{32\}-nix-direnv-\([0-9]\{1,\}\).\([0-9]\{1,\}\).\([0-9]\{1,\}\)/share/nix-direnv/direnvrc'
+echo $string | grep -q -e '/nix/store/[0-9a-z]\{32\}-nix-direnv-\([0-9]\{1,\}\).\([0-9]\{1,\}\).\([0-9]\{1,\}\)/share/nix-direnv/direnvrc'
+echo $?
+
+
+string='/nix/store/gx80b9p7xdyjmbkns86zl8kkkaz5bfsl-direnv-2.30.3/bin:'
+SEARCH_REGEX='/nix/store/[0-9a-z]\{32\}-direnv-\([0-9]\{1,\}\).\([0-9]\{1,\}\).\([0-9]\{1,\}\)/bin:'
+echo $string | grep -q -e "${SEARCH_REGEX}"
+echo $?
+
+string='eval "$(direnv hook bash)"'
+SEARCH_REGEX='eval "$(direnv hook ''\([a-z]\{1,\}\)'')"'
+echo $string | grep -q -e "${SEARCH_REGEX}"
+echo $?
+```
 
 #### Testing the direnv's installation
 

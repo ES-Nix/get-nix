@@ -4,14 +4,22 @@
 # https://stackoverflow.com/questions/3327013/how-to-determine-the-current-shell-im-working-on#comment3450154_3327027
 # NIX_GUESSED_USER_SHELL=$(ps -ocomm= -q $$)
 
-NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))" \
-&& echo 'The installer has identified the runnig shell as: '"$NIX_GUESSED_USER_SHELL" \
-&& GUESSED_SHELL_RC=~/."$NIX_GUESSED_USER_SHELL"rc \
-&& nix profile install nixpkgs#direnv \
-&& nix profile install nixpkgs#nix-direnv \
-&& direnv --version \
-&& echo 'source $(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc' >> ~/.direnvrc \
-&& echo 'export PATH=$(nix eval --raw nixpkgs#direnv)/bin:"$PATH"' >> "$GUESSED_SHELL_RC" \
-&& echo 'export PATH=$(nix eval --raw nixpkgs#nix-direnv)/share/nix-direnv/direnvrc:"$PATH"' >> "$GUESSED_SHELL_RC" \
-&& echo 'eval "$(direnv hook '"$NIX_GUESSED_USER_SHELL"')"' >> "$GUESSED_SHELL_RC"
+nix profile install nixpkgs#direnv \
+&& nix profile install nixpkgs#nix-direnv
+
+direnv --version
+
+NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))"
+
+echo 'The installer has identified the running shell as: '"${NIX_GUESSED_USER_SHELL}"
+
+FULL_PATH_TO_GUESSED_SHELL_RC="${HOME}"/."${NIX_GUESSED_USER_SHELL}"rc
+FULL_PATH_TO_DIRENVRC="${HOME}"/.direnvrc
+
+FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC='source "${HOME}"/.nix-profile/share/nix-direnv/direnvrc'
+STRING_EVAL_DIRENV_HOOK='eval "$(direnv hook '
+FULL_STRING_EVAL_DIRENV_HOOK="${STRING_EVAL_DIRENV_HOOK}""${NIX_GUESSED_USER_SHELL}"')"'
+
+echo "${FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC}" >> "${FULL_PATH_TO_DIRENVRC}"
+echo "${FULL_STRING_EVAL_DIRENV_HOOK}" >> "${FULL_PATH_TO_GUESSED_SHELL_RC}"
 
