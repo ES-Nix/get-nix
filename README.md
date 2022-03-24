@@ -21,7 +21,7 @@ test -d /nix || sudo mkdir -m 0755 /nix \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
-&& export TMPDIR=/tmp  \
+&& export TMPDIR=/tmp \
 && nix flake --version
 ```
 
