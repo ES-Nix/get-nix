@@ -30,7 +30,7 @@
 
 NIX_RELEASE_VERSION=${1:-nix-2.7.0pre20220225_fd4b693}
 
-curl -L 'https://github.com/numtide/nix-flakes-installer/releases/download/'"${NIX_RELEASE_VERSION}"'install' | sh
+curl -L 'https://github.com/numtide/nix-flakes-installer/releases/download/'"${NIX_RELEASE_VERSION}"'/install' | sh
 
 . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export TMPDIR=/tmp
