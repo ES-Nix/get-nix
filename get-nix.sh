@@ -28,7 +28,9 @@
 #&& busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
 #&& busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; }' >> ~/.config/nixpkgs/config.nix
 
-NIX_RELEASE_VERSION=${1:-nix-2.7.0pre20220225_fd4b693}
+# Got it from:
+# https://github.com/numtide/nix-unstable-installer/releases
+NIX_RELEASE_VERSION=${1:-nix-2.8.0pre20220314_a618097}
 
 curl -L 'https://github.com/numtide/nix-flakes-installer/releases/download/'"${NIX_RELEASE_VERSION}"'/install' | sh
 
