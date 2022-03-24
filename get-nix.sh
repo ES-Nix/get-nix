@@ -43,7 +43,7 @@ profile \
 install \
 nixpkgs#busybox \
 --option \
-experimental-features 'nix-command flakes'
+experimental-features 'nix-command flakes ca-references'
 
 
 busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
