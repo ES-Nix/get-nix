@@ -16,8 +16,9 @@ STRING_EVAL_DIRENV_HOOK='eval "$(direnv hook '
 FULL_STRING_EVAL_DIRENV_HOOK="${STRING_EVAL_DIRENV_HOOK}""${NIX_GUESSED_USER_SHELL}"')"'
 
 
+test -x direnv || nix profile install nixpkgs#direnv
+
 # FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC='source "${HOME}"/.nix-profile/share/nix-direnv/direnvrc'
-# test -x direnv || nix profile install nixpkgs#direnv
 # test -f $(readlink -f "${FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC}") || nix profile install nixpkgs#nix-direnv
 # direnv --version
 
