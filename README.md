@@ -16,8 +16,8 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
 && SHA256=1412fca5396faa2e9ae59f7880b95de246fbd2f1 \
-&& NIX_RELEASE_VERSION=' nix-2.4pre20210823_af94b54' \
-&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION}\
+&& NIX_RELEASE_VERSION='nix-2.4pre20210823_af94b54' \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/get-nix.sh | sh /dev/stdin ${NIX_RELEASE_VERSION}\
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && export TMPDIR=/tmp  \
