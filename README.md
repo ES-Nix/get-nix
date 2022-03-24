@@ -207,9 +207,9 @@ echo -e " "'"$ENV->"'"$ENV\n" '"$NIX_PATH"->'"$NIX_PATH\n" '"$PATH"->'"$PATH\n" 
 Excellent:
 ```bash
 echo "${PATH//:/$'\n'}"
-ls -al "$HOME".nix-profile/bin
+ls -al "$HOME"/.nix-profile
 ls -al $(echo "$PATH" | cut -d ':' -f 1 | cut -d '=' -f 1 )
-nix profile list | tr ' ' '\n'
+nix profile list --profile "$HOME"/.nix-profile
 ```
 From: https://askubuntu.com/a/600028
 
@@ -245,6 +245,8 @@ nix show-config | rg big-parallel
 nix show-config | rg kvm nixos-test
 
 nix-store --verify --check-contents
+# echo "$(nix-store --query --requisites "$(nix eval --raw github:ES-Nix/podman-rootless/from-nixpkgs)")" | grep shadow
+# nix-store --verify-path $(nix-store --query --requisites $(which nix))
 nix-store --verify-path $(nix-store --query --requisites $(which nix))
 echo $(nix-store --query --requisites $(which nix)) | tr ' ' '\n'
 nix-build '<nixpkgs>' --attr nix --check --keep-failed
@@ -361,6 +363,12 @@ nix-store --query --referrers-closure --include-outputs "$(nix eval --raw nixpkg
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(readlink -f  $(which nix))) | cat
 nix-store --query --requisites --tree --include-outputs $(nix-store --query --deriver $(readlink -f  $(which nix))) | cat
 nix-store --query --graph --include-outputs $(nix-store --query --deriver $(readlink -f $(which nix))) | dot -Tps > graph.ps
+
+# Adapted from:
+# https://github.com/NixOS/nix/issues/1245#issuecomment-726138112
+nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
+ | xargs nix-store --realise \
+ | xargs nix-store --query --requisites
 ```
 
 ```bash
@@ -400,11 +408,31 @@ export NIXPKGS_ALLOW_UNFREE=1 \
 nix path-info -r /run/current-system
 
 nix-store --query /run/current-system
+nix-store --query --requisites /nix/var/nix/profiles/default
 nix-store --query --requisites /run/current-system
 
 nix profile list
+# For NixOS systems:
+nix profile list --profile /nix/var/nix/profiles/default
+ls -al /nix/var/nix/profiles/default
 ls -al ~/.nix-profile/bin/
 ls -al /run/current-system/sw/bin/
+
+nix profile install nixpkgs#hello
+nix profile list --profile "${HOME}"/.nix-profile
+nix profile list --profile /nix/var/nix/profiles/per-user/"$USER"/profile
+nix profile remove "$(nix eval --raw nixpkgs#hello)"
+
+# In NixOS
+sudo nix profile install nixpkgs#hello --profile /nix/var/nix/profiles/default
+
+# It only removed the hello package
+sudo nix profile remove '.*' --profile /nix/var/nix/profiles/default
+# Same for this other profile
+# /nix/var/nix/profiles/per-user/root/channels
+
+nix show-derivation -r "${HOME}"/.nix-profile
+nix show-derivation -r /run/current-system
 ```
 Refs.:
 - https://search.nixos.org/options?channel=21.11&show=environment.systemPackages&from=0&size=50&sort=relevance&type=packages&query=environment.systemPackages
@@ -448,7 +476,7 @@ nix profile install nixpkgs#{file,ripgrep}
 
 ```bash
 file /home/ubuntu/.nix-profile | rg 'broken' \
-&& echo 'Broken symbolic link to profiel' $(file /home/ubuntu/.nix-profile)
+&& echo 'Broken symbolic link to profile' $(file /home/ubuntu/.nix-profile)
 ```
 It can be a symbolic link broken!
 
@@ -735,6 +763,39 @@ nix build nixpkgs#pkgsStatic.nix
 
 ```
 
+nix build nixpkgs#pkgsStatic.hello
+nix path-info -rsSh nixpkgs#pkgsStatic.hello
+
+
+nix build nixpkgs#pkgsStatic.busybox
+nix path-info -rsSh nixpkgs#pkgsStatic.busybox
+
+
+nix build nixpkgs#pkgsStatic.nix
+nix path-info -rsSh nixpkgs#pkgsStatic.nix
+
+
+nix build github:NixOS/nix#nix-static
+nix path-info -rsSh github:NixOS/nix#nix-static
+
+
+nix search nixpkgs ' sed'
+
+
+nix path-info -r /nix/store/sb7nbfcc1ca6j0d0v18f7qzwlsyvi8fz-ocaml-4.10.0 --store https://cache.nixos.org/
+nix path-info -r "$(nix eval --raw nixpkgs#hello)" --store https://cache.nixos.org/
+
+nix store ls --store https://cache.nixos.org/ -lR /nix/store/0i2jd68mp5g6h2sa5k9c85rb80sn8hi9-hello-2.10
+
+
+nix run github:NixOS/nixpkgs/release-20.03#ocaml -- --version
+nix run github:NixOS/nixpkgs/release-21.11#ocaml -- --version
+
+nix-build '<nixpkgs>' -A hello --arg crossSystem '{ config = "aarch64-unknown-linux-gnu"; }'
+
+
+
+
 ```bash
 nix \
   profile \
@@ -966,6 +1027,12 @@ nix-store \
 --print-dead \
 --option keep-derivations false \
 --option keep-outputs true
+
+
+nix store gc \
+--verbose \
+--option keep-derivations false \
+--option keep-outputs false
 ```
 
 ## Tests
@@ -981,6 +1048,11 @@ nix build --refresh github:ES-Nix/nix-qemu-kvm/dev#qemu.vm \
 
 ### Tests
 
+#### Minimal build
+
+```bash
+nix build --expr '{}' --no-link
+```
 
 That is insane to be possible, but it is, well hope it does not brake for you:
 
@@ -993,6 +1065,7 @@ gcc10,\
 gcc6,\
 gfortran10,\
 gfortran6,\
+julia_16-bin,\
 nodejs,\
 poetry,\
 python39,\
@@ -1002,6 +1075,7 @@ yarn\
 
 gcc --version
 gfortran --version
+julia --version
 node --version
 poetry --version
 python3 --version
@@ -1060,6 +1134,11 @@ bash \
 'id'
 ```
 
+```bash
+nix build nixpkgs#pkgsCross.aarch64-multiplatform.stdenv
+```
+
+nix build --impure --expr '(with import <nixpkgs> {}; callPackage ./default.nix {})'
 
 #### Non nixpkgs flakes tests
 
@@ -1309,7 +1388,7 @@ nix run github:NixOS/nixpkgs/47cd6702934434dd02bc53a67dbce3e5493e33a2#nodejs-12_
 nix flake metadata github:NixOS/nixpkgs/nixos-21.11 --json | jq --join-output '.revision'
 
 
-# Did not work! The - infront of committerdate does not work.
+# Did not work! The '-' in front of committerdate does not work.
 # git ls-remote git://github.com/NixOS/nixpkgs.git nixos-unstable --sort=-committerdate
 
 LATEST_COMMIT_SHA256_IN_BRANCH=git ls-remote --heads origin nixos-21.11
@@ -1382,6 +1461,11 @@ nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python38 -
 nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python39 -- --version
 nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python39 -- --version
 
+
+nix run github:NixOS/nixpkgs/release-20.03#python3 -- --version
+nix run github:NixOS/nixpkgs/release-20.09#python3 -- --version
+nix run github:NixOS/nixpkgs/release-21.05#python3 -- --version
+nix run github:NixOS/nixpkgs/release-21.11#python3 -- --version
 
 nix run github:NixOS/nixpkgs/nixos-20.03#python3 -- --version
 nix run github:NixOS/nixpkgs/nixos-20.09#python3 -- --version
