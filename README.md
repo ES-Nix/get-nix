@@ -16,7 +16,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
 && BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
-&& SHA256=c0a0dd4976a50fa44c556885f001c803f62a9cfe \
+&& SHA256=a52a173048d960952c26b4dc0194937d1eb85ee6 \
 && NIX_RELEASE_VERSION='nix-2.4pre20210823_af94b54' \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
@@ -605,7 +605,7 @@ sudo mkdir -v /nix
 sudo chown "$(id -u)":"$(id -g)" -v /nix
 sudo -k
 
-SHA256=c0a0dd4976a50fa44c556885f001c803f62a9cfe \
+SHA256=a52a173048d960952c26b4dc0194937d1eb85ee6 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.profile \
 && nix --version \
@@ -905,12 +905,12 @@ https://ivanix.wordpress.com/tag/umask/
 
 TODO:
 - https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510 and https://github.com/lethalman/nix-user-chroot/pull/13#issuecomment-462200418
-
+- https://github.com/NixOS/nix/blob/d9cfd853e52d0173f86a1648246360faa96c516c/flake.nix#L87
 
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=c0a0dd4976a50fa44c556885f001c803f62a9cfe \
+SHA256=a52a173048d960952c26b4dc0194937d1eb85ee6 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && direnv --version
@@ -951,7 +951,7 @@ echo $?
 #### Testing the direnv's installation
 
 ```bash
-SHA256=c0a0dd4976a50fa44c556885f001c803f62a9cfe \
+SHA256=a52a173048d960952c26b4dc0194937d1eb85ee6 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/src/tests/test_install_direnv_nix_direnv.sh | sh \
 && cd ~/foo-bar
 ```
