@@ -53,6 +53,9 @@ busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
 && busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
 && busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
 
+# If there is one line with only '-e ' removes it.
+# Nix 2.4 installer let it alone in the ~/.profile.
+sed 's/^-e $//' ~/.profile
 
 nix \
 profile \
