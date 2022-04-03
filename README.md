@@ -16,7 +16,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
 && BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
-&& SHA256=6b2f460f2991a015ab3bc5b8681f9a1fa40159f1 \
+&& SHA256=caba9b3d41c97f5ecbc23b0c262ed409bc202a11 \
 && NIX_RELEASE_VERSION='nix-2.4pre20210823_af94b54' \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
@@ -605,7 +605,7 @@ sudo mkdir -v /nix
 sudo chown "$(id -u)":"$(id -g)" -v /nix
 sudo -k
 
-SHA256=6b2f460f2991a015ab3bc5b8681f9a1fa40159f1 \
+SHA256=caba9b3d41c97f5ecbc23b0c262ed409bc202a11 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
 && . ~/.profile \
 && nix --version \
@@ -910,7 +910,7 @@ TODO:
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=6b2f460f2991a015ab3bc5b8681f9a1fa40159f1 \
+SHA256=caba9b3d41c97f5ecbc23b0c262ed409bc202a11 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && direnv --version
@@ -951,7 +951,7 @@ echo $?
 #### Testing the direnv's installation
 
 ```bash
-SHA256=6b2f460f2991a015ab3bc5b8681f9a1fa40159f1 \
+SHA256=caba9b3d41c97f5ecbc23b0c262ed409bc202a11 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/src/tests/test_install_direnv_nix_direnv.sh | sh \
 && cd ~/foo-bar
 ```
