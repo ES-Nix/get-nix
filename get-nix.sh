@@ -55,7 +55,7 @@ busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
 
 # If there is one line with only '-e ' removes it.
 # Nix 2.4 installer let it alone in the ~/.profile.
-sed -i 's/^-e $//' ~/.profile
+busybox sed -i 's/^-e $//' ~/.profile
 
 nix \
 profile \
