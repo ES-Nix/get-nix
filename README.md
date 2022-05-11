@@ -316,6 +316,8 @@ echo $(nix-store --query --graph $(nix eval --raw github:NixOS/nix#nix-static.dr
 ```bash
 nix path-info --derivation nixpkgs#hello
 nix eval --raw nixpkgs#hello.drvPath
+nix eval --raw nixpkgs#lib.version
+nix eval nixpkgs#lib.fakeSha256
 
 echo $(nix-store --query --graph $(nix eval --raw nixpkgs#hello.drvPath)) | dot -Tpdf > hello.pdf
 ```
@@ -391,6 +393,13 @@ nix-instantiate --strict "<nixpkgs/nixos>" -A system
 nix-instantiate --strict --json --eval -E 'builtins.map (p: p.name) (import <nixpkgs/nixos> {}).config.environment.systemPackages' | jq -c | jq -r '.[]' | sort -u
 
 nix eval --impure --expr 'with import <nixpkgs>{}; idea.pycharm-community.outPath'
+
+nix build --impure --expr \
+'with import <nixpkgs> {};
+runCommand "foo" {
+buildInputs = [ hello ];
+}
+"hello > $out"'
 
 nix eval --impure --expr 'with import <nixpkgs/nixos>{}; /etc/nixos#nixosConfigurations."$(hostname)".config.environment.systemPackages.outPath'
 
@@ -899,6 +908,12 @@ nix build nixpkgs#pkgsStatic.busybox
 result/bin/busybox sh -c 'echo $$ && uname --all'
 ```
 
+```bash
+nix run nixpkgs#pkgsStatic.busybox -- sh -c 'echo $$ && uname --all'
+```
+nix run nixpkgs#pkgsStatic.xorg.xclock
+
+
 TODO: `umask` 
 https://github.com/NixOS/nix/issues/2377#issuecomment-633165541
 https://ivanix.wordpress.com/tag/umask/
@@ -1056,6 +1071,20 @@ nix build --refresh github:ES-Nix/nix-qemu-kvm/dev#qemu.vm \
 nix build --expr '{}' --no-link
 ```
 
+Hope it works:
+```bash
+nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello --no-link
+```
+
+```bash
+nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.nix --no-link
+```
+
+```bash
+nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.python3Minimal --no-link
+```
+
+
 That is insane to be possible, but it is, well hope it does not brake for you:
 
 ```bash
@@ -1140,7 +1169,224 @@ bash \
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.stdenv
 ```
 
-nix build --impure --expr '(with import <nixpkgs> {}; callPackage ./default.nix {})'
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+[ hello cowsay ]
+)' 
+
+# hello | cowsay
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/nixpkgs-unstable"
+    ).lib.nixosSystem {
+        system = "${builtins.currentSystem}";
+        modules = [];
+    }
+  ).config.system.build.vm 
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/nixpkgs-unstable"
+    ).lib.nixosSystem {
+        system = "${builtins.currentSystem}";
+        modules = [({ pkgs, ... }: {
+            boot.isContainer = true;
+
+            # Network configuration.
+            networking.useDHCP = false;
+            networking.firewall.allowedTCPPorts = [ 80 ];
+
+            # Enable a web server.
+            services.httpd = {
+              enable = true;
+              adminAddr = "morty@example.org";
+            };
+          })
+        ];
+    }
+  ).config.system.build.toplevel 
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf"
+    ).lib.nixosSystem {
+        system = "${builtins.currentSystem}";
+        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+    }
+  ).config.system.build.isoImage
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+    }
+  ).config.system.build.isoImage
+)
+'
+```
+
+
+
+```bash
+sha256sum result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso 
+cc2ff666032dcd2c99ffcad29dcafdb50e2e38abe3df00ab47198c67879c8edd  result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso
+```
+
+
+```bash
+nix \
+build \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [            
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/virtualisation/build-vm.nix" 
+          
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/installer/cd-dvd/channel.nix" 
+        ];
+    }
+  ).config.system.build.vm
+)
+' \
+&& result/bin/run-nixos-vm
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#coreutils \
+nixpkgs#flutter \
+nixpkgs#google-chrome \
+nixpkgs#which \
+--command \
+bash \
+-c \
+'export CHROME_EXECUTABLE="$(which google-chrome-stable)" \
+&& flutter devices \
+&& flutter create my_app \
+&& cd my_app \
+&& timeout 30 flutter run || test $? -eq 124 || echo Error in flutter run'
+```
+
+
+```bash
+xhost + \
+&& podman \
+run \
+--device=/dev/kvm \
+--device=/dev/fuse \
+--log-level=error \
+--env STORAGE_DRIVER=vfs \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--env=PATH=/root/.nix-profile/bin:/usr/bin:/bin \
+--interactive=true \
+--privileged=true \
+--tty=true \
+--rm=true \
+--security-opt seccomp=unconfined \
+--security-opt label=disable \
+--user=0 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume=/etc/localtime:/etc/localtime:ro \
+--volume=/proc/:/proc/:rw \
+--volume="$(pwd)":/code \
+--workdir=/code \
+docker.io/nixpkgs/nix-flakes \
+bash \
+-c \
+'
+# test -d ~/.config/nix || mkdir -p ~/.config/nix
+# echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+
+test -d ~/.config/nixpkgs || mkdir -p ~/.config/nixpkgs
+echo "{ allowUnfree = true; android_sdk.accept_license = true; }" >> ~/.config/nixpkgs/config.nix
+
+nix \
+shell \
+--impure \
+--option sandbox false \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#coreutils \
+nixpkgs#flutter \
+nixpkgs#google-chrome \
+nixpkgs#which \
+nixpkgs#btar
+
+
+export CHROME_EXECUTABLE="$(which google-chrome-stable)" \
+&& flutter devices \
+&& flutter create my_app \
+&& cd my_app \
+&& timeout 30 flutter run || test $? -eq 124 || echo Error in flutter run
+
+' \
+&& xhost -
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(with import <nixpkgs> {}; callPackage ./default.nix {})'
+```
+
 
 #### Non nixpkgs flakes tests
 
@@ -1513,6 +1759,284 @@ in
   pkgs.hello'
 
 nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).hello'
+
+nix-instantiate \
+--option pure-eval true \
+--eval \
+--impure \
+--expr \
+'with (import <nixpkgs> {}); let               
+  overlay = final: prev: {
+    openssl = prev.openssl.override {
+      static = true;
+    };
+  };
+
+  pkgs = import (with builtins.getFlake "nixpkgs";) { overlays = [ overlay ]; };
+
+in
+  pkgs.hello'
+
+
+nix \
+build \
+--impure \
+--expr \
+'(
+with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem};
+hello
+)'
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs";  with legacyPackages.${builtins.currentSystem}; 
+pkgsStatic.hello
+)'
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs";  with legacyPackages.${builtins.currentSystem}; 
+(hello.override { withStatic = true; })
+)'
+
+nix \                  
+build \
+nixpkgs#pkgsStatic.nix      
+
+
+nix \                  
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs";  with legacyPackages.${builtins.currentSystem}; 
+pkgsStatic.nix      
+)'
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+(SDL2.override { withStatic = true; }).dev)'
+
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+pkgsStatic.openssl
+)'
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+with pkgsStatic; [ openssl hello ]
+)'
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; 
+(sudo.override { pam = null; withInsults = true; })
+)'
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; 
+pkgsStatic.shadow.su        
+)'
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}.pkgsCross.aarch64-multiplatform.pkgsStatic;
+(shadow.override { pam = null; }).su
+)'
+
+nix \             
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; 
+(shadow.override { pam = null; }).su
+
+
+nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+(openssl.override { static = true; })
+)'
+
+TODO:
+nixpkgs#coreutils 
+
+
+nix \
+shell \
+--impure \
+--expr \
+'(
+with builtins.getFlake "nixpkgs";  
+with legacyPackages.${builtins.currentSystem}; 
+  (
+    buildFHSUserEnv { name = "fhs"; }
+  )
+)' \
+--command \
+fhs
+
+```bash
+# nix-shell -p "(steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run"
+# https://github.com/NixOS/nixpkgs/issues/32881#issuecomment-371815465
+
+nix \
+shell \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+(steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run
+)'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+(gnused.overrideDerivation (oldAttrs: {
+  name = "sed-4.2.2-pre";
+  src = fetchurl {
+    url = ftp://alpha.gnu.org/gnu/sed/sed-4.2.2-pre.tar.bz2;
+    sha256 = "11nq06d131y4wmf3drm0yk502d2xc6n5qy82cg88rb9nqd2lj41k";
+  };
+  patches = [];
+}))
+)'
+```
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+(hello.overrideAttrs (oldAttrs: rec {
+  separateDebugInfo = true;
+}))
+)' \
+--command \
+bash \
+-c \
+'file $(readlink -f $(which hello))'
+```
+From:
+- https://youtu.be/6VepnulTfu8?t=477
+- 
+
+```bash
+nix build --impure --expr 'with (import ./. {system="x86_64-darwin";}); hello'
+```
+From:
+- https://siraben.dev/2022/02/13/nix-flake-hacks.html
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+(python3Minimal.override { openssl = pkgsStatic.openssl; })
+)'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+  [ 
+    (python3.overrideAttrs 
+      (oldAttrs: rec { 
+          static = true;        
+        }
+      )
+    )    
+    bashInteractive
+    coreutils    
+    file
+    glibc.bin 
+    which
+  ]
+)' \
+--command \
+bash \
+-c \
+'file $(readlink -f $(which python3)) \
+&& ldd $(readlink -f $(which python3))'
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+  (python3Minimal.override 
+    (oldAttrs: { 
+        tzdata = tzdata;
+        rebuildBytecode = false;
+        stripTests = true;
+        stripIdlelib = true;
+        stripConfig = true;
+        stripTkinter = true;
+        reproducibleBuild = true;
+        static = true;
+        nativeBuildInputs = "${oldAttrs.nativeBuildInputs} ++ [ gcc ]"
+      }
+    )
+  )
+)'
+```
+
+
+nix-instantiate \
+--option pure-eval true \
+--eval \
+--impure \
+--expr \
+'with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; python3.withPackages (ps: with ps; [ numpy scipy ])'
+
 nix build --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).openssl'
 nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { aclSupport = false; })]; }).coreutils'
 
