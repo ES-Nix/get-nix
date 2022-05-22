@@ -2,3 +2,4 @@
 .idea/
 *.qcow2*
 result
+.direnv
