@@ -103,6 +103,7 @@ du -L -h -s /nix
 ```bash
 jq --version || nix profile install nixpkgs#jq
 nix path-info --json --all | jq 'map(.narSize) | add'
+nix path-info nixpkgs#nix_2_4
 ```
 
 ```bash
@@ -163,6 +164,7 @@ nix show-config --json | jq .
 nix verify
 nix doctor 
 nix path-info
+nix path-info nixpkgs#nix_2_4
 nix flake metadata nixpkgs
 jq --version || nix profile install nixpkgs#jq
 nix flake metadata nixpkgs --json | jq .
@@ -947,7 +949,7 @@ nix store gc --verbose \
 
 ```bash
 string='/nix/store/d71am745ykqnhniz19hxncxz0yfrhclj-nix-direnv-1.6.0/share/nix-direnv/direnvrc'
-SEARCH_REGEX= '/nix/store/[0-9a-z]\{32\}-nix-direnv-\([0-9]\{1,\}\).\([0-9]\{1,\}\).\([0-9]\{1,\}\)/share/nix-direnv/direnvrc'
+SEARCH_REGEX='/nix/store/[0-9a-z]\{32\}-nix-direnv-\([0-9]\{1,\}\).\([0-9]\{1,\}\).\([0-9]\{1,\}\)/share/nix-direnv/direnvrc'
 echo $string | grep -q -e '/nix/store/[0-9a-z]\{32\}-nix-direnv-\([0-9]\{1,\}\).\([0-9]\{1,\}\).\([0-9]\{1,\}\)/share/nix-direnv/direnvrc'
 echo $?
 
@@ -956,6 +958,12 @@ string='/nix/store/gx80b9p7xdyjmbkns86zl8kkkaz5bfsl-direnv-2.30.3/bin:'
 SEARCH_REGEX='/nix/store/[0-9a-z]\{32\}-direnv-\([0-9]\{1,\}\).\([0-9]\{1,\}\).\([0-9]\{1,\}\)/bin:'
 echo $string | grep -q -e "${SEARCH_REGEX}"
 echo $?
+
+string='/nix/store/gx80b9p7xdyjmbkns6zl8kkkaz5bfsl-direnv-2.30.3/bin:'
+SEARCH_REGEX='/nix/store/[0-9a-z]\{32\}-direnv-\([0-9]\{1,\}\).\([0-9]\{1,\}\).\([0-9]\{1,\}\)/bin:'
+echo $string | grep -q -e "${SEARCH_REGEX}"
+echo $?
+
 
 string='eval "$(direnv hook bash)"'
 SEARCH_REGEX='eval "$(direnv hook ''\([a-z]\{1,\}\)'')"'
@@ -1075,6 +1083,8 @@ Hope it works:
 ```bash
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello --no-link
 ```
+From: 
+- https://www.youtube.com/watch?v=OV2hi8b5t48
 
 ```bash
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.nix --no-link
@@ -1167,6 +1177,40 @@ bash \
 
 ```bash
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.stdenv
+
+RESULT_PATH='result/bin/busybox'
+
+
+RESULT_SHA256='93c70940186e32f6a36e6a9c63c3ceb5d5ad3f4b6ead6f6078842ad164009e89'
+RESULT_SHA512='04491ffe77bd56bc9a9cbb428079ceb75bc65398fcdc9586ad4a3420c962ebfec4a4ccc5c61f6c2e11d0c155c0d6f63bed2336de578289c872aede7e06142371'
+
+nix \
+build \
+nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.busybox-sandbox-shell \
+--option substitute true
+
+echo "${RESULT_SHA256}"'  '"${RESULT_PATH}" | sha256sum -c
+echo "${RESULT_SHA512}"'  '"${RESULT_PATH}" | sha512sum -c
+
+nix \
+build \
+nixpkgs#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
+--option substitute true
+
+echo "${RESULT_SHA256}"'  '"${RESULT_PATH}" | sha256sum -c
+echo "${RESULT_SHA512}"'  '"${RESULT_PATH}" | sha512sum -c
+
+echo 'Using now the correct shas:'
+RESULT_SHA256='45de8827ef49b643050aa845a68449e5b5d10404103e61e88008bb1ea2c617bb'
+RESULT_SHA512='ef1cff43e13d6940228cf57532cfd4de9f7eabd003fe658bb97bcb3ccae5a8e6ffe4abd70f3abbd57a0d752c2fa70ed2e1ab29282e23aa573f8a8badb7dc8b4a'
+
+echo "${RESULT_SHA256}"'  '"${RESULT_PATH}" | sha256sum -c
+echo "${RESULT_SHA512}"'  '"${RESULT_PATH}" | sha512sum -c
+```
+
+
+```bash
+nix build nixpkgs#pkgsCross.s390x.busybox-sandbox-shell
 ```
 
 ```bash
@@ -1257,29 +1301,78 @@ build \
 
 ```bash
 nix \
+--option sandbox true \
 build \
 --expr \
 '
 (
   (
     (
-      builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf"
+      builtins.getFlake "github:NixOS/nixpkgs/aebc7fd7e2a816801862b1892db35c4653a48225"
     ).lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/aebc7fd7e2a816801862b1892db35c4653a48225")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
     }
   ).config.system.build.isoImage
 )
 '
 ```
 
+```bash
+nix flake metadata github:NixOS/nixpkgs/nixos-22.05-small
+github:NixOS/nixpkgs/aebc7fd7e2a816801862b1892db35c4653a48225
+```
+
+```bash
+ISO_PATH="$(echo result/iso/nixos-22.05.*.*-x86_64-linux.iso)"
+
+
+sha1sum "${ISO_PATH}"
+sha256sum "${ISO_PATH}"
+sha512sum "${ISO_PATH}"
+
+ISO_SHA1='c9fef27e86190a1ef16b902cce37735f7bd24ea5'
+ISO_SHA256='f20ecfd64b0d9a222ef07d3331b250da938bd475887734e46a2ffcf2bd8481f2'
+ISO_SHA512='37aa13d449ac66413cb47b4fb4b091c37e2df6a414d73764ac88b4d34a9d5916a83310b3056bdab6e29f669a36f8c041a118b10a2e3b4dc2d674f66bd350f955'
+
+echo "${ISO_SHA1}"'  '"${ISO_PATH}" | sha1sum -c
+echo "${ISO_SHA256}"'  '"${ISO_PATH}" | sha256sum -c
+echo "${ISO_SHA512}"'  '"${ISO_PATH}" | sha512sum -c
+
+nix run nixpkgs#neofetch -- --json
+{
+    "OS": "NixOS 22.05 (Quokka) x86_64",
+    "Host": "LENOVO",
+    "Kernel": "5.15.28",
+    "Uptime": "1 day, 1 hour, 30 mins",
+    "Packages": "1280 (nix-system), 132 (nix-user), 234 (nix-default)",
+    "Shell": "zsh 5.8.1",
+    "Resolution": "1366x768, 1366x768",
+    "DE": "Plasma 5.23.5",
+    "WM": "KWin",
+    "Theme": "Breeze [GTK2/3]",
+    "Icons": "breeze [GTK2/3]",
+    "Terminal": ".konsole-wrappe",
+    "CPU": "Intel i3-4130 (4) @ 3.400GHz",
+    "GPU": "Intel  4th Generation Core Processor Family ",
+    "GPU": "Intel 4th Generation Core Processor Family",
+    "Memory": "6625MiB / 7777MiB",
+    "Version": "7.1.0"
+}
+```
 
 
 ```bash
-sha256sum result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso 
-cc2ff666032dcd2c99ffcad29dcafdb50e2e38abe3df00ab47198c67879c8edd  result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso
-```
+sha1sum result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso
+sha256sum result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso
+sha512sum result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso
 
+b763f9da3d5f48ce52142f62c484725b52ca431d  result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso
+1242cef387cdedbff99db4dd415633ef43f1e642bcc8f2f4cb5b2a89ec2f1d32  result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso
+8114af918b87715ef3a1b4e637762bf0b5ae33ef292c266bfacde4c2946b1b62715fd3cb7a20f254ff615a95b462140ed45e3c3c863c35ea83eb6ea7802e7ab8  result/iso/nixos-22.05.20220501.b283b64-x86_64-linux.iso
+
+nix run nixpkgs#neofetch -- --json
+```
 
 ```bash
 nix \
@@ -1304,12 +1397,147 @@ build \
 && result/bin/run-nixos-vm
 ```
 
+```bash
+podman \
+run \
+--device=/dev/kvm \
+--device=/dev/fuse \
+--log-level=error \
+--env STORAGE_DRIVER=vfs \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--env=PATH=/root/.nix-profile/bin:/usr/bin:/bin \
+--interactive=true \
+--privileged=true \
+--tty=true \
+--rm=true \
+--security-opt seccomp=unconfined \
+--security-opt label=disable \
+--user=0 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume=/etc/localtime:/etc/localtime:ro \
+--volume=/proc/:/proc/:rw \
+--volume="$(pwd)":/code \
+--workdir=/code \
+docker.io/nixpkgs/nix-flakes \
+bash \
+-c \
+"nix --option sandbox false build --expr '(builtins.getFlake \"github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf\")'"
+```
+
+```bash
+# nix flake metadata github:NixOS/nixpkgs/nixos-22.05
+FIXED_NIXPKGS='github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c'
+RESULT_PATH='result/bin/busybox'
+
+
+RESULT_SHA256='93c70940186e32f6a36e6a9c63c3ceb5d5ad3f4b6ead6f6078842ad164009e89'
+RESULT_SHA512='04491ffe77bd56bc9a9cbb428079ceb75bc65398fcdc9586ad4a3420c962ebfec4a4ccc5c61f6c2e11d0c155c0d6f63bed2336de578289c872aede7e06142371'
+
+nix \
+build \
+"${FIXED_NIXPKGS}"#pkgsCross.aarch64-multiplatform.pkgsStatic.busybox-sandbox-shell \
+--option substitute true \
+--option sandbox false
+
+echo "${RESULT_SHA256}"'  '"${RESULT_PATH}" | sha256sum -c
+echo "${RESULT_SHA512}"'  '"${RESULT_PATH}" | sha512sum -c
+
+nix \
+build \
+"${FIXED_NIXPKGS}"#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
+--option substitute true \
+--option sandbox false
+
+echo "${RESULT_SHA256}"'  '"${RESULT_PATH}" | sha256sum -c
+echo "${RESULT_SHA512}"'  '"${RESULT_PATH}" | sha512sum -c
+
+echo 'Using now the correct shas:'
+RESULT_SHA256='45de8827ef49b643050aa845a68449e5b5d10404103e61e88008bb1ea2c617bb'
+RESULT_SHA512='ef1cff43e13d6940228cf57532cfd4de9f7eabd003fe658bb97bcb3ccae5a8e6ffe4abd70f3abbd57a0d752c2fa70ed2e1ab29282e23aa573f8a8badb7dc8b4a'
+
+echo "${RESULT_SHA256}"'  '"${RESULT_PATH}" | sha256sum -c
+echo "${RESULT_SHA512}"'  '"${RESULT_PATH}" | sha512sum -c
+```
+
+
+```bash
+nix flake metadata github:NixOS/nixpkgs/nixos-22.05
+```
+
+```bash
+# It does not exist in NixOS systems!
+# --volume=/etc/localtime:/etc/localtime:ro \
+# It is not sure taht it exists 
+# --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+podman \
+run \
+--device=/dev/kvm \
+--device=/dev/fuse \
+--log-level=error \
+--env=STORAGE_DRIVER='vfs' \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--env=PATH=/root/.nix-profile/bin:/usr/bin:/bin \
+--interactive=true \
+--name=nix-flakes-container \
+--privileged=true \
+--tty=true \
+--rm=false \
+--security-opt seccomp=unconfined \
+--security-opt label=disable \
+--user=0 \
+--volume=/proc/:/proc/:rw \
+--volume="$(pwd)":/code \
+--workdir=/code \
+docker.io/nixpkgs/nix-flakes \
+bash \
+-c \
+"
+nix \
+  --option sandbox false \
+  build \
+  --expr '
+    (
+      (
+        (
+          builtins.getFlake \"github:NixOS/nixpkgs/08950a6e29cf7bddee466592eb790a417550f7f9\"
+        ).lib.nixosSystem {
+            system = \"x86_64-linux\";
+            modules = [ \"\${toString (builtins.getFlake \"github:NixOS/nixpkgs/08950a6e29cf7bddee466592eb790a417550f7f9\")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix\" ];
+        }
+      ).config.system.build.isoImage
+    )
+  ' \
+&& ls -al result/bin/nixos-22.05.*.iso
+
+sha1sum result/bin/nixos-22.05.*.iso
+sha256sum result/bin/nixos-22.05.*.iso
+sha512sum result/bin/nixos-22.05.*.iso
+
+EXPECTED_SHA1='28a77b051f168a7614bb4a4a6be48a0536b100d4'
+EXPECTED_SHA256='cc2ff666032dcd2c99ffcad29dcafdb50e2e38abe3df00ab47198c67879c8edd'
+EXPECTED_SHA512='1fe2b87dae294e26177cad9e66177e70953731aefa68420b66da8f480fb230ea24075470132840898a86f7785292acb721a14d9692fcb935401b88215d14b72d'
+ISO_PATTERN_NAME='result/bin/nixos-22.05.*.iso'
+
+echo "${EXPECTED_SHA1}"'  '"${ISO_PATTERN_NAME}" | sha1sum -c
+echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
+echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+"
+```
+
+
+```bash
+
+```
+
+```bash
+
+```
 
 ```bash
 nix \
 shell \
 --impure \
-nixpkgs#busybox-sandbox-shell \
+nixpkgs#bashInteractive \
 nixpkgs#coreutils \
 nixpkgs#flutter \
 nixpkgs#google-chrome \
@@ -1322,6 +1550,32 @@ bash \
 && flutter create my_app \
 && cd my_app \
 && timeout 30 flutter run || test $? -eq 124 || echo Error in flutter run'
+```
+Maybe `nix shell --impure --option sandbox false ...` ?
+
+
+
+```bash
+COMMIT_SHA=7cc36b8ca8292957ad1371c141c6870de20b856d
+NIXPKGS_STRING=github:/NANASHI0X74/nixpkgs/"${COMMIT_SHA}"
+# NIXPKGS_STRING=nixpkgs
+
+nix \
+shell \
+--impure \
+"${NIXPKGS_STRING}"#bashInteractive \
+"${NIXPKGS_STRING}"#coreutils \
+"${NIXPKGS_STRING}"#flutter \
+"${NIXPKGS_STRING}"#google-chrome \
+"${NIXPKGS_STRING}"#which \
+--command \
+bash \
+-c \
+'export CHROME_EXECUTABLE="$(which google-chrome-stable)" \
+&& flutter devices \
+&& flutter create my_app \
+&& cd my_app \
+&& timeout 60 flutter run || test $? -eq 124 || echo Error in flutter run'
 ```
 
 
@@ -1365,9 +1619,7 @@ nixpkgs#busybox-sandbox-shell \
 nixpkgs#coreutils \
 nixpkgs#flutter \
 nixpkgs#google-chrome \
-nixpkgs#which \
-nixpkgs#btar
-
+nixpkgs#which
 
 export CHROME_EXECUTABLE="$(which google-chrome-stable)" \
 && flutter devices \
@@ -1378,6 +1630,73 @@ export CHROME_EXECUTABLE="$(which google-chrome-stable)" \
 ' \
 && xhost -
 ```
+
+
+
+
+nix \
+shell \
+--impure \
+nixpkgs#clang \
+nixpkgs#cmake \
+nixpkgs#ninja \
+nixpkgs#pkg-config \
+nixpkgs#gtk3 \
+nixpkgs#gtk3.dev \
+nixpkgs#gtk3-x11 \
+nixpkgs#gtk3-x11.dev
+
+
+nix \
+shell \
+--impure \
+nixpkgs#clang \
+nixpkgs#cmake \
+nixpkgs#flutter \
+nixpkgs#ninja \
+nixpkgs#pkg-config \
+nixpkgs#gtk3.dev \
+nixpkgs#util-linux.dev \
+nixpkgs#glib.dev
+
+
+flutter config --enable-linux-desktop
+
+flutter create my_app \
+&& cd my_app \
+&& flutter build linux
+
+
+flutter clean
+
+```bash
+sudo apt-get update \
+&& sudo apt-get install -y \
+    libgtk-3-dev
+```
+
+```bash
+Note, selecting 'libspice-client-gtk-3.0-dev' for regex 'gtk+-3.0'
+
+Note, selecting 'libjavascriptcoregtk-3.0-bin' for regex 'gtk+-3.0'
+Note, selecting 'libwebkitgtk-3.0-dev' for regex 'gtk+-3.0'
+Note, selecting 'gir1.2-gtk-3.0' for regex 'gtk+-3.0'
+Note, selecting 'libjavascriptcoregtk-3.0-dev' for regex 'gtk+-3.0'
+Note, selecting 'gir1.2-spiceclientgtk-3.0' for regex 'gtk+-3.0'
+Note, selecting 'libgtk-3-0' for regex 'gtk+-3.0'
+Note, selecting 'libwebkitgtk-3.0-common' for regex 'gtk+-3.0'
+Note, selecting 'wxperl-gtk-3-0-4-uni-gcc-3-4' for regex 'gtk+-3.0'
+Note, selecting 'libwebkitgtk-3.0-0' for regex 'gtk+-3.0'
+Note, selecting 'gir1.2-spice-client-gtk-3.0' for regex 'gtk+-3.0'
+Note, selecting 'libwebkit2gtk-3.0-25' for regex 'gtk+-3.0'
+Note, selecting 'libjavascriptcoregtk-3.0-0' for regex 'gtk+-3.0'
+Note, selecting 'libspice-client-gtk-3.0-1' for regex 'gtk+-3.0'
+Note, selecting 'libspice-client-gtk-3.0-5' for regex 'gtk+-3.0'
+Note, selecting 'gir1.2-javascriptcoregtk-3.0' for regex 'gtk+-3.0'
+Note, selecting 'libalien-wxwidgets-perl' instead of 'wxperl-gtk-3-0-4-uni-gcc-3-4'
+```
+
+
 
 ```bash
 nix \
@@ -1481,6 +1800,172 @@ build \
 github:PedroRegisPOAR/NixOS-configuration.nix#nixosConfigurations.pedroregispoar.config.system.build.toplevel
 ```
 
+
+### Nesting
+
+```bash
+
+nix build --refresh .#ubuntu-qemu-kvm
+
+command -v podman || sudo apt-get update && sudo apt-get install -y podman
+podman \
+run \
+--log-level=error \
+--env STORAGE_DRIVER=vfs \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--env=PATH=/root/.nix-profile/bin:/usr/bin:/bin \
+--interactive=true \
+--privileged=false \
+--tty=true \
+--rm=true \
+--security-opt seccomp=unconfined \
+--security-opt label=disable \
+--user=0 \
+--volume=/proc/:/proc/:rw \
+--volume="$(pwd)":/code \
+--workdir=/code \
+docker.io/nixpkgs/nix-flakes \
+bash \
+-c \
+"
+# nix flake metadata github:NixOS/nix --json | jq --join-output '.url'
+
+nix \
+build \
+github:NixOS/nix/1dd7253133c4dfd2e7a16ad6fe505442cef38a5b#nix-static \
+--option substitute true \
+--option sandbox false 
+
+
+RESULT_PATH='result/bin/nix'
+
+RESULT_SHA256='17906356fbb4f19bf57d1c539f51725899f98b4944539fa03c8dbe5e001ed70f'
+RESULT_SHA512='c18c56a868b54d1c3bcfb7e1c58143b2817a3eabd60497c9cbd635f502c5d5c228a672f403d884a15e8e6e5b5c143fecbfe75c401a3db1746b9c3d7f9306fbe9'
+
+echo \"\${RESULT_SHA256}\"'  '\"\${RESULT_PATH}\" | sha256sum -c \
+&& echo \"\${RESULT_SHA512}\"'  '\"\${RESULT_PATH}\" | sha512sum -c \
+&& cp -v \"\${RESULT_PATH}\" /code/nix-static
+"
+
+#nix \
+#run \
+#--refresh \
+#github:ES-Nix/nix-oci-image/nix-static-minimal#oci-podman-openssh-server
+#sudo cp -v /code/nix .
+
+test -d /nix || sudo mkdir -v /nix && sudo chown -Rv "$(id -u)":"$(id -g)" /nix
+
+./nix-static \
+--extra-experimental-features 'nix-command flakes' \
+run \
+github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#hello
+
+#./nix \
+#--extra-experimental-features 'nix-command flakes' \
+#store \
+#gc \
+#-v
+
+sudo rm -fr /nix/*
+du -hs /nix/
+
+./nix-static \
+--extra-experimental-features 'nix-command flakes' \
+run \
+github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#hello
+
+sudo rm -fr /nix/*
+du -hs /nix/
+
+./nix-static \
+--extra-experimental-features 'nix-command flakes' \
+run \
+github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#hello
+
+./nix \
+--extra-experimental-features 'nix-command flakes' \
+--option sandbox true \
+build \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+    }
+  ).config.system.build.isoImage
+)
+'
+
+EXPECTED_SHA256='b09bf53a018fade68f6dbe200da5a40a5c4f24eb7745356231696be55d412700'
+EXPECTED_SHA512='70b5c7bc32ec4f89872161fbb931e181212cac1c7527dc4ef1e32dfa418a122d3f8e9f4b451ab480a11ed2ba7d7dd3194eb80f0ae1da214bc4f4bf42d0badc09'
+ISO_PATTERN_NAME="$(echo result/iso/nixos-22.05.*-x86_64-linux.iso)"
+
+echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
+echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+
+
+./nix \
+--extra-experimental-features 'nix-command flakes' \
+run \
+github:edolstra/dwarffs -- --version
+
+
+
+echo 'Start kvm stuff...' \
+&& getent group kvm || sudo groupadd kvm \
+&& sudo usermod --append --groups kvm "$USER" \
+&& echo 'End kvm stuff!'
+
+./nix \
+--extra-experimental-features 'nix-command flakes' \
+build \
+github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso
+```
+
+```bash
+podman \
+run \
+--log-level=error \
+--env STORAGE_DRIVER=vfs \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--env=PATH=/root/.nix-profile/bin:/usr/bin:/bin \
+--interactive=true \
+--privileged=false \
+--tty=true \
+--rm=true \
+--security-opt seccomp=unconfined \
+--security-opt label=disable \
+--user=0 \
+--volume=/proc/:/proc/:rw \
+--volume="$(pwd)":/code \
+--workdir=/code \
+docker.io/nixpkgs/nix-flakes \
+bash \
+-c \
+"
+# nix flake metadata github:NixOS/nix --json | jq --join-output '.url'
+
+nix \
+build \
+github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c#pkgsStatic.nix \
+--option substitute true \
+--option sandbox false 
+
+
+RESULT_PATH='result/bin/nix'
+
+RESULT_SHA256='95bf4be07d0f1a4f8368056c0cabd4cf69121172b79591726fe0cd9eb3eb96bf'
+RESULT_SHA512='93f63e5003ba81c11a15f7188bc5930de824f80f8f2e4394506b1ee7ed20391d4de13ac295966dac2e6f723314686273972d50d73b709e78df5a555641ea632a'
+
+echo \"\${RESULT_SHA256}\"'  '\"\${RESULT_PATH}\" | sha256sum -c \
+&& echo \"\${RESULT_SHA512}\"'  '\"\${RESULT_PATH}\" | sha512sum -c \
+&& cp -v \"\${RESULT_PATH}\" /code/nix
+"
+```
 
 ### Install zsh
 
@@ -1722,13 +2207,17 @@ nix run github:NixOS/nixpkgs/nixos-21.11#python3 -- --version
 nix run github:NixOS/nixpkgs/nixpkgs-unstable#python3 -- --version
 
 nix run github:NixOS/nixpkgs/nixos-21.11#pkgsStatic.nix
+nix run github:NixOS/nixpkgs/nixos-22.05#pkgsStatic.nix
 nix run github:NixOS/nixpkgs/nixpkgs-unstable#pkgsStatic.nix
 
 nix run github:NixOS/nix#nix-static -- flake metadata github:NixOS/nixpkgs/nixos-21.11
 
-nix run github:NixOS/nix#nix-static -- run github:NixOS/nixpkgs/nixos-21.11#python3 -- --version
+nix run github:NixOS/nix#nix-static -- run github:NixOS/nixpkgs/nixos-22.05#python3 -- --version
+nix run github:NixOS/nix#nix-static -- show-config --json
 
 
+nix flake metadata github:NixOS/nixpkgs/nixos-21.11 --json | jq --join-output '.url'
+nix flake metadata github:NixOS/nixpkgs/nixos-22.05 --json | jq --join-output '.url'
 ```
 
 
@@ -2049,4 +2538,11 @@ nix build --impure --expr '(import <nixpkgs> {
     })
   ];
 }).firefox-unwrapped'
+
+
+####
+
+
+sudo apt-get -qq update
+sudo apt-get install -y nix-bin
 

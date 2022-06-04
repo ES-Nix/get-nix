@@ -27,6 +27,49 @@ toybox chmod -v 0700 "$BASE"/nix
 toybox test -d /home/"$USER"/nix || toybox mkdir -v -p -m 0755 /home/"$USER"/nix
 
 
+# nix build github:NixOS/nixpkgs/3e644bd62489b516292c816f70bf0052c693b3c7#pkgsStatic.nix
+
+BASE="${HOME}"/.local/bin
+mkdir -v -p -m 0755 "${BASE}"
+
+curl -L https://hydra.nixos.org/build/168900393/download/2/nix --output "${BASE}"/nix
+chmod -v 0700 "${BASE}"/nix
+
+# test -f 'result/bin/nix' || echo 'Error the path does not exist: ''result/bin/nix'
+# cp -v result/bin/nix "${BASE}"
+export PATH="${BASE}":"${PATH}"
+
+FULL_PATH_TO_REGISTRY="$(readlink -f "$HOME"/.cache/nix/flake-registry.json)"
+
+echo "${FULL_PATH_TO_REGISTRY}"
+
+cp "${FULL_PATH_TO_REGISTRY}" flake-registry.json
+sudo rm -fr /nix/store/ nix/var
+nix store add-path flake-registry.json
+
+ls -al /nix/store/ | grep registry
+
+
+nix registry pin --registry ./custom-flake-registry.json nixpkgs
+
+nix --store "${HOME}" registry pin --registry ./custom-flake-registry.json nixpkgs
+
+mkdir -p -v -m 0755 "${HOME}"/.config/nix
+nix --store "${HOME}" registry pin --registry "${HOME}"/.config/nix/registry.json nixpkgs
+
+
+nix --store "${HOME}" build github:NixOS/nixpkgs/3e644bd62489b516292c816f70bf0052c693b3c7#hello
+nix --store "${HOME}" build git://github.com/NixOS/nixpkgs/3e644bd62489b516292c816f70bf0052c693b3c7#hello
+
+
+nix --store "${HOME}" \
+run 'git://git@github.com/NixOS/nixpkgs?ref=nixpkgs-unstable&rev=3e644bd62489b516292c816f70bf0052c693b3c7#hello'
+
+nix --store "${HOME}" run git://github.com/NixOS/patchelf -- --version
+
+nix store gc -v --store "${HOME}"
+
+
 nix \
   profile \
   install \

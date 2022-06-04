@@ -1,4 +1,5 @@
-FROM ubuntu:21.04 AS base-ubuntu
+FROM docker.io/library/ubuntu:20.04 AS ubuntu-sudo-and-nix-install-deps
+
 
 RUN apt-get update \
  && apt-get install --no-install-recommends --no-install-suggests -y \
@@ -8,8 +9,11 @@ RUN apt-get update \
     tar \
     xz-utils \
  && apt-get -y autoremove \
- && apt-get -y clean  \
+ && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
+
+
+FROM ubuntu-sudo-and-nix-install-deps AS ubuntu-sudo-and-nix-install-deps-nixuser
 
 RUN addgroup nixgroup \
  && adduser \
@@ -30,6 +34,11 @@ USER nixuser
 
 ENV USER nixuser
 
+# RUN BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
+# && SHA256=61bc33388f399fd3de71510b5ca20f159c803491 \
+# && NIX_RELEASE_VERSION='nix-2.4' \
+# && su ubuntu -c 'curl -fsSL '"${BASE_URL}""$SHA256"'/get-nix.sh' | su ubuntu -c 'sh -s -- '${NIX_RELEASE_VERSION}
+#
 
 # mkdir --parent --mode=0755 ~/.config/nix \
 # && echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
