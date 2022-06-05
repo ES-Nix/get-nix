@@ -1461,7 +1461,8 @@ echo "${RESULT_SHA512}"'  '"${RESULT_PATH}" | sha512sum -c
 
 
 ```bash
-nix flake metadata github:NixOS/nixpkgs/nixos-22.05
+jq --version || nix profile install nixpkgs#jq
+nix flake metadata github:NixOS/nixpkgs/nixos-22.05 --json | jq --join-output '.url'
 ```
 
 ```bash
@@ -1525,13 +1526,6 @@ echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 ```
 
 
-```bash
-
-```
-
-```bash
-
-```
 
 ```bash
 nix \
@@ -1697,13 +1691,16 @@ Note, selecting 'libalien-wxwidgets-perl' instead of 'wxperl-gtk-3-0-4-uni-gcc-3
 ```
 
 
+##### Testing the cache
 
 ```bash
 nix \
-build \
---impure \
---expr \
-'(with import <nixpkgs> {}; callPackage ./default.nix {})'
+store \
+ls \
+--store https://cache.nixos.org/ \
+--long \
+--recursive \
+"$(nix eval --raw nixpkgs#gtk3.dev)"/lib/pkgconfig/
 ```
 
 
@@ -1803,11 +1800,19 @@ github:PedroRegisPOAR/NixOS-configuration.nix#nixosConfigurations.pedroregispoar
 
 ### Nesting
 
+
+
 ```bash
+nix \
+run \
+--refresh \
+github:ES-Nix/nix-qemu-kvm/dev#ubuntu-qemu-kvm
+```
 
-nix build --refresh .#ubuntu-qemu-kvm
 
+```bash
 command -v podman || sudo apt-get update && sudo apt-get install -y podman
+
 podman \
 run \
 --log-level=error \
@@ -1860,7 +1865,7 @@ test -d /nix || sudo mkdir -v /nix && sudo chown -Rv "$(id -u)":"$(id -g)" /nix
 run \
 github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#hello
 
-#./nix \
+#./nix-static \
 #--extra-experimental-features 'nix-command flakes' \
 #store \
 #gc \
@@ -1882,51 +1887,78 @@ du -hs /nix/
 run \
 github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#hello
 
-./nix \
---extra-experimental-features 'nix-command flakes' \
---option sandbox true \
-build \
---expr \
-'
-(
-  (
-    (
-      builtins.getFlake "github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c"
-    ).lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
-    }
-  ).config.system.build.isoImage
-)
-'
 
-EXPECTED_SHA256='b09bf53a018fade68f6dbe200da5a40a5c4f24eb7745356231696be55d412700'
-EXPECTED_SHA512='70b5c7bc32ec4f89872161fbb931e181212cac1c7527dc4ef1e32dfa418a122d3f8e9f4b451ab480a11ed2ba7d7dd3194eb80f0ae1da214bc4f4bf42d0badc09'
-ISO_PATTERN_NAME="$(echo result/iso/nixos-22.05.*-x86_64-linux.iso)"
+export NIXPKGS_ALLOW_UNFREE=1 \
+&& ./nix-static \
+      --extra-experimental-features 'nix-command flakes' \
+      profile \
+      install \
+      --impure \
+      github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#python3Full
 
-echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
-echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+python3 --version
 
 
-./nix \
+#./nix-static \
+#--extra-experimental-features 'nix-command flakes' \
+#build \
+#github:ES-Nix/poetry2nix-examples/2cb6663e145bbf8bf270f2f45c869d69c657fef2#poetry2nixOCIImage
+
+# Broken, no ideia why...
+#./nix-static \
+#--extra-experimental-features 'nix-command flakes' \
+#--option sandbox true \
+#build \
+#--expr \
+#'
+#(
+#  (
+#    (
+#      builtins.getFlake "github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c"
+#    ).lib.nixosSystem {
+#        system = "x86_64-linux";
+#        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+#    }
+#  ).config.system.build.isoImage
+#)
+#'
+#
+#EXPECTED_SHA256='b09bf53a018fade68f6dbe200da5a40a5c4f24eb7745356231696be55d412700'
+#EXPECTED_SHA512='70b5c7bc32ec4f89872161fbb931e181212cac1c7527dc4ef1e32dfa418a122d3f8e9f4b451ab480a11ed2ba7d7dd3194eb80f0ae1da214bc4f4bf42d0badc09'
+#ISO_PATTERN_NAME="$(echo result/iso/nixos-22.05.*-x86_64-linux.iso)"
+#
+#echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
+#echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+
+
+./nix-static \
 --extra-experimental-features 'nix-command flakes' \
 run \
 github:edolstra/dwarffs -- --version
 
 
 
-echo 'Start kvm stuff...' \
-&& getent group kvm || sudo groupadd kvm \
-&& sudo usermod --append --groups kvm "$USER" \
-&& echo 'End kvm stuff!'
-
-./nix \
---extra-experimental-features 'nix-command flakes' \
-build \
-github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso
+#echo 'Start kvm stuff...' \
+#&& getent group kvm || sudo groupadd kvm \
+#&& sudo usermod --append --groups kvm "$USER" \
+#&& echo 'End kvm stuff!'
+#
+#./nix-static \
+#--extra-experimental-features 'nix-command flakes' \
+#build \
+#github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso
 ```
 
 ```bash
+nix \
+run \
+--refresh \
+github:ES-Nix/nix-qemu-kvm/dev#ubuntu-qemu-kvm
+```
+
+```bash
+command -v podman || sudo apt-get update && sudo apt-get install -y podman
+
 podman \
 run \
 --log-level=error \
@@ -1947,7 +1979,7 @@ docker.io/nixpkgs/nix-flakes \
 bash \
 -c \
 "
-# nix flake metadata github:NixOS/nix --json | jq --join-output '.url'
+# nix flake metadata nix --json | jq --join-output '.url'
 
 nix \
 build \
@@ -1963,9 +1995,127 @@ RESULT_SHA512='93f63e5003ba81c11a15f7188bc5930de824f80f8f2e4394506b1ee7ed20391d4
 
 echo \"\${RESULT_SHA256}\"'  '\"\${RESULT_PATH}\" | sha256sum -c \
 && echo \"\${RESULT_SHA512}\"'  '\"\${RESULT_PATH}\" | sha512sum -c \
-&& cp -v \"\${RESULT_PATH}\" /code/nix
+&& cp -v \"\${RESULT_PATH}\" /code/nix-pkgs-static
 "
 ```
+
+
+
+```bash
+mkdir -pv -m 0770 "${HOME}"/bin
+
+mv -v nix-pkgs-static "${HOME}"/bin/nix
+
+echo 'export PATH="${HOME}"/bin:"${PATH}"' >> ~/."$(ps -ocomm= -q $$)"rc \
+&& . ~/."$(ps -ocomm= -q $$)"rc
+
+test -d /nix || sudo mkdir -v /nix && sudo chown -Rv "$(id -u)":"$(id -g)" /nix
+
+nix \
+profile \
+install \
+nixpkgs#pkgsStatic.busybox \
+--option experimental-features 'nix-command flakes'
+
+# It is, lets say, not so beautiful 
+busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
+&& busybox grep 'nixos' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
+&& busybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
+&& busybox grep 'trace' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'show-trace = true' >> ~/.config/nix/nix.conf \
+&& busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
+&& busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
+
+nix \
+profile \
+remove \
+"$(nix eval --raw nixpkgs#pkgsStatic.busybox)"
+
+nix flake --version
+```
+
+```bash
+nix \
+build \
+github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c#pkgsStatic.nix
+```
+
+Really hard build:
+```bash
+nix \
+build \
+github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c#pkgsStatic.nix \
+--option substitute false
+```
+
+
+
+```bash
+nix \
+run \
+github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#hello
+
+sudo rm -fr /nix/*
+du -hs /nix/
+
+nix \
+run \
+github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#hello
+
+
+nix \
+run \
+github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#xorg.xclock
+
+
+nix \
+profile \
+install \
+github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#python3Full
+
+python3 --version
+
+export NIXPKGS_ALLOW_UNFREE=1 \
+&& nix \
+profile \
+install \
+--impure \
+github:NixOS/nixpkgs/f1c9c23aad972787f00f175651e4cb0d7c7fd5ea#geogebra
+
+#./nix-pkgs-static \
+#--extra-experimental-features 'nix-command flakes' \
+#build \
+#github:ES-Nix/poetry2nix-examples/2cb6663e145bbf8bf270f2f45c869d69c657fef2#poetry2nixOCIImage
+
+nix \
+run \
+github:edolstra/dwarffs -- --version
+```
+
+
+
+#### --store "${HOME}"
+
+
+
+
+```bash
+mkdir -pv -m 0770 "${HOME}"/bin
+
+echo 'export PATH="${HOME}"/bin:"${PATH}"' >> . ~/."$(ps -ocomm= -q $$)"rc \
+&& . ~/."$(ps -ocomm= -q $$)"rc
+
+mv nix-pkgs-static "${HOME}"/bin/nix
+
+ln -sfv "${HOME}"/nix/var/nix/profiles/per-user/"${USER}"/ "${HOME}"/.nix-profile
+
+./nix-pkgs-static \
+--extra-experimental-features 'nix-command flakes' \
+--store "${HOME}" \
+profile \
+install \
+github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c#hello
+```
+
 
 ### Install zsh
 
@@ -2293,7 +2443,7 @@ build \
 (hello.override { withStatic = true; })
 )'
 
-nix \                  
+nix \
 build \
 nixpkgs#pkgsStatic.nix      
 

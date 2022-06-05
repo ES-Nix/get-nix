@@ -41,6 +41,104 @@ toybox cat /home/"$USER"/.config/nixpkgs/config.nix | toybox grep 'allowUnfree' 
 #toybox echo -n ec74eb0971c4f54a8e3c25344db051640ead538292d566fa526430eb2579fffe "$HOME"/.local/bin/nix | toybox sha256sum -c
 
 
+
+
+#FULL_PATH_TO_REGISTRY="$(readlink -f "$HOME"/.cache/nix/flake-registry.json)"
+#
+#echo "${FULL_PATH_TO_REGISTRY}"
+#
+#cp "${FULL_PATH_TO_REGISTRY}" flake-registry.json
+#sudo rm -fr /nix/store/ nix/var
+#nix store add-path flake-registry.json
+#
+#ls -al /nix/store/ | grep registry
+#
+#
+#nix registry pin --registry ./custom-flake-registry.json nixpkgs
+#
+#nix --store "${HOME}" registry pin --registry ./custom-flake-registry.json nixpkgs
+#
+#mkdir -p -v -m 0755 "${HOME}"/.config/nix
+#nix --store "${HOME}" registry pin --registry "${HOME}"/.config/nix/registry.json nixpkgs
+#
+#
+#nix --store "${HOME}" build github:NixOS/nixpkgs/3e644bd62489b516292c816f70bf0052c693b3c7#hello
+#nix --store "${HOME}" build git://github.com/NixOS/nixpkgs/3e644bd62489b516292c816f70bf0052c693b3c7#hello
+#
+#
+#nix \
+#--store "${HOME}" \
+#run \
+#'git://git@github.com/NixOS/nixpkgs?ref=nixpkgs-unstable&rev=3e644bd62489b516292c816f70bf0052c693b3c7#hello'
+#
+#nix --store "${HOME}" run git://github.com/NixOS/patchelf -- --version
+#
+#nix store gc -v --store "${HOME}"
+#
+#
+#nix \
+#  profile \
+#  install \
+#  github:NixOS/nixpkgs/3e644bd62489b516292c816f70bf0052c693b3c7#pkgsStatic.nix \
+#  --profile ~/.nix-static \
+#  --option experimental-features 'nix-command flakes'
+#
+#toybox test -d "$HOME"/.config/nix || toybox mkdir -p -m 0755 "$HOME"/.config/nix && toybox touch "$HOME"/.config/nix/nix.conf
+#
+#toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'nixos' || toybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> /home/"$USER"/.config/nix/nix.conf
+#toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'flakes' || toybox echo 'experimental-features = nix-command flakes ca-references' >> /home/"$USER"/.config/nix/nix.conf
+#toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'trace' || toybox echo 'show-trace = true' >> /home/"$USER"/.config/nix/nix.conf
+#
+#
+#toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'derivations' || toybox echo 'keep-derivations = true' >> /home/"$USER"/.config/nix/nix.conf
+#toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'outputs' || toybox echo 'keep-outputs = true' >> /home/"$USER"/.config/nix/nix.conf
+#
+#
+#toybox test -d /home/"$USER"/.config/nixpkgs || toybox mkdir -v -p -m 0755 /home/"$USER"/.config/nixpkgs && toybox touch /home/"$USER"/.config/nixpkgs/config.nix
+#toybox cat /home/"$USER"/.config/nixpkgs/config.nix | toybox grep 'allowUnfree' || toybox echo '{ allowUnfree = true; }' >> /home/"$USER"/.config/nixpkgs/config.nix
+#
+#
+##toybox echo -n ec74eb0971c4f54a8e3c25344db051640ead538292d566fa526430eb2579fffe "$HOME"/.local/bin/nix | toybox sha256sum -c
+#
+#
+#toybox mkdir -p -m 0755 "$HOME"/.nix-profile/etc/profile.d
+#toybox cat << EOF > "$HOME"/.nix-profile/etc/profile.d/nix.sh
+#if [ -n "\$HOME" ] && [ -n "\$USER" ]; then
+#
+#    # Set up the per-user profile.
+#    # This part should be kept in sync with nixpkgs:nixos/modules/programs/shell.nix
+#
+#    NIX_LINK=\$HOME/.nix-profile
+#
+#    # Set up environment.
+#    # This part should be kept in sync with nixpkgs:nixos/modules/programs/environment.nix
+#    export NIX_PROFILES="/nix/var/nix/profiles/default \$HOME/.nix-profile"
+#
+#    # Set \$NIX_SSL_CERT_FILE so that Nixpkgs applications like curl work.
+#    if [ -e /etc/ssl/certs/ca-certificates.crt ]; then # NixOS, Ubuntu, Debian, Gentoo, Arch
+#        export NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+#    elif [ -e /etc/ssl/ca-bundle.pem ]; then # openSUSE Tumbleweed
+#        export NIX_SSL_CERT_FILE=/etc/ssl/ca-bundle.pem
+#    elif [ -e /etc/ssl/certs/ca-bundle.crt ]; then # Old NixOS
+#        export NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
+#    elif [ -e /etc/pki/tls/certs/ca-bundle.crt ]; then # Fedora, CentOS
+#        export NIX_SSL_CERT_FILE=/etc/pki/tls/certs/ca-bundle.crt
+#    elif [ -e "\$NIX_LINK/etc/ssl/certs/ca-bundle.crt" ]; then # fall back to cacert in Nix profile
+#        export NIX_SSL_CERT_FILE="\$NIX_LINK/etc/ssl/certs/ca-bundle.crt"
+#    elif [ -e "\$NIX_LINK/etc/ca-bundle.crt" ]; then # old cacert in Nix profile
+#        export NIX_SSL_CERT_FILE="\$NIX_LINK/etc/ca-bundle.crt"
+#    fi
+#
+#    if [ -n "\${MANPATH-}" ]; then
+#        export MANPATH="\$NIX_LINK/share/man:\$MANPATH"
+#    fi
+#
+#    export PATH="\$NIX_LINK/bin:\$PATH"
+#    unset NIX_LINK
+#fi
+#EOF
+
+
 toybox mkdir -p -m 0755 "$HOME"/.nix-profile/etc/profile.d
 toybox cat << EOF > "$HOME"/.nix-profile/etc/profile.d/nix.sh
 if [ -n "\$HOME" ] && [ -n "\$USER" ]; then
