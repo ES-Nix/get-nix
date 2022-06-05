@@ -42,7 +42,7 @@ toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'derivations' || toy
 toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'outputs' || toybox echo 'keep-outputs = true' >> /home/"$USER"/.config/nix/nix.conf
 
 
-test -d /nix || sudo mkdir -v /nix && sudo chown -Rv "$(id -u)":"$(id -g)" /nix
+test -d /nix || sudo mkdir -v /nix && sudo -k chown -Rv "$(id -u)":"$(id -g)" /nix
 
 
 # Main idea from: https://stackoverflow.com/a/1167849

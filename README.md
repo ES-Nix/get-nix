@@ -612,14 +612,10 @@ not hardcoding the profile number.
 ### nix statically built WIP
 
 ```bash
-sudo mkdir -v /nix
-sudo chown "$(id -u)":"$(id -g)" -v /nix
-sudo -k
-
-SHA256=61bc33388f399fd3de71510b5ca20f159c803491 \
-&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/nix-static.sh | sh \
+SHA256=093136c2dd50d041058e65b25672749efda35fb4 \
+&& curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"${SHA256}"/nix-static.sh | sh \
 && . ~/.profile \
-&& nix --version \
+&& nix flake --version \
 && nix flake metadata nixpkgs \
 && nix store gc --verbose
 ```
