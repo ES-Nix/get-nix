@@ -27,8 +27,8 @@ toybox chmod -v 0700 "$BASE"/nix
 
 # test -f 'result/bin/nix' || echo 'Error the path does not exist: ''result/bin/nix'
 # cp -v result/bin/nix "${BASE}"
-echo 'export PATH="${HOME}"/.local/bin:"${PATH}"' >> ~/."$(ps -ocomm= -q $$)"rc \
-&& ~/."$(ps -ocomm= -q $$)"rc
+#echo 'export PATH="${HOME}"/.local/bin:"${PATH}"' >> ~/."$(ps -ocomm= -q $$)"rc \
+#&& ~/."$(ps -ocomm= -q $$)"rc
 
 
 toybox test -d ~/.config/nix || toybox mkdir -p -m 0755 ~/.config/nix \
