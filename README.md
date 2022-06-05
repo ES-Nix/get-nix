@@ -612,7 +612,7 @@ not hardcoding the profile number.
 ### nix statically built WIP
 
 ```bash
-SHA256=093136c2dd50d041058e65b25672749efda35fb4 \
+SHA256=70edd1df1c2c79a10cadcbd56998c9b3960e19e7 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"${SHA256}"/nix-static.sh | sh \
 && . ~/.profile \
 && nix flake --version \
