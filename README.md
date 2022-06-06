@@ -609,7 +609,10 @@ From: [Add 'nix diff-closures' command](https://github.com/NixOS/nix/pull/3818).
 not hardcoding the profile number.
 
 
-### nix statically built WIP
+### nix statically built, WIP
+
+#### Install nix statically built
+
 
 ```bash
 SHA256=70edd1df1c2c79a10cadcbd56998c9b3960e19e7 \
@@ -621,6 +624,8 @@ SHA256=70edd1df1c2c79a10cadcbd56998c9b3960e19e7 \
 ```
 
 
+#### tests for the nix statically built
+
 ```bash
 nix \
 run \
@@ -629,9 +634,179 @@ nixpkgs#hello
 
 ```bash
 nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+  flake \
+  --version
+```
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+  run \
+  --store "${HOME}" \
+  nixpkgs#pkgsStatic.hello
+```
+
+```bash
+nix \
+run \
+nixpkgs#pkgsStatic.nix \
+-- \
+  flake \
+  --version
+```
+
+Nesting (broken):
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+  -- \
+  run \
+  --store "${HOME}" \
+  nixpkgs#pkgsStatic.nix \
+    -- \
+    run \
+    --store "${HOME}" \
+    nixpkgs#pkgsStatic.nix \
+      -- \
+      --version
+```
+
+```bash
+nix \
+run \
+nixpkgs#pkgsStatic.nix \
+-- \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (gnused.overrideDerivation (oldAttrs: {
+        name = "sed-4.2.2-pre";
+        src = fetchurl {
+          url = ftp://alpha.gnu.org/gnu/sed/sed-4.2.2-pre.tar.bz2;
+          sha256 = "11nq06d131y4wmf3drm0yk502d2xc6n5qy82cg88rb9nqd2lj41k";
+        };
+        patches = [];
+      }
+    )
+  )
+)
+' \
+--command \
+bash \
+-c \
+'sed --version && which sed'
+```
+
+
+
+```bash
+nix \
 develop \
 github:ES-Nix/fhs-environment/enter-fhs
 ```
+
+
+```bash
+nix \
+run \
+nixpkgs#pkgsStatic.nix \
+-- \
+develop \
+github:ES-Nix/fhs-environment/enter-fhs
+```
+
+Broken:
+```bash
+nix \
+run \
+nixpkgs#pkgsStatic.nix \
+-- \
+profile \
+install \
+--refresh \
+github:ES-Nix/podman-rootless/from-nixpkgs#podman
+```
+
+Works:
+```bash
+nix \
+run \
+nixpkgs#pkgsStatic.nix \
+-- \
+  run \
+  github:ES-Nix/podman-rootless/from-nixpkgs#podman \
+  -- \
+    run \
+    --rm=true \
+    docker.io/library/alpine:3.14.2 \
+    sh \
+    -c \
+    "
+      cat /etc/os-release \
+      && apk update \
+      && apk add --no-cache python3 \
+      && python3 --version
+    "
+```
+
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+  build \
+  --store "${HOME}" \
+  github:ES-Nix/poetry2nix-examples/2cb6663e145bbf8bf270f2f45c869d69c657fef2#poetry2nixOCIImage
+```
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+  build \
+  --store "${HOME}" \
+  --impure \
+  --expr \
+  '(                                                                                     
+    (
+      (
+        builtins.getFlake "github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c"
+      ).lib.nixosSystem {
+          system = "${builtins.currentSystem}";
+          modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+      }
+    ).config.system.build.isoImage
+  )
+  '
+
+EXPECTED_SHA256='ed705ad772e8a616d58c11447787d68d9ba867d8589dc698021af0da0daf9395' \
+&& EXPECTED_SHA512='736f8f29e457cb00038c64147f063f95eeb35aa709daeff2e620e74366887cf1e3184654bdcce8afcb7ee9d625b4c661940580cb5ab59bb88cffd9f9b6946ad1' \
+&& ISO_PATTERN_NAME="$(echo "${HOME}""$(readlink result)"/iso/nixos-22.05.*.*-x86_64-linux.iso)"
+
+# sha256sum "${ISO_PATTERN_NAME}"
+# sha512sum "${ISO_PATTERN_NAME}"
+
+echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
+echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+```
+
 
 ```bash
 nix --store "$HOME" flake metadata nixpkgs \
@@ -690,6 +865,7 @@ github:GNU-ES/hello \
 hello
 ```
 
+
 ```bash
 nix \
 build \
@@ -703,6 +879,16 @@ https://stackoverflow.com/questions/6345973/who-uses-posix-realtime-signals-and-
 
 strings $HOME/bin/nix | grep Real
 
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+build \
+--store "${HOME}" \
+github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp
+```
 
 
 ```bash
@@ -769,24 +955,40 @@ nix build github:NixOS/nix#nix-static
 nix build github:NixOS/nix/9feca5cdf64b82bfb06dfda07d19d007a2dfa1c1#nix-static
 
 nix build nixpkgs#pkgsStatic.nix
-
 ```
 
+
+```bash
 nix build nixpkgs#pkgsStatic.hello
 nix path-info -rsSh nixpkgs#pkgsStatic.hello
+```
 
+```bash
+nix build nixpkgs#pkgsStatic.toybox
+nix path-info -rsSh nixpkgs#pkgsStatic.toybox
+```
 
+```bash
 nix build nixpkgs#pkgsStatic.busybox
 nix path-info -rsSh nixpkgs#pkgsStatic.busybox
+```
 
 
+```bash
+nix build nixpkgs#pkgsStatic.redis
+nix path-info -rsSh nixpkgs#pkgsStatic.redis
+```
+
+
+```bash
 nix build nixpkgs#pkgsStatic.nix
 nix path-info -rsSh nixpkgs#pkgsStatic.nix
+```
 
-
+```bash
 nix build github:NixOS/nix#nix-static
 nix path-info -rsSh github:NixOS/nix#nix-static
-
+```
 
 nix search nixpkgs ' sed'
 
@@ -796,12 +998,14 @@ nix path-info -r "$(nix eval --raw nixpkgs#hello)" --store https://cache.nixos.o
 
 nix store ls --store https://cache.nixos.org/ -lR /nix/store/0i2jd68mp5g6h2sa5k9c85rb80sn8hi9-hello-2.10
 
-
+```bash
 nix run github:NixOS/nixpkgs/release-20.03#ocaml -- --version
 nix run github:NixOS/nixpkgs/release-21.11#ocaml -- --version
+```
 
+```bash
 nix-build '<nixpkgs>' -A hello --arg crossSystem '{ config = "aarch64-unknown-linux-gnu"; }'
-
+```
 
 
 
@@ -1688,6 +1892,16 @@ Note, selecting 'libalien-wxwidgets-perl' instead of 'wxperl-gtk-3-0-4-uni-gcc-3
 
 
 ##### Testing the cache
+
+
+```bash
+nix \
+store \
+verify \
+--store https://cache.nixos.org/ \
+"$(nix eval --raw nixpkgs#hello)"
+```
+
 
 ```bash
 nix \
