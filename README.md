@@ -37,7 +37,7 @@ About the 2.4 release: [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-
 https://github.com/NixOS/nix/pull/5247#issuecomment-920207863, https://github.com/NixOS/nix/milestone/11, 
 https://github.com/NixOS/nix/releases/tag/2.4.
 
-### Testing your installation
+### Testing your installation (not a must, it is probably broken in your system!)
 
 Optional: to test your installation.
 Note: it needs lots of memory and internet and time, it needs some improvements.
@@ -294,6 +294,55 @@ echo $(nix-store --query --graph $(nix-store --query $(which hello))) | dot -Tps
 ```
 
 ```bash
+echo $(nix-store --query --graph $(nix-store --query $(nix eval --raw nixpkgs#hello.drvPath))) | dot -Tps > graph.ps \
+&& sha256sum graph.ps
+```
+
+```bash
+FILE_NAME='graph.ps'
+
+nix-store \
+  --store https://cache.nixos.org/ \
+  --query \
+  --references $(nix eval --raw github:NixOS/nixpkgs/18de53ca965bd0678aaf09e5ce0daae05c58355a#gcc) \
+ | xargs nix-store --query --graph \
+ | dot -Tps > "${FILE_NAME}"
+
+
+EXPECTED_SHA256='c527370967bcd73d54d8004e53e143b3cd595a6f15c16eaec8cc9bc09c2db298'
+EXPECTED_SHA512='8810404805850f06620a9cd7274ae4b7c6c7202312401f2e9d256d2b3c2eec9695baec75e47d4046d17a9a2e54de359398ceafdc61217cb59936b3699210f7d0'
+
+ sha256sum "${FILE_NAME}"
+ sha512sum "${FILE_NAME}"
+
+echo "${EXPECTED_SHA256}"'  '"${FILE_NAME}" | sha256sum -c
+echo "${EXPECTED_SHA512}"'  '"${FILE_NAME}" | sha512sum -c
+```
+
+
+```bash
+FILE_NAME='graph.pdf'
+
+nix-store \
+  --store https://cache.nixos.org/ \
+  --query \
+  --references $(nix eval --raw github:NixOS/nixpkgs/18de53ca965bd0678aaf09e5ce0daae05c58355a#gcc) \
+ | xargs nix-store --query --graph \
+ | dot -Tpdf > "${FILE_NAME}"
+
+
+EXPECTED_SHA256='c33dc3e3995010c7c9d899bf126f54728670e3042921383dea25876c34c6e042'
+EXPECTED_SHA512='50fdbe25d531d9cf3899c7e1fa57dce43a2630fd43890322e6783817f7a5438ac1798f9a87d160953a9abc09fef6b560eea899551e3eeb432489002942555f2a'
+
+# sha256sum "${FILE_NAME}"
+# sha512sum "${FILE_NAME}"
+
+echo "${EXPECTED_SHA256}"'  '"${FILE_NAME}" | sha256sum -c
+echo "${EXPECTED_SHA512}"'  '"${FILE_NAME}" | sha512sum -c
+```
+
+
+```bash
 nix \
 shell \
 nixpkgs#{coreutils,graphviz,hello,which} \
@@ -374,7 +423,8 @@ nix-store --query --graph --include-outputs $(nix-store --query --deriver $(read
 # https://github.com/NixOS/nix/issues/1245#issuecomment-726138112
 nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
  | xargs nix-store --realise \
- | xargs nix-store --query --requisites
+ | xargs nix-store --query --requisites \
+ | cat 
 ```
 
 ```bash
