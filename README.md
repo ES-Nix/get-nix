@@ -90,12 +90,29 @@ When you get an error like this (only after many huge builds, but depends on how
 
 ### About memory
 
-For check memory:
+```bash
+nix store gc -v \
+&& du -L -h -s /nix \
+&& nix profile install nixpkgs#hello nixpkgs#figlet \
+&& nix store gc \
+&& hello | figlet \
+&& du -L -h -s /nix \
+&& nix profile remove $(nix eval --raw nixpkgs#hello) $(nix eval --raw nixpkgs#figlet) \
+&& nix store gc \
+&& command -v hello || echo 'The hello excutable/binary was not found on $PATH.' \
+&& command -v figlet || echo 'The figlet excutable/binary was not found on $PATH.' \
+&& du -L -h -s /nix
+```
+
+
+#### For check size of /nix: long flags version
+
 ```bash
 du --dereference --human-readable --summarize /nix
 ```
 
-Short flags version:
+#### For check size of /nix: short flags version:
+
 ```bash
 du -L -h -s /nix
 ```
@@ -114,10 +131,10 @@ echo "$(dirname "$(dirname "$(readlink -f "$(which nix)")")")"
 nix shell nixpkgs#libselinux --command getenforce
 ```
 
-Remove all things in an profile and garbage collect it:
+Remove all things in the default profile and garbage collect :
 ```bash
 nix profile remove '.*' \
-&& nix store gc
+&& nix store gc --verbose
 ```
 
 
@@ -703,6 +720,8 @@ nixpkgs#pkgsStatic.nix \
   nixpkgs#pkgsStatic.hello
 ```
 
+#### Nesting
+
 ```bash
 nix \
 run \
@@ -729,6 +748,12 @@ nixpkgs#pkgsStatic.nix \
       -- \
       --version
 ```
+
+
+```bash
+error: setting up a private mount namespace: Operation not permitted
+```
+
 
 ```bash
 nix \
@@ -772,13 +797,36 @@ github:ES-Nix/fhs-environment/enter-fhs
 ```bash
 nix \
 run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+  -- \
+  develop \
+  --store "${HOME}" \
+  github:ES-Nix/fhs-environment/enter-fhs
+```
+
+
+
+#### Why this error? 
+
+```bash
+error: executing '/nix/store/scysmz0g4177wm01aa2xjlr0jcvv0wk0-nix-2.9.1-x86_64-unknown-linux-musl/libexec/nix/build-remote': No such file or directory
+error: unexpected EOF reading a line
+
+       … while reading the response from the build hook
+```
+
+
+```bash
+nix \
+run \
 nixpkgs#pkgsStatic.nix \
 -- \
 develop \
 github:ES-Nix/fhs-environment/enter-fhs
 ```
 
-Broken:
+
 ```bash
 nix \
 run \
@@ -797,6 +845,30 @@ run \
 nixpkgs#pkgsStatic.nix \
 -- \
   run \
+  github:ES-Nix/podman-rootless/from-nixpkgs#podman \
+  -- \
+    run \
+    --rm=true \
+    docker.io/library/alpine:3.14.2 \
+    sh \
+    -c \
+    "
+      cat /etc/os-release \
+      && apk update \
+      && apk add --no-cache python3 \
+      && python3 --version
+    "
+```
+
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+  run \
+  --store "${HOME}" \
   github:ES-Nix/podman-rootless/from-nixpkgs#podman \
   -- \
     run \
@@ -908,7 +980,7 @@ github:GNU-ES/hello
 
 ```bash
 nix \
-shell
+shell \
 --store "$HOME" \
 github:GNU-ES/hello \
 --command \
@@ -2837,7 +2909,6 @@ with legacyPackages.${builtins.currentSystem};
 ```
 
 
-
 ```bash
 nix \
 shell \
@@ -2845,9 +2916,67 @@ shell \
 --expr \
 '(with builtins.getFlake "nixpkgs"; 
 with legacyPackages.${builtins.currentSystem}; 
-(hello.overrideAttrs (oldAttrs: rec {
-  separateDebugInfo = true;
+(gnused.overrideAttrs (oldAttrs: {
+  preFixup = (oldAttrs.preFixup or "") + "set -x";
 }))
+)'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    (hello.overrideAttrs 
+      (oldAttrs: {
+          preFixup = (oldAttrs.preFixup or "") + "set -x";
+        }
+      )
+    )
+)'
+```
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+  -- \
+  shell \
+  --store "${HOME}" \
+  --impure \
+  --expr \
+  '(
+    with builtins.getFlake "nixpkgs"; 
+    with legacyPackages.${builtins.currentSystem}; 
+      (hello.overrideAttrs 
+        (oldAttrs: {
+            preFixup = (oldAttrs.preFixup or "") + "set -x";
+          }
+        )
+      )
+  )'
+```
+
+NAME="$(echo "${HOME}""$(echo "$(readlink result)" | cut -d'/' -f4-)"/bin/hello)"
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (hello.overrideAttrs (oldAttrs: rec {
+        separateDebugInfo = true;
+      }
+    )
+  )
 )' \
 --command \
 bash \
@@ -2857,6 +2986,19 @@ bash \
 From:
 - https://youtu.be/6VepnulTfu8?t=477
 - 
+
+
+
+```bash
+nix \
+run \
+nixpkgs#pkgsStatic.nix \
+  -- \
+  build \
+  github:ES-Nix/nixosTest/2f37db3fe507e725f5e94b42a942cdfef30e5d75#checks.x86_64-linux.test-nixos  
+```
+
+
 
 ```bash
 nix build --impure --expr 'with (import ./. {system="x86_64-darwin";}); hello'
@@ -2869,9 +3011,14 @@ nix \
 shell \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-(python3Minimal.override { openssl = pkgsStatic.openssl; })
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (python3Minimal.override 
+    { 
+      openssl = pkgsStatic.openssl; 
+    }
+  )
 )'
 ```
 
@@ -2879,9 +3026,48 @@ with legacyPackages.${builtins.currentSystem};
 ```bash
 nix \
 shell \
+--store "${HOME}" \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (python3Minimal.override 
+    { 
+      openssl = pkgsStatic.openssl; 
+    }
+  )
+)'
+```
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+  -- \
+  shell \
+  --store "${HOME}" \
+  --impure \
+  --expr \
+  '(
+    with builtins.getFlake "nixpkgs"; 
+    with legacyPackages.${builtins.currentSystem}; 
+    (python3Minimal.override 
+      { 
+        openssl = pkgsStatic.openssl; 
+      }
+    )
+  )'
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+with builtins.getFlake "nixpkgs"; 
 with legacyPackages.${builtins.currentSystem}; 
   [ 
     (python3.overrideAttrs 
@@ -2921,11 +3107,41 @@ with legacyPackages.${builtins.currentSystem};
         stripTkinter = true;
         reproducibleBuild = true;
         static = true;
-        nativeBuildInputs = "${oldAttrs.nativeBuildInputs} ++ [ gcc ]"
+        nativeBuildInputs = "${oldAttrs.nativeBuildInputs} ++ [ gcc ]";
       }
     )
   )
 )'
+```
+
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+  -- \
+  shell \
+  --store "${HOME}" \
+  --impure \
+  --expr \
+  '(with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    (python3Minimal.override 
+      (oldAttrs: { 
+          tzdata = tzdata;
+          rebuildBytecode = false;
+          stripTests = true;
+          stripIdlelib = true;
+          stripConfig = true;
+          stripTkinter = true;
+          reproducibleBuild = true;
+          static = true;
+        }
+        nativeBuildInputs = "${oldAttrs.nativeBuildInputs} ++ [ gcc ]";
+      )    
+    )
+  )'
 ```
 
 
