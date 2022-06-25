@@ -35,7 +35,7 @@ USER nixuser
 ENV USER nixuser
 
 # RUN BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
-# && SHA256=61bc33388f399fd3de71510b5ca20f159c803491 \
+# && SHA256=13c8773582a7e8679c8f17972ea12cd93ca3c083 \
 # && NIX_RELEASE_VERSION='nix-2.4' \
 # && su ubuntu -c 'curl -fsSL '"${BASE_URL}""$SHA256"'/get-nix.sh' | su ubuntu -c 'sh -s -- '${NIX_RELEASE_VERSION}
 #
