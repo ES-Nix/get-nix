@@ -720,7 +720,61 @@ nixpkgs#pkgsStatic.nix \
   nixpkgs#pkgsStatic.hello
 ```
 
+```bash
+nix \
+build \
+--store "${HOME}" \
+nixpkgs#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
+--option substitute true \
+--option sandbox false
+```
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+  build \
+  --store "${HOME}" \
+  nixpkgs#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
+  --option substitute true \
+  --option sandbox false
+```
+
+```bash
+nix \
+build \
+--store "${HOME}" \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}.pkgsCross.aarch64-multiplatform.pkgsStatic;
+  (shadow.override { pam = null; }).su
+)'
+```
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+  build \
+  --store "${HOME}" \
+  --impure \
+  --expr \
+  '(
+    with builtins.getFlake "nixpkgs"; 
+    with legacyPackages.${builtins.currentSystem}.pkgsCross.aarch64-multiplatform.pkgsStatic;
+    (shadow.override { pam = null; }).su
+  )'
+```
+
+
 #### Nesting
+
 
 ```bash
 nix \
@@ -758,9 +812,11 @@ error: setting up a private mount namespace: Operation not permitted
 ```bash
 nix \
 run \
+--store "${HOME}" \
 nixpkgs#pkgsStatic.nix \
 -- \
 shell \
+--store "${HOME}" \
 --impure \
 --expr \
 '
@@ -787,12 +843,6 @@ bash \
 
 
 
-```bash
-nix \
-develop \
-github:ES-Nix/fhs-environment/enter-fhs
-```
-
 
 ```bash
 nix \
@@ -815,6 +865,38 @@ error: unexpected EOF reading a line
 
        … while reading the response from the build hook
 ```
+
+```bash
+nix \
+build \
+--store "${HOME}" \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (sudo.override { pam = null; withInsults = true; })
+)'
+```
+
+```bash
+nix \
+store \
+ls \
+--store https://cache.nixos.org/ \
+--long \
+/nix/store/scysmz0g4177wm01aa2xjlr0jcvv0wk0-nix-2.9.1-x86_64-unknown-linux-musl/libexec/nix/build-remote
+```
+
+```bash
+nix \
+store \
+ls \
+--store https://cache.nixos.org/ \
+--long \
+/nix/store/scysmz0g4177wm01aa2xjlr0jcvv0wk0-nix-2.9.1-x86_64-unknown-linux-musl/libexec/nix/build-remote
+```
+
 
 
 ```bash
@@ -2704,17 +2786,24 @@ nix flake metadata github:NixOS/nixpkgs/nixos-22.05 --json | jq --join-output '.
 
 
 
-nix run --impure --expr 'with (import <nixpkgs> {}); let               
+```bash
+nix \
+run \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; let               
   overlay = final: prev: {
     hello = prev.hello.overrideAttrs (oldAttrs: with final; {
       postInstall = oldAttrs.postInstall + "${prev.hello}/bin/hello Installation complete";
     });
   };
 
-  pkgs = import <nixpkgs> { overlays = [ overlay ]; };
+  pkgs = import (with builtins.getFlake "nixpkgs";); { overlays = [ overlay ]; };
 
 in
-  pkgs.hello'
+  pkgs.hello
+)'
+```
 
 
 nix run --impure --expr 'with (import <nixpkgs> {}); let               
@@ -2748,7 +2837,7 @@ nix-instantiate \
 in
   pkgs.hello'
 
-
+```bash
 nix \
 build \
 --impure \
@@ -2758,7 +2847,11 @@ with builtins.getFlake "nixpkgs";
 with legacyPackages.${builtins.currentSystem};
 hello
 )'
+```
 
+
+
+```bash
 nix \
 build \
 --impure \
@@ -2766,28 +2859,99 @@ build \
 '(with builtins.getFlake "nixpkgs";  with legacyPackages.${builtins.currentSystem}; 
 pkgsStatic.hello
 )'
+```
 
+```bash
 nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs";  with legacyPackages.${builtins.currentSystem}; 
-(hello.override { withStatic = true; })
+'(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem}; 
+  (hello.override { withStatic = true; })
 )'
+```
 
+
+```bash
 nix \
 build \
-nixpkgs#pkgsStatic.nix      
+--store "${HOME}" \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (nix.override { 
+    storeDir = "/home/ubuntu";
+    stateDir = "/home/ubuntu";
+    confDir = "/home/ubuntu";
+  })
+)'
+```
+
+```bash
+nix \
+run \
+--store "${HOME}" \
+nixpkgs#pkgsStatic.nix \
+-- \
+  build \
+  --store "${HOME}" \
+  --impure \
+  --expr \
+  '(
+    with builtins.getFlake "nixpkgs"; 
+    with legacyPackages.${builtins.currentSystem}; 
+    (pkgsStatic.nix.override { 
+      storeDir = "/home/ubuntu";
+      stateDir = "/home/ubuntu";
+      confDir = "/home/ubuntu";
+    })
+  )'
+```
 
 
+```bash
+nix \
+build \
+--store "${HOME}" \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (pkgsStatic.nix.override { 
+    storeDir = "/home/ubuntu";
+    stateDir = "/home/ubuntu";
+    confDir = "/home/ubuntu";
+  })
+)'
+```
+
+
+```bash
+      storeDir = "/home/ubuntu/nix/store";
+      stateDir = "/home/ubuntu/nix/var";
+      confDir = "/home/ubuntu";
+```
+
+
+```bash
 nix \                  
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs";  with legacyPackages.${builtins.currentSystem}; 
-pkgsStatic.nix      
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    pkgsStatic.nix      
 )'
+```
 
+
+```bash
 nix \
 build \
 --impure \
@@ -2795,8 +2959,10 @@ build \
 '(with builtins.getFlake "nixpkgs"; 
 with legacyPackages.${builtins.currentSystem}; 
 (SDL2.override { withStatic = true; }).dev)'
+```
 
 
+```bash
 nix \
 build \
 --impure \
@@ -2805,75 +2971,107 @@ build \
 with legacyPackages.${builtins.currentSystem}; 
 pkgsStatic.openssl
 )'
+```
 
+
+```bash
 nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-with pkgsStatic; [ openssl hello ]
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with pkgsStatic; [ 
+      openssl 
+      hello 
+    ]
 )'
+```
 
+```bash
 nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; 
-(sudo.override { pam = null; withInsults = true; })
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (sudo.override { pam = null; withInsults = true; })
 )'
+```
 
+
+```bash
 nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; 
-pkgsStatic.shadow.su        
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  pkgsStatic.shadow.su        
 )'
+```
 
+```bash
 nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}.pkgsCross.aarch64-multiplatform.pkgsStatic;
-(shadow.override { pam = null; }).su
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}.pkgsCross.aarch64-multiplatform.pkgsStatic;
+  (shadow.override { pam = null; }).su
 )'
+```
 
+```bash
 nix \             
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; 
-(shadow.override { pam = null; }).su
+'(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem}; 
+  (shadow.override { pam = null; }).su
+)'
+```
 
 
+```bash
 nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-(openssl.override { static = true; })
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (openssl.override { static = true; })
 )'
+```
 
 TODO:
 nixpkgs#coreutils 
 
 
+```bash
 nix \
 shell \
 --impure \
 --expr \
 '(
-with builtins.getFlake "nixpkgs";  
-with legacyPackages.${builtins.currentSystem}; 
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem}; 
   (
     buildFHSUserEnv { name = "fhs"; }
   )
 )' \
 --command \
 fhs
+```
+
+
 
 ```bash
 # nix-shell -p "(steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run"
@@ -2883,9 +3081,10 @@ nix \
 shell \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-(steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run
 )'
 ```
 
@@ -3168,7 +3367,42 @@ nix build --impure --expr '(import <nixpkgs> {
 
 ####
 
+```bash
+sudo apt-get -qq update \
+&& sudo apt-get install -y nix-bin \
+&& sudo chown -R "$(id -u)":"$(id -g)" /nix
 
-sudo apt-get -qq update
-sudo apt-get install -y nix-bin
+nix \
+profile \
+install \
+nixpkgs#busybox \
+--option \
+experimental-features 'nix-command flakes'
+
+
+busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
+&& busybox grep 'nixos' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
+&& busybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
+&& busybox grep 'trace' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'show-trace = true' >> ~/.config/nix/nix.conf \
+&& busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
+&& busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
+
+# If there is one line with only '-e ' removes it.
+# Nix 2.4 installer let it alone in the ~/.profile.
+busybox sed -i 's/^-e $//' ~/.profile
+
+nix \
+profile \
+remove \
+"$(nix eval --raw nixpkgs#busybox)"
+
+nix store gc --verbose
+```
+
+
+```bash
+nix \
+run \
+nixpkgs#hello
+```
 
