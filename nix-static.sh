@@ -42,8 +42,8 @@ toybox test -d ~/.config/nix || toybox mkdir -p -m 0755 ~/.config/nix \
 toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'derivations' || toybox echo 'keep-derivations = true' >> /home/"$USER"/.config/nix/nix.conf
 toybox cat /home/"$USER"/.config/nix/nix.conf | toybox grep 'outputs' || toybox echo 'keep-outputs = true' >> /home/"$USER"/.config/nix/nix.conf
 
-
-test -d /nix || sudo mkdir -v /nix && sudo -k chown -Rv "$(id -u)":"$(id -g)" /nix
+# Removes /nix creation
+# test -d /nix || sudo mkdir -v /nix && sudo -k chown -Rv "$(id -u)":"$(id -g)" /nix
 
 
 # Main idea from: https://stackoverflow.com/a/1167849
