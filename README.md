@@ -682,7 +682,7 @@ not hardcoding the profile number.
 
 
 ```bash
-SHA256=70edd1df1c2c79a10cadcbd56998c9b3960e19e7 \
+SHA256=58e46ea4beb3a4b8d747d4a62e4d7a5fa24a699f \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"${SHA256}"/nix-static.sh | sh \
 && . ~/.profile \
 && nix flake --version \
