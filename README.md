@@ -687,11 +687,29 @@ SHA256=58e46ea4beb3a4b8d747d4a62e4d7a5fa24a699f \
 && . ~/.profile \
 && nix flake --version \
 && nix flake metadata nixpkgs \
-&& nix store gc --verbose
+&& nix --store "${HOME}" store gc --verbose
 ```
 
 
 #### tests for the nix statically built
+
+
+
+
+```bash
+EXPECTED_SHA512SUM='42cf60ebf5b547df476c7b4f9807785b32540f3c6a4777a902148b2e4d09b02aa137be6c813afeab2722892444b28b88c5b4032cd82664bfc1920ccda58f1afb'
+
+nix \
+shell \
+--store "${HOME}" \
+nixpkgs#bashInteractive \
+nixpkgs#uutils-coreutils \
+--command \
+bash \
+-c \
+"echo "${EXPECTED_SHA512SUM}"'  '"$HOME"/.local/bin/nix | sha512sum -c"
+```
+
 
 ```bash
 nix \
