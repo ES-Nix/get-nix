@@ -743,8 +743,7 @@ nix \
 build \
 --store "${HOME}" \
 nixpkgs#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
---option substitute true \
---option sandbox false
+--option sandbox true
 ```
 
 ```bash
@@ -2809,17 +2808,21 @@ nix \
 run \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; let               
-  overlay = final: prev: {
-    hello = prev.hello.overrideAttrs (oldAttrs: with final; {
-      postInstall = oldAttrs.postInstall + "${prev.hello}/bin/hello Installation complete";
-    });
-  };
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  let               
+    overlay = final: prev: {
+      hello = prev.hello.overrideAttrs (oldAttrs: with final; {
+          postInstall = oldAttrs.postInstall + "${prev.hello}/bin/hello Installation complete";
+        }
+      );
+    };
 
   pkgs = import (with builtins.getFlake "nixpkgs";); { overlays = [ overlay ]; };
 
-in
-  pkgs.hello
+  in
+    pkgs.hello
 )'
 ```
 
@@ -2837,6 +2840,29 @@ in
   pkgs.hello'
 
 nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).hello'
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'(
+  import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [(final: prev: { static = true; })]; }
+).hello'
+```
+
+
+```bash
+# nix flake metadata github:NixOS/nixpkgs/nixos-22.05 --json | jq --join-output '.url'
+nix \
+run \
+--impure \
+--expr \
+'(
+  import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [(final: prev: { static = true; })]; }
+).openssl'
+```
+
 
 nix-instantiate \
 --option pure-eval true \
@@ -2888,6 +2914,66 @@ build \
   with builtins.getFlake "nixpkgs";
   with legacyPackages.${builtins.currentSystem}; 
   (hello.override { withStatic = true; })
+)'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (pkgsStatic.nix.override { 
+    storeDir = "/home/ubuntu";
+    stateDir = "/home/ubuntu";
+    confDir = "/home/ubuntu";
+  })
+)' \
+&& result/bin/nix \
+run \
+--extra-experimental-features 'nix-command flakes' \
+"github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"#hello
+```
+
+
+
+```bash
+nix \
+build \
+--store "${HOME}" \
+--impure \
+--expr \
+'(                                                                                              
+  with builtins.getFlake "github:NixOS/nixpkgs/9a17f325397d137ac4d219ecbd5c7f15154422f4"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (pkgsStatic.nix.override { 
+    storeDir = "/home/ubuntu/nix/store";
+    stateDir = "/home/ubuntu/nix/var";
+    confDir = "/home/ubuntu";
+  })
+)'
+NAME="$(echo "${HOME}""/nix/store/$(echo "$(readlink result)" | cut -d'/' -f4-)"/bin/nix)"
+$NAME run --extra-experimental-features 'nix-command flakes' nixpkgs#hello
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (pkgsStatic.python3.override 
+    { 
+      reproducibleBuild = true; 
+      rebuildBytecode = false;
+    }
+  )
 )'
 ```
 
@@ -3225,18 +3311,32 @@ From:
 
 ```bash
 nix \
-shell \
+build \
 --impure \
 --expr \
 '(
   with builtins.getFlake "nixpkgs"; 
   with legacyPackages.${builtins.currentSystem}; 
-  (python3Minimal.override 
+  (pkgsStatic.python3Minimal.override 
     { 
-      openssl = pkgsStatic.openssl; 
+      reproducibleBuild = true;
+      tzdata = tzdata;
     }
   )
 )'
+
+
+FILE_NAME='result/bin/python'
+EXPECTED_SHA256='c13ae01f9308daf5ccc27ec523e3b42fcd60cb1378a6c6d02a05d70d2ca3a28e'
+EXPECTED_SHA512='1f869a5170972dd07bd350699bf8ac1bec9a071cb23ca2d6196a1d429a376d7b32c87cd51635120ddbbed582796465755cf0e02018b2cd84f5e36eeb611add63'
+
+# sha256sum "${FILE_NAME}"
+# sha512sum "${FILE_NAME}"
+
+echo "${EXPECTED_SHA256}"'  '"${FILE_NAME}" | sha256sum -c
+echo "${EXPECTED_SHA512}"'  '"${FILE_NAME}" | sha512sum -c
+
+# python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("America/Recife")))'
 ```
 
 
@@ -3249,12 +3349,13 @@ shell \
 '(
   with builtins.getFlake "nixpkgs"; 
   with legacyPackages.${builtins.currentSystem}; 
-  (python3Minimal.override 
+  (pkgsStatic.python3Minimal.override 
     { 
-      openssl = pkgsStatic.openssl; 
+      reproducibleBuild = true;
     }
   )
-)'
+)' \
+&& sha256sum result/bin/python
 ```
 
 ```bash
@@ -3270,12 +3371,17 @@ nixpkgs#pkgsStatic.nix \
   '(
     with builtins.getFlake "nixpkgs"; 
     with legacyPackages.${builtins.currentSystem}; 
-    (python3Minimal.override 
+    (pkgsStatic.python3Minimal.override 
       { 
-        openssl = pkgsStatic.openssl; 
+        reproducibleBuild = true; 
       }
     )
-  )'
+  )' \
+--command \
+bash \
+-c \
+'file $(readlink -f $(which python3)) \
+&& ldd $(readlink -f $(which python3))'
 ```
 
 ```bash
@@ -3312,25 +3418,58 @@ nix \
 shell \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-  (python3Minimal.override 
-    (oldAttrs: { 
-        tzdata = tzdata;
-        rebuildBytecode = false;
-        stripTests = true;
-        stripIdlelib = true;
-        stripConfig = true;
-        stripTkinter = true;
-        reproducibleBuild = true;
-        static = true;
-        nativeBuildInputs = "${oldAttrs.nativeBuildInputs} ++ [ gcc ]";
-      }
+  '(
+      with builtins.getFlake "nixpkgs"; 
+      with legacyPackages.${builtins.currentSystem}; 
+        (python3Minimal.override 
+        (oldAttrs: { 
+          tzdata = tzdata;
+          rebuildBytecode = false;
+          stripTests = true;
+          stripIdlelib = true;
+          stripConfig = true;
+          stripTkinter = true;
+          reproducibleBuild = true;
+          static = true;
+
+          nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [ gcc ];
+        }
+      )
     )
-  )
-)'
+  )'
 ```
 
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    (python3Minimal.overrideAttrs 
+      (oldAttrs: { 
+          tzdata = tzdata;
+          rebuildBytecode = false;
+          stripTests = true;
+          stripIdlelib = true;
+          stripConfig = true;
+          stripTkinter = true;
+          reproducibleBuild = true;
+          static = true;
+        
+          nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [ gcc ];
+        }
+      )    
+    )
+)' \
+--command \
+bash \
+-c \
+'file $(readlink -f $(which python3)) \
+&& ldd $(readlink -f $(which python3))'
+```
 
 ```bash
 nix \
@@ -3342,10 +3481,11 @@ nixpkgs#pkgsStatic.nix \
   --store "${HOME}" \
   --impure \
   --expr \
-  '(with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
-    (python3Minimal.override 
-      (oldAttrs: { 
+  '(
+      with builtins.getFlake "nixpkgs"; 
+      with legacyPackages.${builtins.currentSystem}; 
+        (python3Minimal.override 
+        (oldAttrs: { 
           tzdata = tzdata;
           rebuildBytecode = false;
           stripTests = true;
@@ -3354,14 +3494,21 @@ nixpkgs#pkgsStatic.nix \
           stripTkinter = true;
           reproducibleBuild = true;
           static = true;
+        
+          nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [ gcc ];
         }
-        nativeBuildInputs = "${oldAttrs.nativeBuildInputs} ++ [ gcc ]";
       )    
     )
-  )'
+  )' \
+--command \
+bash \
+-c \
+'file $(readlink -f $(which python3)) \
+&& ldd $(readlink -f $(which python3))'
 ```
 
 
+```bash
 nix-instantiate \
 --option pure-eval true \
 --eval \
@@ -3381,6 +3528,8 @@ nix build --impure --expr '(import <nixpkgs> {
     })
   ];
 }).firefox-unwrapped'
+```
+
 
 
 ####
