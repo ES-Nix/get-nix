@@ -3336,6 +3336,7 @@ EXPECTED_SHA512='1f869a5170972dd07bd350699bf8ac1bec9a071cb23ca2d6196a1d429a376d7
 echo "${EXPECTED_SHA256}"'  '"${FILE_NAME}" | sha256sum -c
 echo "${EXPECTED_SHA512}"'  '"${FILE_NAME}" | sha512sum -c
 
+# Only python3Full is abble?
 # python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("America/Recife")))'
 ```
 
@@ -3507,6 +3508,67 @@ bash \
 && ldd $(readlink -f $(which python3))'
 ```
 
+```bash
+# nix flake metadata nixpkgs --json | jq --join-output '.url'
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (python39Full.override 
+    { 
+      stripTkinter = false;
+    }
+  )
+)' \
+&& timeout 15 result/bin/python -c 'import tkinter as tk; tk.Tk().mainloop()' || test $? -eq 124 || echo 'Error in tkinter'
+```
+
+
+```bash
+# nix flake metadata nixpkgs --json | jq --join-output '.url'
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (python39Full.override  
+    { 
+      stripTkinter = true;
+    }
+  )
+)' \
+&& timeout 15 result/bin/python -c 'import tkinter as tk; tk.Tk().mainloop()' || test $? -eq 124 || echo 'Error in tkinter'
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    (python39Full.overrideAttrs 
+      (oldAttrs: {                             
+          buildInputs = oldAttrs.buildInputs or [] ++ [ gcc ];
+        }
+      )
+    ).override { stripTkinter = true; }
+)' \
+--command \
+bash \
+-c \
+'
+file $(readlink -f $(which python3)) \
+&& ldd $(readlink -f $(which python3)) \
+&& timeout 15 result/bin/python -c "import tkinter as tk; tk.Tk().mainloop()" || test $? -eq 124 || echo "Error in tkinter"
+'
+```
 
 ```bash
 nix-instantiate \
