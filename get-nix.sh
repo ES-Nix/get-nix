@@ -119,6 +119,18 @@ then
     grep 'flake' ~/.bashrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.bashrc
   fi
 
+elif [ "$NIX_GUESSED_USER_SHELL" = 'sh' ]
+then
+
+  # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
+  # https://stackoverflow.com/a/18126699
+  # To preserve the format of the echoed code.
+  if [ ! -f ~/.ashrc ]; then
+    echo "$NIX_HELPER_FUNCTIONS" > ~/.ashrc
+  else
+    grep 'flake' ~/.ashrc --quiet || echo "$NIX_HELPER_FUNCTIONS" >> ~/.ashrc
+  fi
+
 else
   echo "Your current shell is not suported, sorry."
   exit 123
