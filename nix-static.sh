@@ -36,6 +36,7 @@ toybox test -d ~/.config/nix || toybox mkdir -p -m 0755 ~/.config/nix \
 && toybox grep 'nixos' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || toybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
 && toybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || toybox echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
 && toybox grep 'trace' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || toybox echo 'show-trace = true' >> ~/.config/nix/nix.conf \
+&& toybox grep 'store' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || toybox echo 'store = '"${HOME}" >> ~/.config/nix/nix.conf \
 && toybox test -d ~/.config/nixpkgs || toybox mkdir -p -m 0755 ~/.config/nixpkgs \
 && toybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || toybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
 
