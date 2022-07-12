@@ -1348,7 +1348,7 @@ TODO:
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=58e46ea4beb3a4b8d747d4a62e4d7a5fa24a699f \
+SHA256=e24e784cb368cc41f4051dc1fa5edd0c2646f43c \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && direnv --version
@@ -1356,8 +1356,8 @@ SHA256=58e46ea4beb3a4b8d747d4a62e4d7a5fa24a699f \
 
 To remove:
 ```bash
-nix profile remove "$(nix eval --raw nixpkgs#direnv)"
-nix profile remove "$(nix eval --raw nixpkgs#nix-direnv)"
+nix profile remove "$(nix eval --raw github:NixOS/nixpkgs/60e774ff2ca18570a93a2992fd18b8f5bf3ba57b#direnv)"
+nix profile remove "$(nix eval --raw github:NixOS/nixpkgs/60e774ff2ca18570a93a2992fd18b8f5bf3ba57b#nix-direnv)"
 
 rm -rfv ~/.direnvrc
 ```
