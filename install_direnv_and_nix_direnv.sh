@@ -15,8 +15,8 @@ FULL_PATH_TO_DIRENVRC="${HOME}"/.direnvrc
 STRING_EVAL_DIRENV_HOOK='eval "$(direnv hook '
 FULL_STRING_EVAL_DIRENV_HOOK="${STRING_EVAL_DIRENV_HOOK}""${NIX_GUESSED_USER_SHELL}"')"'
 
-
-test -x direnv || nix profile install nixpkgs#direnv
+# nix flake metadata github:NixOS/nixpkgs/release-22.05
+readlink $(which direnv) &>/dev/null || nix profile install github:NixOS/nixpkgs/60e774ff2ca18570a93a2992fd18b8f5bf3ba57b
 
 # FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC='source "${HOME}"/.nix-profile/share/nix-direnv/direnvrc'
 # test -f $(readlink -f "${FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC}") || nix profile install nixpkgs#nix-direnv
