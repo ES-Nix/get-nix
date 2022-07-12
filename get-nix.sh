@@ -41,14 +41,14 @@ curl -L 'https://github.com/numtide/nix-flakes-installer/releases/download/'"${N
 nix \
 profile \
 install \
-nixpkgs#busybox \
+github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#busybox \
 --option \
-experimental-features 'nix-command flakes'
+experimental-features 'nix-command flakes ca-references'
 
 
 busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
 && busybox grep 'nixos' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
-&& busybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
+&& busybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'experimental-features = nix-command flakes ca-references' >> ~/.config/nix/nix.conf \
 && busybox grep 'trace' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'show-trace = true' >> ~/.config/nix/nix.conf \
 && busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
 && busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
@@ -60,7 +60,7 @@ busybox sed -i 's/^-e $//' ~/.profile
 nix \
 profile \
 remove \
-"$(nix eval --raw nixpkgs#busybox)"
+"$(nix eval --raw github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#busybox)"
 
 
 
@@ -95,7 +95,7 @@ EOF
 
 # NIX_GUESSED_USER_SHELL=$(ps -ocomm= -q $$)
 
-NIX_GUESSED_USER_SHELL="$(basename $(grep $USER </etc/passwd | cut -f 7 -d ":"))"
+NIX_GUESSED_USER_SHELL="$(basename "$(grep "$USER" </etc/passwd | cut -f 7 -d ":")")"
 
 if [ "$NIX_GUESSED_USER_SHELL" = 'zsh' ];
 then
