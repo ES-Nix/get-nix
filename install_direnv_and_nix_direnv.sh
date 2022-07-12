@@ -15,7 +15,6 @@ FULL_PATH_TO_GUESSED_SHELL_RC="${HOME}"/."${NIX_GUESSED_USER_SHELL}"rc
 STRING_EVAL_DIRENV_HOOK='eval "$(direnv hook '
 FULL_STRING_EVAL_DIRENV_HOOK="${STRING_EVAL_DIRENV_HOOK}""${NIX_GUESSED_USER_SHELL}"')"'
 
-set -x
 # nix flake metadata github:NixOS/nixpkgs/release-22.05
 readlink "$(which direnv)" || nix profile install github:NixOS/nixpkgs/60e774ff2ca18570a93a2992fd18b8f5bf3ba57b#direnv
 
