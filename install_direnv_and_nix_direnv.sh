@@ -5,7 +5,7 @@
 # NIX_GUESSED_USER_SHELL=$(ps -ocomm= -q $$)
 
 
-NIX_GUESSED_USER_SHELL="$(basename "$(grep $USER </etc/passwd | cut -f 7 -d ":")")"
+NIX_GUESSED_USER_SHELL="$(basename "$(grep "$USER" </etc/passwd | cut -f 7 -d ":")")"
 
 echo 'The installer has identified the running shell as: '"${NIX_GUESSED_USER_SHELL}"
 
@@ -15,8 +15,9 @@ FULL_PATH_TO_GUESSED_SHELL_RC="${HOME}"/."${NIX_GUESSED_USER_SHELL}"rc
 STRING_EVAL_DIRENV_HOOK='eval "$(direnv hook '
 FULL_STRING_EVAL_DIRENV_HOOK="${STRING_EVAL_DIRENV_HOOK}""${NIX_GUESSED_USER_SHELL}"')"'
 
+set -x
 # nix flake metadata github:NixOS/nixpkgs/release-22.05
-readlink "$(which direnv)" &>/dev/null || nix profile install github:NixOS/nixpkgs/60e774ff2ca18570a93a2992fd18b8f5bf3ba57b#direnv
+readlink "$(which direnv)" || nix profile install github:NixOS/nixpkgs/60e774ff2ca18570a93a2992fd18b8f5bf3ba57b#direnv
 
 # FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC='source "${HOME}"/.nix-profile/share/nix-direnv/direnvrc'
 # test -f $(readlink -f "${FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC}") || nix profile install nixpkgs#nix-direnv
