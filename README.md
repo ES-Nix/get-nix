@@ -16,7 +16,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
 && BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
-&& SHA256=14905e2e68caefa028e491512a9b3f4b792e6386 \
+&& SHA256=18a9d18cb44a9ca357401ba6c06bc05fcb8ec7ad \
 && NIX_RELEASE_VERSION='nix-2.4pre20210823_af94b54' \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
@@ -682,11 +682,11 @@ not hardcoding the profile number.
 
 
 ```bash
-SHA256=14905e2e68caefa028e491512a9b3f4b792e6386 \
+SHA256=18a9d18cb44a9ca357401ba6c06bc05fcb8ec7ad \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"${SHA256}"/nix-static.sh | sh \
 && . ~/.profile \
 && nix flake --version \
-&& nix flake metadata nixpkgs \
+&& nix --store "${HOME}" flake metadata nixpkgs \
 && nix --store "${HOME}" store gc --verbose
 ```
 
@@ -1348,7 +1348,7 @@ TODO:
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=14905e2e68caefa028e491512a9b3f4b792e6386 \
+SHA256=18a9d18cb44a9ca357401ba6c06bc05fcb8ec7ad \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && direnv --version
@@ -1395,7 +1395,7 @@ echo $?
 #### Testing the direnv's installation
 
 ```bash
-SHA256=58e46ea4beb3a4b8d747d4a62e4d7a5fa24a699f \
+SHA256=18a9d18cb44a9ca357401ba6c06bc05fcb8ec7ad \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/src/tests/test_install_direnv_nix_direnv.sh | sh \
 && cd ~/foo-bar
 ```

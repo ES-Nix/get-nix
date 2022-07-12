@@ -213,3 +213,191 @@ openssl version -a
 openssl version -d
 nm -C $(erw openssl) | grep TLS
 objdump $(erw openssl) -x  | grep TLS
+
+
+https://superuser.com/a/929567
+
+
+nix show-derivation nixpkgs#openssl  | jq ".[].outputs.out.path"
+
+https://earthly.dev/blog/make-flags/
+
+https://crypto.stackexchange.com/questions/84271/why-openssh-prefers-ecdsa-nistp256-keys-over-384-and-521-and-those-over-ed255
+
+
+nix \
+build \
+--impure \
+--expr \
+'(
+with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}.pkgsStatic;
+(podman.override { postFixup = ""; })
+)'
+
+
+
+NIXPKGS_ALLOW_BROKEN=1 \
+&& nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}; 
+(podman.overrideAttrs (oldAttrs: {
+  preFixup = "";
+}))
+)'
+
+NIXPKGS_ALLOW_BROKEN=1 \
+&& nix \
+build \
+--impure \
+--expr \
+'(with builtins.getFlake "nixpkgs"; 
+with legacyPackages.${builtins.currentSystem}.pkgsStatic; 
+(catatonit.overrideAttrs (oldAttrs: {
+  nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ patchelf ];
+}))
+)'
+
+
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (pkgsStatic.python3Minimal.override 
+    { 
+      reproducibleBuild = true; 
+    }
+  )
+)' \
+--command \
+bash \
+-c \
+'
+file $(readlink -f $(which python3)) \
+&& ldd $(readlink -f $(which python3)) \
+&& sha256sum $(readlink -f $(which python3)) \
+'
+
+
+
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (
+    glibcLocales.override {
+      allLocales = true;
+    }
+  )
+)'
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (
+    glibcLocales.override {
+      locales = [ "pt_BR.UTF-8/UTF-8" ];
+    }
+  )
+)'
+```
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (
+    glibcLocales.overrideAttrs (oldAttrs: {
+        locales = [ "pt_BR.UTF-8/UTF-8" ];
+      }
+    )
+  )
+)'
+```
+
+```bash
+nix \
+show-derivation \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (
+    glibcLocales.overrideAttrs (oldAttrs: {
+        locales = [ "pt_BR.UTF-8/UTF-8" ];
+      }
+    )
+  )
+)'
+```
+
+```bash
+sha256sum $(readlink result)/lib/locale/locale-archive
+```
+
+
+https://github.com/NixOS/nixpkgs/blob/nixos-22.05/pkgs/development/libraries/glibc/locales.nix#L69
+
+```bash
+# nix flake metadata github:NixOS/nixpkgs/release-22.05 --json
+command -v jq >/dev/null || nix profile install github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#jq \
+&& nix \
+show-derivation \
+nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello | jq '.[].env'
+```
+
+
+```bash
+nix \
+show-derivation \
+github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#gtk3 | jq -r '.[].env.postFixup'
+```
+
+```bash
+command -v jq >/dev/null || nix profile install github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#jq \
+&& nix \       
+show-derivation \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (pkgsStatic.python3Minimal.override 
+    { 
+      reproducibleBuild = true; 
+    }
+  )
+)' | jq -r '.[].env.preConfigure'
+```
+
+
+###
+
+https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/pkgs/tools/networking/pacparser/default.nix#L12-L18
+
+https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/pkgs/os-specific/linux/nvidia-x11/settings.nix#L54-L67
+
+https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/pkgs/os-specific/bsd/netbsd/default.nix#L213-L225
+
