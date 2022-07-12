@@ -1348,7 +1348,7 @@ TODO:
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=63d608ef0b9085b70d6ac996acd2fcaf43683084 \
+SHA256=1ca97589852e30bb1450d73386b96048779433fb \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && direnv --version
