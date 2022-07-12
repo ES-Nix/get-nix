@@ -80,8 +80,8 @@ develop () {
 export TMPDIR=/tmp
 
 #
-# PATH="$HOME"/.nix-profile/etc/profile.d/nix.sh:"$PATH"
-# End of inserted by the get-nix installer
+PATH="\$HOME"/.nix-profile/etc/profile.d/nix.sh:"\$PATH"
+# End of code inserted by the get-nix installer
 EOF
 )
 
