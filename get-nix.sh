@@ -36,7 +36,7 @@
 
 NIX_RELEASE_VERSION=${1:-nix-2.10.1}
 
-sh <(curl -L https://releases.nixos.org/nix/"${NIX_RELEASE_VERSION}"/install) --no-daemon
+curl -L https://releases.nixos.org/nix/"${NIX_RELEASE_VERSION}"/install | sh --no-daemon
 
 . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export TMPDIR=/tmp

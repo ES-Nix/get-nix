@@ -16,7 +16,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
 && BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
-&& SHA256=0757c983e37f9545efe76eda80469ea87ec8ef2a \
+&& SHA256=783d47bb224ffc7667f23da68b35e66e58c4d763 \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
