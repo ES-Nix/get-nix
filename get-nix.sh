@@ -30,9 +30,13 @@
 
 # Got it from:
 # https://github.com/numtide/nix-unstable-installer/releases
-NIX_RELEASE_VERSION=${1:-nix-2.8.0pre20220314_a618097}
+#
+# NIX_RELEASE_VERSION=${1:-nix-2.8.0pre20220314_a618097}
+# curl -L 'https://github.com/numtide/nix-flakes-installer/releases/download/'"${NIX_RELEASE_VERSION}"'/install' | sh
 
-curl -L 'https://github.com/numtide/nix-flakes-installer/releases/download/'"${NIX_RELEASE_VERSION}"'/install' | sh
+NIX_RELEASE_VERSION=${1:-nix-2.10.1}
+
+sh <(curl -L https://releases.nixos.org/nix/"${NIX_RELEASE_VERSION}"/install) --no-daemon
 
 . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && export TMPDIR=/tmp
@@ -43,19 +47,19 @@ profile \
 install \
 github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#busybox \
 --option \
-experimental-features 'nix-command flakes ca-references'
+experimental-features 'nix-command flakes'
 
 
 busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
 && busybox grep 'nixos' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
-&& busybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'experimental-features = nix-command flakes ca-references' >> ~/.config/nix/nix.conf \
+&& busybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
 && busybox grep 'trace' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'show-trace = true' >> ~/.config/nix/nix.conf \
 && busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
 && busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
 
 # If there is one line with only '-e ' removes it.
 # Nix 2.4 installer let it alone in the ~/.profile.
-busybox sed -i 's/^-e $//' ~/.profile
+# busybox sed -i 's/^-e $//' ~/.profile
 
 nix \
 profile \

@@ -17,7 +17,6 @@ test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
 && BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
 && SHA256=0757c983e37f9545efe76eda80469ea87ec8ef2a \
-&& NIX_RELEASE_VERSION='nix-2.4pre20210823_af94b54' \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
