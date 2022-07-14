@@ -711,9 +711,17 @@ test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix
 
 
+mkdir -pv /nix/var/nix/profiles/per-user/vagrant/profile
+ln -fsv /nix/var/nix/profiles/per-user/vagrant/profile $HOME/.nix-profile
+
+
 curl -L https://hydra.nixos.org/build/183832936/download/1/nix > nix \
 && chmod +x nix \
-&& ./nix --extra-experimental-features 'nix-command flakes' run nixpkgs#podman images 
+&& ./nix --store / --extra-experimental-features 'nix-command flakes' run nixpkgs#python3 -- --version 
+
+ls -al /nix/store
+
+./nix --extra-experimental-features 'nix-command flakes' run nixpkgs#podman images 
 
 echo $USER:10000000:65536 | sudo tee -a /etc/subuid -a /etc/subgid
 ```
