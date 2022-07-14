@@ -691,6 +691,36 @@ SHA256=0754c28b5b68148fba205cf6ebd65c6d29a649e5 \
 ```
 
 
+sudo useradd -s '/bin/bash' -m evauser
+sudo groupadd evagroup
+sudo usermod -aG evagroup evauser
+
+sudo passwd evauser
+
+sudo nano /etc/sudoers
+evauser ALL = ALL, !/usr/bin/sudo
+
+sudo su evauser
+curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
+
+
+
+xhost +
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--interactive=true \
+--tty=true \
+--rm=true \
+--workdir=/code \
+--volume="$(pwd)":/code \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+python:3.9 \
+bash \
+-c \
+"id && echo \$DISPLAY && python -c 'from tkinter import Tk; Tk()'"
+
+
 #### tests for the nix statically built
 
 

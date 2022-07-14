@@ -19,6 +19,8 @@
 #          ./src/tests/tests.sh
 #        '';
 
+        packages = (import ./src/pkgs { pkgs = pkgsAllowUnfree; podman-rootless = podman-rootless.packages.${system}.podman; });
+
         sha256sumNixFlakeVersion = pkgsAllowUnfree.writeShellScriptBin "sha256sum-nix-flake-version" ''
           # set -e
 
@@ -257,6 +259,9 @@
         #          nixos = nixos;
         #        };
 
+        #
+        inherit packages;
+
         # TODO
         # https://github.com/NixOS/nix/issues/2854
         #      defaultPackage = self.packages.${system};
@@ -283,6 +288,8 @@
             testNixFromOnlynixpkgs
             testConfig1
             allTests
+
+            # packages.oci-test-nix-single-user-installer
           ]
           ++
           # Why nix flake check is broken if aarch64-darwin is not excluded??

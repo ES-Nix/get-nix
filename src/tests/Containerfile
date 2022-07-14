@@ -1,21 +1,13 @@
 FROM docker.io/library/ubuntu:20.04 AS ubuntu-sudo-and-nix-install-deps
 
-
+#     sudo \
 RUN apt-get update \
  && apt-get install --no-install-recommends --no-install-suggests -y \
     ca-certificates \
     curl \
-    sudo \
     tar \
     xz-utils \
- && apt-get -y autoremove \
- && apt-get -y clean \
- && rm -rf /var/lib/apt/lists/*
-
-
-FROM ubuntu-sudo-and-nix-install-deps AS ubuntu-sudo-and-nix-install-deps-nixuser
-
-RUN addgroup nixgroup \
+ && addgroup nixgroup \
  && adduser \
     --quiet \
     --disabled-password \
@@ -23,12 +15,32 @@ RUN addgroup nixgroup \
     --home /home/nixuser \
     --gecos "User" nixuser \
     --ingroup nixgroup \
- && usermod -a -G sudo nixuser \
  && echo "nixuser:123" | chpasswd \
- && echo 'nixuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
  && chmod 0700 /home/nixuser \
  && mkdir -p /home/nixuser/tmp \
- && chown -R nixuser: /home/nixuser/tmp
+ && chown -R nixuser: /home/nixuser/tmp \
+ && apt-get remove -y sudo shadow \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+
+FROM ubuntu-sudo-and-nix-install-deps AS ubuntu-sudo-and-nix-install-deps-nixuser
+
+#RUN addgroup nixgroup \
+# && adduser \
+#    --quiet \
+#    --disabled-password \
+#    --shell /bin/bash \
+#    --home /home/nixuser \
+#    --gecos "User" nixuser \
+#    --ingroup nixgroup \
+# && usermod -a -G sudo nixuser \
+# && echo "nixuser:123" | chpasswd \
+# && echo 'nixuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+# && chmod 0700 /home/nixuser \
+# && mkdir -p /home/nixuser/tmp \
+# && chown -R nixuser: /home/nixuser/tmp
 
 USER nixuser
 

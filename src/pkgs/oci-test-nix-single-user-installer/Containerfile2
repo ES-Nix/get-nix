@@ -1,0 +1,43 @@
+FROM localhost/nix-bash-coreutils-ca-bundle-etc-passwd-etc-group-tmp-sudo-su:0.0.1 AS test-nix
+
+
+WORKDIR /home/nixuser
+
+EXPOSE 22
+
+# https://github.com/moby/moby/issues/35783#issuecomment-355981140
+#  && test -d /var/empty || mkdir -pv /var/empty \
+# && ssh-keygen -A \
+RUN echo \
+ && chmod 1777 /tmp \
+ && chmod -R 0700 /nix \
+ && chmod -Rv 0700 /home/nixuser \
+ && chown -R nixuser:nixgroup /nix \
+ && chown -Rv nixuser:nixgroup /home/nixuser \
+ && chown -v 0:0 \
+          /bin/sudo \
+          /nix/store/*-sudo-1.9.10/libexec/sudo/sudoers.so \
+ && chmod -v u+s \
+          /sbin/sudo \
+          /nix/store/*-shadow*su/bin/su \
+ && echo 'Yes, the sudo password is hardcoded! It is an sandbox/playground OCI.' \
+ && echo 'nixuser ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nixuser
+
+# && echo 'nixuser:123' | chpasswd \
+
+
+# CMD ["/bin/sshd", "-D"]
+# USER nixuser
+
+# RUN echo \
+#  && nix flake --version \
+#  && nix flake metadata nixpkgs | tee "${HOME}"/metadata.txt \
+#  && cat "${HOME}"/metadata.txt
+
+# COPY ./src/pkgs/oci-nix-bash-coreutils-ca-bundle-etc-passwd-etc-group-tmp-sudo-su/scripts/nix-build-minimal-iso.sh "${HOME}"
+#
+# WORKDIR "${HOME}"
+#
+# RUN ./nix-build-minimal-iso.sh \
+#      && nix store gc -v
+
