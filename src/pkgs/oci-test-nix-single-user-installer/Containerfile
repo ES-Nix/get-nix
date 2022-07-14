@@ -1,43 +1,75 @@
-FROM localhost/nix-bash-coreutils-ca-bundle-etc-passwd-etc-group-tmp-sudo-su:0.0.1 AS test-nix
+FROM docker.io/library/ubuntu:20.04 AS ubuntu-sudo-and-nix-install-deps
 
+#  && apt-get remove -y sudo \
+RUN apt-get update \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
+    ca-certificates \
+    curl \
+    tar \
+    sudo \
+    xz-utils \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup nixgroup \
+ && adduser \
+    --quiet \
+    --disabled-password \
+    --shell /bin/bash \
+    --home /home/nixuser \
+    --gecos "User" nixuser \
+    --ingroup nixgroup \
+ && usermod -a -G sudo nixuser \
+ && echo "nixuser:123" | chpasswd \
+ && echo 'nixuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+ && chmod 0700 /home/nixuser \
+ && mkdir -p /home/nixuser/tmp \
+ && chown -R nixuser: /home/nixuser/tmp
+
+USER nixuser
+
+ENV USER nixuser
+ENV HOME /home/nixuser
 
 WORKDIR /home/nixuser
 
-EXPOSE 22
 
-# https://github.com/moby/moby/issues/35783#issuecomment-355981140
-#  && test -d /var/empty || mkdir -pv /var/empty \
-# && ssh-keygen -A \
-RUN echo \
- && chmod 1777 /tmp \
- && chmod -R 0700 /nix \
- && chmod -Rv 0700 /home/nixuser \
- && chown -R nixuser:nixgroup /nix \
- && chown -Rv nixuser:nixgroup /home/nixuser \
- && chown -v 0:0 \
-          /bin/sudo \
-          /nix/store/*-sudo-1.9.10/libexec/sudo/sudoers.so \
- && chmod -v u+s \
-          /sbin/sudo \
-          /nix/store/*-shadow*su/bin/su \
- && echo 'Yes, the sudo password is hardcoded! It is an sandbox/playground OCI.' \
- && echo 'nixuser ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nixuser
-
-# && echo 'nixuser:123' | chpasswd \
+FROM docker.io/library/ubuntu:20.04 AS ubuntu-and-nix-install-deps
 
 
-# CMD ["/bin/sshd", "-D"]
-# USER nixuser
+RUN apt-get update \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
+    ca-certificates \
+    curl \
+    tar \
+    xz-utils \
+ && apt-get remove -y sudo \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
 
-# RUN echo \
-#  && nix flake --version \
-#  && nix flake metadata nixpkgs | tee "${HOME}"/metadata.txt \
-#  && cat "${HOME}"/metadata.txt
+RUN addgroup nixgroup \
+ && adduser \
+    --quiet \
+    --disabled-password \
+    --shell /bin/bash \
+    --home /home/nixuser \
+    --gecos "User" nixuser \
+    --ingroup nixgroup \
+ && usermod -a -G sudo nixuser \
+ && echo "nixuser:123" | chpasswd \
+ && echo 'nixuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+ && chmod 0700 /home/nixuser \
+ && mkdir -p /home/nixuser/tmp \
+ && chown -R nixuser: /home/nixuser/tmp
 
-# COPY ./src/pkgs/oci-nix-bash-coreutils-ca-bundle-etc-passwd-etc-group-tmp-sudo-su/scripts/nix-build-minimal-iso.sh "${HOME}"
-#
-# WORKDIR "${HOME}"
-#
-# RUN ./nix-build-minimal-iso.sh \
-#      && nix store gc -v
+USER nixuser
 
+ENV USER nixuser
+ENV HOME /home/nixuser
+
+WORKDIR /home/nixuser
+
+# sh <(curl -L https://releases.nixos.org/nix/nix-2.10.1/install) --no-daemon
+# curl -L https://releases.nixos.org/nix/nix-2.10.1/install | sh -s -- --no-daemon

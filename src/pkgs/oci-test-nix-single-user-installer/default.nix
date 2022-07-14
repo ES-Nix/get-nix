@@ -29,10 +29,17 @@ pkgs.dockerTools.buildImage {
   contents = (with pkgs; [
     bashInteractive
     coreutils
-    curl
   ]
     # ++ troubleshoot-packages
-  );
+  )
+  ++
+  (with pkgs.pkgsStatic; [
+    gnutar
+    xz
+    curl
+    ]
+  )
+  ;
 
   config = {
     # Cmd = [ "nix" ];

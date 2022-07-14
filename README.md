@@ -681,16 +681,55 @@ not hardcoding the profile number.
 #### Install nix statically built
 
 
+
 ```bash
-SHA256=0754c28b5b68148fba205cf6ebd65c6d29a649e5 \
+test -d /nix || sudo mkdir -m 0755 /nix \
+&& sudo -k chown "$USER": /nix
+```
+
+```bash
+SHA256=ec05e78577e3a8c4dd5f485a625db674ca1cf661 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"${SHA256}"/nix-static.sh | sh \
 && . ~/.profile \
 && nix flake --version \
-&& nix --store "${HOME}" flake metadata nixpkgs \
-&& nix --store "${HOME}" store gc --verbose
+&& nix flake metadata nixpkgs \
+&& nix store gc --verbose
 ```
 
 
+mkdir -pv $HOME/.nix-profile
+
+```bash
+mkdir -pv $HOME/nix/var/nix/profiles/per-user/vagrant/profile
+ln -sfv $HOME/.nix-profile $HOME/nix/var/nix/profiles/per-user/vagrant/profile
+```
+
+curl -L https://hydra.nixos.org/build/183832936/download/1/nix > nix
+&& chmod +x nix \
+&& ./nix --extra-experimental-features 'nix-command flakes' run nixpkgs#podman images 
+echo $USER:10000000:65536 | sudo tee -a /etc/subuid -a /etc/subgid
+
+nix run nixpkgs#qemu -- --version
+
+# ./nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#hello 
+
+# ./nix --extra-experimental-features 'nix-command flakes' develop github:ES-Nix/fhs-environment/enter-fhs
+
+./nix --extra-experimental-features 'nix-command flakes' \
+run \
+github:ES-Nix/podman-rootless/from-nixpkgs \
+-- \
+run \
+--rm=true \
+docker.io/library/alpine:3.14.2 \
+sh \
+-c \
+"cat /etc/os-release \
+&& apk update \
+&& apk add --no-cache python3 \
+&& python3 --version"
+
+```bash
 sudo useradd -s '/bin/bash' -m evauser
 sudo groupadd evagroup
 sudo usermod -aG evagroup evauser
@@ -702,8 +741,18 @@ evauser ALL = ALL, !/usr/bin/sudo
 
 sudo su evauser
 curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
+```
+
+nix \
+flake \
+update \
+--override-input nixpkgs github:NixOS/nixpkgs/01b8587401f41aecd4b77aa9698c0cba65a38882
 
 
+
+```bash
+podman run --rm -it -u 1005 alpine
+apk add --no-cache curl tar
 
 xhost +
 podman \
@@ -720,6 +769,22 @@ bash \
 -c \
 "id && echo \$DISPLAY && python -c 'from tkinter import Tk; Tk()'"
 
+
+
+podman build --tag test-with-sudo-nix-single-user-installer --file src/pkgs/oci-test-nix-single-user-installer/Containerfile --target=ubuntu-sudo-and-nix-install-deps .
+podman build --tag test-nix-single-user-installer --file src/pkgs/oci-test-nix-single-user-installer/Containerfile --target=ubuntu-and-nix-install-deps .
+
+podman run --privileged --rm -it -u $(id -u ${USER}):$(id -g ${USER}) localhost/test-nix-single-user-installer:0.0.1 bash
+
+podman \
+run \
+--privileged \
+--rm \
+-it \
+-u $(id -u ${USER}):$(id -g ${USER}) \
+localhost/test-with-sudo-nix-single-user-installer:latest \
+bash 
+```
 
 #### tests for the nix statically built
 
