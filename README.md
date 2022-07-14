@@ -707,9 +707,14 @@ ln -sfv $HOME/.nix-profile $HOME/nix/var/nix/profiles/per-user/vagrant/profile
 
 
 ```bash
-curl -L https://hydra.nixos.org/build/183832936/download/1/nix > nix
+test -d /nix || sudo mkdir -m 0755 /nix \
+&& sudo -k chown "$USER": /nix
+
+
+curl -L https://hydra.nixos.org/build/183832936/download/1/nix > nix \
 && chmod +x nix \
 && ./nix --extra-experimental-features 'nix-command flakes' run nixpkgs#podman images 
+
 echo $USER:10000000:65536 | sudo tee -a /etc/subuid -a /etc/subgid
 ```
 
