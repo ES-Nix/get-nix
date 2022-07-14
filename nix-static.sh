@@ -8,18 +8,19 @@
 # What is the best, more compatible, way?
 # cd ~
 # cd "$HOME"
-cd /home/"$USER" || (echo 'For some reason `cd cd /home/"$USER"` failed!' && exit 31)
+#  || echo 'For some reason `cd cd /home/"$USER"` failed!' && exit 3
+cd /home/"$USER"
 
 BASE="$HOME"/.local/bin
 # BUILD_ID='178718571'
 # BUILD_ID='181545168'
 BUILD_ID='183832936'
 
-toybox --version 1> /dev/null 2> /dev/null || (curl -L http://landley.net/toybox/downloads/binaries/0.8.7/toybox-x86_64 > toybox && chmod 0755 toybox)
+toybox --version 1> /dev/null 2> /dev/null || curl -L http://landley.net/toybox/downloads/binaries/0.8.7/toybox-x86_64 > toybox && chmod 0755 toybox
 
 
 ./toybox test -d "$BASE" || ./toybox mkdir -v -p -m 0755 "$BASE"
-toybox --version 1> /dev/null 2> /dev/null || (./toybox mv toybox "$BASE" && export PATH="$BASE":"$PATH")
+toybox --version 1> /dev/null 2> /dev/null || ./toybox mv toybox "$BASE" && export PATH="$BASE":"$PATH"
 
 # curl -L https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest/download-by-type/file/binary-dist > nix
 toybox which nix || curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/1/nix > "$BASE"/nix
