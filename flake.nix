@@ -292,8 +292,9 @@
             # packages.oci-test-nix-single-user-installer
           ]
           ++
-          # Why nix flake check is broken if aarch64-darwin is not excluded??
-          (if !isDarwin then [ self.inputs.podman-rootless.defaultPackage.${system} ] else [ ]);
+          # Q:Why nix flake check is broken if aarch64-darwin is not excluded??
+          # A: because systemd I suppose
+          (if !isDarwin then [ self.inputs.podman-rootless.packages.${system}.podman  ] else [ ]);
 
           shellHook = ''
             export TMPDIR=/tmp

@@ -16,7 +16,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 test -d /nix || sudo mkdir -m 0755 /nix \
 && sudo -k chown "$USER": /nix \
 && BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
-&& SHA256=0754c28b5b68148fba205cf6ebd65c6d29a649e5 \
+&& SHA256=136a0ad03df69baa0a810282591f4c962d1c626f \
 && NIX_RELEASE_VERSION='2.10.1' \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
@@ -688,7 +688,7 @@ test -d /nix || sudo mkdir -m 0755 /nix \
 ```
 
 ```bash
-SHA256=ec05e78577e3a8c4dd5f485a625db674ca1cf661 \
+SHA256=136a0ad03df69baa0a810282591f4c962d1c626f \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"${SHA256}"/nix-static.sh | sh \
 && . ~/.profile \
 && nix flake --version \
@@ -697,37 +697,30 @@ SHA256=ec05e78577e3a8c4dd5f485a625db674ca1cf661 \
 ```
 
 
-mkdir -pv $HOME/.nix-profile
+
 
 ```bash
+mkdir -pv $HOME/.nix-profile
 mkdir -pv $HOME/nix/var/nix/profiles/per-user/vagrant/profile
 ln -sfv $HOME/.nix-profile $HOME/nix/var/nix/profiles/per-user/vagrant/profile
 ```
 
+
+```bash
 curl -L https://hydra.nixos.org/build/183832936/download/1/nix > nix
 && chmod +x nix \
 && ./nix --extra-experimental-features 'nix-command flakes' run nixpkgs#podman images 
 echo $USER:10000000:65536 | sudo tee -a /etc/subuid -a /etc/subgid
+```
 
+```bash
 nix run nixpkgs#qemu -- --version
 
 # ./nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#hello 
 
 # ./nix --extra-experimental-features 'nix-command flakes' develop github:ES-Nix/fhs-environment/enter-fhs
+```
 
-./nix --extra-experimental-features 'nix-command flakes' \
-run \
-github:ES-Nix/podman-rootless/from-nixpkgs \
--- \
-run \
---rm=true \
-docker.io/library/alpine:3.14.2 \
-sh \
--c \
-"cat /etc/os-release \
-&& apk update \
-&& apk add --no-cache python3 \
-&& python3 --version"
 
 ```bash
 sudo useradd -s '/bin/bash' -m evauser
@@ -743,11 +736,13 @@ sudo su evauser
 curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
 ```
 
+
+```bash
 nix \
 flake \
 update \
 --override-input nixpkgs github:NixOS/nixpkgs/01b8587401f41aecd4b77aa9698c0cba65a38882
-
+```
 
 
 ```bash
@@ -771,17 +766,35 @@ bash \
 
 
 
-podman build --tag test-with-sudo-nix-single-user-installer --file src/pkgs/oci-test-nix-single-user-installer/Containerfile --target=ubuntu-sudo-and-nix-install-deps .
-podman build --tag test-nix-single-user-installer --file src/pkgs/oci-test-nix-single-user-installer/Containerfile --target=ubuntu-and-nix-install-deps .
+podman \
+build \
+--tag test-with-sudo-nix-single-user-installer \
+--file src/pkgs/oci-test-nix-single-user-installer/Containerfile \
+--target=ubuntu-sudo-and-nix-install-deps .
 
-podman run --privileged --rm -it -u $(id -u ${USER}):$(id -g ${USER}) localhost/test-nix-single-user-installer:0.0.1 bash
+podman \
+build \
+--tag test-nix-single-user-installer \
+--file src/pkgs/oci-test-nix-single-user-installer/Containerfile \
+--target=ubuntu-and-nix-install-deps .
 
 podman \
 run \
---privileged \
---rm \
--it \
--u $(id -u ${USER}):$(id -g ${USER}) \
+--privileged=true \
+--rm=true \
+--interactive=true \
+--tty=true \
+--user=$(id -u ${USER}):$(id -g ${USER}) \
+localhost/test-nix-single-user-installer:0.0.1 \
+bash
+
+podman \
+run \
+--privileged=true \
+--rm=true \
+--interactive=true \
+--tty=true \
+--user=$(id -u ${USER}):$(id -g ${USER}) \
 localhost/test-with-sudo-nix-single-user-installer:latest \
 bash 
 ```
@@ -1443,7 +1456,7 @@ TODO:
 ### Install direnv and nix-direnv using nix + flakes
 
 ```bash
-SHA256=0754c28b5b68148fba205cf6ebd65c6d29a649e5 \
+SHA256=136a0ad03df69baa0a810282591f4c962d1c626f \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && direnv --version
@@ -1490,7 +1503,7 @@ echo $?
 #### Testing the direnv's installation
 
 ```bash
-SHA256=0754c28b5b68148fba205cf6ebd65c6d29a649e5 \
+SHA256=136a0ad03df69baa0a810282591f4c962d1c626f \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/src/tests/test_install_direnv_nix_direnv.sh | sh \
 && cd ~/foo-bar
 ```
