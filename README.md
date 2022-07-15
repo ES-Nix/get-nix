@@ -749,6 +749,10 @@ sudo su evauser
 curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
 ```
 
+sudo groupadd evagroup \
+&& sudo useradd -g evagroup -s /bin/bash -m -c "Eva User" evauser \
+&& echo "nixuser:123" | sudo chpasswd
+
 
 ```bash
 nix \
@@ -811,6 +815,73 @@ run \
 localhost/test-with-sudo-nix-single-user-installer:latest \
 bash 
 ```
+
+
+
+
+#### Part 1:
+
+```bash
+CONTAINER_NAME='container-test-nix-single'
+IMAGE_NAME='image-test-nix-single'
+
+podman rm --force --ignore "${CONTAINER_NAME}"
+
+podman \
+run \
+--name="${CONTAINER_NAME}" \
+--detach=false \
+--privileged=true \
+--rm=false \
+--interactive=true \
+--tty=true \
+docker.io/library/ubuntu:20.04 \
+bash \
+-c \
+"
+echo 'Creating user' \
+&& groupadd evagroup \
+&& useradd -g evagroup -s /bin/bash -m -c 'Eva User' evauser \
+&& echo 'evauser:123' | chpasswd \
+&& echo 'Start apt-get stuff' \
+&& apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+     tar \
+     xz-utils \
+&& apt-get -y autoremove \
+&& apt-get -y clean \
+&& rm -rf /var/lib/apt/lists/* \
+&& mkdir -m 0755 /nix && chown evauser /nix
+" \
+&& podman commit -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
+&& podman images
+```
+
+#### Part 2: 
+```bash
+podman \
+run \
+--rm=true \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--user=evauser \
+--workdir=/home/evauser \
+image-test-nix-single \
+bash
+```
+
+
+```bash
+curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
+```
+
+```bash
+podman rm --force "${CONTAINER_NAME}"
+```
+
 
 #### tests for the nix statically built
 
