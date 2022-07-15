@@ -36,8 +36,8 @@
 
 
 # https://nixos.org/download.html
-# https://releases.nixos.org/nix/nix-2.10.1/install
-NIX_RELEASE_VERSION=${1:-2.10.1}
+# https://releases.nixos.org/nix/nix-2.10.2/install
+NIX_RELEASE_VERSION=${1:-2.10.2}
 
 curl -L https://releases.nixos.org/nix/nix-"${NIX_RELEASE_VERSION}"/install | sh -s -- --no-daemon
 
