@@ -337,7 +337,9 @@ build \
 ```
 
 ```bash
-nix \
+# nix flake metadata github:NixOS/nixpkgs/release-22.05 --json
+command -v jq >/dev/null || nix profile install github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#jq \
+&& nix \
 show-derivation \
 --impure \
 --expr \
@@ -350,8 +352,34 @@ show-derivation \
       }
     )
   )
+)' | jq -r '.[].env.preConfigure'
+```
+
+
+
+
+```bash
+# nix flake metadata github:NixOS/nixpkgs/release-22.05 --json
+command -v jq >/dev/null || nix profile install github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#jq \
+&& nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+  (
+    glibcLocales.override {
+        allLocales = false;
+        locales = [ "pt_BR.UTF-8/UTF-8" ];
+      }
+  )
 )'
 ```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/176253#issuecomment-1152892550
+
+
 
 ```bash
 sha256sum $(readlink result)/lib/locale/locale-archive
