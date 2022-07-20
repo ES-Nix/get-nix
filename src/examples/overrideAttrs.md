@@ -438,3 +438,39 @@ https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/p
 
 https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/pkgs/os-specific/bsd/netbsd/default.nix#L213-L225
 
+
+
+####
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    (import <nixpkgs> { overlays = [(self: super: { gcc = self.gcc10; })]; }).stdenv.cc
+)'
+```
+Refs.:
+- https://stackoverflow.com/a/62224124
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    (import <nixpkgs> { overlays = [(self: super: { hello = self.python3; })]; }).hello
+)' \
+-- \
+--version
+```
+    glibcLocales.override {
+        allLocales = false;
+        locales = [ "pt_BR.UTF-8/UTF-8" ];
+      }

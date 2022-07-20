@@ -37,6 +37,9 @@ About the 2.4 release: [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-
 https://github.com/NixOS/nix/pull/5247#issuecomment-920207863, https://github.com/NixOS/nix/milestone/11, 
 https://github.com/NixOS/nix/releases/tag/2.4.
 
+
+https://github.com/NixOS/nix/tags
+
 ### Testing your installation (not a must, it is probably broken in your system!)
 
 Optional: to test your installation.
@@ -688,7 +691,7 @@ test -d /nix || sudo mkdir -m 0755 /nix \
 ```
 
 ```bash
-SHA256=8e6023f37459b88908c23b0376f5450923fb0e6b \
+SHA256=deacaf1658943c9175e4c9e6035f8599fb778b8a \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"${SHA256}"/nix-static.sh | sh \
 && . ~/.profile \
 && nix flake --version \
@@ -714,10 +717,13 @@ test -d /nix || sudo mkdir -m 0755 /nix \
 mkdir -pv /nix/var/nix/profiles/per-user/vagrant/profile
 ln -fsv /nix/var/nix/profiles/per-user/vagrant/profile $HOME/.nix-profile
 
-
-curl -L https://hydra.nixos.org/build/183832936/download/1/nix > nix \
+# 183832936
+# 184221926
+# 
+BUILD_ID='183946375'
+curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/1/nix > nix \
 && chmod +x nix \
-&& ./nix --store / --extra-experimental-features 'nix-command flakes' run nixpkgs#python3 -- --version 
+&& ./nix --extra-experimental-features 'nix-command flakes' run nixpkgs#python3 -- --version 
 
 ls -al /nix/store
 
@@ -938,6 +944,20 @@ nixpkgs#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
 --option sandbox true
 ```
 
+
+```bash
+./nix \
+--extra-experimental-features 'nix-command flakes' \
+run \
+nixpkgs#pkgsStatic.nix \
+-- \
+  --extra-experimental-features 'nix-command flakes' \
+  build \
+  nixpkgs#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
+  --option substitute true \
+  --option sandbox false
+```
+
 ```bash
 nix \
 run \
@@ -949,6 +969,19 @@ nixpkgs#pkgsStatic.nix \
   nixpkgs#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
   --option substitute true \
   --option sandbox false
+```
+
+```bash
+./nix \
+--extra-experimental-features 'nix-command flakes' \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}.pkgsCross.aarch64-multiplatform.pkgsStatic;
+  (shadow.override { pam = null; }).su
+)'
 ```
 
 ```bash
