@@ -701,12 +701,14 @@ SHA256=deacaf1658943c9175e4c9e6035f8599fb778b8a \
 
 
 
-
 ```bash
 mkdir -pv $HOME/.nix-profile
-mkdir -pv $HOME/nix/var/nix/profiles/per-user/vagrant/profile
-ln -sfv $HOME/.nix-profile $HOME/nix/var/nix/profiles/per-user/vagrant/profile
+mkdir -pv $HOME/nix/var/nix/profiles/per-user/"${USER}"/profile
+ln -sfv $HOME/.nix-profile $HOME/nix/var/nix/profiles/per-user/"${USER}"/profile
 ```
+
+
+
 
 
 ```bash
@@ -828,8 +830,8 @@ bash
 #### Part 1:
 
 ```bash
-CONTAINER_NAME='container-test-nix-single'
-IMAGE_NAME='image-test-nix-single'
+CONTAINER_NAME='container-test-nix'
+IMAGE_NAME='image-test-nix'
 
 podman rm --force --ignore "${CONTAINER_NAME}"
 
@@ -855,27 +857,35 @@ echo 'Creating user' \
      ca-certificates \
      curl \
      tar \
+     podman \
      xz-utils \
 && apt-get -y autoremove \
 && apt-get -y clean \
-&& rm -rf /var/lib/apt/lists/* \
-&& mkdir -m 0755 /nix && chown evauser /nix
+&& rm -rf /var/lib/apt/lists/*
+
+echo evauser:10000:5000 > /etc/subuid
+echo evauser:10000:5000 > /etc/subgid
+
+# mkdir -m 0755 /nix && chown evauser /nix
 " \
 && podman commit -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
-&& podman images
+&& podman images \
+&& podman rm --force --ignore "${CONTAINER_NAME}"
 ```
 
 #### Part 2: 
 ```bash
 podman \
 run \
+--env="USER=evauser" \
+--name="${CONTAINER_NAME}" \
 --rm=true \
 --privileged=true \
 --interactive=true \
 --tty=true \
 --user=evauser \
 --workdir=/home/evauser \
-image-test-nix-single \
+"${IMAGE_NAME}" \
 bash
 ```
 
@@ -886,6 +896,44 @@ curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
 
 ```bash
 podman rm --force "${CONTAINER_NAME}"
+```
+
+
+echo $PATH
+
+nix \
+profile \
+install \
+nixpkgs#hello \
+nixpkgs#lolcat
+
+
+
+```bash
+nix \
+run \
+nixpkgs#pkgsStatic.nix \
+-- \
+    --store "${HOME}" \
+    profile \
+    install \
+    --profile "${HOME}"/.nix-profile \
+    nixpkgs#gcc
+```
+
+```bash
+CONTAINER_NAME='container-test-nix'
+IMAGE_NAME='image-test-nix'
+
+podman \
+exec \
+--interactive=true \
+--tty=false \
+"${CONTAINER_NAME}" \
+bash \
+<<COMMANDS
+ls -la
+COMMANDS
 ```
 
 
@@ -3819,7 +3867,8 @@ nix build --impure --expr '(import <nixpkgs> {
 
 
 
-####
+#### From apt-get, yes, it is possible, or should be to
+
 
 ```bash
 sudo apt-get -qq update \
