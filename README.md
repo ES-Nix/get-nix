@@ -872,7 +872,7 @@ echo evauser:10000:5000 > /etc/subgid
 
 # mkdir -m 0755 /nix && chown evauser /nix
 " \
-&& podman commit -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
+podman commit -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
 && podman images \
 && podman rm --force --ignore "${CONTAINER_NAME}"
 ```
@@ -891,6 +891,104 @@ run \
 --workdir=/home/evauser \
 "${IMAGE_NAME}" \
 bash
+```
+
+```bash
+CONTAINER_NAME='container-test-nix'
+IMAGE_NAME='image-test-nix'
+
+podman rm --force --ignore "${CONTAINER_NAME}"
+
+podman \
+run \
+--name="${CONTAINER_NAME}" \
+--detach=false \
+--privileged=true \
+--rm=false \
+--interactive=true \
+--tty=true \
+docker.io/library/ubuntu:22.04 \
+bash \
+-c \
+"
+echo 'Start apt-get stuff' \
+&& apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+     tar \
+     xz-utils \
+     sudo libpcap-dev \
+&& apt-get -y autoremove \
+&& apt-get -y clean \
+&& rm -rf /var/lib/apt/lists/* \
+&& echo 'Creating user' \
+&& groupadd evagroup \
+&& useradd -g evagroup -s /bin/bash -m -c 'Eva User' evauser \
+&& echo 'evauser:123' | chpasswd \
+&& echo 'evauser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/evauser \
+&& echo '###'                                                                                                                         
+
+
+echo evauser:10000:5000 > /etc/subuid
+echo evauser:10000:5000 > /etc/subgid
+
+mkdir -m 0755 /nix && chown evauser /nix
+" \
+podman commit -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
+&& podman images \
+&& podman rm --force --ignore "${CONTAINER_NAME}"
+```
+
+```bash
+podman \
+run \
+--device=/dev/fuse \
+--env="USER=evauser" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/var/tmp \
+--mount=type=tmpfs,tmpfs-size=10000M,destination=/home/evauser/.local/share/containers/storage \
+--name="${CONTAINER_NAME}" \
+--privileged=true \
+--rm=true \
+--security-opt="label=disable" \
+--tty=true \
+--user=evauser \
+--workdir=/home/evauser \
+"${IMAGE_NAME}" \
+bash \
+-c \
+'
+test -d /nix || sudo mkdir -m 0755 /nix \
+&& sudo -k chown "$USER": /nix \
+&& BASE_URL="https://raw.githubusercontent.com/ES-Nix/get-nix/" \
+&& SHA256=8e6023f37459b88908c23b0376f5450923fb0e6b \
+&& NIX_RELEASE_VERSION="2.10.2" \
+&& curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
+&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& . ~/."$(ps -ocomm= -q $$)"rc \
+&& export TMPDIR=/tmp \
+&& nix flake --version
+
+nix \
+profile \
+install \
+github:ES-Nix/podman-rootless/from-nixpkgs#podman
+
+
+# Some fixes                                        
+sudo mount -o remount,shared / / \
+&& nix profile install nixpkgs#libcap \                                            
+&& P_SETPATH="$(nix eval --raw nixpkgs#libcap)"/bin/setcap \
+&& echo "${P_SETPATH}" \         
+&& ls -la /nix/store/*-shadow-4.11.1/bin/newuidmap \
+&& echo \             
+&& sudo env "PATH=$PATH" "USER=$USER" "P_SETPATH=$P_SETPATH" "${P_SETPATH}" "cap_setuid=+ep" /nix/store/*-shadow-4.11.1/bin/newuidmap \
+&& sudo env "PATH=$PATH" "USER=$USER" "P_SETPATH=$P_SETPATH" "${P_SETPATH}" "cap_setgid=+ep" /nix/store/*-shadow-4.11.1/bin/newgidmap
+podman images
+podman images
+podman run -it --rm ubuntu bash -c "apt-get update"
+'
 ```
 
 

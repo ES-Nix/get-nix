@@ -294,7 +294,9 @@
           ++
           # Q:Why nix flake check is broken if aarch64-darwin is not excluded??
           # A: because systemd I suppose
-          (if !isDarwin then [ self.inputs.podman-rootless.packages.${system}.podman  ] else [ ]);
+          (if !isDarwin then [
+            # self.inputs.podman-rootless.packages.${system}.podman
+           ] else [ ]);
 
           shellHook = ''
             export TMPDIR=/tmp

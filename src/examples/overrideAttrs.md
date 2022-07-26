@@ -430,6 +430,47 @@ show-derivation \
 ```
 
 
+### awscli
+
+TODO: document it better
+```bash
+nix \                                                                                                                                       
+develop \        
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (awscli.override 
+    { 
+      python3 = python38; 
+    }
+  )
+)' \
+--command \
+python --version
+```
+
+```bash
+nix \                                                                                                                                       
+develop \        
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (awscli.override 
+    { 
+      python3 = python39; 
+    }
+  )
+)' \
+--command \
+python --version
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/d1ca40ea766da1b639937084d18d3e54e4e5da1b/pkgs/tools/admin/awscli/default.nix#L52-L63
+
 ###
 
 https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/pkgs/tools/networking/pacparser/default.nix#L12-L18
