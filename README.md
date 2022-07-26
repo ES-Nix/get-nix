@@ -696,7 +696,7 @@ May be?
 > `~/.local/share/nix/someuser`
 
 
-Things that may be automagically solved by not using the store in `~/.local/share/nix/someuser`:
+Things that may be automagically solved by not using the store in `/nix/store`:
 - https://discourse.nixos.org/t/nix-var-nix-opt-nix-usr-local-nix/7101/66
 
 
