@@ -508,8 +508,34 @@ Refs.:
 
 The easy way:
 ```bash
-nix run nixpkgs#pkgsStatic.redis -- --version
+# If this is broken in the future, test the fixed commit sha256 version
+nix shell nixpkgs#pkgsStatic.redis --command redis-cli --version
+
+# Got the 2f0c3be57c348f4cfd8820f2d189e29a685d9c41 from:
+# nix flake metadata nixpkgs
+# nix shell 'github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65#pkgsStatic.redis' --command redis-cli --version
+
+
+nix \
+shell \
+'github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65#pkgsStatic.redis' \
+--command \
+sh \
+-c \
+'
+redis-cli --version
+
+ldd "$(which redis-server)" 1> /dev/null 2> /dev/null 
+EXITCODE=$?
+test $EXITCODE -eq 1 && echo "Looks like it worked!" || echo "Something bad happened!";
+exit $EXITCODE
+'
 ```
+Refs.:
+- https://stackoverflow.com/a/55940715
+
+
+
 
 ####
 
