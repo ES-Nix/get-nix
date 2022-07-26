@@ -685,6 +685,21 @@ not hardcoding the profile number.
 
 ### nix statically built, WIP
 
+It should be working, specially after nix 2.10.0+.
+Take a look in:
+- https://discourse.nixos.org/t/nix-2-10-0-released/20291
+
+- See:
+> `~/.local/share/nix/root`
+
+May be?
+> `~/.local/share/nix/someuser`
+
+
+Things that may be automagically solved by not using the store in `~/.local/share/nix/someuser`:
+- https://discourse.nixos.org/t/nix-var-nix-opt-nix-usr-local-nix/7101/66
+
+
 #### Install nix statically built
 
 
