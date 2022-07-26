@@ -481,6 +481,36 @@ https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/p
 
 
 
+
+#### redis
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+    (redis.overrideAttrs(old: {
+        makeFlags = (old.makeFlags or []) ++ ["USE_SYSTEMD=no"];
+      }
+    )
+  )
+)'
+```
+Refs.:
+- http://lethalman.blogspot.com/2016/04/cheap-docker-images-with-nix_15.html (the first one to do this?)
+- https://unix.stackexchange.com/questions/543325/nix-error-undefined-variable-gopackages
+- https://discourse.nixos.org/t/nix-docker-buildlayeredimage-musl-static-build-issue/15153/6
+- https://mudrii.medium.com/fixing-dockerfile-image-build-consistency-5bc6d5128aac
+- https://gist.github.com/573/6692d06a14f8844abbe40935d8eb8146
+
+The easy way:
+```bash
+nix run nixpkgs#pkgsStatic.redis -- --version
+```
+
 ####
 
 ```bash
