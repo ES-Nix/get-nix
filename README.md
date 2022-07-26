@@ -199,9 +199,13 @@ nix flake show nixpkgs
 nix flake show github:nixos/nixpkgs
 nix flake show github:nixos/nixpkgs/nixpkgs-unstable
 
-nix flake metadata nixpkgs # For development version use nix flake metadata .#
+# For development version use nix flake metadata '.#'
+nix flake metadata nixpkgs
 nix flake metadata github:nixos/nixpkgs
 nix flake metadata github:nixos/nixpkgs/nixpkgs-unstable
+
+# It requires that the flake has as input the nixpkgs
+echo 'github:NixOS/nixpkgs/'"$(nix flake metadata '.#' --json | jq -r '.locks.nodes.nixpkgs.locked.rev')"
 ```
 
 ```bash

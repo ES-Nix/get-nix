@@ -470,7 +470,3 @@ build \
 -- \
 --version
 ```
-    glibcLocales.override {
-        allLocales = false;
-        locales = [ "pt_BR.UTF-8/UTF-8" ];
-      }
