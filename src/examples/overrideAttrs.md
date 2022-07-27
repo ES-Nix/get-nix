@@ -325,6 +325,56 @@ echo $EXPECTED_SHA512'  '$(readlink -f $(which python3)) | sha512sum -c
 '
 ```
 
+
+
+```bash
+
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65"; 
+  with legacyPackages.${builtins.currentSystem};
+  (pkgsCross.s390x.pkgsStatic.python3Minimal.override 
+    { 
+      reproducibleBuild = true; 
+    }
+  )
+)' \
+--command \
+bash \
+-c \
+'
+# 
+echo "Test 1:"
+file "$(readlink -f $(which python3))" | grep -q -F "statically linked" || exit 32
+
+
+echo "Test 2:"
+# 1> /dev/null 2> /dev/null 
+! ldd $(readlink -f $(which python3)) 
+EXITCODE=$?
+test $EXITCODE -eq 0 || (echo "Something bad happened!" && exit $EXITCODE)
+
+
+EXPECTED_SHA256=c0e857711c91e5dccbced4645e45d637e98bedae113d749d90909abd080081d3
+EXPECTED_SHA512=d310f94d20ece6d993f5887f2d632ce64c1497441d597e76714e32f8078897855009869546428baa8f89f189e6aa7ef0bfa3c9ad3f3a8c3744c6c5b5281a170d
+
+echo "Test 3:"
+echo $EXPECTED_SHA256'  '$(readlink -f $(which python3)) | sha256sum -c
+EXITCODE=$?
+test $EXITCODE -eq 0 && echo "Looks like it worked!" || (echo "Something bad happened!" && exit $EXITCODE)
+
+echo "Test 4:"
+echo $EXPECTED_SHA512'  '$(readlink -f $(which python3)) | sha512sum -c
+EXITCODE=$?
+test $EXITCODE -eq 0 && echo "Looks like it worked!" || (echo "Something bad happened!" && exit $EXITCODE)
+'
+```
+
+
+
 ```bash
 nix \
 build \
