@@ -2029,10 +2029,16 @@ nix \
 shell \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-[ hello cowsay ]
-)' 
+'
+  (
+    with builtins.getFlake "nixpkgs";
+    with legacyPackages.${builtins.currentSystem};
+    [
+      hello
+      cowsay
+    ]
+  )
+'
 
 # hello | cowsay
 ```
@@ -3980,6 +3986,33 @@ nix build --impure --expr '(import <nixpkgs> {
     })
   ];
 }).firefox-unwrapped'
+```
+
+
+### dockerTools examples
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.streamLayeredImage {
+      name = "hello";
+      tag = "latest";
+      config = {
+        Cmd = [
+          "${pkgs.hello}/bin/hello"
+        ];
+      };
+    }
+  )
+'
 ```
 
 
