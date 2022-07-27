@@ -16,7 +16,7 @@ shell \
 --impure \
 --expr \
 '(with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
-with legacyPackages.${builtins.currentSystem}; 
+with legacyPackages.${builtins.currentSystem};
 (openssl_1_1.overrideAttrs (oldAttrs: {
   src = fetchurl {
     url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1o.tar.gz;
@@ -44,7 +44,7 @@ shell \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
     (redis.overrideAttrs(old: {
         makeFlags = old.makeFlags ++ ["USE_SYSTEMD=no"];
       }
@@ -59,7 +59,7 @@ develop \
 --impure \
 --expr \
 '(with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
-with legacyPackages.${builtins.currentSystem}; 
+with legacyPackages.${builtins.currentSystem};
 (openssl_1_1.overrideAttrs (oldAttrs: rec {
   src = fetchurl {
     url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1l.tar.gz;
@@ -81,7 +81,7 @@ develop \
 --impure \
 --expr \
 '(with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
-with legacyPackages.${builtins.currentSystem}; 
+with legacyPackages.${builtins.currentSystem};
 (openssl_1_1.overrideAttrs (oldAttrs: rec {
   src = fetchurl {
     url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1l.tar.gz;
@@ -113,7 +113,7 @@ shell \
 --impure \
 --expr \
 '(with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
-with legacyPackages.${builtins.currentSystem}; 
+with legacyPackages.${builtins.currentSystem};
 (openssl_1_1.overrideAttrs (oldAttrs: rec {
   src = fetchurl {
     url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1l.tar.gz;
@@ -130,7 +130,7 @@ shell \
 --impure \
 --expr \
 '(with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
-with legacyPackages.${builtins.currentSystem}; 
+with legacyPackages.${builtins.currentSystem};
 (openssl_1_1.overrideAttrs (oldAttrs: rec {
   src = fetchurl {
     url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1l.tar.gz;
@@ -154,7 +154,7 @@ shell \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (openssl_1_1.overrideAttrs (oldAttrs: rec {
     src = fetchurl {
       url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1l.tar.gz;
@@ -180,7 +180,7 @@ s_client \
 openssl version
 "
 
-
+```bash
 NIXPKGS_ALLOW_INSECURE=1 \
 && nix \
 shell \
@@ -188,7 +188,7 @@ shell \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (openssl_1_1.overrideAttrs (oldAttrs: rec {
     src = fetchurl {
       url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1l.tar.gz;
@@ -204,7 +204,7 @@ bash \
 (openssl version -f | grep -q -e '-DOPENSSL_TLS_SECURITY_LEVEL=2') || echo 'Not found flag -DOPENSSL_TLS_SECURITY_LEVEL=2'
 openssl version -f | sed 's/ / \\ \n/g' | sed -e 1d | (sed -u 1q; sort)
 "
-
+```
 
 
 
@@ -217,58 +217,93 @@ objdump $(erw openssl) -x  | grep TLS
 
 https://superuser.com/a/929567
 
-
+```bash
 nix show-derivation nixpkgs#openssl  | jq ".[].outputs.out.path"
+```
 
 https://earthly.dev/blog/make-flags/
 
 https://crypto.stackexchange.com/questions/84271/why-openssh-prefers-ecdsa-nistp256-keys-over-384-and-521-and-those-over-ed255
 
 
+Broken:
+```bash
 nix \
 build \
 --impure \
 --expr \
-'(
-with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}.pkgsStatic;
-(podman.override { postFixup = ""; })
-)'
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65"; 
+  with legacyPackages.${builtins.currentSystem}.pkgsStatic;
+    (
+      podman.override {
+        postFixup = "";
+      }
+    )
+  )
+'
+```
 
-
-
+```bash
 NIXPKGS_ALLOW_BROKEN=1 \
 && nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-(podman.overrideAttrs (oldAttrs: {
-  preFixup = "";
-}))
-)'
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      podman.overrideAttrs (oldAttrs: {
+        preFixup = "";
+      }
+    )
+  )
+)
+'
+```
 
+```bash
 NIXPKGS_ALLOW_BROKEN=1 \
 && nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}.pkgsStatic; 
-(catatonit.overrideAttrs (oldAttrs: {
-  nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ patchelf ];
-}))
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem}.pkgsStatic; 
+    (
+      catatonit.overrideAttrs (oldAttrs: {
+        nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ patchelf ];
+      }
+    )
+  )
 )'
+```
+
+```bash
+export NIXPKGS_ALLOW_BROKEN=1 \
+&& nix why-depends --impure --derivation nixpkgs#pkgsStatic.podman nixpkgs#systemd | cat
+```
 
 
+```bash
+export NIXPKGS_ALLOW_BROKEN=1 \
+&& nix why-depends --impure --derivation nixpkgs#pkgsStatic.procps nixpkgs#systemd
+```
+
+
+```bash
 nix \
 shell \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65"; 
+  with legacyPackages.${builtins.currentSystem};
   (pkgsStatic.python3Minimal.override 
     { 
       reproducibleBuild = true; 
@@ -279,26 +314,32 @@ shell \
 bash \
 -c \
 '
-file $(readlink -f $(which python3)) \
-&& ldd $(readlink -f $(which python3)) \
-&& sha256sum $(readlink -f $(which python3)) \
+# The file from coreutils must report that it is an statically linked binary
+file $(readlink -f $(which python3)) | grep -q -F "statically linked" || echo "Error 1"
+
+ldd $(readlink -f $(which python3))
+EXPECTED_SHA256=72f383ac9f9dbfaa8ea955557a76e0a63f80118e420e848ff4399f090a924cc1
+EXPECTED_SHA512=b4865ec702187bcd3aed8567772d67e64352367406fe05266b11f6d88d28da6b090c2bcd06ef0886f8ab151a3f0008c023cd954919e04f4bf6eaab02c1175357
+echo $EXPECTED_SHA256'  '$(readlink -f $(which python3)) | sha256sum -c
+echo $EXPECTED_SHA512'  '$(readlink -f $(which python3)) | sha512sum -c
 '
+```
 
-
-
+```bash
 nix \
 build \
 --impure \
 --expr \
 '(
   with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (
     glibcLocales.override {
       allLocales = true;
     }
   )
 )'
+```
 
 
 ```bash
@@ -308,7 +349,7 @@ build \
 --expr \
 '(
   with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (
     glibcLocales.override {
       locales = [ "pt_BR.UTF-8/UTF-8" ];
@@ -326,7 +367,7 @@ build \
 --expr \
 '(
   with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (
     glibcLocales.overrideAttrs (oldAttrs: {
         locales = [ "pt_BR.UTF-8/UTF-8" ];
@@ -345,7 +386,7 @@ show-derivation \
 --expr \
 '(
   with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (
     glibcLocales.overrideAttrs (oldAttrs: {
         locales = [ "pt_BR.UTF-8/UTF-8" ];
@@ -420,7 +461,7 @@ show-derivation \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (pkgsStatic.python3Minimal.override 
     { 
       reproducibleBuild = true; 
@@ -434,13 +475,13 @@ show-derivation \
 
 TODO: document it better
 ```bash
-nix \                                                                                                                                       
-develop \        
+nix \
+develop \
 --impure \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (awscli.override 
     { 
       python3 = python38; 
@@ -452,13 +493,13 @@ python --version
 ```
 
 ```bash
-nix \                                                                                                                                       
-develop \        
+nix \
+develop \
 --impure \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (awscli.override 
     { 
       python3 = python39; 
@@ -471,8 +512,11 @@ python --version
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/d1ca40ea766da1b639937084d18d3e54e4e5da1b/pkgs/tools/admin/awscli/default.nix#L52-L63
 
+
+
 ###
 
+TODO: document it
 https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/pkgs/tools/networking/pacparser/default.nix#L12-L18
 
 https://github.com/NixOS/nixpkgs/blob/634141959076a8ab69ca2cca0f266852256d79ee/pkgs/os-specific/linux/nvidia-x11/settings.nix#L54-L67
@@ -536,19 +580,27 @@ Refs.:
 
 
 
+#### opencv
+
+
+```bash
+nix why-depends --all nixpkgs#pkgsStatic.opencv nixpkgs#systemd
+```
 
 ####
 
 ```bash
 nix \
-build \
+shell \
 --impure \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
     (import <nixpkgs> { overlays = [(self: super: { gcc = self.gcc10; })]; }).stdenv.cc
-)'
+)' \
+--command \
+gcc --version
 ```
 Refs.:
 - https://stackoverflow.com/a/62224124
@@ -556,14 +608,14 @@ Refs.:
 
 ```bash
 nix \
-build \
+shell \
 --impure \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
     (import <nixpkgs> { overlays = [(self: super: { hello = self.python3; })]; }).hello
 )' \
--- \
---version
+--command \
+python --version
 ```
