@@ -298,7 +298,7 @@ export NIXPKGS_ALLOW_BROKEN=1 \
 
 ```bash
 nix \
-shell \
+build \
 --impure \
 --expr \
 '(
@@ -309,26 +309,22 @@ shell \
       reproducibleBuild = true; 
     }
   )
-)' \
---command \
-bash \
-<<'COMMANDS'
+)'
 # The file from coreutils must report that it is an statically linked binary
-file $(readlink -f $(which python3)) | grep -q -F "statically linked" || exit 32
+file $(readlink -f $(which result/bin/python)) | grep -q -F "statically linked" || exit 32
 
-! ldd $(readlink -f $(which python3)) 2> /dev/null
+! ldd $(readlink -f $(which result/bin/python)) 2> /dev/null
 export EXPECTED_SHA256=f1c5d1e728b61731e1a305070444be95818b5a778682def8424a6ae9a5a37c0d
 export EXPECTED_SHA512=eeee2852bf6510e187a1cf228d58977f826e00235528b1abef8069cd3eaa07d7e81f2debf016d8c3580d6f0aa874255c2bed2e3c29dc4e6aa4d80b02010a4c99
-echo $EXPECTED_SHA256'  '$(readlink -f $(which python3)) | sha256sum -c --strict 1> /dev/null
-echo $EXPECTED_SHA512'  '$(readlink -f $(which python3)) | sha512sum -c --strict 1> /dev/null
-COMMANDS
+echo $EXPECTED_SHA256'  '$(readlink -f $(which result/bin/python)) | sha256sum -c --strict 1> /dev/null
+echo $EXPECTED_SHA512'  '$(readlink -f $(which result/bin/python)) | sha512sum -c --strict 1> /dev/null
 ```
 
 
 
 ```bash
 nix \
-shell \
+build \
 --impure \
 --expr \
 '(
@@ -339,35 +335,16 @@ shell \
       reproducibleBuild = true; 
     }
   )
-)' \
---command \
-bash \
-<<'COMMANDS'
-# 
-echo "Test 1:"
-file "$(readlink -f $(which python3))" | grep -q -F "statically linked" || exit 32
+)'
 
+# The file from coreutils must report that it is an statically linked binary
+file $(readlink -f $(which result/bin/python)) | grep -q -F "statically linked" || exit 32
 
-echo "Test 2:"
-# 1> /dev/null 2> /dev/null 
-! ldd $(readlink -f $(which python3)) 2> /dev/null
-EXITCODE=$?
-test $EXITCODE -eq 0 || (echo "Something bad happened!" && exit $EXITCODE)
-
-
+! ldd $(readlink -f $(which result/bin/python)) 2> /dev/null
 export EXPECTED_SHA256=c0e857711c91e5dccbced4645e45d637e98bedae113d749d90909abd080081d3
 export EXPECTED_SHA512=d310f94d20ece6d993f5887f2d632ce64c1497441d597e76714e32f8078897855009869546428baa8f89f189e6aa7ef0bfa3c9ad3f3a8c3744c6c5b5281a170d
-
-echo "Test 3:"
-echo $EXPECTED_SHA256'  '$(readlink -f $(which python3)) | sha256sum -c --strict 1> /dev/null
-EXITCODE=$?
-test $EXITCODE -eq 0 && echo "Looks like it worked!" || (echo "Something bad happened!" && exit $EXITCODE)
-
-echo "Test 4:"
-echo $EXPECTED_SHA512'  '$(readlink -f $(which python3)) | sha512sum -c --strict 1> /dev/null
-EXITCODE=$?
-test $EXITCODE -eq 0 && echo "Looks like it worked!" || (echo "Something bad happened!" && exit $EXITCODE)
-COMMANDS
+echo $EXPECTED_SHA256'  '$(readlink -f $(which result/bin/python)) | sha256sum -c --strict 1> /dev/null
+echo $EXPECTED_SHA512'  '$(readlink -f $(which result/bin/python)) | sha512sum -c --strict 1> /dev/null
 ```
 
 
