@@ -710,7 +710,7 @@ test -d /nix || sudo mkdir -m 0755 /nix \
 ```
 
 ```bash
-SHA256=deacaf1658943c9175e4c9e6035f8599fb778b8a \
+SHA256=eee552921de35c241976b07b31816d852be78aeb \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"${SHA256}"/nix-static.sh | sh \
 && . ~/.profile \
 && nix flake --version \
