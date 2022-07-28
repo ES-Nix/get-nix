@@ -4007,7 +4007,7 @@ shell \
       tag = "latest";
       config = {
         Cmd = [
-          "${pkgs.hello}/bin/hello"
+          "${pkgs.pkgsStatic.hello}/bin/hello"
         ];
       };
     }
@@ -4015,6 +4015,10 @@ shell \
 '
 ```
 
+
+podman run --interactive=true --tty=true --user=podman --volume=$(pwd):/home/podman/data:U quay.io/podman/stable bash -c 'cat /etc/passwd && ls -al $HOME/data'
+
+```bash
 
 
 #### From apt-get, yes, it is possible, or should be to

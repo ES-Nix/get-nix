@@ -5,13 +5,17 @@
 
 #set -x
 
+# This installer needs at least the USER environment variable
+echo 'Testing if the USER environment has non null value'
+# https://stackoverflow.com/a/39301995
+[[ "${USER-x}" ]] || exit 44
 # What is the best, more compatible, way?
 # cd ~
 # cd "$HOME"
 #  || echo 'For some reason `cd cd /home/"$USER"` failed!' && exit 3
 cd /home/"$USER"
 
-BASE="$HOME"/.local/bin
+BASE=/home/"$USER"/.local/bin
 # BUILD_ID='178718571'
 # BUILD_ID='181545168'
 # BUILD_ID='183832936'
@@ -63,7 +67,7 @@ EOF
 # Really important the double quotes in the PROFILE_NIX_FUNCTIONS variable echo, see:
 # https://stackoverflow.com/a/18126699
 # To preserve the format of the echoed code.
-if [ ! -f /home/nix_user/.profile ]; then
+if [ ! -f /home/"$USER"/.profile ]; then
   echo "$BASHRC_NIX_FUNCTIONS" > /home/"$USER"/.profile
 else
   toybox grep 'flake' /home/"$USER"/.profile -q || echo "$BASHRC_NIX_FUNCTIONS" >> /home/"$USER"/.profile
