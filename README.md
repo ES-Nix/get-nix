@@ -4072,10 +4072,66 @@ shell \
 ```
 
 
-podman run --interactive=true --tty=true --user=podman --volume=$(pwd):/home/podman/data:U quay.io/podman/stable bash -c 'cat /etc/passwd && ls -al $HOME/data'
 
 ```bash
+# nix flake metadata nixpkgs --json | jq --join-output '.url'
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/8f73de28e63988da02426ebb17209e3ae07f103b";
+    with legacyPackages.${builtins.currentSystem};
 
+    dockerTools.buildImage {
+      name = "nix";
+      tag = "latest";
+
+      copyToRoot = [
+        pkgsStatic.nix
+      ];
+      config = {
+        Entrypoint = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
+        Env = [
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "USER=root"
+        ];
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
+--tty=true \
+--rm=true \
+localhost/nix:latest \
+run \
+nixpkgs#hello
+```
+
+```bash
+# podman load < result
+# If streamLayeredImage
+"$(readlink -f result)" | podman load
+
+podman images
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/nix:latest
+```
+
+TODO: 
+- https://discourse.nixos.org/t/how-to-run-chown-for-docker-image-built-with-streamlayeredimage-or-buildlayeredimage/11977/3
 
 #### From apt-get, yes, it is possible, or should be to
 
