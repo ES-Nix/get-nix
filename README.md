@@ -1051,6 +1051,22 @@ podman run -it --rm localhost/unprivileged-ubuntu22:latest
 curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
 ```
 
+
+```bash
+# https://hydra.nixos.org/project/nix
+BUILD_ID='185724653'
+curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/1/nix > nix
+chmod +x nix
+
+# mkdir -pv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
+# ln -sfv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/abcuser/profile "${HOME}"/.nix-profile
+```
+
+```bash
+./nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#hello
+```
+
+
 ```bash
 podman rm --force "${CONTAINER_NAME}"
 ```
