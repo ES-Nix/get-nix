@@ -1007,6 +1007,46 @@ podman run -it --rm ubuntu bash -c "apt-get update"
 ```
 
 
+
+##### unprivileged
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:22.04
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+     tar \
+     xz-utils \
+     libpcap-dev \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser
+EXPOSE 80
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu22 .
+
+
+podman run -it --rm localhost/unprivileged-ubuntu22:latest
+```
+
+#### Testing the installer
+
 ```bash
 curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
 ```

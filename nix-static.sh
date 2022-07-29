@@ -8,7 +8,7 @@
 # This installer needs at least the USER environment variable
 echo 'Testing if the USER environment has non null value'
 # https://stackoverflow.com/a/39301995
-[[ "${USER-x}" ]] || exit 44
+[ "${USER}" ] || exit 44
 # What is the best, more compatible, way?
 # cd ~
 # cd "$HOME"
