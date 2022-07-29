@@ -290,7 +290,8 @@ export NIXPKGS_ALLOW_BROKEN=1 \
 ```
 
 TODO: it seems to be possible to compile statically 
-- https://github.com/containers/podman/issues/14454#issuecomment-1148561820, this one has a Dockerfile that compiles podman statically  
+- https://github.com/containers/podman/issues/14454#issuecomment-1148561820, this one has a Dockerfile that compiles podman statically
+- https://github.com/containers/podman/blob/main/Makefile#L107
 - https://github.com/cri-o/cri-o/blob/e80d9c9197059f24f97bf33c18533ce07f257420/Makefile#L175-L181
 
 ```bash
