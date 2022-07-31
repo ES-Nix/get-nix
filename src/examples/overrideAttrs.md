@@ -607,6 +607,12 @@ Refs.:
 - https://stackoverflow.com/a/55940715
 
 
+### C++, boost, poco, Clang 7, overrideCC stdenv
+
+
+
+https://blog.galowicz.de/2019/04/17/tutorial_nix_cpp_setup/
+
 
 #### opencv
 
@@ -614,6 +620,9 @@ Refs.:
 ```bash
 nix why-depends --all nixpkgs#pkgsStatic.opencv nixpkgs#systemd
 ```
+
+
+https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-when-use-qemu-in-docker
 
 ####
 
