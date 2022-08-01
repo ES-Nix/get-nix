@@ -6,9 +6,15 @@ https://www.youtube.com/watch?v=6VepnulTfu8
 
 ### openssl
 
+```bash
+nix run nixpkgs#gcr
+```
 
-https://wiki.openssl.org/index.php/Compilation_and_Installation#Modifying_Build_Settings
-https://stackoverflow.com/a/7831995
+
+- https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_security_level.html
+- https://github.com/openssl/openssl/blob/a6843e6ae8ae0551aae8555783f06dab7951f112/INSTALL.md#no-asm
+- https://wiki.openssl.org/index.php/Compilation_and_Installation#Modifying_Build_Settings
+- https://stackoverflow.com/a/7831995
 
 
 ssh-keygen -lf ~/.ssh/id_ed25519.pub
@@ -219,8 +225,12 @@ openssl version -d
 nm -C $(erw openssl) | grep TLS
 objdump $(erw openssl) -x  | grep TLS
 
-
+https://stackoverflow.com/questions/26411955/openssl-how-to-find-the-config-options-that-openssl-was-compiled-with
 https://superuser.com/a/929567
+https://github.com/openssl/openssl/issues/11456#issuecomment-607682072
+https://unix.stackexchange.com/a/134942
+https://stackoverflow.com/a/189524
+
 
 ```bash
 nix show-derivation nixpkgs#openssl  | jq ".[].outputs.out.path"
