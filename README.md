@@ -1946,6 +1946,10 @@ nix build --refresh github:ES-Nix/nix-qemu-kvm/dev#qemu.vm \
 nix build --expr '{}' --no-link
 ```
 
+```bash
+nix -vvvvv build --expr '{ inputs.nixpkgs.url = "nixpkgs";  outputs = { ... }: {  }; }' --no-link
+```
+
 Hope it works:
 ```bash
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello --no-link
