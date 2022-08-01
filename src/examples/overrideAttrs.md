@@ -4,7 +4,10 @@ https://www.youtube.com/watch?v=6VepnulTfu8
 
 
 
-###
+### openssl
+
+
+https://wiki.openssl.org/index.php/Compilation_and_Installation#Modifying_Build_Settings
 
 ssh-keygen -lf ~/.ssh/id_ed25519.pub
 
