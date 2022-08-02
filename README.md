@@ -4179,3 +4179,8 @@ run \
 nixpkgs#hello
 ```
 
+### SoN2022 
+
+TODO:
+- [Armijn Hemel - The History of NixOS (SoN2022 - Public Lecture Series)](https://www.youtube.com/watch?v=t6goF1dM3ag)
+- [Eelco Dolstra - The Evolution of Nix (SoN2022 - public lecture series)](https://www.youtube.com/watch?v=h8hWX_aGGDc)
