@@ -2,6 +2,10 @@
 
 https://www.youtube.com/watch?v=6VepnulTfu8
 
+> I'm not convinced getting rid of `NIX_CFLAGS_COMPILE` is a good idea. 
+> `NIX_CFLAGS_COMPILE` is consistent and reliable, unlike figuring out the magic 
+> incantation (often silently ignored) to tell the build system to pass a flag to the C compiler.
+https://github.com/NixOS/nixpkgs/issues/79303#issuecomment-720647170
 
 
 ### openssl
@@ -15,7 +19,10 @@ nix run nixpkgs#gcr
 - https://github.com/openssl/openssl/blob/a6843e6ae8ae0551aae8555783f06dab7951f112/INSTALL.md#no-asm
 - https://wiki.openssl.org/index.php/Compilation_and_Installation#Modifying_Build_Settings
 - https://stackoverflow.com/a/7831995
-
+- https://stackoverflow.com/questions/56141096/how-to-override-a-parameter-in-an-openssl-configuration-file-using-the-cli
+- https://askubuntu.com/questions/1233186/ubuntu-20-04-how-to-set-lower-ssl-security-level
+- https://stackoverflow.com/a/64200184
+- https://discourse.nixos.org/t/how-to-recompile-a-package-with-flags/3603/7
 
 ssh-keygen -lf ~/.ssh/id_ed25519.pub
 
@@ -591,6 +598,7 @@ Refs.:
 - https://unix.stackexchange.com/questions/543325/nix-error-undefined-variable-gopackages
 - https://discourse.nixos.org/t/nix-docker-buildlayeredimage-musl-static-build-issue/15153/6
 - https://mudrii.medium.com/fixing-dockerfile-image-build-consistency-5bc6d5128aac
+- https://javamana.com/2021/11/20211102055652111y.html
 - https://gist.github.com/573/6692d06a14f8844abbe40935d8eb8146
 
 The easy way:
@@ -671,3 +679,7 @@ shell \
 --command \
 python --version
 ```
+
+
+https://stackoverflow.com/a/56706514
+
