@@ -298,7 +298,80 @@ nix-store --query --requisites --include-outputs $(which nix) | cat
 
 nix-store --query --tree --include-outputs $(nix-store --query --deriver $(which nix)) | cat
 nix-store --query --graph --include-outputs $(nix-store --query --deriver $(which nix)) | dot -Tps > graph.ps
+
+
+nix build nixpkgs#hello --no-link
+nix-store --query --graph --include-outputs $(nix path-info --derivation nixpkgs#hello) | dot -Tps > graph.ps
 ```
+
+
+```bash
+nix build nixpkgs#awscli --no-link
+nix-store --query --graph --include-outputs $(nix path-info nixpkgs#awscli) | dot -Tps > graph.ps
+```
+
+
+```bash
+command -v jq || nix profile install nixpkgs/18de53ca965bd0678aaf09e5ce0daae05c58355a#jq
+command -v dot || nix profile install nixpkgs/18de53ca965bd0678aaf09e5ce0daae05c58355a#graphviz
+
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#pkgsStatic.hello --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#pkgsStatic.hello) \
+| dot -Tps > graph.ps
+```
+
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Minimal --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Minimal) \
+| dot -Tps > graph.ps
+```
+
+
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3 --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3) \
+| dot -Tps > graph.ps
+```
+
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Full --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Full) \
+| dot -Tps > graph.ps
+```
+
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#pkgsStatic.python3Minimal --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#pkgsStatic.python3Minimal) \
+| dot -Tps > graph.ps
+```
+ 
+
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#podman-unwrapped --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#podman-unwrapped) \
+| dot -Tps > graph.ps
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/6142#issuecomment-1048538683
+
+
 
 ```bash
 nix \
@@ -328,7 +401,7 @@ FILE_NAME='graph.ps'
 nix-store \
   --store https://cache.nixos.org/ \
   --query \
-  --references $(nix eval --raw github:NixOS/nixpkgs/18de53ca965bd0678aaf09e5ce0daae05c58355a#gcc) \
+  --references $(nix eval --raw github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#gcc) \
  | xargs nix-store --query --graph \
  | dot -Tps > "${FILE_NAME}"
 
@@ -346,6 +419,8 @@ echo "${EXPECTED_SHA512}"'  '"${FILE_NAME}" | sha512sum -c
 
 ```bash
 FILE_NAME='graph.pdf'
+
+command -v dot || nix profile install nixpkgs/18de53ca965bd0678aaf09e5ce0daae05c58355a#graphviz
 
 nix-store \
   --store https://cache.nixos.org/ \
@@ -393,7 +468,11 @@ echo $(nix-store --query --graph $(nix eval --raw github:NixOS/nix#nix-static.dr
 ```
 
 ```bash
+nix path-info nixpkgs#hello
 nix path-info --derivation nixpkgs#hello
+
+nix path-info --derivation --json --recursive nixpkgs#hello | jq .
+
 nix eval --raw nixpkgs#hello.drvPath
 nix eval --raw nixpkgs#lib.version
 nix eval nixpkgs#lib.fakeSha256
@@ -404,6 +483,13 @@ echo $(nix-store --query --graph $(nix eval --raw nixpkgs#hello.drvPath)) | dot 
 
 ```bash
 nix show-derivation nixpkgs#hello
+
+
+command -v jq || nix profile install nixpkgs#jq
+nix show-derivation --recursive nixpkgs#pkgsStatic.hello \
+| jq -r '.[] | select(.outputs.out.hash and .env.urls) | .env.urls' \
+| uniq \
+| sort
 ```
 
 ```bash

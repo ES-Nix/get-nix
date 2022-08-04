@@ -268,7 +268,7 @@ build \
 ```
 
 ```bash
-NIXPKGS_ALLOW_BROKEN=1 \
+export NIXPKGS_ALLOW_BROKEN=1 \
 && nix \
 build \
 --impure \
@@ -279,13 +279,112 @@ build \
   with legacyPackages.${builtins.currentSystem};
     (
       podman.overrideAttrs (oldAttrs: {
-        preFixup = "";
+        postFixup = "";
       }
     )
   )
 )
 '
 ```
+
+```bash
+ldd $(readlink -f result/bin/podman) | rg systemd
+nix-store --query --graph --include-outputs $(readlink -f result/bin/python) | dot -Tps > graph.ps
+okular graph.ps
+```
+
+```bash
+export NIXPKGS_ALLOW_BROKEN=1 \
+&& nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      podman-unwrapped.overrideAttrs (oldAttrs: {
+        postFixup = "";
+      }
+    )
+  )
+)
+'
+```
+
+
+```bash
+export NIXPKGS_ALLOW_BROKEN=1 \
+&& nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      podman-unwrapped.overrideAttrs (oldAttrs: {
+        postFixup = "";
+      }
+    )
+  ).override { systemd = null; }
+)
+'
+```
+
+
+```bash
+export NIXPKGS_ALLOW_BROKEN=1 \
+&& nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      pkgsStatic.podman-unwrapped.overrideAttrs (oldAttrs: {
+        postFixup = "";
+      }
+    )
+  ).override { systemd = null; }
+)
+'
+```
+Refs.:
+- https://discourse.nixos.org/t/combining-override-and-overrideattrs/10089/2
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      podman-unwrapped.override
+        {
+          systemd = null;
+          lvm2 = null;
+          libapparmor = null;
+          libselinux = null;
+          btrfs-progs = null;
+        }
+    ).overrideAttrs (oldAttrs:
+        {
+          postFixup = "";
+        }
+      )
+  )
+'
+```
+
 
 ```bash
 NIXPKGS_ALLOW_BROKEN=1 \
@@ -328,11 +427,11 @@ build \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
   with legacyPackages.${builtins.currentSystem};
-  (pkgsStatic.python3Minimal.override 
-    { 
-      reproducibleBuild = true; 
+  (pkgsStatic.python3Minimal.override
+    {
+      reproducibleBuild = true;
     }
   )
 )'
@@ -356,9 +455,9 @@ build \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65"; 
   with legacyPackages.${builtins.currentSystem};
-  (pkgsCross.s390x.pkgsStatic.python3Minimal.override 
-    { 
-      reproducibleBuild = true; 
+  (pkgsCross.s390x.pkgsStatic.python3Minimal.override
+    {
+      reproducibleBuild = true;
     }
   )
 )'
@@ -381,7 +480,7 @@ build \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "nixpkgs"; 
+  with builtins.getFlake "nixpkgs";
   with legacyPackages.${builtins.currentSystem};
   (
     glibcLocales.override {
@@ -398,7 +497,7 @@ build \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "nixpkgs"; 
+  with builtins.getFlake "nixpkgs";
   with legacyPackages.${builtins.currentSystem};
   (
     glibcLocales.override {
@@ -416,7 +515,7 @@ build \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "nixpkgs"; 
+  with builtins.getFlake "nixpkgs";
   with legacyPackages.${builtins.currentSystem};
   (
     glibcLocales.overrideAttrs (oldAttrs: {
@@ -435,7 +534,7 @@ show-derivation \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "nixpkgs"; 
+  with builtins.getFlake "nixpkgs";
   with legacyPackages.${builtins.currentSystem};
   (
     glibcLocales.overrideAttrs (oldAttrs: {
@@ -512,9 +611,9 @@ show-derivation \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
   with legacyPackages.${builtins.currentSystem};
-  (pkgsStatic.python3Minimal.override 
-    { 
-      reproducibleBuild = true; 
+  (pkgsStatic.python3Minimal.override
+    {
+      reproducibleBuild = true;
     }
   )
 )' | jq -r '.[].env.preConfigure'
