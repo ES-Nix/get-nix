@@ -1599,7 +1599,8 @@ TODO: try it
 https://github.com/freuk/awesome-nix-hpc
 
 TODO:
-Matthew shows how using statically linked Nix in a 5MB binary, one can use Nix without root. With an one-liner shell, you can use Nix to install any software on a Linux machine.
+Matthew shows how using statically linked Nix in a 5MB binary, one can use Nix without root. 
+With an one-liner shell, you can use Nix to install any software on a Linux machine.
 [Static Nix: a command-line swiss army knife](https://matthewbauer.us/blog/static-nix.html)
 
 
@@ -1607,8 +1608,11 @@ TODO: [Packaging with Nix](https://www.youtube.com/embed/Ndn5xM1FgrY?start=329&e
 
 [Nix Portable: Nix - Static, Permissionless, Install-free, Pre-configured](https://discourse.nixos.org/t/nix-portable-nix-static-permissionless-install-free-pre-configured/11719)
 
+https://support.glitch.com/t/install-prebuilt-packages-without-root-from-nixpkgs/43775
 
-> Oh yeah, chroot stores won’t work on macOS. Neither will proot. Having a flat-file binary cache in the shared dir and copying to/from that will be your only option there.
+
+> Oh yeah, chroot stores won’t work on macOS. Neither will proot. Having a flat-file binary cache in the shared dir
+> and copying to/from that will be your only option there.
 [How to use a local directory as a nix binary cache?](https://discourse.nixos.org/t/how-to-use-a-local-directory-as-a-nix-binary-cache/655/14)
 
 
