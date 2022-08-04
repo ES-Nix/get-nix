@@ -683,3 +683,9 @@ python --version
 
 https://stackoverflow.com/a/56706514
 
+
+
+### Old gcc version
+
+
+https://discourse.nixos.org/t/compiling-with-old-glibc/12054/4
