@@ -3886,7 +3886,7 @@ EXPECTED_SHA512='1f869a5170972dd07bd350699bf8ac1bec9a071cb23ca2d6196a1d429a376d7
 echo "${EXPECTED_SHA256}"'  '"${FILE_NAME}" | sha256sum -c
 echo "${EXPECTED_SHA512}"'  '"${FILE_NAME}" | sha512sum -c
 
-# Only python3Full is abble?
+# Only python3Full is able?
 # python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("America/Recife")))'
 ```
 
