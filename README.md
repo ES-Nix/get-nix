@@ -382,7 +382,11 @@ nixpkgs#{coreutils,graphviz,which} \
 echo $(nix-store --query --graph $(nix-store --query $(readlink -f $(which nix)))) | dot -Tps > graph.ps 
 ```
 
+Broken:
+```bash
 echo $(nix-store --query --graph $(nix eval --raw github:NixOS/nix#nix-static))
+```
+
 ```bash
 echo $(nix-store --query --graph $(nix eval --raw github:NixOS/nix#nix-static)) | dot -Tpdf > nix-static.pdf
 echo $(nix-store --query --graph $(nix eval --raw github:NixOS/nix#nix-static.drvPath)) | dot -Tpdf > nix-static-drvPath.pdf
