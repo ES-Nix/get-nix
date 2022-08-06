@@ -2885,7 +2885,7 @@ python3 --version
 #build \
 #github:ES-Nix/poetry2nix-examples/2cb6663e145bbf8bf270f2f45c869d69c657fef2#poetry2nixOCIImage
 
-# Broken, no ideia why...
+# Broken, no idea why...
 #./nix-static \
 #--extra-experimental-features 'nix-command flakes' \
 #--option sandbox true \
