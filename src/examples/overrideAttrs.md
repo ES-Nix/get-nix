@@ -748,6 +748,36 @@ https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-w
 
 ####
 
+
+
+```bash
+nix build --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).openssl'
+```
+
+
+```bash
+nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { aclSupport = false; })]; }).coreutils'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(import <nixpkgs> {                                                                      
+  overlays = [
+    (self: super: {
+      firefox-unwrapped = super.firefox-unwrapped.overrideAttrs (oldAttrs: {
+        makeFlags = oldAttrs.makeFlags ++ [ "BUILD_OFFICIAL=1" ];
+      });
+    })
+  ];
+  }
+).firefox-unwrapped'
+```
+
 ```bash
 nix \
 shell \

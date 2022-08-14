@@ -939,9 +939,8 @@ bash
 #### Part 1:
 
 ```bash
-CONTAINER_NAME='container-test-nix'
-IMAGE_NAME='image-test-nix'
-
+IMAGE_NAME='unprivileged-ubuntu22'
+CONTAINER_NAME='container'"${IMAGE_NAME}"'-test-nix'
 podman rm --force --ignore "${CONTAINER_NAME}"
 
 podman \
@@ -952,7 +951,7 @@ run \
 --rm=false \
 --interactive=true \
 --tty=true \
-docker.io/library/ubuntu:20.04 \
+docker.io/library/ubuntu:22.04 \
 bash \
 -c \
 "
@@ -983,7 +982,11 @@ podman commit -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
 ```
 
 #### Part 2: 
+
 ```bash
+IMAGE_NAME='unprivileged-ubuntu22'
+CONTAINER_NAME='container'"${IMAGE_NAME}"'-test-nix'
+
 podman \
 run \
 --env="USER=evauser" \
@@ -994,13 +997,13 @@ run \
 --tty=true \
 --user=evauser \
 --workdir=/home/evauser \
-"${IMAGE_NAME}" \
+localhost/"${IMAGE_NAME}" \
 bash
 ```
 
 ```bash
-CONTAINER_NAME='container-test-nix'
-IMAGE_NAME='image-test-nix'
+IMAGE_NAME='unprivileged-ubuntu22'
+CONTAINER_NAME='container'"${IMAGE_NAME}"'-test-nix'
 
 podman rm --force --ignore "${CONTAINER_NAME}"
 
@@ -1100,6 +1103,41 @@ podman run -it --rm ubuntu bash -c "apt-get update"
 
 ##### unprivileged
 
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:22.04
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+     tar \
+     xz-utils \
+     libpcap-dev \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+     
+RUN adduser user --home /home/user --disabled-password --gecos "" --shell /bin/bash
+
+RUN mkdir /nix && chmod a+rwx /nix && chown -v user: /nix
+USER user
+ENV USER user
+WORKDIR /home/user
+
+# RUN curl https://nixos.org/nix/install | sh
+
+# RUN nix --version
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu22 .
+
+podman run -it --rm localhost/unprivileged-ubuntu22:latest
+```
+
 ```bash
 cat > Containerfile << 'EOF'
 FROM ubuntu:22.04
@@ -1120,7 +1158,7 @@ RUN addgroup abcgroup --gid 4455  \
      --ingroup abcgroup \
      --uid 3322 \
      abcuser
-EXPOSE 80
+RUN mkdir /nix && chmod 0755 /nix && chown -v abcuser: /nix
 USER abcuser
 WORKDIR /home/abcuser
 ENV USER="abcuser"
@@ -1132,7 +1170,7 @@ build \
 --tag=unprivileged-ubuntu22 .
 
 
-podman run -it --rm localhost/unprivileged-ubuntu22:latest
+podman run --privileged=true -it --rm localhost/unprivileged-ubuntu22:latest
 ```
 
 #### Testing the installer
@@ -2041,6 +2079,12 @@ nix build --expr '{}' --no-link
 ```
 
 ```bash
+cat <<'EOF' | xargs -I{} nix build --expr {} --no-link
+'{}'
+EOF
+```
+
+```bash
 nix -vvvvv build --expr '{ inputs.nixpkgs.url = "nixpkgs";  outputs = { ... }: {  }; }' --no-link
 ```
 
@@ -2176,6 +2220,10 @@ echo "${RESULT_SHA512}"'  '"${RESULT_PATH}" | sha512sum -c
 
 ```bash
 nix build nixpkgs#pkgsCross.s390x.busybox-sandbox-shell
+```
+
+```bash
+nix build nixpkgs#pkgsCross.armv7l-hf-multiplatform.dockerTools.examples.redis
 ```
 
 ```bash
@@ -3358,10 +3406,10 @@ nix \
 run \
 --impure \
 --expr \
-'(
-  with builtins.getFlake "nixpkgs"; 
+'(  
   with legacyPackages.${builtins.currentSystem}; 
   let               
+    nixpkgs = (with builtins.getFlake "nixpkgs");
     overlay = final: prev: {
       hello = prev.hello.overrideAttrs (oldAttrs: with final; {
           postInstall = oldAttrs.postInstall + "${prev.hello}/bin/hello Installation complete";
@@ -3369,7 +3417,7 @@ run \
       );
     };
 
-  pkgs = import (with builtins.getFlake "nixpkgs";); { overlays = [ overlay ]; };
+  pkgs = import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [ overlay ]; };
 
   in
     pkgs.hello
@@ -3377,7 +3425,11 @@ run \
 ```
 
 
-nix run --impure --expr 'with (import <nixpkgs> {}); let               
+nix \
+run \
+--impure \
+--expr \
+'with (import <nixpkgs> {}); let               
   overlay = final: prev: {
     openssl = prev.openssl.override {
       static = true;
@@ -3399,6 +3451,23 @@ run \
 '(
   import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [(final: prev: { static = true; })]; }
 ).hello'
+```
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [(final: prev: 
+    { 
+      static = true;
+      postInstall = prev.postInstall + "${prev.hello}/bin/hello Installation complete";
+    })]; 
+    }
+).hello
+'
 ```
 
 
@@ -4126,20 +4195,579 @@ nix-instantiate \
 --eval \
 --impure \
 --expr \
-'with builtins.getFlake "nixpkgs"; with legacyPackages.${builtins.currentSystem}; python3.withPackages (ps: with ps; [ numpy scipy ])'
+'
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    python3.withPackages (ps: with ps; [ numpy scipy ])
+'
+```
 
-nix build --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).openssl'
-nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { aclSupport = false; })]; }).coreutils'
+###
 
-nix build --impure --expr '(import <nixpkgs> {                                                                      
-  overlays = [
-    (self: super: {
-      firefox-unwrapped = super.firefox-unwrapped.overrideAttrs (oldAttrs: {
-        makeFlags = oldAttrs.makeFlags ++ [ "BUILD_OFFICIAL=1" ];
-      });
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+  vmTools.runInLinuxVM (pkgs.runCommand "boo" {} ''
+        "${concatMapStringsSep "\n" (i: "echo baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") (range 1 300)}"
+      ''
+    )                                   
+)
+'
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "tracee-test";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            python3
+          ];
+        };
+      };
+    
+      testScript = ''
+        machine.succeed("""
+          python3 --version
+         """)
+      '';
+    })                                   
+)
+'
+```
+
+### nixosTest
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-empty";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+        };
+      };
+    
+      testScript = "";
     })
-  ];
-}).firefox-unwrapped'
+)
+'
+```
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-empty";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+        };
+      };
+    
+      testScript = "";
+    })
+).driverInteractive
+'
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-empty";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+        };
+      };
+    
+      testScript = "";
+    })
+).driverInteractive
+' \
+--command \
+sh \
+-c \
+'nixos-test-driver --interactive'
+```
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-empty";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+        };
+      };
+    
+      testScript = "";
+    })
+).driverInteractive
+' \
+--command \
+sh \
+<<'COMMANDS'
+nixos-test-driver --interactive <<<"import subprocess; subprocess.call(['sh', '-c', 'cat /etc/passwd'])"
+nixos-test-driver --interactive <<<"import os; print(os.listdir('/proc/' + str(os.getpid()) + '/ns'))"
+COMMANDS
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            python3
+          ];
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"python3 --version\")"
+      '';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            python3
+          ];
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(
+          \"\"\"
+            python3 --version
+          \"\"\"
+        )"
+      '';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            pkgsStatic.python3Minimal
+          ];
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(
+          \"\"\"
+            ! ldd python3
+          \"\"\"
+        )"
+      '';
+    })
+)
+'
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            hello
+          ];
+          
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(
+          \"\"\"
+            ls -al /proc/$$/ns | wc -l 
+          \"\"\"
+        )"
+      '';
+    })
+)
+'
+```
+
+
+Broken:
+```bash
+cat <<'EOF' | xargs -0 -I{} nix build --expr {} --no-link
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            python3
+          ];
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"python3 --version\")"
+      '';
+    })
+)
+'
+EOF
+```
+
+
+machine.wait_for_unit("multi-user.target")
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          virtualisation.podman = {
+            enable = true;
+            # Creates a `docker` alias for podman, to use it as a drop-in replacement
+            #dockerCompat = true;
+          };
+        };
+      };
+    
+      testScript = ''
+        "machine.wait_for_unit(\"multi-user.target\"); machine.succeed(\"podman images\"); machine.succeed(\"systemctl is-active podman.socket\"); machine.fail(\"systemctl is-active podman\")"
+      '';
+    })
+)
+'
+```
+
+
+```bash
+# nix flake metadata nixpkgs --json | jq --join-output '.url'
+# github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07
+nix \                                                      
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-kubernetes";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          services.kubernetes = {
+           roles = ["master" "node"];
+           kubelet.extraOpts = "--fail-swap-on=false";
+           masterAddress = "localhost";
+          };
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"systemctl is-active certmgr\")"
+      '';
+    })
+)
+'
+```
+
+
+
+```bash
+# nix flake metadata nixpkgs --json | jq --join-output '.url'
+# github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      doCheck = false;
+      name = "nixos-test-kubernetes";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          services.kubernetes = {
+           roles = ["master" "node"];
+           kubelet.extraOpts = "--fail-swap-on=false";
+           masterAddress = "localhost";
+          };
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"systemctl is-active certmgr\")"
+      '';
+    })
+)
+'
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/022caabb5f2265ad4006c1fa5b1ebe69fb0c3faf"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      skipLint = true;
+      name = "nixos-test-kubernetes";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          services.kubernetes = {
+           roles = ["master" "node"];
+           kubelet.extraOpts = "--fail-swap-on=false";
+           masterAddress = "localhost";
+          };
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"systemctl is-active kubelet\")"
+      '';
+    })
+)
+'
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/022caabb5f2265ad4006c1fa5b1ebe69fb0c3faf"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      skipLint = true;
+      name = "nixos-test-kubernetes";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          virtualisation = {
+            memorySize = 1024 * 3;
+            diskSize = 1024 * 3;
+            cores = 4;
+            msize = 104857600;
+          };        
+          services.kubernetes = {
+           roles = ["master" "node"];
+           # If you use swap:
+           # kubelet.extraOpts = "--fail-swap-on=false";
+           masterAddress = "localhost";
+          };
+          
+          # Is this ok to kubernetes?
+          # Why free -h still show swap stuff but with 0?
+          swapDevices = pkgs.lib.mkForce [ ];
+          boot.kernelParams = [
+            "swapaccount=0"
+            "systemd.unified_cgroup_hierarchy=0"
+            "group_enable=memory"
+            "cgroup_enable=cpuset"
+            "cgroup_memory=1"
+            "cgroup_enable=memory"
+          ];          
+        };
+      };
+
+      testScript = ''
+        "
+machine.start()
+
+# let the system boot up
+machine.wait_for_unit(\"multi-user.target\")
+
+machine.succeed(\"systemctl is-active cfssl.service\")
+machine.succeed(\"systemctl is-active containerd.service\")
+machine.succeed(\"systemctl is-active flannel.service\")
+machine.succeed(\"systemctl is-active kube-apiserver.service\")
+machine.succeed(\"systemctl is-active kube-controller-manager.service\")
+machine.succeed(\"systemctl is-active kube-proxy.service\")
+machine.succeed(\"systemctl is-active kube-scheduler.service\")
+machine.succeed(\"systemctl is-active kubelet.service\")
+machine.succeed(\"systemctl is-active etcd.service\")
+machine.succeed(\"systemctl is-active kubernetes.target\")
+        "
+      '';
+    })
+)
+'
+```
+
+machine.succeed(\"systemctl is-active kubelet\")
+machine.succeed(\"systemctl is-active cfssl\")
+
+
+machine.succeed(\"systemctl is-active certmgr.service\")
+machine.succeed(\"systemctl is-active kube-addon-manager.service\")
+
+machine.succeed(\"systemctl is-active cfssl.service\")
+machine.succeed(\"systemctl is-active containerd.service\")
+machine.succeed(\"systemctl is-active flannel.service\")
+machine.succeed(\"systemctl is-active kube-addon-manager.service\")
+machine.succeed(\"systemctl is-active kube-apiserver.service\")
+machine.succeed(\"systemctl is-active kube-controller-manager.service\")
+machine.succeed(\"systemctl is-active kube-proxy.service\")
+machine.succeed(\"systemctl is-active kube-scheduler.service\")
+machine.succeed(\"systemctl is-active kubelet.service\")
+machine.succeed(\"systemctl is-active etcd.service\")
+machine.succeed(\"systemctl is-active kubernetes.target\")
+
+#### nixosTest + pkgsCross
+
+
+```bash
+# nix flake metadata nixpkgs --json | jq --join-output '.url'
+# github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-kubernetes";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "aarch64-android" ];
+          environment.systemPackages = [
+            pkgsCross.aarch64-android.pkgsStatic.hello
+          ];          
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"hello | grep Hello\")"
+      '';
+    })
+)
+'
 ```
 
 
