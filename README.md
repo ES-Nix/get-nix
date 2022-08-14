@@ -974,7 +974,7 @@ echo 'Creating user' \
 echo evauser:10000:5000 > /etc/subuid
 echo evauser:10000:5000 > /etc/subgid
 
-# mkdir -m 0755 /nix && chown evauser /nix
+mkdir -m 0755 /nix && chown evauser /nix
 " \
 podman commit -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
 && podman images \
@@ -1135,7 +1135,7 @@ build \
 --file=Containerfile \
 --tag=unprivileged-ubuntu22 .
 
-podman run -it --rm localhost/unprivileged-ubuntu22:latest
+podman run --privileged=true -it --rm localhost/unprivileged-ubuntu22:latest
 ```
 
 ```bash
@@ -4666,6 +4666,7 @@ build \
       name = "nixos-test-kubernetes";
       nodes = {
         machine = { config, pkgs, ... }: {
+          boot.isContainer = false;
           virtualisation = {
             memorySize = 1024 * 3;
             diskSize = 1024 * 3;
