@@ -813,6 +813,16 @@ python --version
 https://stackoverflow.com/a/56706514
 
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(import <nixpkgs> { overlays = [ (self: super: { nginxStable = null; }) ]; }).nixosTests.nginx'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/50301
+
 
 ### Old gcc version
 
