@@ -4651,6 +4651,9 @@ build \
 '
 ```
 
+
+#### k8s test
+
 ```bash
 nix \
 build \
@@ -4711,6 +4714,8 @@ machine.succeed(\"systemctl is-active kube-scheduler.service\")
 machine.succeed(\"systemctl is-active kubelet.service\")
 machine.succeed(\"systemctl is-active etcd.service\")
 machine.succeed(\"systemctl is-active kubernetes.target\")
+
+machine.succeed(\"systemctl is-active certmgr.service\")
         "
       '';
     })
