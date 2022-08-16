@@ -19,7 +19,8 @@ BASE=/home/"$USER"/.local/bin
 # BUILD_ID='178718571'
 # BUILD_ID='181545168'
 # BUILD_ID='183832936'
-BUILD_ID='183946375'
+# BUILD_ID='183946375'
+BUILD_ID='187091778'
 
 toybox --version 1> /dev/null 2> /dev/null || curl -L http://landley.net/toybox/downloads/binaries/0.8.7/toybox-x86_64 > toybox && chmod 0755 toybox
 
