@@ -5074,4 +5074,317 @@ Refs.:
 
 
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/md5sum /bin/sh; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+
+nix \
+log \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/md5sum /bin/sh; mkdir $out";
+      dontInstall = true;
+    }
+)
+' | cat
+```
+
 https://discourse.nixos.org/t/nixpkgs-that-need-no-sandbox/19173/8
+
+```bash
+nix shell -i 'github:NixOS/nixpkgs/6c6409e965a6c883677be7b9d87a95fab6c3472e#'pkgsStatic.busybox-sandbox-shell --command sh -c 'ls'
+```
+
+```bash
+nix build 'github:NixOS/nixpkgs/6c6409e965a6c883677be7b9d87a95fab6c3472e#'pkgsStatic.busybox-sandbox-shell
+echo eaf3601b19f2f22e5911f5678f1667d5d80fe5e7a4a2cc986b716bcfd20cc51d'  'result/bin/sh | sha256sum -c
+```
+
+```bash
+sha256sum $(nix show-config --json | jq -r '."sandbox-paths".value[0]' | cut -c9-)
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/sha256sum /bin/sh; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+
+nix \
+log \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/sha256sum /bin/sh; mkdir $out";
+      dontInstall = true;
+    }
+)
+' | cat
+```
+
+
+ls -al /proc/$$/ns; mkdir $out
+
+nix show-config | grep trust
+
+
+```bash
+nix \
+build \
+--option sandbox false \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/ls -al /tmp; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+
+
+nix \
+log \
+--option sandbox false \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/ls -al /tmp; mkdir $out";
+      dontInstall = true;
+    }
+)
+' | cat
+```
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/sha256sum /bin/sh; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+
+
+nix \
+log \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/sha256sum /bin/sh; mkdir $out";
+      dontInstall = true;
+    }
+)
+' | cat
+```
+
+
+```bash
+nix \
+build \
+--option sandbox false \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ curl ];
+      buildPhase = "\"${curl}\"/bin/curl google.com; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+
+
+nix \
+log \
+--option sandbox false \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ curl ];
+      buildPhase = "\"${curl}\"/bin/curl google.com; mkdir $out";
+      dontInstall = true;
+    }
+)
+' | cat
+```
+
+
+In an NixOS even with `--option sandbox false` and `sandbox = relaxed` from `nix show-config | grep sandbox`:
+```bash
+error: builder for '/nix/store/1cw0sf4r1q1ina51vzzvg5r87jcbfxv7-demo.drv' failed with exit code 6;
+       last 5 log lines:
+       > patching sources
+       > configuring
+       > no configure script, doing nothing
+       > building
+       > curl: (6) Could not resolve host: google.com
+       For full logs, run 'nix log /nix/store/1cw0sf4r1q1ina51vzzvg5r87jcbfxv7-demo.drv'.
+```
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "\"${coreutils}\"/bin/ls -al /proc/$$/ns; mkdir $out;";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ curl ];
+      buildPhase = "\"${curl}\"/bin/curl google.com; mkdir $out;";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+```bash
+error: builder for '/nix/store/8dcl8h7zhfcg73m5zyalfbnsp9y5sjgn-demo.drv' failed with exit code 6;
+       last 5 log lines:
+       > patching sources
+       > configuring
+       > no configure script, doing nothing
+       > building
+       > curl: (6) Could not resolve host: google.com
+       For full logs, run 'nix log /nix/store/8dcl8h7zhfcg73m5zyalfbnsp9y5sjgn-demo.drv'.
+```
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      nativeBuildDependencies = [ coreutils ];
+      buildPhase = "echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd /bin/sh | sha256sum -c && mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+```
+
