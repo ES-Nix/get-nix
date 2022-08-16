@@ -4999,7 +4999,7 @@ unshare -Upf --map-root-user -- sudo -u nobody echo hello
 nix shell --store ./ nixpkgs#bash nixpkgs#coreutils nixpkgs#util-linux --command bash -c 'unshare --user --pid echo YES' 
 
 
-
+```bash
 nix \
 build \
 --impure \
@@ -5012,13 +5012,15 @@ build \
         { 
            nativeBuildInputs = [ coreutils ];
         } 
-      "mkdir $out; ls -al /; echo; pwd"
+      "mkdir $out; ls -al /; echo; ls -al /build; pwd"
 )
 '
+```
 
 
+```bash
 nix \
-build \
+log \
 --impure \
 --expr \
 '
@@ -5029,6 +5031,47 @@ build \
         { 
            nativeBuildInputs = [ coreutils ];
         } 
-      "mkdir $out; ls -al /; echo; pwd"
+      "mkdir $out; ls -al /; echo; ls -al /build; pwd"
 )
 ' | cat
+```
+
+
+#####  
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    runCommand "my-test" {} "echo a > /tmp/a; ls -al /tmp; sleep 1; mkdir $out"
+)
+'
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    runCommand "my-test" {} "echo a > /tmp/a; ls -al /tmp; sleep 1; mkdir $out"
+)
+' | cat
+```
+Refs.:
+- https://stackoverflow.com/a/67607698
+
+
+
+https://discourse.nixos.org/t/nixpkgs-that-need-no-sandbox/19173/8
