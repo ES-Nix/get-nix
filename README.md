@@ -4912,3 +4912,123 @@ nixpkgs#hello
 TODO:
 - [Armijn Hemel - The History of NixOS (SoN2022 - Public Lecture Series)](https://www.youtube.com/watch?v=t6goF1dM3ag)
 - [Eelco Dolstra - The Evolution of Nix (SoN2022 - public lecture series)](https://www.youtube.com/watch?v=h8hWX_aGGDc)
+
+
+### sandbox
+
+
+```bash
+# nix-shell -p "(steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run"
+# https://github.com/NixOS/nixpkgs/issues/32881#issuecomment-371815465
+
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run
+)'
+```
+
+
+nix-shell -E '{pkgs ? import <nixpkgs> {} }: (pkgs.buildFHSUserEnv { name = "testfhsu"; targetPkgs = _: [];}).env'
+
+
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/441dc5d512153039f19ef198e662e4f3dbb9fd65";  
+  with legacyPackages.${builtins.currentSystem};
+    (buildFHSUserEnv { name = "testfhsu"; targetPkgs = _: [ hello su ];})
+)
+' \
+--command \
+testfhsu \
+-c \
+'hello && su'
+
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/441dc5d512153039f19ef198e662e4f3dbb9fd65";  
+  with legacyPackages.${builtins.currentSystem};
+    (buildFHSUserEnvBubblewrap { name = "testfhsu"; targetPkgs = _: [ hello su ];})
+)
+' \
+--command \
+testfhsu \
+-c \
+'hello && su'
+
+
+
+export NIXPKGS_ALLOW_UNFREE=1; \
+nix \
+run \
+--impure \
+github:NixOS/nixpkgs/03d52eed55151e330de5f0cc4fde434a7227ff43#steam-run \
+-- \
+sh \
+-c \
+'getcap /'
+
+
+export NIXPKGS_ALLOW_UNFREE=1; nix build --impure github:NixOS/nixpkgs/03d52eed55151e330de5f0cc4fde434a7227ff43#steam
+https://github.com/NixOS/nixpkgs/issues/33106
+
+nix run github:NixOS/nixpkgs/03d52eed55151e330de5f0cc4fde434a7227ff43#chromium -- --version
+
+nix shell github:NixOS/nixpkgs/441dc5d512153039f19ef198e662e4f3dbb9fd65#bubblewrap --command sh -c 'bwrap --dev-bind / / sudo id'
+
+export NIXPKGS_ALLOW_UNFREE=1; nix run --impure github:NixOS/nixpkgs/441dc5d512153039f19ef198e662e4f3dbb9fd65#steam-run -- id
+export NIXPKGS_ALLOW_UNFREE=1; nix run --impure github:NixOS/nixpkgs/441dc5d512153039f19ef198e662e4f3dbb9fd65#steam-run -- sudo
+https://github.com/NixOS/nixpkgs/issues/69338
+
+
+unshare -Upf --map-root-user -- sudo -u nobody echo hello
+
+
+nix shell --store ./ nixpkgs#bash nixpkgs#coreutils nixpkgs#util-linux --command bash -c 'unshare --user --pid echo YES' 
+
+
+
+nix \
+build \
+--impure \
+--expr \
+'
+(                                                                                                     
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    runCommand "_" 
+        { 
+           nativeBuildInputs = [ coreutils ];
+        } 
+      "mkdir $out; ls -al /; echo; pwd"
+)
+'
+
+
+nix \
+build \
+--impure \
+--expr \
+'
+(                                                                                                     
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    runCommand "_" 
+        { 
+           nativeBuildInputs = [ coreutils ];
+        } 
+      "mkdir $out; ls -al /; echo; pwd"
+)
+' | cat
