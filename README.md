@@ -1135,6 +1135,19 @@ build \
 --file=Containerfile \
 --tag=unprivileged-ubuntu22 .
 
+podman \
+run \
+--privileged=true \
+-it \
+--rm \
+localhost/unprivileged-ubuntu22:latest \
+bash \
+-c \
+'curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
+&& . /home/user/.nix-profile/etc/profile.d/nix.sh \
+&& nix --option extra-experimental-features "nix-command flakes" profile install nixpkgs#hello \
+&& hello'
+
 podman run --privileged=true -it --rm localhost/unprivileged-ubuntu22:latest
 ```
 
@@ -4888,9 +4901,8 @@ busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
 && busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
 && busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
 
-# If there is one line with only '-e ' removes it.
-# Nix 2.4 installer let it alone in the ~/.profile.
-busybox sed -i 's/^-e $//' ~/.profile
+
+echo 'PATH="$HOME"/.nix-profile/bin:"$PATH"' >> ~/."$(busybox basename $SHELL)"rc && . ~/."$( busybox basename $SHELL)"rc
 
 nix \
 profile \
@@ -4899,13 +4911,38 @@ remove \
 
 nix store gc --verbose
 ```
-
+https://stackoverflow.com/questions/3294072/get-last-dirname-filename-in-a-file-path-argument-in-bash#comment101491296_10274182
 
 ```bash
 nix \
 run \
 nixpkgs#hello
 ```
+
+"${builtins.currentSystem}"
+```bash
+nix \
+build \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/4b4f4bf2845c6e2cc21cd30f2e297908c67d8611"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/4b4f4bf2845c6e2cc21cd30f2e297908c67d8611")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+    }
+  ).config.system.build.isoImage
+)
+'
+
+EXPECTED_SHA512='c24d5b36de84ebd88df2946bd65259d81cbfcb7da30690ecaeacb86e0c1028d4601e1f6165ea0775791c18161eee241092705cd350f0e935c715f2508c915741'
+ISO_PATTERN_NAME='result/iso/nixos-21.11.20210618.4b4f4bf-x86_64-linux.iso'
+# sha512sum "${ISO_PATTERN_NAME}"
+echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+```
+
 
 ### SoN2022 
 
@@ -5174,7 +5211,7 @@ nix show-config | grep trust
 ```bash
 nix \
 build \
---option sandbox false \
+--option sandbox true \
 --impure \
 --expr \
 '
@@ -5184,8 +5221,133 @@ build \
     stdenv.mkDerivation {
       name = "demo";
       dontUnpack = true;
-      nativeBuildDependencies = [ coreutils ];
-      buildPhase = "\"${coreutils}\"/bin/ls -al /tmp; mkdir $out";
+      buildInputs = [ coreutils ];
+      buildPhase = "test $(ls -al /build | wc -l) -eq 4; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      buildInputs = [ coreutils ];
+      buildPhase = "test $(ls -A /tmp | wc -c) -eq 0; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      buildInputs = [ coreutils ];
+      buildPhase = "test $(ls -al /nix | wc -l) -eq 4; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+```
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      buildInputs = [ coreutils ];
+      buildPhase = "test $(ls -al /nix/store | wc -l) -eq 52; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      buildInputs = [ mount ];
+      buildPhase = "test $(mount | wc -l) -eq 111; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+nix build --option sandbox true --impure --expr '
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      buildInputs = [ mount ];
+      buildPhase = "test $(mount | wc -l) -eq 109; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      buildInputs = [ coreutils ];
+      buildPhase = "ls -al /tmp; mkdir $out";
       dontInstall = true;
     }
 )
@@ -5194,7 +5356,7 @@ build \
 
 nix \
 log \
---option sandbox false \
+--option sandbox true \
 --impure \
 --expr \
 '
@@ -5204,8 +5366,8 @@ log \
     stdenv.mkDerivation {
       name = "demo";
       dontUnpack = true;
-      nativeBuildDependencies = [ coreutils ];
-      buildPhase = "\"${coreutils}\"/bin/ls -al /tmp; mkdir $out";
+      buildInputs = [ coreutils ];
+      buildPhase = "ls -al /tmp; mkdir $out";
       dontInstall = true;
     }
 )
@@ -5388,3 +5550,179 @@ build \
 '
 ```
 
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demoo";
+      dontUnpack = true;
+      buildInputs = [ cowsay ];
+      buildPhase = "type -a cowsay; mkdir $out;";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "test-sandbox-expected-fail";
+      dontUnpack = true;
+      buildPhase = "ls -al && mkdir $out;";
+      dontInstall = true;
+    }
+)
+'
+```
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "test-sandbox-expected-fail";
+      dontUnpack = true;
+      buildPhase = "ls -al && mkdir $out;";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "test-sandbox";
+      dontUnpack = true;
+      buildInputs = [ which ];
+      buildPhase = "gcc --version && which gcc && mkdir $out;";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+```bash
+sudo apt-get update -y && sudo apt-get install -y cowsay
+```
+
+
+```bash
+nix \
+build \
+--option sandbox false \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "test-sandbox";
+      dontUnpack = true;
+      buildPhase = "mkdir $out; cowsay $(echo abcz | sha256sum -) > $out/log.txt";
+      dontInstall = true;
+    }
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "test-sandbox";
+      dontUnpack = true;
+      buildInputs = [ cowsay ];
+      buildPhase = "mkdir $out; cowsay $(echo abcz | sha256sum -) > $out/log.txt";
+      dontInstall = true;
+    }
+)
+'
+```
+
+##### breakpointHook
+
+
+```bash
+cd some_empty_folder # Important to avoid errors during unpack phase
+export out=~/tmpdev/bc-build/out
+source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
+set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
+set -x # Optional, if you want to display all commands that are run 
+genericBuild
+```
+
+
+```bash
+nix profile install github:Mic92/cntr
+
+nix build --option sandbox true --impure --expr '
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true; 
+      nativeBuildInputs = [ breakpointHook ];
+      buildInputs = [ bashInteractive coreutils ];
+      buildPhase = "dfgdths; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+```
+
+source $stdenv/setup \
+&& phases="buildPhase" genericBuild
+
+
+sudo $(which cntr) attach -t command cntr-/nix/store/f33nrsw93gwpw2yw238qdb8isrdaa8qs-demo <<'COMMANDS'
+source $stdenv/setup \
+&& phases="buildPhase" genericBuild
+COMMANDS
+
+https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-cntr/8669/4
