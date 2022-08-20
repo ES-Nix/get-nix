@@ -4665,6 +4665,316 @@ build \
 ```
 
 
+#### nixosTest, sudo permissions
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-empty";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          security.sudo.enable = true;
+        };
+      };
+    
+      testScript = "machine.succeed(\"stat /run/wrappers/bin/sudo\")";
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-empty";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          security.sudo.enable = true;
+        };
+      };
+    
+      testScript = "result = int(machine.succeed(\"stat -c %a /run/wrappers/bin/sudo\")); assert 4511 == result, f\"The permission should be: {result}\"";
+    })
+)
+'
+```
+
+b
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+  let
+    uidCustom = 1122;
+    # NixOS module?
+    sharedModule = {
+      # Since it is common for CI not to have $DISPLAY available
+      virtualisation.graphics = false;
+      
+      users.users.alice = {
+        uid = 1122;
+        isNormalUser = true;
+      };      
+    };
+  in nixosTest ({
+    nodes = {
+      machine = { config, pkgs, ... }: {
+        imports = [ sharedModule ];
+      };
+    };
+  
+    # Disable linting for simpler debugging of the testScript
+    skipLint = true;
+  
+    testScript = { nodes, ... }:
+    let
+      sudo = lib.concatStringsSep " " [
+        "XDG_RUNTIME_DIR=/run/user/${toString uidCustom}"
+        "DOCKER_HOST=unix:///run/user/${toString uidCustom}/docker.sock"
+        "sudo" "--preserve-env=XDG_RUNTIME_DIR,DOCKER_HOST" "-u" "alice"
+      ];
+    in "
+machine.wait_for_unit(\"multi-user.target\"); 
+machine.succeed(\"loginctl enable-linger alice\"); 
+machine.wait_until_succeeds(\"${sudo} unshare -Upf --map-root-user -- sudo -u nobody echo hello\")
+    ";
+  })
+)
+'
+```
+
+driverInteractive
+
+testScript = "result = machine.succeed(\"unshare -Upf --map-root-user -- sudo -u nobody echo hello\"); assert 4511 == result, f\"The permission should be: {result}\"";
+
+
+
+
+PATH="/run/current-system/sw/bin:$PATH"
+
+test "$(file $(which sudo))" '==' '/run/wrappers/bin/sudo: setuid executable, regular file, no read permission'
+
+
+#### 
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-empty";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          virtualisation.graphics = false;
+          nixpkgs.config.allowUnfree = true;
+          nix = {
+            package = pkgs.nixFlakes;
+            extraOptions = "experimental-features = nix-command flakes";
+            settings.sandbox = true;
+            # From:
+            # https://github.com/sherubthakur/dotfiles/blob/be96fe7c74df706a8b1b925ca4e7748cab703697/system/configuration.nix#L44
+            # pointing to: https://github.com/NixOS/nixpkgs/issues/124215
+            # settings.extra-sandbox-paths= [ "/bin/sh=${pkgs.bash}/bin/sh"];
+            readOnlyStore = true;
+          };
+   
+          users = {
+            mutableUsers = false;
+            users = {
+              # For ease of debugging the VM as the `root` user
+              root = {
+                password = "";
+                shell = pkgs.bashInteractive;
+              };
+
+              abcde = {
+                password = "";
+                createHome = true;
+                # Create a system user that matches the database user so that we
+                # can use peer authentication.  The tutorial defines a password,
+                # but it is not necessary.                
+                # isSystemUser = true;
+                isNormalUser = true;
+                description = "Some user";
+                extraGroups = [
+                            "wheel"
+                            "kvm"
+                ];
+                packages = [ hello ];
+                shell = pkgs.bashInteractive;
+                # uid = 12321;    
+              };              
+            };
+          };         
+        };
+      };
+      testScript = "";
+    })
+).driverInteractive
+'
+```
+
+```bash
+start_all(); server.shell_interact();
+```
+
+
+###### Minimal
+
+
+8zZtsUMmd5U
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+  let
+    username = "wiii";
+    # NixOS module?
+    sharedModule = {
+      # Since it is common for CI not to have $DISPLAY available
+      virtualisation.graphics = false;
+    };
+  in nixosTest ({
+    nodes = {
+      machine = { config, pkgs, ... }: {
+        imports = [ sharedModule ];
+      };
+    };
+  
+    # Disable linting for simpler debugging of the testScript
+    skipLint = true;
+  
+    testScript = "start_all()";
+  })
+).driverInteractive
+'
+```
+
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+  let
+    username = "wiii";
+    # NixOS module?
+    sharedModule = {
+      # Since it is common for CI not to have $DISPLAY available
+      virtualisation.graphics = false;
+    };
+    
+    myUsersModule = {
+      users = {
+        mutableUsers = false;
+        users = {
+          # For ease of debugging the VM as the `root` user
+          root = {
+            password = "";
+            shell = pkgs.bashInteractive;
+          };
+        
+          abcde = {
+            password = "";
+            createHome = true;
+            # Create a system user that matches the database user so that we
+            # can use peer authentication.  The tutorial defines a password,
+            # but it is not necessary.                
+            # isSystemUser = true;
+            isNormalUser = true;
+            description = "Some user";
+            extraGroups = [
+                        "wheel"
+                        "kvm"
+            ];
+            packages = [ hello ];
+            shell = pkgs.bashInteractive;
+            # uid = 12321;    
+          };              
+        };
+      };
+      
+      services.openssh = {
+        # allowSFTP = true;
+        # kbdInteractiveAuthentication = false;
+        enable = true;
+
+        # Não funciona em ambientes sem $DISPLAY, em CI por exemplo
+        forwardX11 = false;
+
+        # TODO: hardening
+        passwordAuthentication = false;
+
+        # Do NOT use it in PRODUCTION as yes if possible!
+        permitRootLogin = "yes";
+
+        authorizedKeysFiles = [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPOK55vtFrqxd5idNzCd2nhr5K3ocoyw1JKWSM1E7f9i"
+        ];
+      };
+    };
+  in nixosTest ({
+    nodes = {
+      machine = { config, pkgs, ... }: {
+        imports = [ sharedModule myUsersModule ];
+      };
+    };
+  
+    # Disable linting for simpler debugging of the testScript
+    skipLint = true;
+  
+    testScript = "start_all()";
+  })
+).driverInteractive
+'
+```
+
+
 #### k8s test
 
 ```bash
