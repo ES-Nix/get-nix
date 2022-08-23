@@ -4731,7 +4731,7 @@ build \
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
-      name = "nixos-test-empty";
+      name = "nixos-test-sudo";
       nodes = {
         machine = { config, pkgs, ... }: {
           security.sudo.enable = true;
@@ -4756,7 +4756,7 @@ build \
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
-      name = "nixos-test-empty";
+      name = "nixos-test-sudo";
       nodes = {
         machine = { config, pkgs, ... }: {
           security.sudo.enable = true;
@@ -4764,6 +4764,56 @@ build \
       };
     
       testScript = "result = int(machine.succeed(\"stat -c %a /run/wrappers/bin/sudo\")); assert 4511 == result, f\"The permission should be: {result}\"";
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-sudo";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          security.sudo.enable = true;
+        };
+      };
+    
+      testScript = "result = machine.succeed(\"echo $PATH\"); assert 4511 == result, f\"The permission should be: {result}\"";
+    })
+)
+'
+```
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-unshare";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+        };
+      };
+    
+      testScript = "expected = len(\"Success\"); result = len(str(machine.succeed(\"unshare --user --pid echo -n Success\"))); assert expected == result, f\"The permission should be: {expected} but is {result} \"";  
     })
 )
 '
