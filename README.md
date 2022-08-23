@@ -1143,10 +1143,12 @@ run \
 localhost/unprivileged-ubuntu22:latest \
 bash \
 -c \
-'curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
+'
+curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
 && . /home/user/.nix-profile/etc/profile.d/nix.sh \
 && nix --option extra-experimental-features "nix-command flakes" profile install nixpkgs#hello \
-&& hello'
+&& hello
+'
 
 podman run --privileged=true -it --rm localhost/unprivileged-ubuntu22:latest
 ```
@@ -1160,7 +1162,6 @@ RUN apt-get update -y \
      curl \
      tar \
      xz-utils \
-     libpcap-dev \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
@@ -1171,7 +1172,9 @@ RUN addgroup abcgroup --gid 4455  \
      --ingroup abcgroup \
      --uid 3322 \
      abcuser
-RUN mkdir /nix && chmod 0755 /nix && chown -v abcuser: /nix
+
+# Uncomment that to compare
+# RUN mkdir /nix && chmod 0755 /nix && chown -v abcuser: /nix
 USER abcuser
 WORKDIR /home/abcuser
 ENV USER="abcuser"
@@ -1183,7 +1186,54 @@ build \
 --tag=unprivileged-ubuntu22 .
 
 
-podman run --privileged=true -it --rm localhost/unprivileged-ubuntu22:latest
+podman \
+run \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22:latest \
+bash \
+-c \
+'
+curl -L https://releases.nixos.org/nix/nix-2.10.3/install | sh -s -- --no-daemon \
+&& . /home/abcuser/.nix-profile/etc/profile.d/nix.sh \
+&& nix --option extra-experimental-features "nix-command flakes" profile install nixpkgs#hello \
+&& hello
+'
+
+podman \
+run \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22:latest \
+bash \
+-c \
+'
+mkdir -pv "$HOME"/.local/bin \
+&& export PATH="$HOME"/.local/bin:"$PATH" \
+&& curl -L https://hydra.nixos.org/build/187091778/download/1/nix > nix \
+&& mv nix "$HOME"/.local/bin \
+&& chmod +x "$HOME"/.local/bin/nix
+# Works!
+nix --option extra-experimental-features "nix-command flakes" run nixpkgs#hello
+# Works!
+nix --option extra-experimental-features "nix-command flakes" \
+build nixpkgs#nixosTests.kubernetes.rbac-single-node.driverInteractive
+# Broken
+nix --option extra-experimental-features "nix-command flakes" profile install nixpkgs#hello
+'
+
+# To play interactive
+podman \
+run \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22:latest
 ```
 
 #### Testing the installer
@@ -4269,6 +4319,7 @@ build \
 ### nixosTest
 
 
+#### nixosTest minimal
 
 ```bash
 nix \
@@ -4718,7 +4769,7 @@ build \
 '
 ```
 
-b
+
 ```bash
 nix \
 run \
