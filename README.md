@@ -4822,6 +4822,67 @@ build \
 
 ```bash
 nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-hydra";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+  nix.package = pkgs.nixUnstable;
+  nix.trustedUsers = [ "hydra" ];
+  nix.binaryCaches = [ "http://cache.example.org" "https://cache.nixos.org" ];
+
+  nix.buildMachines = [
+    { hostName = "localhost"; sshKey = "/var/run/keys/hydra_rsa"; system = "x86_64-linux,i686-linux"; maxJobs = 4; supportedFeatures = [ "builtin" "big-parallel" "kvm" ]; }
+  ];
+
+  services.nginx.enable = true;
+  services.nginx.recommendedGzipSettings = true;
+  services.nginx.recommendedOptimisation = true;
+  services.nginx.recommendedProxySettings = true;
+  services.nginx.virtualHosts = {
+    "cache.example.org".locations."/".root = "/var/lib/nix-cache";
+    "hydra.example.org".locations."/".proxyPass = "http://127.0.0.1:60080";
+  };
+
+  services.hydra.enable = true;
+  services.hydra.hydraURL = "http://hydra.example.org";
+  services.hydra.notificationSender = "hydra@example.org";
+  services.hydra.port = 60080;
+  services.hydra.useSubstitutes = true;
+  # Look for nix-store --generate-binary-cache-key in the nix-store manpage
+  # for more information on how to generate a keypair for your cache.
+  services.hydra.extraConfig = "
+    store_uri = file:///var/lib/nix-cache?secret-key=/run/keys/cache.example.org-1/sk
+    binary_cache_public_uri http://cache.example.org
+  ";
+  users.users.hydra.extraGroups = [ "keys" ];
+  users.users.hydra-queue-runner.extraGroups = [ "keys" ];
+
+  services.postgresql.enable = true;
+        };
+      };
+    
+      testScript = "machine.wait_for_unit(\"multi-user.target\"); expected = len(\"Success\"); result = machine.succeed(\"nc -v -4 localhost 60080 -w 1 -z\"); assert expected == result, f\"The permission should be: {expected} but is {result} \"";  
+    })
+)
+'
+```
+Refs.:
+- https://gist.github.com/LnL7/fcd5c0bf772f2165a1ac40be6617d2f4
+- https://gist.github.com/joepie91/c26f01a787af87a96f967219234a8723
+- https://nixos.wiki/wiki/Hydra
+- https://search.nixos.org/options?channel=22.05&show=services.hydra.enable&from=0&size=50&sort=relevance&type=packages&query=hydra
+
+
+```bash
+nix \
 run \
 --impure \
 --expr \
