@@ -766,6 +766,24 @@ build \
 --impure \
 --expr \
 '
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992")
+  {
+    overlays = [ (final: prev: { nginxStable = null; }) ];
+  }
+).nixosTests.nginx
+'
+```
+https://github.com/NixOS/nixpkgs/issues/62116#issuecomment-1225180043
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
 (import <nixpkgs> {                                                                      
   overlays = [
     (self: super: {
