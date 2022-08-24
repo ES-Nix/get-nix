@@ -2167,6 +2167,23 @@ nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.python3Minimal --no
 ```
 
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {}).nixosTests.podman'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {}; in pkgs.nixosTests.podman'
+```
+
 That is insane to be possible, but it is, well hope it does not brake for you:
 
 ```bash
@@ -6155,6 +6172,41 @@ build \
 )
 '
 ```
+
+
+
+```bash
+alpine312:~$ nix run github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992#nix-info -- --markdown
+/nix/store/v3j5z9z9hnjyg5xbxbxmwshdkii7wqg0-nix-info/bin/nix-info: line 69: nix-instantiate: command not found
+ - system: `0`
+ - host os: `Linux 5.4.192-0-virt, Alpine Linux, noversion, nobuild`
+ - multi-user?: `no`
+ - sandbox: `yes`
+/nix/store/v3j5z9z9hnjyg5xbxbxmwshdkii7wqg0-nix-info/bin/nix-info: line 167: nix-env: command not found
+ - version: `0`
+find: ‘/nix/var/nix/profiles/per-user’: No such file or directory
+```
+
+
+https://github.com/NixOS/nixpkgs/blob/0305391fb65b5bdaa8af3c48275ec0df1cdcc34e/pkgs/tools/nix/info/info.sh#L127
+https://github.com/NixOS/nixpkgs/blob/0305391fb65b5bdaa8af3c48275ec0df1cdcc34e/pkgs/tools/nix/info/sandbox.nix
+
+
+
+##### __noChroot = true;
+
+I am against that, unless there is not a better way known.
+
+https://github.com/NixOS/nixpkgs/blob/3fe1cbb848ea90827158bbd814c2189ff8043539/pkgs/development/tools/purescript/spago/default.nix#L39
+https://zimbatm.com/notes/nix-packaging-the-heretic-way
+https://discourse.nixos.org/t/is-there-a-way-to-mark-a-package-as-un-sandboxable/4174/2
+
+> If the `sandbox` option is set to relaxed, then fixed-output derivations
+> and derivations that have the `__noChroot` attribute set to
+> true do not run in sandboxes.
+https://nixos.org/manual/nix/unstable/command-ref/conf-file.html?highlight=extra-
+
+
 
 ##### breakpointHook
 
