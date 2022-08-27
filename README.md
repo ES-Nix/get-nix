@@ -6302,7 +6302,12 @@ genericBuild
 ```bash
 nix profile install github:Mic92/cntr
 
-nix build --option sandbox true --impure --expr '
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem};
@@ -6318,14 +6323,24 @@ nix build --option sandbox true --impure --expr '
 '
 ```
 
+
+
+```bash
 source $stdenv/setup \
 && phases="buildPhase" genericBuild
+```
 
-
-sudo $(which cntr) attach -t command cntr-/nix/store/f33nrsw93gwpw2yw238qdb8isrdaa8qs-demo <<'COMMANDS'
+```bash
+sudo \
+$(which cntr) \
+attach \
+-t \
+command \
+cntr-/nix/store/f33nrsw93gwpw2yw238qdb8isrdaa8qs-demo \
+<<'COMMANDS'
 source $stdenv/setup \
 && phases="buildPhase" genericBuild
 COMMANDS
-
+```
 https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-cntr/8669/4
 
