@@ -352,6 +352,24 @@ $(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#py
 
 
 ```bash
+nix build --impure github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#vscodium --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#vscodium) \
+| dot -Tpdf > graph.pdf
+```
+
+
+```bash
+nix build --impure github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#vscode --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info --impure github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#vscode) \
+| dot -Tpdf > graph.pdf
+```
+
+
+```bash
 nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#pkgsStatic.python3Minimal --no-link
 
 nix-store --query --graph --include-outputs \
@@ -359,6 +377,64 @@ $(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#pk
 | dot -Tps > graph.ps
 ```
  
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.numpy --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.numpy) \
+| dot -Tps > graph.ps
+```
+
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.opencv3 --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.opencv3) \
+| dot -Tpdf > graph.pdf
+```
+
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.opencv4 --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.opencv4) \
+| dot -Tpdf > graph.pdf
+```
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.keras --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.keras) \
+| dot -Tps > graph.ps
+```
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#gcc48 --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#gcc48) \
+| dot -Tpdf > graph.pdf
+```
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.tensorflow --no-link
+
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#python3Packages.tensorflow) \
+| dot -Tpdf > graph.pdf
+```
+
+```bash
+nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#nixosTests.kubernetes.dns-single-node.driverInteractive --no-link
+
+nix-store --query --graph \
+$(nix path-info github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#nixosTests.kubernetes.dns-single-node.driverInteractive) \
+| dot -Tpdf > graph.pdf
+```
 
 
 ```bash
@@ -1086,11 +1162,11 @@ github:ES-Nix/podman-rootless/from-nixpkgs#podman
 
 # Some fixes                                        
 sudo mount -o remount,shared / / \
-&& nix profile install nixpkgs#libcap \                                            
+&& nix profile install nixpkgs#libcap \
 && P_SETPATH="$(nix eval --raw nixpkgs#libcap)"/bin/setcap \
-&& echo "${P_SETPATH}" \         
+&& echo "${P_SETPATH}" \
 && ls -la /nix/store/*-shadow-4.11.1/bin/newuidmap \
-&& echo \             
+&& echo \
 && sudo env "PATH=$PATH" "USER=$USER" "P_SETPATH=$P_SETPATH" "${P_SETPATH}" "cap_setuid=+ep" /nix/store/*-shadow-4.11.1/bin/newuidmap \
 && sudo env "PATH=$PATH" "USER=$USER" "P_SETPATH=$P_SETPATH" "${P_SETPATH}" "cap_setgid=+ep" /nix/store/*-shadow-4.11.1/bin/newgidmap
 podman images
@@ -3742,7 +3818,7 @@ build \
 
 
 ```bash
-nix \                  
+nix \
 build \
 --impure \
 --expr \
@@ -3830,7 +3906,7 @@ build \
 ```
 
 ```bash
-nix \             
+nix \
 build \
 --impure \
 --expr \
@@ -4637,7 +4713,7 @@ build \
 ```bash
 # nix flake metadata nixpkgs --json | jq --join-output '.url'
 # github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07
-nix \                                                      
+nix \
 build \
 --impure \
 --expr \
@@ -6193,6 +6269,8 @@ https://github.com/NixOS/nixpkgs/blob/0305391fb65b5bdaa8af3c48275ec0df1cdcc34e/p
 
 
 
+TODO: HUGE, https://github.com/NixOS/nix/issues?page=2&q=is%3Aissue+is%3Aopen+sandbox
+
 ##### __noChroot = true;
 
 I am against that, unless there is not a better way known.
@@ -6250,3 +6328,4 @@ source $stdenv/setup \
 COMMANDS
 
 https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-cntr/8669/4
+
