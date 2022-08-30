@@ -2117,7 +2117,7 @@ result/bin/busybox sh -c 'echo $$ && uname --all'
 nix run nixpkgs#pkgsStatic.busybox -- sh -c 'echo $$ && uname --all'
 ```
 nix run nixpkgs#pkgsStatic.xorg.xclock
-
+[LinuxCon Portland 2009 - Roundtable - Q&A 1](https://www.youtube.com/embed/K3FsmpXeqHc?start=342&end=350&version=3)
 
 TODO: `umask` 
 https://github.com/NixOS/nix/issues/2377#issuecomment-633165541
@@ -6341,7 +6341,7 @@ https://github.com/NixOS/nixpkgs/blob/0305391fb65b5bdaa8af3c48275ec0df1cdcc34e/p
 
 TODO: /dev/kvm
 https://github.com/NixOS/nixpkgs/blob/16236dd7e33ba4579ccd3ca8349396b2f9c960fe/nixos/modules/services/misc/nix-daemon.nix#L522
-
+[LinuxCon Portland 2009 - Roundtable - Q&A 1](https://www.youtube.com/embed/K3FsmpXeqHc?start=100&end=112&version=3), start=100&end=112
 
 TODO: HUGE, https://github.com/NixOS/nix/issues?page=2&q=is%3Aissue+is%3Aopen+sandbox
 
