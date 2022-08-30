@@ -1010,6 +1010,9 @@ bash
 ```
 
 
+#### Other similar projects
+
+- https://github.com/DavHau/nix-portable
 
 
 #### Part 1:
@@ -1196,7 +1199,7 @@ RUN apt-get update -y \
      
 RUN adduser user --home /home/user --disabled-password --gecos "" --shell /bin/bash
 
-RUN mkdir /nix && chmod a+rwx /nix && chown -v user: /nix
+# RUN mkdir /nix && chmod a+rwx /nix && chown -v user: /nix
 USER user
 ENV USER user
 WORKDIR /home/user
@@ -1228,6 +1231,8 @@ curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
 
 podman run --privileged=true -it --rm localhost/unprivileged-ubuntu22:latest
 ```
+
+
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -1290,7 +1295,7 @@ bash \
 '
 mkdir -pv "$HOME"/.local/bin \
 && export PATH="$HOME"/.local/bin:"$PATH" \
-&& curl -L https://hydra.nixos.org/build/187091778/download/1/nix > nix \
+&& curl -L https://hydra.nixos.org/build/188965270/download/2/nix > nix \
 && mv nix "$HOME"/.local/bin \
 && chmod +x "$HOME"/.local/bin/nix
 # Works!
@@ -1311,6 +1316,66 @@ run \
 --rm=true \
 localhost/unprivileged-ubuntu22:latest
 ```
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:22.04
+
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.local/bin:"$PATH"
+
+# Not DRY, I know
+RUN mkdir -pv /home/abcuser/.local/bin \
+ && export PATH=/home/abcuser/.local/bin:"$PATH" \
+ && curl -L https://hydra.nixos.org/build/188965270/download/2/nix > nix \
+ && mv nix /home/abcuser/.local/bin \
+ && chmod +x /home/abcuser/.local/bin/nix \
+ && mkdir -p ~/.config/nix \
+ && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+EOF
+
+
+podman \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu22 .
+
+
+podman \
+run \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22:latest \
+bash \
+-c \
+'
+# Broken
+nix profile install nixpkgs#hello
+'
+```
+
+
 
 #### Testing the installer
 
@@ -5396,13 +5461,16 @@ build \
 
     dockerTools.buildImage {
       name = "nix";
-      tag = "latest";
+      tag = "0.0.1";
 
       copyToRoot = [
         pkgsStatic.nix
+        coreutils
+        bashInteractive
       ];
       config = {
-        Entrypoint = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
+        # Entrypoint = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
+        Entrypoint = [ "${bashInteractive}/bin/bash" ];
         Env = [
           "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
           "USER=root"
@@ -5420,8 +5488,9 @@ run \
 --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
 --tty=true \
 --rm=true \
-localhost/nix:latest \
-run \
+localhost/nix:0.0.1 \
+profile \
+install \
 nixpkgs#hello
 ```
 
@@ -5440,8 +5509,11 @@ run \
 localhost/nix:latest
 ```
 
-TODO: 
+TODO:
 - https://discourse.nixos.org/t/how-to-run-chown-for-docker-image-built-with-streamlayeredimage-or-buildlayeredimage/11977/3
+
+
+
 
 #### From apt-get, yes, it is possible, or should be to
 
