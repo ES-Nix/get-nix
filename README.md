@@ -1568,6 +1568,56 @@ nixpkgs#pkgsStatic.nix \
 ```
 
 
+```bash
+nix build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
+```
+
+In:
+```bash
+file result/bin/hello
+```
+
+Out:
+```bash
+result/bin/hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, not stripped
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-cross";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = [
+            pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
+          ];
+        };
+      };
+
+      testScript = ''
+        "machine.succeed(\"hello\")"
+      '';
+    })
+)
+'
+```
+
+
+```bash
+nix build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python310Packages.rsa
+```
+
+
 #### Nesting
 
 
