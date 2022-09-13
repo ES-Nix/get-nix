@@ -3829,6 +3829,70 @@ run \
 ```
 
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+  (pkgsStatic.nix.override {
+    storeDir = "/home/abcuser";
+    stateDir = "/home/abcuser";
+    confDir = "/home/abcuser";
+  })
+)'
+```
+
+
+```bash
+cp ~/.local/bin/nix ~/.local/bin/nix-old
+FULL_PATH_TO_NIX="$(echo "${HOME}""/.local/share/nix/root/nix/store/$(echo "$(readlink result)" | cut -d'/' -f4-)"/bin/nix)"
+
+cp $FULL_PATH_TO_NIX ~/.local/bin/
+
+nix \
+profile \
+install \
+"github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"#hello
+```
+
+```bash
+nix \
+build \
+--store "${HOME}" \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/9a17f325397d137ac4d219ecbd5c7f15154422f4";
+  with legacyPackages.${builtins.currentSystem};
+  (pkgsStatic.nix.override {
+    stateDir = "/home/abcuser/nix/var";
+  })
+)'
+NAME="$(echo "${HOME}""/nix/store/$(echo "$(readlink result)" | cut -d'/' -f4-)"/bin/nix)"
+$NAME run --extra-experimental-features 'nix-command flakes' nixpkgs#hello
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+  (pkgsStatic.nix.override {
+    storeDir = "/home/abcuser/.nix/store";
+    stateDir = "/home/abcuser/.nix/var";
+    confDir = "/home/abcuser/.nix/etc";
+  })
+)'
+```
+https://rgoswami.me/posts/local-nix-no-root/#patches
+
 
 ```bash
 nix \
@@ -3848,6 +3912,7 @@ build \
 NAME="$(echo "${HOME}""/nix/store/$(echo "$(readlink result)" | cut -d'/' -f4-)"/bin/nix)"
 $NAME run --extra-experimental-features 'nix-command flakes' nixpkgs#hello
 ```
+
 
 
 ```bash
@@ -5656,10 +5721,11 @@ shell \
 )'
 ```
 
-
+```bash
 nix-shell -E '{pkgs ? import <nixpkgs> {} }: (pkgs.buildFHSUserEnv { name = "testfhsu"; targetPkgs = _: [];}).env'
+```
 
-
+```bash
 nix \
 shell \
 --impure \
@@ -5691,9 +5757,10 @@ shell \
 testfhsu \
 -c \
 'hello && su'
+```
 
 
-
+```bash
 export NIXPKGS_ALLOW_UNFREE=1; \
 nix \
 run \
@@ -5703,17 +5770,25 @@ github:NixOS/nixpkgs/03d52eed55151e330de5f0cc4fde434a7227ff43#steam-run \
 sh \
 -c \
 'getcap /'
+```
 
-
+```bash
 export NIXPKGS_ALLOW_UNFREE=1; nix build --impure github:NixOS/nixpkgs/03d52eed55151e330de5f0cc4fde434a7227ff43#steam
+```
 https://github.com/NixOS/nixpkgs/issues/33106
 
+```bash
 nix run github:NixOS/nixpkgs/03d52eed55151e330de5f0cc4fde434a7227ff43#chromium -- --version
+```
 
+```bash
 nix shell github:NixOS/nixpkgs/441dc5d512153039f19ef198e662e4f3dbb9fd65#bubblewrap --command sh -c 'bwrap --dev-bind / / sudo id'
+```
 
+```bash
 export NIXPKGS_ALLOW_UNFREE=1; nix run --impure github:NixOS/nixpkgs/441dc5d512153039f19ef198e662e4f3dbb9fd65#steam-run -- id
 export NIXPKGS_ALLOW_UNFREE=1; nix run --impure github:NixOS/nixpkgs/441dc5d512153039f19ef198e662e4f3dbb9fd65#steam-run -- sudo
+```
 https://github.com/NixOS/nixpkgs/issues/69338
 
 

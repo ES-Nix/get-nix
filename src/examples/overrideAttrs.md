@@ -746,8 +746,10 @@ nix why-depends --all nixpkgs#pkgsStatic.opencv nixpkgs#systemd
 
 https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-when-use-qemu-in-docker
 
-####
+#### overlays
 
+
+TODO: https://www.fbrs.io/nix-overlays/
 
 
 ```bash
