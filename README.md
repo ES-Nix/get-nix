@@ -5743,6 +5743,10 @@ TODO:
 
 ### sandbox
 
+Do watch:
+- [Jörg 'Mic92' Thalheim - About Nix sandboxes and breakpoints (NixCon 2018)](https://www.youtube.com/watch?v=ULqoCjANK-I)
+- [Build outside of the (sand)box (NixCon 2019)](https://www.youtube.com/watch?v=iWAowLWNra8)
+- [Nix on Darwin – History, challenges, and where it's going by Dan Peebles (NixCon 2017)](https://www.youtube.com/watch?v=73mnPBLL_20)
 
 ```bash
 # nix-shell -p "(steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run"
@@ -6580,4 +6584,20 @@ source $stdenv/setup \
 COMMANDS
 ```
 https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-cntr/8669/4
+
+
+
+## NixOS modules
+
+
+https://nixos.wiki/wiki/NixOS_modules
+https://nixos.mayflower.consulting/blog/2018/09/11/custom-images/
+https://hoverbear.org/blog/nix-flake-live-media/
+
+
+## Caching and Nix
+
+
+https://scrive.github.io/nix-workshop/06-infrastructure/01-caching-nix.html
+
 

@@ -74,3 +74,9 @@ build \
 
 TODO:
 https://discourse.nixos.org/t/does-nginx-package-in-the-nixpkgs-repos-compiled-with-mail-proxy-support/9429/4
+
+
+## enableDebugging for hello
+
+https://github.com/NixOS/nixpkgs/issues/136756#issuecomment-917264024
+
