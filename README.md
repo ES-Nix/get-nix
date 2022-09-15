@@ -887,9 +887,9 @@ SHA256=5443257f9e3ac31c5f0da60332d7c5bebfab1cdf \
 
 
 ```bash
-mkdir -pv $HOME/.nix-profile
-mkdir -pv $HOME/nix/var/nix/profiles/per-user/"${USER}"/profile
-ln -sfv $HOME/.nix-profile $HOME/nix/var/nix/profiles/per-user/"${USER}"/profile
+mkdir -pv "${HOME}"/.nix-profile
+mkdir -pv "${HOME}"/nix/var/nix/profiles/per-user/"${USER}"/profile
+ln -sfv "${HOME}"/.nix-profile "${HOME}"/nix/var/nix/profiles/per-user/"${USER}"/profile
 ```
 
 
@@ -3861,18 +3861,56 @@ install \
 ```bash
 nix \
 build \
---store "${HOME}" \
 --impure \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/9a17f325397d137ac4d219ecbd5c7f15154422f4";
   with legacyPackages.${builtins.currentSystem};
   (pkgsStatic.nix.override {
-    stateDir = "/home/abcuser/nix/var";
+    stateDir = "/home/abcuser/.local/share/nix/root/nix/var";
+    storeDir = "/home/abcuser/.local/share/nix/root/nix/store";
   })
 )'
-NAME="$(echo "${HOME}""/nix/store/$(echo "$(readlink result)" | cut -d'/' -f4-)"/bin/nix)"
-$NAME run --extra-experimental-features 'nix-command flakes' nixpkgs#hello
+```
+
+
+```bash
+test -d "${HOME}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"/profile || mkdir -pv "${HOME}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"/profile
+ln -sfv "${HOME}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"/profile "${HOME}"/.nix-profile
+
+file "${HOME}"/.nix-profile | grep '/.nix-profile: symbolic link to /home/'
+
+
+nix build nixpkgs#hello
+# test -d "${HOME}"/.nix-profile || mkdir -pv "${HOME}"/.nix-profile
+ln -sfv "${HOME}"/.local/share/nix/root"$(readlink result)"/bin "${HOME}"/.nix-profile/bin
+# ln -sfv "${HOME}"/.local/share/nix/root"$(readlink result)"/bin/hello "${HOME}"/.nix-profile/bin/hello
+
+# file "${HOME}"/.nix-profile/bin/hello | grep '/.nix-profile/bin: symbolic link to /home/'
+```
+
+
+https://github.com/YorikSar/nixos-vm-on-macos/tree/24025c73634e580045744c169be1be167b12fe50#broken-sudo
+
+```bash
+# WIP
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/9a17f325397d137ac4d219ecbd5c7f15154422f4";
+  with legacyPackages.${builtins.currentSystem};
+  (pkgsStatic.nix.overrideAttrs
+    (old:
+      {
+        stateDir = "/home/abcuser/.local/share/nix/root/nix/var";
+        storeDir = "/home/abcuser/.local/share/nix/root/nix/store";
+        makeFlags = (old.makeFlags or []) ++ ["USE_SYSTEMD=no"];
+      }
+    )
+  )
+)'
 ```
 
 

@@ -68,3 +68,9 @@ build \
 )
 '
 ```
+
+
+## nginx
+
+TODO:
+https://discourse.nixos.org/t/does-nginx-package-in-the-nixpkgs-repos-compiled-with-mail-proxy-support/9429/4
