@@ -6593,10 +6593,15 @@ https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-
 https://nixos.wiki/wiki/NixOS_modules
 https://nixos.mayflower.consulting/blog/2018/09/11/custom-images/
 https://hoverbear.org/blog/nix-flake-live-media/
+[Rickard Nilsson - Nix(OS) modules everywhere! (NixCon 2018)](https://www.youtube.com/watch?v=I_KCd46B8Mw)
+[Nix Friday - NixOS modules](https://www.youtube.com/watch?v=5doOHe8mnMU)
+
 
 
 ## Caching and Nix
 
+
+[Domen Kožar, Robert Hensing - Cachix - binary cache(s) for everyone (NixCon 2018)](https://www.youtube.com/watch?v=py26iM26Qg4)
 
 https://scrive.github.io/nix-workshop/06-infrastructure/01-caching-nix.html
 
