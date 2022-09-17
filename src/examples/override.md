@@ -80,3 +80,22 @@ https://discourse.nixos.org/t/does-nginx-package-in-the-nixpkgs-repos-compiled-w
 
 https://github.com/NixOS/nixpkgs/issues/136756#issuecomment-917264024
 
+
+
+## static sudo with pam = null
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      (pkgs.pkgsStatic.sudo.override { pam = null; })
+    )
+  )
+'
+```
