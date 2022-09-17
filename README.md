@@ -5578,7 +5578,7 @@ build \
 
 ```bash
 nix \
-shell \
+build \
 --impure \
 --expr \
 '
@@ -5588,7 +5588,7 @@ shell \
 
     dockerTools.streamLayeredImage {
       name = "hello";
-      tag = "latest";
+      tag = "0.0.1";
       config = {
         Cmd = [
           "${pkgs.pkgsStatic.hello}/bin/hello"
@@ -5597,9 +5597,57 @@ shell \
     }
   )
 '
+
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/hello:0.0.1
 ```
 
 
+#### dockerTools.buildImage for aarch64-linux, hello example with podman
+
+```bash
+nix \
+build \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+    with legacyPackages."aarch64-linux";
+
+    dockerTools.buildImage {
+      name = "hello";
+      tag = "0.0.1";
+      config = {
+        Cmd = [
+          "${pkgs.pkgsStatic.hello}/bin/hello"
+        ];
+      };
+    }
+  )
+'
+
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/hello:0.0.1
+```
+
+Details:
+```bash
+podman info --format json | jq '.[].arch  | select( . != null )'
+```
 
 ```bash
 # nix flake metadata nixpkgs --json | jq --join-output '.url'
@@ -5622,8 +5670,8 @@ build \
         bashInteractive
       ];
       config = {
-        # Entrypoint = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
-        Entrypoint = [ "${bashInteractive}/bin/bash" ];
+        Entrypoint = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
+        # Entrypoint = [ "${bashInteractive}/bin/bash" ];
         Env = [
           "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
           "USER=root"
@@ -5635,6 +5683,11 @@ build \
 
 podman load < result
 
+
+podman inspect localhost/hello:0.0.1 | jq -r '.[].Architecture' | grep -q arm64
+
+# podman info --format json | jq '.[].imageCopyTmpDir  | select( . != null )'
+# It may be broken because of architecture, ARM or AMD
 podman \
 run \
 --interactive=true \
@@ -5668,7 +5721,7 @@ TODO:
 
 
 
-#### From apt-get, yes, it is possible, or should be to
+#### From apt-get, yes, it is possible, or should be
 
 
 ```bash
