@@ -14,7 +14,7 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 
 ```bash
 test -d /nix || (sudo mkdir -m 0755 /nix && sudo -k chown "$USER": /nix); \
-test $(stat -c %a /nix) -eq 0755 || sudo -kv chmod 0755 /nix); \
+test $(stat -c %a /nix) -eq 0755 || sudo -kv chmod 0755 /nix; \
 BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
 && SHA256=5443257f9e3ac31c5f0da60332d7c5bebfab1cdf \
 && NIX_RELEASE_VERSION='2.10.2' \
