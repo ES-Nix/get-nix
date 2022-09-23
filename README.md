@@ -3422,21 +3422,29 @@ github:NixOS/nixpkgs/40e2b1ae0535885507ab01d7a58969934cf2713c#hello
 
 #### From `apt-get`
 
+Just to inspect some stuff:
+```bash
+[ -z "$USER" ] || echo '"$USER" variable is empty or not set'
+
+cat /etc/passwd | grep sh
+```
+
 ```bash
 sudo su -c 'apt-get update && apt-get install -y zsh' \
 && echo \
-&& cat /etc/passwd | grep sh \
-&& chsh -s /usr/bin/zsh \
-&& cat /etc/passwd | grep sh \
+&& sudo chsh -s /usr/bin/zsh "$USER" \
 && echo \
 && curl -LO https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh \
 && chmod +x install.sh \
 && yes | ./install.sh \
 && rm install.sh \
+&& touch ~/.zshrc \
 && zsh
 ```
-From: https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH
-From: https://ohmyz.sh/#install
+Refs: 
+- https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH
+- https://ohmyz.sh/#install
+- https://stackoverflow.com/a/25728814
 
 
 ```bash
