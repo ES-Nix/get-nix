@@ -763,6 +763,25 @@ nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { aclSupp
 
 
 ```bash
+nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { aclSupport = false; })]; }).pkgsStatic.coreutils'
+```
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992")
+  { overlays = [(final: prev: { aclSupport = false; })]; }
+).pkgsStatic.coreutils
+'
+```
+
+
+```bash
 nix \
 build \
 --impure \
@@ -844,7 +863,9 @@ Refs.:
 - https://github.com/NixOS/nixpkgs/issues/50301
 
 
+
 ### Old gcc version
 
 
 https://discourse.nixos.org/t/compiling-with-old-glibc/12054/4
+
