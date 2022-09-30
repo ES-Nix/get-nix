@@ -782,6 +782,88 @@ run \
 
 
 ```bash
+export NIXPKGS_ALLOW_BROKEN=1
+
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65")
+  { overlays = [(final: prev: { postFixup = ""; })]; }
+).pkgsStatic.podman-unwrapped
+'
+```
+
+> Why `systemd = null;` breaks?
+
+
+
+
+
+```bash
+export NIXPKGS_ALLOW_BROKEN=1;
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  import (builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65")
+  { overlays = [(final: prev: { buildInputs = [ libseccomp libselinux lvm2 ]; postFixup = ""; })]; }
+).pkgsStatic.podman-unwrapped
+'
+```
+
+
+```bash
+nix build nixpkgs#pkgsStatic.btrfs-progs 2> /dev/null || echo 'Erro in: 'btrfs-progs
+nix build nixpkgs#pkgsStatic.gpgme 2> /dev/null || echo 'Erro in: 'btrfs-progs
+nix build nixpkgs#pkgsStatic.libapparmor 2> /dev/null || echo 'Erro in: 'btrfs-progs
+nix build nixpkgs#pkgsStatic.libseccomp 2> /dev/null || echo 'Erro in: 'btrfs-progs
+nix build nixpkgs#pkgsStatic.libselinux 2> /dev/null || echo 'Erro in: 'btrfs-progs
+nix build nixpkgs#pkgsStatic.lvm2 2> /dev/null || echo 'Erro in: 'btrfs-progs
+nix build nixpkgs#pkgsStatic.systemd 2> /dev/null || echo 'Erro in: 'btrfs-progs
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/13cbe534ebe63a0bc2619c57661a2150569d0443/pkgs/applications/virtualization/podman/default.nix#L37-L45
+
+
+```bash
+nix build nixpkgs#pkgsStatic.acl 2> /dev/null || echo 'Erro in: 'acl
+nix build nixpkgs#pkgsStatic.attr 2> /dev/null || echo 'Erro in: 'attr
+nix build nixpkgs#pkgsStatic.e2fsprogs 2> /dev/null || echo 'Erro in: 'e2fsprogs
+nix build nixpkgs#pkgsStatic.libuuid 2> /dev/null || echo 'Erro in: 'libuuid
+nix build nixpkgs#pkgsStatic.lzo 2> /dev/null || echo 'Erro in: 'lzo
+nix build nixpkgs#pkgsStatic.python3 2> /dev/null || echo 'Erro in: 'python3
+nix build nixpkgs#pkgsStatic.zlib 2> /dev/null || echo 'Erro in: 'zlib
+nix build nixpkgs#pkgsStatic.zstd 2> /dev/null || echo 'Erro in: 'zstd
+nix build nixpkgs#pkgsStatic.udev 2> /dev/null || echo 'Erro in: 'udev
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/13cbe534ebe63a0bc2619c57661a2150569d0443/pkgs/tools/filesystems/btrfs-progs/default.nix#L24
+
+
+```bash
+# export NIXPKGS_ALLOW_BROKEN=1
+
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65")
+  { overlays = [(final: prev: { systemd = null; })]; }
+).pkgsStatic.podman-unwrapped
+'
+```
+
+
+WARNING: it works but it must not! Read the link.
+```bash
 nix \
 build \
 --impure \
