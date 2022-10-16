@@ -1293,11 +1293,11 @@ podman rm -f conteiner-alpine
 
 
 
-
+```bash
 poetry config virtualenvs.in-project true \
 && poetry config virtualenvs.path . \
 && poetry install
-
+```
 
 ##### Part 2:
 
@@ -2817,7 +2817,7 @@ build \
       builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf"
     ).lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [            
+        modules = [ 
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/virtualisation/build-vm.nix" 
           
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/installer/cd-dvd/channel.nix" 
@@ -4726,7 +4726,7 @@ nix-instantiate \
 '
 ```
 
-###
+### vmTools.runInLinuxVM
 
 
 ```bash
@@ -4746,6 +4746,11 @@ build \
 )
 '
 ```
+
+
+
+Some really more complex example:
+
 
 ```bash
 nix \
@@ -5912,7 +5917,7 @@ run \
 nixpkgs#hello
 ```
 
-"${builtins.currentSystem}"
+
 ```bash
 nix \
 build \
@@ -5924,18 +5929,58 @@ build \
       builtins.getFlake "github:NixOS/nixpkgs/4b4f4bf2845c6e2cc21cd30f2e297908c67d8611"
     ).lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ "${toString (builtins.getFlake "github:NixOS/nixpkgs/4b4f4bf2845c6e2cc21cd30f2e297908c67d8611")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+        modules = [ 
+                    "${toString (builtins.getFlake "github:NixOS/nixpkgs/4b4f4bf2845c6e2cc21cd30f2e297908c67d8611")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                    { 
+                      # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD#Building_faster
+                      isoImage.squashfsCompression = "gzip -Xcompression-level 1";
+                    }
+                  ];
     }
   ).config.system.build.isoImage
 )
 '
 
-EXPECTED_SHA512='c24d5b36de84ebd88df2946bd65259d81cbfcb7da30690ecaeacb86e0c1028d4601e1f6165ea0775791c18161eee241092705cd350f0e935c715f2508c915741'
+# EXPECTED_SHA512='c24d5b36de84ebd88df2946bd65259d81cbfcb7da30690ecaeacb86e0c1028d4601e1f6165ea0775791c18161eee241092705cd350f0e935c715f2508c915741'
+EXPECTED_SHA512='5a761bd0f539a6ef53a002f73ee598e728565d7ac2f60a5947862d8795d233e3cf6bbf3c55f70a361f55e4b30e499238799d2ddb379e10a063d469d93276e3d8'
 ISO_PATTERN_NAME='result/iso/nixos-21.11.20210618.4b4f4bf-x86_64-linux.iso'
 # sha512sum "${ISO_PATTERN_NAME}"
 echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 ```
 
+
+```bash
+# nix flake metadata github:NixOS/nixpkgs/release-22.05
+nix \
+build \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/bf82ac1f931c11a551abef3cf022d2faeab500ed"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ 
+                    "${toString (builtins.getFlake "github:NixOS/nixpkgs/bf82ac1f931c11a551abef3cf022d2faeab500ed")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                    { 
+                      # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD#Building_faster
+                      isoImage.squashfsCompression = "gzip -Xcompression-level 1";
+                    }
+                  ];
+    }
+  ).config.system.build.isoImage
+)
+'
+
+EXPECTED_SHA512='d3a2162159fe326f602d91a134db36a744b1fc605bfc44c1300a1af39a7a0753beda9a00ddad7b8ab623fe5269e95f0643990258ec1d5a125fc402a53524a9c2'
+ISO_PATTERN_NAME='result/iso/nixos-22.05.20221016.bf82ac1-x86_64-linux.iso'
+# sha512sum "${ISO_PATTERN_NAME}"
+echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+```
+
+installation-cd-graphical-calamares-plasma5
+installation-cd-graphical-calamares-gnome
 
 ### SoN2022 
 
