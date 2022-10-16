@@ -1009,6 +1009,15 @@ localhost/test-with-sudo-nix-single-user-installer:latest \
 bash 
 ```
 
+```bash
+  --qemu-commandline QEMU_COMMANDLINE
+                        Pass arguments directly to the QEMU emulator. Ex:
+                        --qemu-commandline='-display gtk,gl=on'
+                        --qemu-commandline env=DISPLAY=:0.1
+```
+From:
+- virt-install --help | rg DISPLAY -B3
+- virt-install --version == 4.0.0
 
 #### Other similar projects
 
@@ -1178,6 +1187,139 @@ podman run -it --rm ubuntu bash -c "apt-get update"
 '
 ```
 
+
+#### Alpine
+
+
+##### Part 1:
+
+```bash
+cat > Containerfile << 'EOF'
+FROM alpine:3.16.1
+RUN apk add --no-cache \
+     ca-certificates \
+     curl \
+     shadow \
+     tar \
+     xz \
+ && echo 'Creating user' \
+ && groupadd abcgroup \
+ && useradd -g abcgroup -s /bin/sh -m -c 'Eva User' abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo abcuser:10000:5000 > /etc/subuid \
+ && echo abcuser:10000:5000 > /etc/subgid \
+ && mkdir -m 0755 /nix && chown abcuser /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--tag=unprivileged-alpine3161 .
+```
+
+```bash
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/unprivileged-alpine3161:latest \
+sh
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+```bash
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/unprivileged-alpine3161:latest \
+sh
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+```bash
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--detach=true \
+--device=/dev/fuse:rw \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=false \
+--name=conteiner-alpine \
+--privileged=true \
+--rm=false \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/unprivileged-alpine3161:latest \
+sh
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+```bash
+podman \
+exec \
+--interactive=true \
+--tty=true \
+conteiner-alpine sh
+```
+
+```bash
+podman rm -f conteiner-alpine
+```
+
+
+
+
+poetry config virtualenvs.in-project true \
+&& poetry config virtualenvs.path . \
+&& poetry install
+
+
+##### Part 2:
+
+```bash
+BASE_IMAGE_NAME_AND_TAG='alpine:3.16.1'
+IMAGE_NAME='unprivileged-''alpine3161'
+CONTAINER_NAME='container'"${IMAGE_NAME}"'-test-nix'
+podman rm --force --ignore "${CONTAINER_NAME}"
+
+podman \
+run \
+--env="USER=evauser" \
+--name="${CONTAINER_NAME}" \
+--rm=true \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--user=evauser \
+--workdir=/home/evauser \
+localhost/"${IMAGE_NAME}" \
+sh
+```
 
 
 ##### unprivileged
@@ -1667,7 +1809,7 @@ shell \
 '
 (
   with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (gnused.overrideDerivation (oldAttrs: {
         name = "sed-4.2.2-pre";
         src = fetchurl {
@@ -1719,7 +1861,7 @@ build \
 --expr \
 '(
   with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (sudo.override { pam = null; withInsults = true; })
 )'
 ```
@@ -2346,7 +2488,7 @@ Hope it works:
 ```bash
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello --no-link
 ```
-From: 
+From:
 - https://www.youtube.com/watch?v=OV2hi8b5t48
 
 ```bash

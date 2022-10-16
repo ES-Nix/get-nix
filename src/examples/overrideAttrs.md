@@ -620,6 +620,109 @@ show-derivation \
 ```
 
 
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem}; 
+    (
+      hello.overrideAttrs (oldAttrs: {
+        postInstall = (oldAttrs.postInstall or "") 
+                       + "\n" 
+                       + "mkdir -p $out/lib"
+                       + "\n" 
+                       + "ln -fsv ${stdenv.cc.cc.lib}/lib/libstdc++.so.6 $out/lib/";
+      }
+    )
+  )
+)
+'
+```
+
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem}; 
+    (
+      hello.overrideAttrs (oldAttrs: {
+        nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ pkgs.makeWrapper ];
+        postInstall = (oldAttrs.postInstall or "") 
+                       + "\n" 
+                       + "wrapProgram $out/bin/hello --prefix LD_LIBRARY_PATH : ${stdenv.cc.cc.lib}/lib";
+      }
+    )
+  )
+)
+'
+```
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem}; 
+    (
+      python3.overrideAttrs (oldAttrs: {
+        nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ pkgs.makeWrapper ];
+        postInstall = (oldAttrs.postInstall or "") 
+                       + "\n" 
+                       + "wrapProgram $out/bin/python3 --prefix ABC : xyz-value";
+      }
+    )
+  )
+)
+' \
+-- \
+-c \
+'import os; assert os.environ.get("ABC") == "xyz-value", "The environment variable ABC was not equal to xyz-value"'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem}; 
+    (
+      python3Minimal.overrideAttrs (oldAttrs: {
+        nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ pkgs.makeWrapper ];
+        postInstall = (oldAttrs.postInstall or "") 
+                       + "\n" 
+                       + "wrapProgram $out/bin/python3 --prefix ABC : xyz-value";
+      }
+    )
+  )
+)
+' \
+--command \
+python \
+-c \
+'import os; assert os.environ.get("ABC") == "xyz-value", "The environment variable ABC was not equal to xyz-value"'
+```
+
+
 ### awscli
 
 TODO: document it better
@@ -661,6 +764,18 @@ python --version
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/d1ca40ea766da1b639937084d18d3e54e4e5da1b/pkgs/tools/admin/awscli/default.nix#L52-L63
 
+
+
+```bash
+overrideAttrs (attrs: {
+      buildInputs = (attrs.buildInputs or []) ++ [ makeWrapper ];
+      postInstall = (attrs.postFixup or "") + lib.optionalString stdenv.isLinux ''
+        chmod +x $out/bin/pycharm-community
+        wrapProgram "$out/bin/pycharm-community --set FOO_BAR "XPTO"
+        wrapProgram "$out/bin/pycharm-community --set LOCALE_ARCHIVE "${glibcLocales}/lib/locale/locale-archive"
+      '';
+    })
+```
 
 
 ###
@@ -820,12 +935,12 @@ run \
 
 ```bash
 nix build nixpkgs#pkgsStatic.btrfs-progs 2> /dev/null || echo 'Erro in: 'btrfs-progs
-nix build nixpkgs#pkgsStatic.gpgme 2> /dev/null || echo 'Erro in: 'btrfs-progs
-nix build nixpkgs#pkgsStatic.libapparmor 2> /dev/null || echo 'Erro in: 'btrfs-progs
-nix build nixpkgs#pkgsStatic.libseccomp 2> /dev/null || echo 'Erro in: 'btrfs-progs
-nix build nixpkgs#pkgsStatic.libselinux 2> /dev/null || echo 'Erro in: 'btrfs-progs
-nix build nixpkgs#pkgsStatic.lvm2 2> /dev/null || echo 'Erro in: 'btrfs-progs
-nix build nixpkgs#pkgsStatic.systemd 2> /dev/null || echo 'Erro in: 'btrfs-progs
+nix build nixpkgs#pkgsStatic.gpgme 2> /dev/null || echo 'Erro in: 'gpgme
+nix build nixpkgs#pkgsStatic.libapparmor 2> /dev/null || echo 'Erro in: 'libapparmor
+nix build nixpkgs#pkgsStatic.libseccomp 2> /dev/null || echo 'Erro in: 'libseccomp
+nix build nixpkgs#pkgsStatic.libselinux 2> /dev/null || echo 'Erro in: 'libselinux
+nix build nixpkgs#pkgsStatic.lvm2 2> /dev/null || echo 'Erro in: 'lvm2
+nix build nixpkgs#pkgsStatic.systemd 2> /dev/null || echo 'Erro in: 'systemd
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/13cbe534ebe63a0bc2619c57661a2150569d0443/pkgs/applications/virtualization/podman/default.nix#L37-L45
@@ -950,4 +1065,37 @@ Refs.:
 
 
 https://discourse.nixos.org/t/compiling-with-old-glibc/12054/4
+
+
+### glibc.overrideAttrs
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(import <nixpkgs> {
+  overlays = [
+    (self: super: {
+      glibc = super.glibc.overrideAttrs (oldAttrs: {
+        version = "2.26";
+      });
+    })
+  ];
+  }
+).glibc
+'
+```
+Refs.:
+- https://gurkan.in/wiki/nix.html#override-example-optional-args
+
+### stdenv.cc.cc.lib
+
+
+```bash
+nix build nixpkgs#stdenv.cc.cc.lib \
+&& ls -al "$(nix eval --raw nixpkgs#stdenv.cc.cc.lib)/lib"
+```
 
