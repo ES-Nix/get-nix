@@ -5983,6 +5983,41 @@ echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 installation-cd-graphical-calamares-plasma5
 installation-cd-graphical-calamares-gnome
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+let 
+  nixos = import <nixpkgs/nixos> { }; 
+in nixos.config.systemd.units."nix-daemon.service"
+'
+```
+Refs.:
+- https://discourse.nixos.org/t/how-to-use-modules-on-other-linux-distributions/7406/2
+
+
+```bash
+nix \
+build \
+--expr \
+'
+let 
+  nixos = (builtins.getFlake "github:NixOS/nixpkgs/d0f9857448e77df50d1e0b518ba0e835b797532a").lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${toString (builtins.getFlake "github:NixOS/nixpkgs/d0f9857448e77df50d1e0b518ba0e835b797532a")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in nixos.config.systemd.units."nix-daemon.service"
+'
+```
+
+```bash
+cat result/nix-daemon.service | grep PATH | cut -d '=' -f3 | tr -d '"' | tr ':' '\n'
+```
+
 ### SoN2022 
 
 TODO:
