@@ -1,4 +1,8 @@
+## The .overrides and .overrideAttrs
 
+
+
+[Customizing packages in Nix](https://bobvanderlinden.me/customizing-packages-in-nix/)
 
 ```bash
 nix \
