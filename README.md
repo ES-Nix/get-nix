@@ -4713,6 +4713,21 @@ file $(readlink -f $(which python3)) \
 '
 ```
 
+
+```bash
+nix \
+shell \
+nixpkgs#pkgsStatic.python3Minimal \
+--command \
+python \
+-c \
+'import zlib; print(zlib.ZLIB_RUNTIME_VERSION)'
+```
+Refs.:
+- https://docs.python.org/3/library/zlib.html
+
+
+
 ```bash
 nix-instantiate \
 --option pure-eval true \
@@ -4724,6 +4739,89 @@ nix-instantiate \
   with legacyPackages.${builtins.currentSystem}; 
     python3.withPackages (ps: with ps; [ numpy scipy ])
 '
+```
+
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [ pandas ])
+)' \
+--command \
+python3 -c 'import pandas as pd; pd.DataFrame(); print(pd.__version__)'
+```
+
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [ mmh3 ])
+)' \
+--command \
+python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
+```
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e"; 
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [ geopandas ])
+)' \
+--command \
+python3 -c 'import geopandas as gpd; print(gpd.__version__)'
+```
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [ tensorflow ])
+)' \
+--command \
+python3 -c 'import tensorflow as tf; print(tf.Variable(tf.zeros([4, 3]))); print(tf.__version__)'
+```
+
+
+```bash
+nix \
+build \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [
+                                     geopandas
+                                     matplotlib
+                                     scipy
+                                     tensorflow
+                                     pandas
+                                     jupyter
+                                     scikitlearn
+                                     nltk
+                                     plotly
+                                   ]
+                        )
+)'
+```
+
+
+```bash
+nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | dot -Tpdf > glue.pdf
+nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | wc -l
 ```
 
 ### vmTools.runInLinuxVM

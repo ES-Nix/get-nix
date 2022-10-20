@@ -8,6 +8,45 @@ https://www.youtube.com/watch?v=6VepnulTfu8
 https://github.com/NixOS/nixpkgs/issues/79303#issuecomment-720647170
 
 
+### hello
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+    (hello.overrideAttrs
+      (oldAttrs: {
+          preFixup = (oldAttrs.preFixup or "") + "set -x";
+        }
+      )
+    )
+)'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+    (hello.overrideAttrs
+      (oldAttrs: {
+          oldAttrs.buildInputs or []) ++ [ makeWrapper ];
+          postInstallPhase = (oldAttrs.postInstallPhase or "") + "wrapProgram $out/bin/hello --prefix LD_LIBRARY_PATH : ${pkgs.stdenv.cc.cc.lib}/lib";
+        }
+      )
+    )
+)'
+```
+
+
 ### openssl
 
 ```bash
@@ -248,6 +287,28 @@ https://earthly.dev/blog/make-flags/
 https://crypto.stackexchange.com/questions/84271/why-openssh-prefers-ecdsa-nistp256-keys-over-384-and-521-and-those-over-ed255
 
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      python3.overrideAttrs (oldAttrs: {
+        postFixup = "";
+      }
+    )
+  )
+)
+'
+```
+
+
+### podman
+
 Broken:
 ```bash
 nix \
@@ -394,11 +455,11 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
-  with legacyPackages.${builtins.currentSystem}.pkgsStatic; 
+  with builtins.getFlake "github:NixOS/nixpkgs/e66821278399ba9565178ce3b525e72275fe004e";
+  with legacyPackages.${builtins.currentSystem}; 
     (
-      catatonit.overrideAttrs (oldAttrs: {
-        nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ patchelf ];
+      pkgsStatic.catatonit.overrideAttrs (oldAttrs: {
+        noAuditTmpdir = true;
       }
     )
   )
@@ -628,33 +689,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
-  with legacyPackages.${builtins.currentSystem}; 
-    (
-      hello.overrideAttrs (oldAttrs: {
-        postInstall = (oldAttrs.postInstall or "") 
-                       + "\n" 
-                       + "mkdir -p $out/lib"
-                       + "\n" 
-                       + "ln -fsv ${stdenv.cc.cc.lib}/lib/libstdc++.so.6 $out/lib/";
-      }
-    )
-  )
-)
-'
-```
-
-
-
-
-```bash
-nix \
-build \
---impure \
---expr \
-'
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
   with legacyPackages.${builtins.currentSystem}; 
     (
       hello.overrideAttrs (oldAttrs: {
@@ -677,7 +712,7 @@ run \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
   with legacyPackages.${builtins.currentSystem}; 
     (
       python3.overrideAttrs (oldAttrs: {
@@ -703,7 +738,7 @@ shell \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
   with legacyPackages.${builtins.currentSystem}; 
     (
       python3Minimal.overrideAttrs (oldAttrs: {

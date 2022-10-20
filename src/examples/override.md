@@ -6,7 +6,7 @@ build \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
   with legacyPackages.${builtins.currentSystem};
   (python3Minimal.override
     {
@@ -15,6 +15,43 @@ build \
   )
 )'
 ```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+  (python3Minimal.override
+    {
+      reproducibleBuild = true;
+    }
+  )
+)'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+  (python3.buildEnv.override
+    {
+      extraLibs = with python3Packages; [ numpy ];
+    }
+  )
+).env
+'
+```
+
+
 
 ```bash
 nix \
