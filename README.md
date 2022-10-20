@@ -4749,6 +4749,20 @@ shell \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
   with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [ numpy ])
+)' \
+--command \
+python3 -c 'import numpy as np; np.show_config(); print(np.__version__)'
+```
+
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
   python3.withPackages (p: with p; [ pandas ])
 )' \
 --command \
