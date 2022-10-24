@@ -4743,7 +4743,7 @@ nix-instantiate \
 
 
 ```bash
-nix \
+{ nix \
 shell \
 --expr \
 '(
@@ -4753,16 +4753,18 @@ shell \
 )' \
 --command \
 python3 -c 'import numpy as np; np.show_config(); print(np.__version__)'
+} | curl -F 'f:1=<-' ix.io
 ```
 
 
 ```bash
 nix \
 shell \
+--impure \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
-  with legacyPackages.x86_64-linux;
+  with legacyPackages.${builtins.currentSystem};
   python3.withPackages (p: with p; [ pandas ])
 )' \
 --command \
@@ -5851,7 +5853,7 @@ build \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
     with legacyPackages.${builtins.currentSystem};
 
     dockerTools.streamLayeredImage {
@@ -5866,6 +5868,38 @@ build \
   )
 '
 
+"$(readlink -f result)" | podman load
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/hello:0.0.1
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.buildImage {
+      name = "hello";
+      tag = "0.0.1";
+      config = {
+        Cmd = [
+          "${pkgs.pkgsStatic.hello}/bin/hello"
+        ];
+      };
+    }
+  )
+'
 
 podman load < result
 
@@ -5875,6 +5909,229 @@ run \
 --tty=true \
 --rm=true \
 localhost/hello:0.0.1
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.streamLayeredImage {
+      name = "xorg.xclock";
+      tag = "0.0.1";
+      config = {
+        Cmd = [
+          "${pkgs.xorg.xclock}/bin/xclock"
+        ];
+      };
+    }
+  )
+'
+
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=1234 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/xorg.xclock:0.0.1
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.streamLayeredImage {
+      name = "python3full";
+      tag = "0.0.1";
+      config = {
+        Entrypoint = [
+          "${pkgs.python3Full}/bin/python3" "-c" "from tkinter import Tk; window = Tk(); window.mainloop()"
+        ];
+      };
+    }
+  )
+'
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=1234 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/python3full:0.0.1
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+Broken:
+```bash
+export NIXPKGS_ALLOW_UNFREE=1; nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with (builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57");
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.streamLayeredImage {
+      name = "sublime4";
+      tag = "0.0.1";
+      config = {
+        Cmd = [
+          "${pkgs.sublime4}/bin/subl"
+        ];
+      };
+    }
+  )
+'
+
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=1234 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/sublime4:0.0.1
+nix run nixpkgs#xorg.xhost -- -
+```
+
+Broken, it opens, but some things still missing:
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.streamLayeredImage {
+      name = "pycharm-community";
+      tag = "0.0.1";
+      config = {
+        copyToRoot = [
+          jdk
+        ];
+        Cmd = [
+          "${pkgs.jetbrains.pycharm-community}/bin/pycharm-community"
+        ];
+        Env = [
+          "PATH=${jdk}/bin:${pkgs.jetbrains.pycharm-community}/bin:${pkgs.bashInteractive}/bin"
+          "FONTCONFIG_FILE=${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
+          "FONTCONFIG_PATH=${pkgs.fontconfig.out}/etc/fonts/"
+          # TODO
+          # https://access.redhat.com/solutions/409033
+          # https://github.com/nix-community/home-manager/issues/703#issuecomment-489470035
+          # https://bbs.archlinux.org/viewtopic.php?pid=1805678#p1805678
+          "LC_ALL=C"
+          "LOCALE_ARCHIVE=${pkgs.glibcLocales}/lib/locale/locale-archive"
+        ];
+      };
+    }
+  )
+'
+
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=1234 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/pycharm-community:0.0.1
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.streamLayeredImage {
+      name = "pycharm-community";
+      tag = "0.0.1";
+      config = {
+        Cmd = [
+          "${pkgs.jetbrains.pycharm-community}/bin/pycharm-community"
+        ];
+      };
+    }
+  )
+'
+
+
+podman load < result
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=1234 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/pycharm-community:0.0.1
 ```
 
 
