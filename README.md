@@ -6309,7 +6309,7 @@ run \
 --workdir="$HOME" \
 localhost/nix:0.0.1 \
 -c \
-"nix --option experimental-features 'nix-command flakes' run nixpkgs#hello"
+"nix --option experimental-features 'nix-command flakes' run nixpkgs#python310Packages.isort"
 ```
 
 ```bash
