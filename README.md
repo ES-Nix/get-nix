@@ -6244,6 +6244,7 @@ TODO:
 - https://discourse.nixos.org/t/how-to-run-chown-for-docker-image-built-with-streamlayeredimage-or-buildlayeredimage/11977/3
 
 
+#### dockerTools, pkgsStatic.nix, pkgsStatic.busybox-sandbox-shell, podman
 
 ```bash
 # nix flake metadata nixpkgs --json | jq --join-output '.url'
