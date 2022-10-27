@@ -6267,7 +6267,7 @@ build \
         # bashInteractive
       ];
       config = {
-        Cmd = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
+        # Cmd = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
         # Entrypoint = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
         # Entrypoint = [ "${bashInteractive}/bin/bash" ];
         Entrypoint = [ "${pkgsStatic.busybox-sandbox-shell}/bin/sh" ];
