@@ -6312,6 +6312,12 @@ localhost/nix:0.0.1 \
 "nix --option experimental-features 'nix-command flakes' run nixpkgs#hello"
 ```
 
+```bash
+nix --option experimental-features 'nix-command flakes' build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python310Packages.rsa build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
+nix --option experimental-features 'nix-command flakes' build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python310Packages.rsa
+```
+
+```bash
 podman \
 exec \
 --env="USER_ID_TO_CHOWN=$(id -u)" \
@@ -6323,7 +6329,7 @@ conteiner-unprivileged-nix \
 bash \
 -c \
 'env; mkdir -p "$HOME"/.local/share/nix/root/nix && chmod 1777 /tmp && chown "$USER_ID_TO_CHOWN":"$USER_ID_TO_CHOWN" "$HOME"/.local/share/nix/root/nix /tmp'
-
+```
 
 #### From apt-get, yes, it is possible, or should be
 
