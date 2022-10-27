@@ -6287,6 +6287,9 @@ echo
 
 nix run nixpkgs#xorg.xhost -- + 
 
+# It pays of its ugliness
+test -f data/.config/nix/nix.conf || {mkdir -pv data/.config/nix && echo 'experimental-features = nix-command flakes' > data/.config/nix/nix.conf}
+
 podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
