@@ -6209,7 +6209,7 @@ build \
 podman load < result
 
 
-podman inspect localhost/hello:0.0.1 | jq -r '.[].Architecture' | grep -q arm64
+podman inspect localhost/nix:0.0.1 | jq -r '.[].Architecture' | grep -q arm64
 
 # podman info --format json | jq '.[].imageCopyTmpDir  | select( . != null )'
 # It may be broken because of architecture, ARM or AMD
@@ -6244,6 +6244,85 @@ TODO:
 - https://discourse.nixos.org/t/how-to-run-chown-for-docker-image-built-with-streamlayeredimage-or-buildlayeredimage/11977/3
 
 
+
+```bash
+# nix flake metadata nixpkgs --json | jq --join-output '.url'
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f540aeda6f677354f1e7144ab04352f61aaa0118";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.buildImage {
+      name = "nix";
+      tag = "0.0.1";
+
+      copyToRoot = [
+        pkgsStatic.nix
+        # coreutils
+        # bashInteractive
+      ];
+      config = {
+        Cmd = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
+        # Entrypoint = [ "${pkgsStatic.nix}/bin/nix" "--option" "experimental-features" "nix-command flakes" ];
+        # Entrypoint = [ "${bashInteractive}/bin/bash" ];
+        Entrypoint = [ "${pkgsStatic.busybox-sandbox-shell}/bin/sh" ];
+        Env = [
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"          
+        ];
+      };
+    }
+  )
+'
+
+podman load < result
+
+
+rm -frv data; test -d data || mkdir -pv data/tmp
+echo
+
+nix run nixpkgs#xorg.xhost -- + 
+
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/fuse:rw \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--env="HOME=${HOME:-:/home/someuser}" \
+--env="PATH=/bin:$HOME/.nix-profile/bin" \
+--env="TMPDIR=${HOME}" \
+--env="USER=${USER:-:someuser}" \
+--group-add=keep-groups \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-nix \
+--privileged=true \
+--tty=true \
+--userns=keep-id \
+--rm=true \
+--volume="$(pwd)"/data:"$HOME":U \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--workdir="$HOME" \
+localhost/nix:0.0.1 \
+-c \
+"nix --option experimental-features 'nix-command flakes' run nixpkgs#hello"
+```
+
+podman \
+exec \
+--env="USER_ID_TO_CHOWN=$(id -u)" \
+--env="GROUP_ID_TO_CHOWN=$(id -g)" \
+--interactive=true \
+--tty=true \
+--user=0 \
+conteiner-unprivileged-nix \
+bash \
+-c \
+'env; mkdir -p "$HOME"/.local/share/nix/root/nix && chmod 1777 /tmp && chown "$USER_ID_TO_CHOWN":"$USER_ID_TO_CHOWN" "$HOME"/.local/share/nix/root/nix /tmp'
 
 
 #### From apt-get, yes, it is possible, or should be
