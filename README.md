@@ -6282,13 +6282,18 @@ build \
 podman load < result
 
 
-rm -frv data; test -d data || mkdir -pv data/tmp
+# To clean all state
+# chown $(id -u):$(id -g) -R data
+# rm -fr data 
+test -d data || mkdir -pv data/tmp
+
+# It pays of its ugliness
+test -f data/.config/nix/nix.conf || {mkdir -pv data/.config/nix && echo 'experimental-features = nix-command flakes' > data/.config/nix/nix.conf}
+
 echo
 
 nix run nixpkgs#xorg.xhost -- + 
 
-# It pays of its ugliness
-test -f data/.config/nix/nix.conf || {mkdir -pv data/.config/nix && echo 'experimental-features = nix-command flakes' > data/.config/nix/nix.conf}
 
 podman \
 run \
