@@ -27,6 +27,26 @@ build \
 )'
 ```
 
+```bash
+rm -fv result \
+&& nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+    (hello.overrideAttrs
+      (oldAttrs: {
+          preBuild = (oldAttrs.preBuild or "") + "export ABC_ENVIRONMENT_VARIABLE=xptozyx";
+          preFixup = (oldAttrs.preFixup or "") + "echo xzafssdfg; env";
+        }
+      )
+    )
+)' \
+&& nix log $(readlink -f result) | grep '^ABC_ENVIRONMENT_VARIABLE=xptozyx'
+```
+
 
 ```bash
 nix \
@@ -925,10 +945,55 @@ run \
 '
 (
   import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992")
+  { overlays = [(final: prev: { postFixup = (final.postFixup or "") + ""; })]; }
+).hello
+'
+```
+
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992")
+  { overlays = [(final: prev: { 
+                  python3 = prev.python3.override {
+                    packageOverrides = final: prev: {
+                      flask = prev.flask.overrideAttrs (oldAttrs: {
+                          postFixup = (final.postFixup or "asdff") + "";
+                        });
+                      };
+                    };
+                  })
+               ]; 
+  }
+).python3Packages.flask
+'
+```
+
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992")
   { overlays = [(final: prev: { aclSupport = false; })]; }
 ).pkgsStatic.coreutils
 '
 ```
+
+
+
+
+### Force rebuilding pkgsStatic.podman-unwrapped with postFixup = "";
 
 
 ```bash

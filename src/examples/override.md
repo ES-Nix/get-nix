@@ -1,5 +1,25 @@
 ## The .overrides and .overrideAttrs
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      (pkgs.python3.override { sqlite = pkgsStatic.sqlite; })
+    )
+  )
+'
+```
+
+import platform,sqlite3
+print("Oper Sys : %s %s" % (platform.system(), platform.release()))
+print("Platform : %s %s" % (platform.python_implementation(),platform.python_version()))
+print("SQLite   : %s" % (sqlite3.sqlite_version))
 
 
 [Customizing packages in Nix](https://bobvanderlinden.me/customizing-packages-in-nix/)
@@ -31,10 +51,39 @@ build \
   with legacyPackages.${builtins.currentSystem};
   (python3Minimal.override
     {
-      reproducibleBuild = true;
+      packageOverrides = final: prev: {
+        flask = prev.flask.overrideAttrs (oldAttrs: {
+        postFixup = (final.postFixup or "asdff") + "";
+        });
+      };
     }
   )
 )'
+```
+
+
+```bash
+nix \
+run \
+--refresh \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992")
+  { overlays = [(final: prev: {
+                  python3 = prev.python3.override {
+                    packageOverrides = final: prev: {
+                      flask = prev.isort.overridePythonAttrs (oldAttrs: rec {
+                          postFixup = (prev.postFixup or "abcdefg") + "";
+                        });
+                      };
+                    };
+                  })
+               ];
+  }
+).python3.pkgs.isort
+'
 ```
 
 
@@ -122,6 +171,21 @@ https://discourse.nixos.org/t/does-nginx-package-in-the-nixpkgs-repos-compiled-w
 https://github.com/NixOS/nixpkgs/issues/136756#issuecomment-917264024
 
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      (pkgs.python3.override { postFixup = (final.postFixup or "asdff") + ""; })
+    )
+  )
+'
+```
 
 ## static sudo with pam = null
 
@@ -132,7 +196,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "nixpkgs";
+  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
   with legacyPackages.${builtins.currentSystem};
     (
       (pkgs.pkgsStatic.sudo.override { pam = null; })
