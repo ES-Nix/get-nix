@@ -6403,6 +6403,14 @@ git init \
 
 nix build .#container
 
+
+# TODO: you need some kernel flags and may be more stuff to be able to run containers
+nix \
+profile \
+install \
+--refresh \
+github:ES-Nix/podman-rootless/from-nixpkgs#podman
+
 cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
 
 podman run --privileged -it --rm localhost/nixos-image:latest /init
