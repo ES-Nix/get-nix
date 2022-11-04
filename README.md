@@ -4834,6 +4834,28 @@ build \
 )'
 ```
 
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [
+                                     geopandas
+                                     matplotlib
+                                     scipy
+                                     tensorflow
+                                     pandas
+                                     jupyter
+                                     scikitlearn
+                                     nltk
+                                     plotly
+                                   ]
+                        )
+)'
+```
+
 
 ```bash
 nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | dot -Tpdf > glue.pdf
@@ -6340,6 +6362,53 @@ bash \
 'env; mkdir -p "$HOME"/.local/share/nix/root/nix && chmod 1777 /tmp && chown "$USER_ID_TO_CHOWN":"$USER_ID_TO_CHOWN" "$HOME"/.local/share/nix/root/nix /tmp'
 ```
 
+
+#### Bare NixOS
+
+
+```bash
+cat > flake.nix << 'EOF'
+{
+  description = "Bare NixOS";
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+  outputs = {self, nixpkgs, nixos-generators, ...}: {
+    packages.x86_64-linux = {
+      container = nixos-generators.nixosGenerate {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        modules = [
+          ({ pkgs, ... }: {
+            services.getty.autologinUser = "root";
+          })
+        ];
+        format = "docker";
+      };
+    };
+  };
+}
+EOF
+
+nix \
+flake \
+update \
+--override-input nixpkgs github:NixOS/nixpkgs/2da64a81275b68fdad38af669afeda43d401e94b
+
+git init \
+&& git add .
+
+nix build .#container
+
+cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
+
+podman run --privileged -it --rm localhost/nixos-image:latest /init
+```
+
+
 #### From apt-get, yes, it is possible, or should be
 
 
@@ -7258,6 +7327,8 @@ https://github.com/NixOS/nixpkgs/blob/16236dd7e33ba4579ccd3ca8349396b2f9c960fe/n
 [LinuxCon Portland 2009 - Roundtable - Q&A 1](https://www.youtube.com/embed/K3FsmpXeqHc?start=100&end=112&version=3), start=100&end=112
 
 TODO: HUGE, https://github.com/NixOS/nix/issues?page=2&q=is%3Aissue+is%3Aopen+sandbox
+
+TODO: about the $TMPDIR, https://discourse.nixos.org/t/tmpdir-with-nix-build-and-sandbox/11761
 
 ##### __noChroot = true;
 
