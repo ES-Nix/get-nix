@@ -6413,9 +6413,37 @@ github:ES-Nix/podman-rootless/from-nixpkgs#podman
 
 cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
 
-podman run --privileged -it --rm localhost/nixos-image:latest /init
+podman \
+run \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+localhost/nixos-image:latest \
+/init
 ```
 
+
+```bash
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--volume="$(pwd)":/code \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--workdir=/code \
+localhost/nixos-image:latest \
+/init
+```
+
+
+```bash
+nix profile remove "$(nix eval --raw github:ES-Nix/podman-rootless/from-nixpkgs#podman)"
+```
 
 #### From apt-get, yes, it is possible, or should be
 
