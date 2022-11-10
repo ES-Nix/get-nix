@@ -6366,6 +6366,7 @@ bash \
 #### Bare NixOS
 
 
+
 ```bash
 cat > flake.nix << 'EOF'
 {
@@ -6382,9 +6383,192 @@ cat > flake.nix << 'EOF'
       container = nixos-generators.nixosGenerate {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         modules = [
-          ({ pkgs, ... }: {
-            services.getty.autologinUser = "root";
-          })
+                    # Provide an initial copy of the NixOS channel so that the user
+                    # doesn't need to run "nix-channel --update" first.
+                    # "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+                    
+                    # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD
+                    # "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix
+
+                    ({ pkgs, ... }: {
+                      users.users.nixuser = {                    
+                        createHome = true;
+                        # isNormalUser = true;
+                        isSystemUser = true;
+                        description = "nix user";
+                        extraGroups = [
+                          "networkmanager"
+                          "libvirtd"
+                          "wheel"
+                          "nixgroup"
+                          "docker"
+                          "kvm"
+                          "qemu-libvirtd"
+                        ];
+                        packages = with pkgs; [
+                          # firefox
+                          figlet
+                        ];
+                        # shell = pkgs.zsh;
+                        # uid = 12321;    
+                      };
+                      users.users.nixuser.group = "nixgroup";
+                      users.groups.nixuser = { };
+                    
+                      services.getty.autologinUser = "nixuser";
+
+                      nix = {
+                        # keep-outputs = true
+                        # keep-derivations = true
+                        # system-features = benchmark big-parallel kvm nixos-test
+                        package = pkgs.nixFlakes;
+                        extraOptions = ''
+                          experimental-features = nix-command flakes
+                        '';
+                        readOnlyStore = true;
+                      };
+                      
+                      environment.systemPackages = with pkgs; [
+                        hello
+                      ];
+                    })
+        ];
+        format = "docker";
+      };
+    };
+  };
+}
+EOF
+
+nix \
+flake \
+update \
+--override-input nixpkgs github:NixOS/nixpkgs/2da64a81275b68fdad38af669afeda43d401e94b
+
+git init \
+&& git add .
+
+nix build .#container
+
+
+# TODO: you need some kernel flags and may be more stuff to be able to run containers
+nix \
+profile \
+install \
+--refresh \
+github:ES-Nix/podman-rootless/from-nixpkgs#podman
+
+cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
+
+podman \
+run \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+localhost/nixos-image:latest \
+/init
+```
+
+
+
+
+```bash
+cat > flake.nix << 'EOF'
+{
+  description = "Bare NixOS";
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+  outputs = {self, nixpkgs, nixos-generators, ...}: {
+    packages.x86_64-linux = {
+      container = nixos-generators.nixosGenerate {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        modules = [
+                    # Provide an initial copy of the NixOS channel so that the user
+                    # doesn't need to run "nix-channel --update" first.
+                    "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+
+                    ({ pkgs, ... }: {
+                      users.users.nixuser = {                    
+                        createHome = true;
+                        # isNormalUser = true;
+                        isSystemUser = true;
+                        description = "nix user";
+                        extraGroups = [
+                          "networkmanager"
+                          "libvirtd"
+                          "wheel"
+                          "nixgroup"
+                          "docker"
+                          "kvm"
+                          "qemu-libvirtd"
+                        ];
+                        packages = with pkgs; [
+                          firefox
+                        ];
+                        # shell = pkgs.zsh;
+                        # uid = 12321;    
+                      };
+                      users.users.nixuser.group = "nixgroup";
+                      users.groups.nixuser = { };
+                    
+                      services.getty.autologinUser = "root";
+                      
+                      nixpkgs.config.allowUnfree = true;
+                      environment.variables = {
+                        NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                        SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                      };
+
+                      networking.hostName = "nixos"; # Define your hostname.
+                      # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+                    
+                      # Configure network proxy if necessary
+                      # networking.proxy.default = "http://user:password@proxy:port/";
+                      # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+                    
+                      # Enable networking
+                      networking.networkmanager.enable = true;
+
+                      virtualisation.podman = {
+                        enable = true;
+                        # Create a `docker` alias for podman, to use it as a drop-in replacement
+                        #dockerCompat = true;
+                      };
+
+                      virtualisation = {
+                        libvirtd = {
+                          enable = true;
+                          # Used for UEFI boot
+                          # https://myme.no/posts/2021-11-25-nixos-home-assistant.html
+                          qemu.ovmf.enable = true;
+                        };
+                      };
+
+                      environment.variables = {
+                        VAGRANT_DEFAULT_PROVIDER = "libvirt";
+                      };
+
+                      nix = {
+                        # keep-outputs = true
+                        # keep-derivations = true
+                        # system-features = benchmark big-parallel kvm nixos-test
+                        package = pkgs.nixFlakes;
+                        extraOptions = ''
+                          experimental-features = nix-command flakes
+                        '';
+                        readOnlyStore = true;
+                      };
+                      
+                      environment.systemPackages = with pkgs; [
+                        hello
+                      ];
+                    })
         ];
         format = "docker";
       };
@@ -6536,6 +6720,21 @@ build \
                       # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD#Building_faster
                       isoImage.squashfsCompression = "gzip -Xcompression-level 1";
                     }
+                    
+                    ({
+                      # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+                      boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+                      boot.kernelParams = [
+                        "console=tty0"
+                        "console=ttyS0,115200n8"
+                        # Set sensible kernel parameters
+                        # https://nixos.wiki/wiki/Bootloader
+                        # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
+                        "boot.shell_on_fail"
+                        "panic=30"
+                        "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+                      ];
+                    })                    
                   ];
     }
   ).config.system.build.isoImage
@@ -6550,6 +6749,21 @@ echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 
 installation-cd-graphical-calamares-plasma5
 installation-cd-graphical-calamares-gnome
+
+```bash
+rm -fv nixos.qcow2 nixos.img                       
+qemu-img create nixos.img 12G
+
+qemu-kvm \
+-boot order=d \
+-hda nixos.img \
+-cdrom nixos-22.05.20221016.bf82ac1-x86_64-linux.iso \
+-m 2G \
+-enable-kvm \
+-cpu host \
+-smp $(nproc) \
+-nographic
+```
 
 ```bash
 nix \
