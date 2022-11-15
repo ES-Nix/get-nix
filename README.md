@@ -5487,6 +5487,7 @@ build \
   with lib;
     import ("${path}/nixos/tests/make-test-python.nix") ({
       name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/issues/172325
       # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
       extraPythonPackages = p: [ p.numpy ];
       nodes = { };
@@ -5511,6 +5512,7 @@ build \
     import ("${path}/nixos/tests/make-test-python.nix") ({
       skipLint = true;
       name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/issues/172325
       # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
       extraPythonPackages = p: with p; [ requests types-requests ];
       nodes = { };
@@ -5535,6 +5537,7 @@ build \
     import ("${path}/nixos/tests/make-test-python.nix") ({
       skipLint = true;
       name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/issues/172325
       # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
       extraPythonPackages = p: with p; [ pandas ];
       nodes = { };
@@ -5561,6 +5564,7 @@ build \
     import ("${path}/nixos/tests/make-test-python.nix") ({
       skipLint = true;
       name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/issues/172325
       # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
       extraPythonPackages = p: with p; [ geopandas ];
       nodes = { };
@@ -5586,6 +5590,7 @@ build \
     import ("${path}/nixos/tests/make-test-python.nix") ({
       skipLint = true;
       name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/issues/172325
       # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
       extraPythonPackages = p: with p; [ tensorflow ];
       nodes = { };
@@ -5597,6 +5602,96 @@ print(tf.Variable(tf.zeros([4, 3]))); print(tf.__version__)"'';
 )
 '
 ```
+
+
+#### nixosTest, enableOCR = true
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      import ("${path}/nixos/tests/make-test-python.nix") ({
+        name = "xclock";
+        nodes.machine = { config, pkgs, ... }: {
+          imports = [
+            "${path}/nixos/tests/common/x11.nix"
+          ];
+          services.xserver.enable = true;
+          environment.systemPackages = [ pkgs.xorg.xclock ];
+        };
+
+        enableOCR = true;
+
+        testScript =
+        ''
+        "
+@polling_condition
+def xclock_running():
+    machine.succeed(\"pgrep -x xclock\")
+
+machine.wait_for_unit(\"graphical.target\")
+machine.wait_for_x()
+machine.execute(\"xclock >&2 &\")
+machine.wait_for_window(\"xclock\")
+machine.screenshot(\"screen\")
+machine.send_key(\"alt-f4\")
+machine.wait_until_fails(\"pgrep -x xclock\")
+      "
+      '';
+      }
+    )
+  )
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      import ("${path}/nixos/tests/make-test-python.nix") ({
+        name = "domination";
+        nodes.machine = { config, pkgs, ... }: {
+          imports = [
+            "${path}/nixos/tests/common/x11.nix"
+          ];
+          services.xserver.enable = true;
+          environment.systemPackages = [ pkgs.domination ];
+        };
+        enableOCR = true;
+  
+        testScript =
+        ''
+        "
+machine.wait_for_x()
+machine.execute(\"domination >&2 &\")
+machine.wait_for_window(\"Menu\")
+machine.wait_for_text(r\"(New Game|Start Server|Load Game|Help Manual|Join Game|About|Play Online)\")
+machine.screenshot(\"screen\")
+machine.send_key(\"ctrl-q\")
+machine.wait_until_fails(\"pgrep -x domination\")
+      "
+      '';
+      }
+    )
+  )
+'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/8db9c4ed3f50ef208f8ce4b4048b4574dcfeb5e3/nixos/tests/domination.nix
+
 
 #### nixosTest, sudo permissions
 
