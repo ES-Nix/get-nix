@@ -942,10 +942,11 @@ sudo su evauser
 curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
 ```
 
+```bash
 sudo groupadd evagroup \
 && sudo useradd -g evagroup -s /bin/bash -m -c "Eva User" evauser \
 && echo "nixuser:123" | sudo chpasswd
-
+```
 
 ```bash
 nix \
@@ -1548,11 +1549,15 @@ podman rm --force "${CONTAINER_NAME}"
 
 echo $PATH
 
+```bash
 nix \
 profile \
 install \
 nixpkgs#hello \
-nixpkgs#lolcat
+nixpkgs#lolcat \
+nixpkgs#figlet \
+nixpkgs#cowsay
+```
 
 
 
@@ -1759,6 +1764,74 @@ build \
 nix build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python310Packages.rsa
 ```
 
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-isort";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+              (python3.buildEnv.override
+                {
+                  extraLibs = with python3Packages; [ isort ];
+                }
+              )
+          ];
+        };
+      };
+
+      testScript = ''
+        "machine.succeed(\"isort\")"
+      '';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-cross-python3-isort";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = [
+              (pkgsCross.aarch64-multiplatform-musl.python3.buildEnv.override
+                {
+                  extraLibs = with python3Packages; [ isort ];
+                }
+              )
+          ];
+        };
+      };
+
+      testScript = ''
+        "machine.succeed(\"isort\")"
+      '';
+    })
+)
+'
+```
 
 #### Nesting
 
@@ -2516,6 +2589,30 @@ build \
 --expr \
 'let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {}; in pkgs.nixosTests.podman'
 ```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  let
+    pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {};
+    nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = with pkgs; [
+            hello
+          ];
+        };
+      };
+  in pkgs.nixosTests ({
+      name = "hello-test";
+      nodes = nodes;
+      testScript = ''"machine.succeed(\"hello\")"'';
+    })
+'
+```
+
 
 That is insane to be possible, but it is, well hope it does not brake for you:
 
@@ -3829,7 +3926,7 @@ run \
 --expr \
 '(  
   with legacyPackages.${builtins.currentSystem}; 
-  let               
+  let
     nixpkgs = (with builtins.getFlake "nixpkgs");
     overlay = final: prev: {
       hello = prev.hello.overrideAttrs (oldAttrs: with final; {
@@ -3850,7 +3947,7 @@ nix \
 run \
 --impure \
 --expr \
-'with (import <nixpkgs> {}); let               
+'with (import <nixpkgs> {}); let
   overlay = final: prev: {
     openssl = prev.openssl.override {
       static = true;
@@ -3909,7 +4006,7 @@ nix-instantiate \
 --eval \
 --impure \
 --expr \
-'with (import <nixpkgs> {}); let               
+'with (import <nixpkgs> {}); let
   overlay = final: prev: {
     openssl = prev.openssl.override {
       static = true;
@@ -3964,7 +4061,7 @@ build \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   (pkgsStatic.nix.override { 
     storeDir = "/home/ubuntu";
@@ -4872,7 +4969,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
   vmTools.runInLinuxVM (pkgs.runCommand "boo" {} ''
@@ -4896,7 +4993,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -4914,7 +5011,7 @@ build \
           python3 --version
          """)
       '';
-    })                                   
+    })
 )
 '
 ```
@@ -4931,7 +5028,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -4955,7 +5052,7 @@ run \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -4978,7 +5075,7 @@ shell \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5007,7 +5104,7 @@ shell \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5037,7 +5134,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5066,7 +5163,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5099,7 +5196,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5131,7 +5228,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5163,7 +5260,7 @@ Broken:
 cat <<'EOF' | xargs -0 -I{} nix build --expr {} --no-link
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5196,7 +5293,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5318,6 +5415,188 @@ build \
 '
 ```
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    import ("${pkgs}/nixos/tests/make-test-python.nix") ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            python3
+          ];
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"python3 --version\")"
+      '';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    import ("${path}/nixos/tests/make-test-python.nix") ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            python3
+          ];
+        };
+      };
+    
+      testScript = ''
+"@polling_condition(description=\"check that foo is running\")
+def foo_running():
+    machine.succeed(\"python3 --version\")"
+      '';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    import ("${path}/nixos/tests/make-test-python.nix") ({
+      name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
+      extraPythonPackages = p: [ p.numpy ];
+      nodes = { };
+
+      testScript = ''"import numpy as np; assert str(np.zeros(4) == \"array([0., 0., 0., 0.])\") "'';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    import ("${path}/nixos/tests/make-test-python.nix") ({
+      skipLint = true;
+      name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
+      extraPythonPackages = p: with p; [ requests types-requests ];
+      nodes = { };
+
+      testScript = ''"import requests as r; print(r.__version__)"'';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    import ("${path}/nixos/tests/make-test-python.nix") ({
+      skipLint = true;
+      name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
+      extraPythonPackages = p: with p; [ pandas ];
+      nodes = { };
+
+      testScript = ''"
+import pandas as pd # type: ignore
+print(pd.__version__)"'';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    import ("${path}/nixos/tests/make-test-python.nix") ({
+      skipLint = true;
+      name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
+      extraPythonPackages = p: with p; [ geopandas ];
+      nodes = { };
+
+      testScript = ''"
+import geopandas as gpd # type: ignore
+print(gpd.__version__)"'';
+    })
+)
+'
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    import ("${path}/nixos/tests/make-test-python.nix") ({
+      skipLint = true;
+      name = "nixos-test-python3-examples";
+      # https://github.com/NixOS/nixpkgs/pull/174441/files#diff-53201fd9a776413fa35cb167cab111999bafe5580f579c80eaa850678a7b4599R406
+      extraPythonPackages = p: with p; [ tensorflow ];
+      nodes = { };
+
+      testScript = ''"
+import tensorflow as tf # type: ignore
+print(tf.Variable(tf.zeros([4, 3]))); print(tf.__version__)"'';
+    })
+)
+'
+```
 
 #### nixosTest, sudo permissions
 
@@ -5330,7 +5609,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5355,7 +5634,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5380,7 +5659,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5406,7 +5685,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5430,7 +5709,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5491,7 +5770,7 @@ run \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
   let
@@ -5555,7 +5834,7 @@ run \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
@@ -5628,7 +5907,7 @@ run \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
   let
@@ -5663,7 +5942,7 @@ run \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
   let
@@ -5781,7 +6060,7 @@ build \
             "cgroup_enable=cpuset"
             "cgroup_memory=1"
             "cgroup_enable=memory"
-          ];          
+          ];
         };
       };
 
@@ -5852,7 +6131,7 @@ build \
           boot.binfmt.emulatedSystems = [ "aarch64-android" ];
           environment.systemPackages = [
             pkgsCross.aarch64-android.pkgsStatic.hello
-          ];          
+          ];
         };
       };
     
@@ -6734,7 +7013,7 @@ build \
                         "panic=30"
                         "boot.panic_on_fail" # reboot the machine upon fatal boot issues
                       ];
-                    })                    
+                    })
                   ];
     }
   ).config.system.build.isoImage
@@ -6765,13 +7044,120 @@ qemu-kvm \
 -nographic
 ```
 
+
+```bash
+nix \
+build \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/bf82ac1f931c11a551abef3cf022d2faeab500ed"
+    ).lib.nixosSystem {
+        system = "aarch64-linux";
+        modules = [ 
+                    "${toString (builtins.getFlake "github:NixOS/nixpkgs/bf82ac1f931c11a551abef3cf022d2faeab500ed")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                    { 
+                      # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD#Building_faster
+                      isoImage.squashfsCompression = "gzip -Xcompression-level 1"; 
+                    }
+                    
+                    ({
+                      # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+                      boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+                      boot.kernelParams = [
+                        "console=tty0"
+                        "console=ttyAMA0,115200n8" # https://nixos.wiki/wiki/NixOS_on_ARM
+                        # Set sensible kernel parameters
+                        # https://nixos.wiki/wiki/Bootloader
+                        # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
+                        "boot.shell_on_fail"
+                        "panic=30"
+                        "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+                      ];
+                    })
+                  ];
+    }
+  ).config.system.build.isoImage
+)
+'
+```
+
+
+```bash
+rm -fv nixos.qcow2 nixos.img
+qemu-img create nixos.img 12G
+
+qemu-system-aarch64 \
+-boot order=d \
+-bios $(nix-build '<nixpkgs>' -A pkgs.OVMF.fd --no-out-link)/FV/OVMF.fd  \
+-hda nixos.img \
+-cdrom result/iso/*.iso \
+-m 2G \
+-smp 4 \
+-machine virt \
+-nographic \
+-cpu cortex-a57
+```
+
+
+
+```bash
+# nix flake metadata github:NixOS/nixpkgs/release-22.05
+nix \
+build \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/bf82ac1f931c11a551abef3cf022d2faeab500ed"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ 
+                    "${toString (builtins.getFlake "github:NixOS/nixpkgs/bf82ac1f931c11a551abef3cf022d2faeab500ed")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                    "${toString (builtins.getFlake "github:NixOS/nixpkgs/bf82ac1f931c11a551abef3cf022d2faeab500ed")}/nixos/modules//profiles/all-hardware.nix"
+                    { 
+                      # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD#Building_faster
+                      isoImage.squashfsCompression = "gzip -Xcompression-level 1";
+                    }
+                    
+                    ({
+                      # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+                      boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+                      boot.kernelParams = [
+                        "console=tty0"
+                        "console=ttyS0,115200n8"
+                        # Set sensible kernel parameters
+                        # https://nixos.wiki/wiki/Bootloader
+                        # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
+                        "boot.shell_on_fail"
+                        "panic=30"
+                        "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+                      ];
+                    })
+                  ];
+    }
+  ).config.system.build.isoImage
+)
+'
+
+EXPECTED_SHA512='d3a2162159fe326f602d91a134db36a744b1fc605bfc44c1300a1af39a7a0753beda9a00ddad7b8ab623fe5269e95f0643990258ec1d5a125fc402a53524a9c2'
+ISO_PATTERN_NAME='result/iso/nixos-22.05.20221016.bf82ac1-x86_64-linux.iso'
+sha512sum "${ISO_PATTERN_NAME}"
+echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+```
+
+
+
 ```bash
 nix \
 build \
 --impure \
 --expr \
 '
-let 
+let
   nixos = import <nixpkgs/nixos> { }; 
 in nixos.config.systemd.units."nix-daemon.service"
 '
@@ -6785,7 +7171,7 @@ nix \
 build \
 --expr \
 '
-let 
+let
   nixos = (builtins.getFlake "github:NixOS/nixpkgs/d0f9857448e77df50d1e0b518ba0e835b797532a").lib.nixosSystem { 
             system = "x86_64-linux"; 
             modules = [ 
@@ -6913,7 +7299,7 @@ build \
 --expr \
 '
 (                                                                                                     
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
     runCommand "_" 
         { 
@@ -6932,7 +7318,7 @@ log \
 --expr \
 '
 (                                                                                                     
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem}; 
     runCommand "_" 
         { 
