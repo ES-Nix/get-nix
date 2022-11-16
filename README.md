@@ -4975,7 +4975,7 @@ build \
   vmTools.runInLinuxVM (pkgs.runCommand "boo" {} ''
         "${concatMapStringsSep "\n" (i: "echo baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") (range 1 300)}"
       ''
-    )                                   
+    )
 )
 '
 ```
@@ -5015,6 +5015,69 @@ build \
 )
 '
 ```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+  vmTools.runInLinuxVM 
+  (
+    nixosTest ({
+      name = "nixos-test-empty";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+        };
+      };
+    
+      testScript = "";
+    })
+  )
+)
+'
+```
+
+Broken.
+`qemu-kvm: cannot set up guest memory 'pc.ram': Cannot allocate memory`
+it needs more memory, I guess, the outer VM the `runInLinuxVM` may need to have 
+as much as RAM as it self needs and the inner `nixosTest` needs too.
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+  vmTools.runInLinuxVM 
+  (
+    nixosTest ({
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            hello
+          ];
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"hello\")"
+      '';
+    })
+  )
+)
+'
+```
+
+
 
 ### nixosTest
 
@@ -6759,14 +6822,22 @@ cat > flake.nix << 'EOF'
         modules = [
                     # Provide an initial copy of the NixOS channel so that the user
                     # doesn't need to run "nix-channel --update" first.
-                    # "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+                    "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
                     
-                    # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD
-                    # "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix
+                    # "${modulesPath}/installer/cd-dvd/iso-image.nix"
+                    # error: derivation '/nix/store/2j6939vz4slg58a55jfvp5r3hka3h21l-closure-info.drv' requires non-existent output 'bin' from input derivation '/nix/store/zd4r1jh7nmvkhlm6z6xi0z2w0bfkzfap-libidn2-2.3.2.drv'
+                    # "${nixpkgs}/nixos/modules/profiles/all-hardware.nix"
+                    # "${nixpkgs}/nixos/modules/profiles/base.nix"
+                    # "${nixpkgs}/nixos/modules/profiles/installation-device.nix"
+                    # "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+                    # "${nixpkgs}/nixos/modules/installer/tools/tools.nix"
 
                     ({ pkgs, ... }: {
                       users.users.nixuser = {                    
+                        home = "/home/nixuser";
                         createHome = true;
+                        homeMode = "0700";
+
                         # isNormalUser = true;
                         isSystemUser = true;
                         description = "nix user";
@@ -6781,15 +6852,29 @@ cat > flake.nix << 'EOF'
                         ];
                         packages = with pkgs; [
                           # firefox
-                          figlet
                         ];
-                        # shell = pkgs.zsh;
+                        shell = pkgs.bashInteractive;
                         # uid = 12321;    
                       };
                       users.users.nixuser.group = "nixgroup";
                       users.groups.nixuser = { };
-                    
-                      services.getty.autologinUser = "nixuser";
+
+                      #
+                      # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
+                      users.users."root".initialPassword = "r00t";
+                      #
+                      # To crete a new one:
+                      # mkpasswd -m sha-512
+                      # https://unix.stackexchange.com/a/187337
+                      # users.users."root".hashedPassword = "$6$gCCW9SQfMdwAmmAJ$fQDoVPYZerCi10z2wpjyk4ZxWrVrZkVcoPOTjFTZ5BJw9I9qsOAUCUPAouPsEMG.5Kk1rvFSwUB.NeUuPt/SC/";
+
+                      services.getty.autologinUser = "root";
+
+                      virtualisation.podman = {
+                        enable = true;
+                        # Create a `docker` alias for podman, to use it as a drop-in replacement
+                        #dockerCompat = true;
+                      };
 
                       nix = {
                         # keep-outputs = true
@@ -6804,7 +6889,13 @@ cat > flake.nix << 'EOF'
                       
                       environment.systemPackages = with pkgs; [
                         hello
+                        figlet
+                        podman
+                        sudo
+                        xorg.xclock
                       ];
+
+                      DISPLAY=:0
                     })
         ];
         format = "docker";
@@ -6826,11 +6917,11 @@ nix build .#container
 
 
 # TODO: you need some kernel flags and may be more stuff to be able to run containers
-nix \
-profile \
-install \
---refresh \
-github:ES-Nix/podman-rootless/from-nixpkgs#podman
+#nix \
+#profile \
+#install \
+#--refresh \
+#github:ES-Nix/podman-rootless/from-nixpkgs#podman
 
 cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
 
@@ -6843,6 +6934,7 @@ run \
 localhost/nixos-image:latest \
 /init
 ```
+
 
 
 
@@ -6867,9 +6959,236 @@ cat > flake.nix << 'EOF'
                     # doesn't need to run "nix-channel --update" first.
                     "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
 
+                    # "${modulesPath}/installer/cd-dvd/iso-image.nix"
+                    # error: derivation '/nix/store/2j6939vz4slg58a55jfvp5r3hka3h21l-closure-info.drv' requires non-existent output 'bin' from input derivation '/nix/store/zd4r1jh7nmvkhlm6z6xi0z2w0bfkzfap-libidn2-2.3.2.drv'
+                    # "${nixpkgs}/nixos/modules/profiles/all-hardware.nix"
+                    # "${nixpkgs}/nixos/modules/profiles/base.nix"
+                    # "${nixpkgs}/nixos/modules/profiles/installation-device.nix"
+                    # "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+                    # "${nixpkgs}/nixos/modules/installer/tools/tools.nix"
+
                     ({ pkgs, ... }: {
+                      users.extraGroups.nixgroup.gid = 5678;
+
+                      users.users.nixuser = {                    
+                        home = "/home/nixuser";
+                        createHome = true;
+                        homeMode = "0700";
+
+                        # isNormalUser = true;
+                        isSystemUser = true;
+                        description = "nix user";
+                        extraGroups = [
+                          "networkmanager"
+                          "libvirtd"
+                          "wheel"
+                          "nixgroup"
+                          "docker"
+                          "kvm"
+                          "qemu-libvirtd"
+                        ];
+                        packages = with pkgs; [
+                          # firefox
+                        ];
+                        shell = pkgs.bashInteractive;
+                        uid = 1234;
+                        initialPassword = "1";
+                        group = "nixgroup";
+                      };
+
+                      users.extraUsers.nixuser.subUidRanges = [
+                          {
+                            count = 1;
+                            startUid = 1000;
+                          }
+                          {
+                            count = 65534;
+                            startUid = 1000001;
+                          }
+                        ];
+
+                      users.extraUsers.nixuser.subGidRanges = [
+                          {
+                            count = 1;
+                            startGid = 1000;
+                          }
+                          {
+                            count = 65534;
+                            startGid = 1000001;
+                          }
+                        ];
+                      #
+                      # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
+                      users.users."root".initialPassword = "r00t";
+                      #
+                      # To crete a new one:
+                      # mkpasswd -m sha-512
+                      # https://unix.stackexchange.com/a/187337
+                      # users.users."root".hashedPassword = "$6$gCCW9SQfMdwAmmAJ$fQDoVPYZerCi10z2wpjyk4ZxWrVrZkVcoPOTjFTZ5BJw9I9qsOAUCUPAouPsEMG.5Kk1rvFSwUB.NeUuPt/SC/";
+
+                      services.getty.autologinUser = "nixuser";
+                      # Enable networking
+                      networking = {
+                        hostName = "nixos";
+                        useDHCP = false;
+                        networkmanager.enable = true;
+                        nameservers = [ "1.1.1.1" "8.8.8.8" ];
+                      };
+
+                      boot.loader.systemd-boot.enable = true;
+                      boot.binfmt.emulatedSystems = ["aarch64-linux"];
+
+                      # Enable the X11 windowing system.
+                      services.xserver.enable = true;
+
+                      # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+                      boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+                      boot.kernelParams = [
+                        "console=tty0"
+                        "console=ttyS0,115200n8"
+                        # Set sensible kernel parameters
+                        # https://nixos.wiki/wiki/Bootloader
+                        # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
+                        "boot.shell_on_fail"
+                        "panic=30"
+                        "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+                      ];
+
+                      # https://discourse.nixos.org/t/linuxpackages-5-10-nvidia-x11-attribute-extend-missing-at-nix-kernel-nix31/11934/6
+                      # boot.kernelPackages = pkgs.lib.recurseIntoAttrs (pkgs.linuxPackagesFor pkgs.linux_6_0);
+
+                      systemd.services.nix-daemon.enable = true;
+                      virtualisation.podman = {
+                        enable = true;
+                        # Create a `docker` alias for podman, to use it as a drop-in replacement
+                        #dockerCompat = true;
+                      };
+
+                      nix = {
+                        # keep-outputs = true
+                        # keep-derivations = true
+                        # system-features = benchmark big-parallel kvm nixos-test
+                        package = pkgs.nixFlakes;
+                        extraOptions = ''
+                          experimental-features = nix-command flakes
+                        '';
+                        readOnlyStore = true;
+                      };
+
+                      environment.systemPackages = with pkgs; [
+                        cacert
+                        #hello
+                        pkgsCross.aarch64-multiplatform.pkgsStatic.hello
+                        figlet
+                        podman
+                        sudo
+                        python3
+                        xorg.xclock
+                        file
+                        gnugrep
+                      ];
+
+                      environment.variables = {
+                        NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                        SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                        DISPLAY = ":0";
+                      };
+                    })
+        ];
+        format = "docker";
+      };
+    };
+  };
+}
+EOF
+
+nix \
+flake \
+update \
+--override-input nixpkgs github:NixOS/nixpkgs/97b8d9459f7922ce0e666113a1e8e6071424ae16
+
+git init \
+&& git add .
+
+nix build .#container
+
+
+# TODO: you need some kernel flags and may be more stuff to be able to run containers
+#nix \
+#profile \
+#install \
+#--refresh \
+#github:ES-Nix/podman-rootless/from-nixpkgs#podman
+
+cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
+
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname="nixos" \
+--interactive=true \
+--name=nixos-container \
+--privileged=true \
+--publish="8888:8888" \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume="$(pwd)":/tmp/code:rw \
+localhost/nixos-image:latest \
+/init
+```
+
+
+
+```bash
+su -l nixuser
+
+podman run -it --rm alpine
+
+nix build nixpkgs#vlc
+```
+
+
+```bash
+python3 -m http.server 8888
+```
+
+
+```bash
+test $(curl -s -w '%{http_code}\n' localhost:8888 -o /dev/null) -eq 200 || echo 'Error'
+```
+
+
+
+```bash
+cat > flake.nix << 'EOF'
+{
+  description = "Bare NixOS";
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+  outputs = {self, nixpkgs, nixos-generators, ...}: {
+    packages.x86_64-linux = {
+      container = nixos-generators.nixosGenerate {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        modules = [
+                    # Provide an initial copy of the NixOS channel so that the user
+                    # doesn't need to run "nix-channel --update" first.
+                    "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+                    
+                    ({ pkgs, ... }: {
+                      users.users.nixuser.group = "nixgroup";
+                      users.groups.nixuser = { };
+                    
                       users.users.nixuser = {                    
                         createHome = true;
+                        group = "nixgroup";
                         # isNormalUser = true;
                         isSystemUser = true;
                         description = "nix user";
@@ -6888,8 +7207,6 @@ cat > flake.nix << 'EOF'
                         # shell = pkgs.zsh;
                         # uid = 12321;    
                       };
-                      users.users.nixuser.group = "nixgroup";
-                      users.groups.nixuser = { };
                     
                       services.getty.autologinUser = "root";
                       
@@ -6897,6 +7214,15 @@ cat > flake.nix << 'EOF'
                       environment.variables = {
                         NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                         SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                        DISPLAY = ":0";
+                      };
+
+                      environment.etc."containers/registries.conf" = {
+                        mode = "0644";
+                        text = ''
+                          [registries.search]
+                          registries = ['docker.io', 'localhost']
+                        '';
                       };
 
                       networking.hostName = "nixos"; # Define your hostname.
@@ -6971,12 +7297,16 @@ github:ES-Nix/podman-rootless/from-nixpkgs#podman
 
 cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
 
+nix run nixpkgs#xorg.xhost -- +
 podman \
 run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname="nixos" \
 --interactive=true \
 --privileged=true \
 --rm=true \
 --tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/nixos-image:latest \
 /init
 ```
@@ -7195,6 +7525,37 @@ qemu-system-aarch64 \
 -nographic \
 -cpu cortex-a57
 ```
+
+
+
+        nixos-lib = import (nixpkgs + "/nixos/lib") {};
+
+
+      checks = {
+          test-nixos = nixos-lib.runTest {
+            imports = [ ./test.nix ];
+
+            hostPkgs = pkgsAllowUnfree;  # the Nixpkgs package set used outside the VMs
+          };
+        };
+
+
+{ pkgs, ... }: {
+  # It is an MUST to hava en name!
+  # error: The option `name' is used but not defined.
+  name = "Fooo";
+  nodes = { master = { pkgs, ... }: { }; };
+
+  testScript = ''
+    start_all()
+    master.succeed("ls -al")
+  '';
+}
+
+
+
+
+
 
 
 
