@@ -5669,6 +5669,10 @@ print(tf.Variable(tf.zeros([4, 3]))); print(tf.__version__)"'';
 
 #### nixosTest, enableOCR = true
 
+
+
+##### nixosTest, enableOCR = true, xclock
+
 ```bash
 nix \
 build \
@@ -5714,6 +5718,8 @@ machine.wait_until_fails(\"pgrep -x xclock\")
 ```
 
 
+##### nixosTest, enableOCR = true, domination
+
 ```bash
 nix \
 build \
@@ -5754,6 +5760,105 @@ machine.wait_until_fails(\"pgrep -x domination\")
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/8db9c4ed3f50ef208f8ce4b4048b4574dcfeb5e3/nixos/tests/domination.nix
+
+If you want to play the game:
+```bash
+nix run github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9#domination
+```
+
+
+
+##### nixosTest, enableOCR = true, vscodium
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+let
+  tests = {
+    wayland = { pkgs, ... }: {
+      imports = [ "${path}/nixos/tests/common/wayland-cage.nix" ];
+
+      services.cage.program = "${pkgs.vscodium}/bin/codium";
+
+      environment.variables.NIXOS_OZONE_WL = "1";
+      environment.variables.DISPLAY = "do not use";
+
+      fonts.fonts = with pkgs; [ dejavu_fonts ];
+    };
+    xorg = { pkgs, ... }: {
+      imports = [ "${path}/nixos/tests/common/user-account.nix" "${path}/nixos/tests/common/x11.nix" ];
+
+      virtualisation.memorySize = 2047;
+      services.xserver.enable = true;
+      services.xserver.displayManager.sessionCommands = "${pkgs.vscodium}/bin/codium";
+      test-support.displayManager.auto.user = "alice";
+    };
+  };
+
+  mkTest = name: machine:
+    import ("${path}/nixos/tests/make-test-python.nix") ({ pkgs, ... }: {
+      inherit name;
+
+      nodes = { "${name}" = machine; };
+
+      enableOCR = true;
+
+      # testScriptWithTypes:55: error: Item "function" of
+      # "Union[Callable[[Callable[..., Any]], ContextManager[Any]], ContextManager[Any]]"
+      # has no attribute "__enter__"
+      #     with codium_running:
+      #          ^
+      skipTypeCheck = true;
+
+      testScript = ''
+      "
+@polling_condition
+def codium_running():
+    machine.succeed(\"pgrep -x codium\")
+start_all()
+machine.wait_for_unit(\"graphical.target\")
+machine.wait_until_succeeds(\"pgrep -x codium\")
+with codium_running:
+    # Wait until vscodium is visible. \"File\" is in the menu bar.
+    machine.wait_for_text(\"Get Started\")
+    machine.screenshot(\"start_screen\")
+    test_string = \"testfile\"
+    # Create a new file
+    machine.send_key(\"ctrl-n\")
+    machine.wait_for_text(\"Untitled\")
+    machine.screenshot(\"empty_editor\")
+    # Type a string
+    machine.send_chars(test_string)
+    machine.wait_for_text(test_string)
+    machine.screenshot(\"editor\")
+    # Save the file
+    machine.send_key(\"ctrl-s\")
+    machine.wait_for_text(\"(Save|Desktop|alice|Size)\")
+    machine.screenshot(\"save_window\")
+    machine.send_key(\"ret\")
+    # (the default filename is the first line of the file)
+    machine.wait_for_file(f\"/home/alice/{test_string}\")
+# machine.send_key(\"ctrl-q\")
+# machine.wait_until_fails(\"pgrep -x codium\")
+      "
+      '';
+    });
+
+in
+builtins.mapAttrs (k: v: mkTest k v { }) tests
+  )
+'
+```
+
 
 
 #### nixosTest, sudo permissions
