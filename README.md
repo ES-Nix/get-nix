@@ -7064,6 +7064,15 @@ cat > flake.nix << 'EOF'
                         #dockerCompat = true;
                       };
 
+                      virtualisation = {
+                        libvirtd = {
+                          enable = true;
+                          # Used for UEFI boot
+                          # https://myme.no/posts/2021-11-25-nixos-home-assistant.html
+                          qemu.ovmf.enable = true;
+                        };
+                      };
+
                       nix = {
                         # keep-outputs = true
                         # keep-derivations = true
@@ -7086,12 +7095,14 @@ cat > flake.nix << 'EOF'
                         xorg.xclock
                         file
                         gnugrep
+                        vagrant
                       ];
 
                       environment.variables = {
                         NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                         SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                         DISPLAY = ":0";
+                        VAGRANT_DEFAULT_PROVIDER = "libvirt";
                       };
                     })
         ];
@@ -7158,174 +7169,6 @@ python3 -m http.server 8888
 
 ```bash
 test $(curl -s -w '%{http_code}\n' localhost:8888 -o /dev/null) -eq 200 || echo 'Error'
-```
-
-
-
-```bash
-cat > flake.nix << 'EOF'
-{
-  description = "Bare NixOS";
-  inputs = {
-    nixpkgs.url = "nixpkgs/nixos-unstable";
-    nixos-generators = {
-      url = "github:nix-community/nixos-generators";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-  };
-  outputs = {self, nixpkgs, nixos-generators, ...}: {
-    packages.x86_64-linux = {
-      container = nixos-generators.nixosGenerate {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        modules = [
-                    # Provide an initial copy of the NixOS channel so that the user
-                    # doesn't need to run "nix-channel --update" first.
-                    "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-                    
-                    ({ pkgs, ... }: {
-                      users.users.nixuser.group = "nixgroup";
-                      users.groups.nixuser = { };
-                    
-                      users.users.nixuser = {                    
-                        createHome = true;
-                        group = "nixgroup";
-                        # isNormalUser = true;
-                        isSystemUser = true;
-                        description = "nix user";
-                        extraGroups = [
-                          "networkmanager"
-                          "libvirtd"
-                          "wheel"
-                          "nixgroup"
-                          "docker"
-                          "kvm"
-                          "qemu-libvirtd"
-                        ];
-                        packages = with pkgs; [
-                          firefox
-                        ];
-                        # shell = pkgs.zsh;
-                        # uid = 12321;    
-                      };
-                    
-                      services.getty.autologinUser = "root";
-                      
-                      nixpkgs.config.allowUnfree = true;
-                      environment.variables = {
-                        NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-                        SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-                        DISPLAY = ":0";
-                      };
-
-                      environment.etc."containers/registries.conf" = {
-                        mode = "0644";
-                        text = ''
-                          [registries.search]
-                          registries = ['docker.io', 'localhost']
-                        '';
-                      };
-
-                      networking.hostName = "nixos"; # Define your hostname.
-                      # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-                    
-                      # Configure network proxy if necessary
-                      # networking.proxy.default = "http://user:password@proxy:port/";
-                      # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-                    
-                      # Enable networking
-                      networking.networkmanager.enable = true;
-
-                      virtualisation.podman = {
-                        enable = true;
-                        # Create a `docker` alias for podman, to use it as a drop-in replacement
-                        #dockerCompat = true;
-                      };
-
-                      virtualisation = {
-                        libvirtd = {
-                          enable = true;
-                          # Used for UEFI boot
-                          # https://myme.no/posts/2021-11-25-nixos-home-assistant.html
-                          qemu.ovmf.enable = true;
-                        };
-                      };
-
-                      environment.variables = {
-                        VAGRANT_DEFAULT_PROVIDER = "libvirt";
-                      };
-
-                      nix = {
-                        # keep-outputs = true
-                        # keep-derivations = true
-                        # system-features = benchmark big-parallel kvm nixos-test
-                        package = pkgs.nixFlakes;
-                        extraOptions = ''
-                          experimental-features = nix-command flakes
-                        '';
-                        readOnlyStore = true;
-                      };
-                      
-                      environment.systemPackages = with pkgs; [
-                        hello
-                      ];
-                    })
-        ];
-        format = "docker";
-      };
-    };
-  };
-}
-EOF
-
-nix \
-flake \
-update \
---override-input nixpkgs github:NixOS/nixpkgs/2da64a81275b68fdad38af669afeda43d401e94b
-
-git init \
-&& git add .
-
-nix build .#container
-
-
-# TODO: you need some kernel flags and may be more stuff to be able to run containers
-nix \
-profile \
-install \
---refresh \
-github:ES-Nix/podman-rootless/from-nixpkgs#podman
-
-cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
-
-nix run nixpkgs#xorg.xhost -- +
-podman \
-run \
---env="DISPLAY=${DISPLAY:-:0}" \
---hostname="nixos" \
---interactive=true \
---privileged=true \
---rm=true \
---tty=true \
---volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/nixos-image:latest \
-/init
-```
-
-
-```bash
-nix run nixpkgs#xorg.xhost -- +
-podman \
-run \
---env="DISPLAY=${DISPLAY:-:0}" \
---interactive=true \
---privileged=true \
---rm=true \
---tty=true \
---volume="$(pwd)":/code \
---volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
---workdir=/code \
-localhost/nixos-image:latest \
-/init
 ```
 
 
