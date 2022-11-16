@@ -6846,13 +6846,15 @@ build \
 podman load < result
 
 
+SHARED_DIRETORY_NAME=code
 # To clean all state
-# chown $(id -u):$(id -g) -R data
-# rm -fr data 
-test -d data || mkdir -pv data/tmp
+# chown $(id -u):$(id -g) -R "$SHARED_DIRETORY_NAME"
+# rm -fr "$SHARED_DIRETORY_NAME" 
+test -d "$SHARED_DIRETORY_NAME" || mkdir -pv "$SHARED_DIRETORY_NAME"/tmp
 
 # It pays of its ugliness
-test -f data/.config/nix/nix.conf || {mkdir -pv data/.config/nix && echo 'experimental-features = nix-command flakes' > data/.config/nix/nix.conf}
+test -f "$SHARED_DIRETORY_NAME"/.config/nix/nix.conf \
+|| mkdir -pv "$SHARED_DIRETORY_NAME"/.config/nix && echo 'experimental-features = nix-command flakes' > "$SHARED_DIRETORY_NAME"/.config/nix/nix.conf
 
 echo
 
@@ -6877,13 +6879,15 @@ run \
 --tty=true \
 --userns=keep-id \
 --rm=true \
---volume="$(pwd)"/data:"$HOME":U \
+--volume="$(pwd)"/"$SHARED_DIRETORY_NAME":"$HOME":U \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 --workdir="$HOME" \
 localhost/nix:0.0.1 \
 -c \
 "nix --option experimental-features 'nix-command flakes' run nixpkgs#python310Packages.isort"
 ```
+
+
 
 ```bash
 nix --option experimental-features 'nix-command flakes' build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python310Packages.rsa build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
