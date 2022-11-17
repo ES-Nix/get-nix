@@ -5861,6 +5861,63 @@ builtins.mapAttrs (k: v: mkTest k v { }) tests
 
 
 
+
+#### test-selenium-firefox
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      import ("${path}/nixos/tests/make-test-python.nix") ({
+        name = "t-selenium-firefox";
+        nodes.machine = { config, pkgs, ... }: {
+          imports = [
+            "${path}/nixos/tests/common/x11.nix"
+          ];
+          services.xserver.enable = true;
+          environment.systemPackages = 
+            let
+              python = pkgs.python3.withPackages (ps: [ ps.selenium ]);
+              pythonTest = pkgs.writeScriptBin "test-selenium-firefox" ''
+"#!${python}/bin/python3
+from selenium import webdriver
+webdriver.Firefox()
+"'';
+            in with pkgs; [
+              pythonTest
+              geckodriver
+              firefox
+            ];
+        };
+        enableOCR = true;
+        # Disable linting for simpler debugging of the testScript
+        skipLint = true;
+        skipTypeCheck = true;
+        testScript =
+        ''
+        "
+start_all()
+machine.wait_for_unit(\"graphical.target\")
+machine.wait_for_x()
+machine.execute(\"test-selenium-firefox\")
+machine.execute(\"sleep 3\")
+machine.screenshot(\"screen\")
+      "
+      '';
+      }
+    )
+  )
+'
+```
+
+
 #### nixosTest, sudo permissions
 
 
