@@ -5907,7 +5907,65 @@ start_all()
 machine.wait_for_unit(\"graphical.target\")
 machine.wait_for_x()
 machine.execute(\"test-selenium-firefox\")
+machine.wait_for_text(r\"(Mozilla Firefox|New Tab|Search or enter address)\")
+machine.screenshot(\"screen\")
+      "
+      '';
+      }
+    )
+  )
+'
+```
+
+
+#### test-selenium-firefox, python3 -m http.server
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      import ("${path}/nixos/tests/make-test-python.nix") ({
+        name = "t-selenium-firefox";
+        nodes.machine = { config, pkgs, ... }: {
+          imports = [
+            "${path}/nixos/tests/common/x11.nix"
+          ];
+          services.xserver.enable = true;
+          environment.systemPackages = 
+            let
+              python = pkgs.python3.withPackages (ps: [ ps.selenium ]);
+              pythonTest = pkgs.writeScriptBin "test-selenium-firefox" ''
+"#!${python}/bin/python3
+from selenium import webdriver
+webdriver.Firefox().get(\"localhost:6789\")
+"'';
+            in with pkgs; [
+              pythonTest
+              geckodriver
+              firefox
+              python3
+            ];
+        };
+        enableOCR = true;
+        # Disable linting for simpler debugging of the testScript
+        skipLint = true;
+        skipTypeCheck = true;
+        testScript =
+        ''
+        "
+start_all()
+machine.wait_for_unit(\"graphical.target\")
+machine.wait_for_x()
+machine.execute(\"python3 -m http.server 6789 >&2 &\")
 machine.execute(\"sleep 3\")
+machine.execute(\"test-selenium-firefox\")
+machine.wait_for_text(r\"(Mozilla Firefox|Directory listing for)\")
 machine.screenshot(\"screen\")
       "
       '';
