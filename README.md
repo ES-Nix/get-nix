@@ -466,6 +466,30 @@ echo $(nix-store --query --graph $(nix-store --query $(which hello))) | dot -Tps
 && sha256sum graph.ps
 ```
 
+The correct one if you do not need legacy:
+```bash
+nix build nixpkgs#hello --print-out-paths
+```
+
+```bash
+nix \
+profile \
+install \
+nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4#{coreutils,graphviz}
+```
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+    nix \
+    build \
+    --derivation \
+    github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4#python311 \
+    --print-out-paths
+) | dot -Tps > python311.ps \
+&& echo e9191c6519bf9ac34feda13b5f11b2e5e39fa4872b3a30f98617a2695f836e18'  'python311.ps | sha256sum -c
+```
+
 ```bash
 echo $(nix-store --query --graph $(nix-store --query $(nix eval --raw nixpkgs#hello.drvPath))) | dot -Tps > graph.ps \
 && sha256sum graph.ps
@@ -2903,6 +2927,11 @@ b763f9da3d5f48ce52142f62c484725b52ca431d  result/iso/nixos-22.05.20220501.b283b6
 nix run nixpkgs#neofetch -- --json
 ```
 
+
+
+#### config.system.build.vm nixos/modules/virtualisation/build-vm.nix
+
+Bare minimum (not so useful, just to test):
 ```bash
 nix \
 build \
@@ -2911,20 +2940,267 @@ build \
 (
   (
     (
-      builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf"
+      builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
     ).lib.nixosSystem {
         system = "x86_64-linux";
         modules = [ 
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/virtualisation/build-vm.nix" 
-          
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/b283b64580d1872333a99af2b4cef91bb84580cf")}/nixos/modules/installer/cd-dvd/channel.nix" 
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
         ];
     }
   ).config.system.build.vm
 )
-' \
-&& result/bin/run-nixos-vm
+'
 ```
+
+If you try to execute that command with `nix run` rather then `nix build` it needs DISPLAY and 
+as is it is you does not have a way to login.
+
+
+
+```bash
+export QEMU_OPTS=-nographic \
+&& nix \
+run \
+--impure \
+--expr \
+'
+(
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4";
+    with legacyPackages.${builtins.currentSystem};
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
+
+          ({
+            # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+            boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+            boot.kernelParams = [
+              "console=tty0"
+              "console=ttyS0,115200n8"
+              # Set sensible kernel parameters
+              # https://nixos.wiki/wiki/Bootloader
+              # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
+              "boot.shell_on_fail"
+              "panic=30"
+              "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+            ];
+
+            # https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
+            # users.users.nixosvmtest.group = "nixgroup";
+            # users.groups.nixosvmtest = {};
+            users.extraGroups.nixgroup.gid = 5678;
+
+            users.users.nixuser = {
+              isSystemUser = true;
+              # initialPassword = "test";
+              password = "";
+              createHome = true;
+              home = "/home/nixuser";
+              homeMode = "0700";
+              description = "The VM tester user";
+              group = "nixgroup";
+              extraGroups = [
+                              "wheel"
+                              "kvm"
+              ];
+              packages = [ hello ];
+              shell = bashInteractive;
+              uid = 1234;
+            };
+
+            users.users.root.initialPassword = "root";
+          })
+        ];
+    }
+  ).config.system.build.vm
+)
+'; \
+rm -fv nixos.qcow2
+```
+
+
+#### in-line nix build qcow2-compressed
+
+```bash
+nix \
+build \
+--expr \
+'
+(
+with (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4");
+let
+  #
+  # https://hoverbear.org/blog/nix-flake-live-media/
+  # https://github.com/NixOS/nixpkgs/blob/39b851468af4156e260901c4fd88f88f29acc58e/nixos/release.nix#L147
+  image = (import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/eval-config.nix" {
+    system = "x86_64-linux";
+    modules = [
+      # expression that exposes the configuration as vm image
+      ({ config, lib, pkgs, ... }: {
+        system.build.qcow2 = import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/make-disk-image.nix" {
+          inherit lib config pkgs;
+          diskSize = 4096;
+          format = "qcow2-compressed";
+          # configFile = ./configuration.nix;
+        };
+      })
+
+      # configure the mountpoint of the root device
+      ({
+        fileSystems."/".device = "/dev/disk/by-label/nixos";
+        boot.loader.grub.device = "/dev/sda";
+      })
+    ];
+  }).config.system.build.qcow2;
+in
+{
+  inherit image;
+}
+)
+'
+
+qemu-img info --output json result/nixos.qcow2
+```
+
+
+```bash
+nix shell nixpkgs#qemu \
+--command qemu-img info --output json \
+$(
+nix \
+build \
+--print-out-paths \
+--expr \
+'
+(
+  with (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4");
+  let
+    #
+    # https://hoverbear.org/blog/nix-flake-live-media/
+    # https://github.com/NixOS/nixpkgs/blob/39b851468af4156e260901c4fd88f88f29acc58e/nixos/release.nix#L147
+    image = (import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/eval-config.nix" {
+      system = "x86_64-linux";
+      modules = [
+        # expression that exposes the configuration as vm image
+        ({ config, lib, pkgs, ... }: {
+          system.build.qcow2 = import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/make-disk-image.nix" {
+            inherit lib config pkgs;
+            diskSize = 4096;
+            format = "qcow2-compressed";
+            # configFile = ./configuration.nix;
+          };
+        })
+
+        # configure the mountpoint of the root device
+        ({
+          fileSystems."/".device = "/dev/disk/by-label/nixos";
+          boot.loader.grub.device = "/dev/sda";
+
+          system.stateVersion = "22.11";
+        })
+      ];
+    }).config.system.build.qcow2;
+  in
+  {
+    inherit image;
+  }
+)
+'
+)/nixos.qcow2
+```
+
+
+```bash
+nix \
+run \
+--expr \
+'
+(
+  (
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
+
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
+          
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+        ];
+
+        ({virtualisation.memorySize = 2048;})
+    }
+  ).config.system.build.vm
+)
+'
+```
+
+
+
+```bash
+nix \
+build \
+--print-out-paths \
+--expr \
+'
+(
+  with (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4");
+  let
+    #
+    # https://hoverbear.org/blog/nix-flake-live-media/
+    # https://github.com/NixOS/nixpkgs/blob/39b851468af4156e260901c4fd88f88f29acc58e/nixos/release.nix#L147
+    image = (import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/eval-config.nix" {
+      system = "x86_64-linux";
+      modules = [
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+
+        # expression that exposes the configuration as vm image
+        ({ config, lib, pkgs, ... }: {
+          system.build.qcow2 = import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/make-disk-image.nix" {
+            inherit lib config pkgs;
+            diskSize = 4096;
+            format = "qcow2-compressed";
+            # configFile = ./configuration.nix;
+          };
+        })
+
+        # configure the mountpoint of the root device
+        ({
+          fileSystems."/".device = "/dev/disk/by-label/nixos";
+          boot.loader.grub.device = "/dev/sda";
+          # Silences some warn
+          system.stateVersion = "22.11";
+        })
+      ];
+    }).config.system.build.vm;
+  in
+  {
+    inherit image;
+  }
+)
+'
+```
+
+TODO: is this working?
+```bash
+(
+  {
+    virtualisation = {
+      memorySize = 2048; # Use 2048MiB memory.
+      cores = 4;         # Simulate 4 cores.
+    }
+  }
+)
+```
+
 
 ```bash
 podman \
@@ -3925,7 +4201,7 @@ run \
 --impure \
 --expr \
 '(  
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   let
     nixpkgs = (with builtins.getFlake "nixpkgs");
     overlay = final: prev: {
@@ -4062,7 +4338,7 @@ build \
 --expr \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   (pkgsStatic.nix.override { 
     storeDir = "/home/ubuntu";
     stateDir = "/home/ubuntu";
@@ -4970,7 +5246,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
   vmTools.runInLinuxVM (pkgs.runCommand "boo" {} ''
         "${concatMapStringsSep "\n" (i: "echo baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") (range 1 300)}"
@@ -4994,7 +5270,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "tracee-test";
@@ -5017,6 +5293,80 @@ build \
 ```
 
 
+    isoImage.contents =
+        [ { source = /home/me/somefolder;
+            target = "/folderiniso";
+          }
+        ];
+
+
+
+```bash
+
+```
+
+
+```bash
+TEMP_DIR="$(mktemp)"
+
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            python3
+          ];
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"(python3 --version | grep 3.9.13) || (python3 --version && exit 1 )\")"
+      '';
+    })
+)
+' 2> "$TEMP_DIR" || tail -n1 "$TEMP_DIR" | cut -d"'" -f2 | sh - | tail -n30
+```
+
+```bash
+TEMP_DIR="$(mktemp)"
+
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-examples";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            python3
+          ];
+        };
+      };
+    
+      testScript = ''
+        "machine.succeed(\"(python3 --version | grep w.9.13) || (python3 --version && exit 1 )\")"
+      '';
+    })
+)
+' 2> "$TEMP_DIR" || tail -n1 "$TEMP_DIR" | cut -d"'" -f2 | sh - | tail -n30
+```
+
+
 ```bash
 nix \
 build \
@@ -5025,7 +5375,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
   vmTools.runInLinuxVM 
   (
@@ -5043,6 +5393,9 @@ build \
 '
 ```
 
+
+
+
 Broken.
 `qemu-kvm: cannot set up guest memory 'pc.ram': Cannot allocate memory`
 it needs more memory, I guess, the outer VM the `runInLinuxVM` may need to have 
@@ -5055,7 +5408,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
   vmTools.runInLinuxVM 
   (
@@ -5092,7 +5445,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-empty";
@@ -5116,7 +5469,7 @@ run \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-empty";
@@ -5139,7 +5492,7 @@ shell \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-empty";
@@ -5168,7 +5521,7 @@ shell \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-empty";
@@ -5198,7 +5551,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-python3-examples";
@@ -5227,7 +5580,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-python3-examples";
@@ -5260,7 +5613,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-python3-examples";
@@ -5292,7 +5645,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-python3-examples";
@@ -5324,7 +5677,7 @@ cat <<'EOF' | xargs -0 -I{} nix build --expr {} --no-link
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-python3-examples";
@@ -5357,7 +5710,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-python3-examples";
@@ -5486,7 +5839,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     import ("${pkgs}/nixos/tests/make-test-python.nix") ({
       name = "nixos-test-python3-examples";
@@ -5515,7 +5868,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     import ("${path}/nixos/tests/make-test-python.nix") ({
       name = "nixos-test-python3-examples";
@@ -5988,7 +6341,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-sudo";
@@ -6013,7 +6366,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-sudo";
@@ -6038,7 +6391,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-sudo";
@@ -6064,7 +6417,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-unshare";
@@ -6088,7 +6441,7 @@ build \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-hydra";
@@ -6149,7 +6502,7 @@ run \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
   let
     uidCustom = 1122;
@@ -6213,7 +6566,7 @@ run \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-empty";
@@ -6286,7 +6639,7 @@ run \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
   let
     username = "wiii";
@@ -6321,7 +6674,7 @@ run \
 '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
   with lib;
   let
     username = "wiii";
@@ -7608,7 +7961,7 @@ qemu-system-aarch64 \
 
 
 { pkgs, ... }: {
-  # It is an MUST to hava en name!
+  # It is an MUST that there is a name!
   # error: The option `name' is used but not defined.
   name = "Fooo";
   nodes = { master = { pkgs, ... }: { }; };
@@ -7672,6 +8025,49 @@ sha512sum "${ISO_PATTERN_NAME}"
 echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 ```
 
+####
+
+
+```bash
+nix \
+build \
+--expr \
+'
+(
+with (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4");
+let
+  #
+  # https://hoverbear.org/blog/nix-flake-live-media/
+  # https://github.com/NixOS/nixpkgs/blob/39b851468af4156e260901c4fd88f88f29acc58e/nixos/release.nix#L147
+  image = (import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/eval-config.nix" {
+    system = "x86_64-linux";
+    modules = [
+      # expression that exposes the configuration as vm image
+      ({ config, lib, pkgs, ... }: {
+        system.build.qcow2 = import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/make-disk-image.nix" {
+          inherit lib config pkgs;
+          diskSize = 2500;
+          format = "qcow2-compressed";
+          # configFile = ./configuration.nix;
+        };
+      })
+      
+        # configure the mountpoint of the root device
+        ({
+          fileSystems."/".device = "/dev/disk/by-label/nixos";
+          boot.loader.grub.device = "/dev/sda";
+        })
+    ];
+  }).config.system.build.qcow2;
+in
+{
+  inherit image;
+}
+)
+'
+```
+
+### nixos.config.systemd.units."nix-daemon.service"
 
 
 ```bash
@@ -7823,7 +8219,7 @@ build \
 '
 (                                                                                                     
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
     runCommand "_" 
         { 
            nativeBuildInputs = [ coreutils ];
@@ -7842,7 +8238,7 @@ log \
 '
 (                                                                                                     
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
     runCommand "_" 
         { 
            nativeBuildInputs = [ coreutils ];
