@@ -3293,7 +3293,8 @@ run \
 
               virtualisation = {
                 # following configuration is added only when building VM with build-vm
-                memorySize = 2048; # Use 2048MiB memory.
+                memorySize = 4096; # Use 4096MiB memory.
+                diskSize = 2048; # Use 2048MiB memory.
                 cores = 3;         # Simulate 3 cores.
                 libvirtd.enable = true;
                 # docker.enable = true;
@@ -5897,18 +5898,86 @@ build \
   with legacyPackages.x86_64-linux;
   python3.withPackages (p: with p; [
                                      geopandas
-                                     matplotlib
-                                     scipy
-                                     tensorflow
-                                     pandas
                                      jupyter
-                                     scikitlearn
+                                     jupyterlab
+                                     keras
+                                     matplotlib
                                      nltk
+                                     numpy
+                                     pandas
                                      plotly
+                                     scikitlearn
+                                     scipy
+                                     sympy
+                                     tensorflow
                                    ]
                         )
 )'
 ```
+
+
+```bash
+nix \
+build \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  [
+    texlive.combined.scheme-medium
+    pandoc
+    (python3.withPackages (p: with p; [
+                                     geopandas
+                                     jupyter
+                                     jupyterlab
+                                     keras
+                                     matplotlib
+                                     nltk
+                                     numpy
+                                     pandas
+                                     plotly
+                                     scikitlearn
+                                     scipy
+                                     sympy
+                                     tensorflow
+                                    argon2-cffi
+                                    behave  
+                                    black                               
+                                    boto3
+                                    coverage
+                                    django
+                                    django-cors-headers
+                                    django-debug-toolbar
+                                    django-polymorphic
+                                    django-rest-polymorphic
+                                    django-storages
+                                    djangorestframework
+                                    djangorestframework-simplejwt
+                                    drf-spectacular
+                                    factory_boy
+                                    faker
+                                    flake8
+                                    freezegun
+                                    gunicorn
+                                    holidays
+                                    ipdb         
+                                    isort
+                                    pandas
+                                    pendulum
+                                    pillow
+                                    psycopg2
+                                    pyjwt
+                                    pymupdf
+                                    requests
+                                    tblib
+                                    user-agents                                     
+                                   ]
+                        )
+                      )
+  ]
+)'
+```
+
 
 ```bash
 nix \
