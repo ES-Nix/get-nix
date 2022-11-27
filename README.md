@@ -3293,8 +3293,8 @@ run \
 
               virtualisation = {
                 # following configuration is added only when building VM with build-vm
-                memorySize = 4096; # Use 4096MiB memory.
-                diskSize = 2048; # Use 2048MiB memory.
+                memorySize = 2048; # Use 2048MiB memory.
+                diskSize = 4096; # Use 4096MiB memory.
                 cores = 3;         # Simulate 3 cores.
                 libvirtd.enable = true;
                 # docker.enable = true;
@@ -3338,7 +3338,7 @@ run \
                 logFile = "/var/log/X.0.log";
                 desktopManager.xterm.enable = true;
                 # displayManager.gdm.autoLogin.enable = true;
-                displayManager.gdm.autoLogin.user = "nixuser";
+                # displayManager.gdm.autoLogin.user = "nixuser";
               };
               services.spice-vdagentd.enable = true;
               
@@ -3371,6 +3371,8 @@ run \
               };
             
               time.timeZone = "America/Recife";
+            
+            system.stateVersion = "22.11";
 
             # users.mutableUsers = false;
             users.users.root = {
