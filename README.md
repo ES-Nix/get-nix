@@ -3688,6 +3688,8 @@ nixuser@localhost \
     unzip    
 ```
 
+> Broken: I just give-up for now and used ssh -X
+
 
 On the host:
 ```bash
@@ -3722,6 +3724,8 @@ ssh -X -o StrictHostKeyChecking=no nixuser@localhost -p 10022; \
 rm -fv nixos.qcow2
 ```
 
+
+##### k8s, 
 
 #### in-line nix build qcow2-compressed
 
