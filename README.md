@@ -2931,7 +2931,7 @@ nix run nixpkgs#neofetch -- --json
 
 #### config.system.build.vm nixos/modules/virtualisation/build-vm.nix
 
-Bare minimum (not so useful, just to test):
+Bare minimum (not so useful, just to test with nix build):
 ```bash
 nix \
 build \
@@ -2958,9 +2958,15 @@ as is it is you does not have a way to login.
 
 ##### Custom build-vm
 
+
+TODO: make a minimal version of that.
 ```bash
-export QEMU_OPTS=-nographic \
-&& nix \
+nix run nixpkgs#xorg.xhost -- +localhost
+
+export QEMU_OPTS='-nographic -display gtk,gl=on'
+export SHARED_DIR="$(pwd)"
+
+nix \
 run \
 --impure \
 --expr \
@@ -2975,6 +2981,8 @@ run \
         system = "x86_64-linux";
         modules = [
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-vm.nix"
+          # "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-guest.nix"
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
 
           ({
@@ -2989,12 +2997,13 @@ run \
               "boot.shell_on_fail"
               "panic=30"
               "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+              # TODO: test it
+              "intel_iommu=on"
+              "iommu=pt"
             ];
 
             # https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
-            # users.users.nixosvmtest.group = "nixgroup";
-            # users.groups.nixosvmtest = {};
-            users.extraGroups.nixgroup.gid = 5678;
+            users.extraGroups.nixgroup.gid = 999;
 
             users.users.nixuser = {
               isSystemUser = true;
@@ -3006,13 +3015,120 @@ run \
               description = "The VM tester user";
               group = "nixgroup";
               extraGroups = [
-                              "wheel"
+                              "docker"
                               "kvm"
+                              "libvirtd"
+                              "wheel"
               ];
-              packages = [ hello ];
+              packages = [ 
+                  # hello
+                  pkgsCross.aarch64-multiplatform.pkgsStatic.hello
+                  direnv
+                  gitFull
+                  xorg.xclock
+                  file 
+                  libvirt
+                  pciutils
+                  vagrant
+                  virt-manager
+                  qemu
+                  kmod
+                  gcc
+                  gnumake
+                  which
+                  
+                  xorg.xorgserver
+                  xorg.xf86inputevdev
+                  xorg.xf86inputsynaptics
+                  xorg.xf86inputlibinput
+                  xorg.xf86videointel
+                  xorg.xf86videoati
+                  xorg.xf86videonouveau                  
+              ];
               shell = bashInteractive;
-              uid = 1234;
+              uid = '"$(id -u)"';
+              autoSubUidGidRange = true;
             };
+
+              systemd.services.fix-sudo-permision = {
+                script = "chown 0:0 -v ${sudo}/libexec/sudo/sudoers.so";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+#              # https://unix.stackexchange.com/questions/619671/declaring-a-sym-link-in-a-users-home-directory#comment1159159_619703
+#              systemd.services.fix-mount = {
+#                script = "mkdir -pv /home/nixuser/code && chown -v nixuser:nixgroup /home/nixuser/code && echo sudo mount -t 9p -o trans=virtio hostsharetag /home/nixuser/code -oversion=9p2000.L,posixacl,msize=104857600,cache=loose >> /home/nixuser/.profile";
+#                wantedBy = [ "multi-user.target" ];
+#              };
+
+              systemd.services.adds-change-workdir = {
+                script = "echo cd /tmp/shared >> /home/nixuser/.profile";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+              # https://unix.stackexchange.com/questions/619671/declaring-a-sym-link-in-a-users-home-directory#comment1159159_619703
+              systemd.services.populate-history = {
+                script = "echo \"touch /tmp/shared/log.txt; ls -al /tmp/shared/\" >> /home/nixuser/.bash_history";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+              services.getty.autologinUser = "nixuser";
+
+              virtualisation = {
+                # following configuration is added only when building VM with build-vm
+                memorySize = 1024; # Use 1024MiB memory.
+                cores = 3;         # Simulate 3 cores.
+                libvirtd.enable = true;
+                # docker.enable = true;
+                
+                podman = {
+                    enable = true;
+                    # Creates a `docker` alias for podman, to use it as a drop-in replacement
+                    # dockerCompat = true;
+                };                
+              };
+              security.polkit.enable = true;
+
+              # https://nixos.wiki/wiki/Libvirt
+              boot.extraModprobeConfig = "options kvm_intel nested=1";
+              boot.kernelModules = [
+                "kvm-intel"
+                "vfio-pci"
+              ];
+              
+              boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+              
+              hardware.opengl.enable = true;
+              hardware.opengl.driSupport = true;
+                        
+              nixpkgs.config.allowUnfree = true;
+              nix = {
+                # What about github:NixOS/nix#nix-static can it be injected here? What would break?
+                # keep-outputs = true
+                # keep-derivations = true
+                # system-features = benchmark big-parallel kvm nixos-test
+                package = pkgs.nixFlakes;
+                extraOptions = "experimental-features = nix-command flakes ca-derivations";
+                readOnlyStore = false;
+              };
+
+              # Enable the X11 windowing system.
+              services.xserver.enable = true;
+              services.xserver.displayManager.lightdm.enable = true;
+              services.spice-vdagentd.enable = true;
+              # See https://discourse.nixos.org/t/display-scaling-with-nixos-as-qemu-kvm-guest/4466 and https://discourse.nixos.org/t/nixos-as-a-guest-os-in-qemu-kvm-how-to-share-clipboard-displaying-scaling-etc/8124
+              services.qemuGuest.enable = true;
+
+              services.sshd.enable = true;
+
+              programs.dconf.enable = true;
+
+              environment.variables = {
+                VAGRANT_DEFAULT_PROVIDER = "libvirt";
+                # VAGRANT_DEFAULT_PROVIDER = "virtualbox";
+              };
+            
+              time.timeZone = "America/Recife";
 
             users.users.root.initialPassword = "root";
           })
@@ -3021,6 +3137,588 @@ run \
   ).config.system.build.vm
 )
 '; \
+rm -fv nixos.qcow2
+```
+Refs.:
+- https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
+- https://discourse.nixos.org/t/default-login-and-password-for-nixos/4683
+- https://discourse.nixos.org/t/nixos-rebuild-build-vm-option-virtualisation-cores-does-not-exist/22929/2
+- https://nixos.wiki/wiki/Using_X_without_a_Display_Manager
+
+
+
+##### Xorg, X11, xauth, build-vm, ssh
+
+
+
+```bash
+# nix run nixpkgs#xorg.xhost -- +localhost
+# export QEMU_OPTS='-nographic -display gtk,gl=on'
+export QEMU_NET_OPTS='hostfwd=tcp::10022-:10022'
+export QEMU_OPTS='-nographic'
+export SHARED_DIR="$(pwd)"
+
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4";
+    with legacyPackages.${builtins.currentSystem};
+    let
+      # https://github.com/pedroregispoar.keys
+      PedroRegisPOARKeys = writeText "pedro-regis-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPOK55vtFrqxd5idNzCd2nhr5K3ocoyw1JKWSM1E7f9i";
+    in 
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-vm.nix"
+          # "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-guest.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
+
+          ({
+            # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+            boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+            boot.kernelParams = [
+              "console=tty0"
+              "console=ttyS0,115200n8"
+              # Set sensible kernel parameters
+              # https://nixos.wiki/wiki/Bootloader
+              # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
+              "boot.shell_on_fail"
+              "panic=30"
+              "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+              # TODO: test it
+              "intel_iommu=on"
+              "iommu=pt"
+            ];
+
+            # https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
+            users.extraGroups.nixgroup.gid = 999;
+
+            users.users.nixuser = {
+              isSystemUser = true;
+              # initialPassword = "test";
+              password = "";
+              createHome = true;
+              home = "/home/nixuser";
+              homeMode = "0700";
+              description = "The VM tester user";
+              group = "nixgroup";
+              extraGroups = [
+                              "docker"
+                              "kvm"
+                              "libvirtd"
+                              "wheel"
+              ];
+              packages = [ 
+                  # hello
+                  pkgsCross.aarch64-multiplatform.pkgsStatic.hello
+                  direnv
+                  gitFull
+                  xorg.xclock
+                  file 
+                  libvirt
+                  pciutils
+                  vagrant
+                  virt-manager
+                  qemu
+                  kmod
+                  gcc
+                  gnumake
+                  which
+                  
+                  xorg.xinit
+                  xorg.xhost
+                  xorg.xorgserver
+                  xorg.xdpyinfo
+                  xorg.xf86inputevdev
+                  xorg.xf86inputsynaptics
+                  xorg.xf86inputlibinput
+                  xorg.xf86videointel
+                  xorg.xf86videoati
+                  xorg.xf86videonouveau                  
+              ];
+              shell = bashInteractive;
+              uid = '"$(id -u)"';
+              autoSubUidGidRange = true;
+              
+              openssh.authorizedKeys.keyFiles = [
+                PedroRegisPOARKeys
+              ];
+          
+              openssh.authorizedKeys.keys = [
+                "${PedroRegisPOARKeys}"
+              ];              
+            };
+
+              systemd.services.fix-sudo-permision = {
+                script = "chown 0:0 -v ${sudo}/libexec/sudo/sudoers.so";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+#              # https://unix.stackexchange.com/questions/619671/declaring-a-sym-link-in-a-users-home-directory#comment1159159_619703
+#              systemd.services.fix-mount = {
+#                script = "mkdir -pv /home/nixuser/code && chown -v nixuser:nixgroup /home/nixuser/code && echo sudo mount -t 9p -o trans=virtio hostsharetag /home/nixuser/code -oversion=9p2000.L,posixacl,msize=104857600,cache=loose >> /home/nixuser/.profile";
+#                wantedBy = [ "multi-user.target" ];
+#              };
+
+              systemd.services.adds-change-workdir = {
+                script = "echo cd /tmp/shared >> /home/nixuser/.profile";
+                wantedBy = [ "multi-user.target" ];
+              };
+              
+              systemd.services.creates-if-not-exist = {
+                script = "echo touch /home/nixuser/.Xauthority >> /home/nixuser/.profile";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+              # https://unix.stackexchange.com/questions/619671/declaring-a-sym-link-in-a-users-home-directory#comment1159159_619703
+              systemd.services.populate-history = {
+                script = "echo \"touch /tmp/shared/log.txt; ls -al /tmp/shared/\" >> /home/nixuser/.bash_history";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+              systemd.services.populate-history2 = {
+                script = "echo \"xauth list\" >> /home/nixuser/.bash_history";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+              # services.getty.autologinUser = "nixuser";
+
+              virtualisation = {
+                # following configuration is added only when building VM with build-vm
+                memorySize = 2048; # Use 2048MiB memory.
+                cores = 3;         # Simulate 3 cores.
+                libvirtd.enable = true;
+                # docker.enable = true;
+                
+                podman = {
+                    enable = true;
+                    # Creates a `docker` alias for podman, to use it as a drop-in replacement
+                    # dockerCompat = true;
+                };                
+              };
+              security.polkit.enable = true;
+
+              # https://nixos.wiki/wiki/Libvirt
+              boot.extraModprobeConfig = "options kvm_intel nested=1";
+              boot.kernelModules = [
+                "kvm-intel"
+                "vfio-pci"
+              ];
+              
+              boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+              
+              hardware.opengl.enable = true;
+              hardware.opengl.driSupport = true;
+                        
+              nixpkgs.config.allowUnfree = true;
+              nix = {
+                # What about github:NixOS/nix#nix-static can it be injected here? What would break?
+                # keep-outputs = true
+                # keep-derivations = true
+                # system-features = benchmark big-parallel kvm nixos-test
+                package = pkgs.nixFlakes;
+                extraOptions = "experimental-features = nix-command flakes ca-derivations";
+                readOnlyStore = false;
+              };
+
+              # Enable the X11 windowing system.
+              services.xserver = { 
+                enable = true; 
+                displayManager.gdm.enable = true;
+                displayManager.startx.enable = true;
+                logFile = "/var/log/X.0.log";
+                desktopManager.xterm.enable = true;
+                # displayManager.gdm.autoLogin.enable = true;
+                displayManager.gdm.autoLogin.user = "nixuser";
+              };
+              services.spice-vdagentd.enable = true;
+              
+              # https://github.com/NixOS/nixpkgs/issues/21332#issuecomment-268730694
+              services.openssh = {
+                allowSFTP = true;
+                kbdInteractiveAuthentication = false;
+                enable = true;
+                forwardX11 = true;
+                passwordAuthentication = false;
+                permitRootLogin = "yes";
+                ports = [ 10022 ];
+                authorizedKeysFiles = [
+                  "${toString PedroRegisPOARKeys}"
+                ];             
+              };
+              programs.ssh.forwardX11 = true;
+
+              # environment.loginShellInit = "if test \"$(tty)\" = \"/dev/ttyS0\" && ! pgrep -f xserver \n then startx &\n fi"; 
+              # See https://discourse.nixos.org/t/display-scaling-with-nixos-as-qemu-kvm-guest/4466 and https://discourse.nixos.org/t/nixos-as-a-guest-os-in-qemu-kvm-how-to-share-clipboard-displaying-scaling-etc/8124
+              services.qemuGuest.enable = true;
+
+              services.sshd.enable = true;
+
+              programs.dconf.enable = true;
+
+              environment.variables = {
+                VAGRANT_DEFAULT_PROVIDER = "libvirt";
+                # VAGRANT_DEFAULT_PROVIDER = "virtualbox";
+              };
+            
+              time.timeZone = "America/Recife";
+
+            # users.mutableUsers = false;
+            users.users.root = {
+              password = "root";
+              initialPassword = "root";
+              openssh.authorizedKeys.keyFiles = [
+                PedroRegisPOARKeys
+              ];
+            };
+          })
+        ];
+    }
+  ).config.system.build.vm
+)
+' < /dev/null &
+
+while ! nc -t -w 1 -z localhost 10022; do echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
+&& ssh-keygen -R '[localhost]:10022'; \
+ssh \
+-X \
+-o StrictHostKeyChecking=no \
+nixuser@localhost \
+-p 10022<<COMMANDS
+timeout 10 xclock
+COMMANDS
+# rm -fv nixos.qcow2
+```
+Refs.:
+- https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
+- https://discourse.nixos.org/t/default-login-and-password-for-nixos/4683
+- https://discourse.nixos.org/t/nixos-rebuild-build-vm-option-virtualisation-cores-does-not-exist/22929/2
+- https://nixos.wiki/wiki/Using_X_without_a_Display_Manager
+- https://github.com/NixOS/nixpkgs/issues/18523#issuecomment-323389189
+
+
+```bash
+while ! nc -t -w 1 -z localhost 10022; do echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
+&& ssh-keygen -R '[localhost]:10022'; \
+ssh \
+-X \
+-o StrictHostKeyChecking=no \
+nixuser@localhost \
+-p 10022<<'COMMANDS'
+file $(readlink -f $(which hello))
+hello
+COMMANDS
+# rm -fv nixos.qcow2
+```
+
+
+Nesting:
+```bash
+export QEMU_NET_OPTS='hostfwd=tcp::10023-:10023'
+export QEMU_OPTS='-nographic'
+export SHARED_DIR="$(pwd)"
+
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4";
+    with legacyPackages.${builtins.currentSystem};
+    let
+      # https://github.com/pedroregispoar.keys
+      PedroRegisPOARKeys = writeText "pedro-regis-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPOK55vtFrqxd5idNzCd2nhr5K3ocoyw1JKWSM1E7f9i";
+    in 
+    (
+      builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
+    ).lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-vm.nix"
+          # "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-guest.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
+
+          ({
+            # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+            boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+            boot.kernelParams = [
+              "console=tty0"
+              "console=ttyS0,115200n8"
+              # Set sensible kernel parameters
+              # https://nixos.wiki/wiki/Bootloader
+              # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
+              "boot.shell_on_fail"
+              "panic=30"
+              "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+              # TODO: test it
+              "intel_iommu=on"
+              "iommu=pt"
+            ];
+
+            # https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
+            users.extraGroups.nixgroup.gid = 999;
+
+            users.users.nixuser = {
+              isSystemUser = true;
+              # initialPassword = "test";
+              password = "";
+              createHome = true;
+              home = "/home/nixuser";
+              homeMode = "0700";
+              description = "The VM tester user";
+              group = "nixgroup";
+              extraGroups = [
+                              "docker"
+                              "kvm"
+                              "libvirtd"
+                              "wheel"
+              ];
+              packages = [ 
+                  # hello
+                  direnv
+                  gitFull
+                  xorg.xclock
+                  file 
+                  libvirt
+                  pciutils
+                  vagrant
+                  virt-manager
+                  qemu
+                  kmod
+                  gcc
+                  gnumake
+                  which               
+              ];
+              shell = bashInteractive;
+              uid = '"$(id -u)"';
+              autoSubUidGidRange = true;
+              
+              openssh.authorizedKeys.keyFiles = [
+                PedroRegisPOARKeys
+              ];
+          
+              openssh.authorizedKeys.keys = [
+                "${PedroRegisPOARKeys}"
+              ];              
+            };
+
+              systemd.services.fix-sudo-permision = {
+                script = "chown 0:0 -v ${sudo}/libexec/sudo/sudoers.so";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+#              # https://unix.stackexchange.com/questions/619671/declaring-a-sym-link-in-a-users-home-directory#comment1159159_619703
+#              systemd.services.fix-mount = {
+#                script = "mkdir -pv /home/nixuser/code && chown -v nixuser:nixgroup /home/nixuser/code && echo sudo mount -t 9p -o trans=virtio hostsharetag /home/nixuser/code -oversion=9p2000.L,posixacl,msize=104857600,cache=loose >> /home/nixuser/.profile";
+#                wantedBy = [ "multi-user.target" ];
+#              };
+
+              systemd.services.adds-change-workdir = {
+                script = "echo cd /tmp/shared >> /home/nixuser/.profile";
+                wantedBy = [ "multi-user.target" ];
+              };
+              
+              systemd.services.creates-if-not-exist = {
+                script = "echo touch /home/nixuser/.Xauthority >> /home/nixuser/.profile";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+              # https://unix.stackexchange.com/questions/619671/declaring-a-sym-link-in-a-users-home-directory#comment1159159_619703
+              systemd.services.populate-history = {
+                script = "echo \"touch /tmp/shared/log.txt; ls -al /tmp/shared/\" >> /home/nixuser/.bash_history";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+              systemd.services.populate-history2 = {
+                script = "echo \"xauth list\" >> /home/nixuser/.bash_history";
+                wantedBy = [ "multi-user.target" ];
+              };
+
+              # services.getty.autologinUser = "nixuser";
+
+              virtualisation = {
+                # following configuration is added only when building VM with build-vm
+                memorySize = 1024; # Use 1024MiB memory.
+                cores = 3;         # Simulate 3 cores.
+                libvirtd.enable = true;
+                # docker.enable = true;
+                
+                podman = {
+                    enable = true;
+                    # Creates a `docker` alias for podman, to use it as a drop-in replacement
+                    # dockerCompat = true;
+                };                
+              };
+              security.polkit.enable = true;
+
+              # https://nixos.wiki/wiki/Libvirt
+              boot.extraModprobeConfig = "options kvm_intel nested=1";
+              boot.kernelModules = [
+                "kvm-intel"
+                "vfio-pci"
+              ];
+              
+              boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+              
+              hardware.opengl.enable = true;
+              hardware.opengl.driSupport = true;
+                        
+              nixpkgs.config.allowUnfree = true;
+              nix = {
+                # What about github:NixOS/nix#nix-static can it be injected here? What would break?
+                # keep-outputs = true
+                # keep-derivations = true
+                # system-features = benchmark big-parallel kvm nixos-test
+                package = pkgs.nixFlakes;
+                extraOptions = "experimental-features = nix-command flakes ca-derivations";
+                readOnlyStore = false;
+              };
+
+              # Enable the X11 windowing system.
+              services.xserver = { 
+                enable = true; 
+                displayManager.gdm.enable = true;
+                displayManager.startx.enable = true;
+                logFile = "/var/log/X.0.log";
+                desktopManager.xterm.enable = true;
+                # displayManager.gdm.autoLogin.enable = true;
+                displayManager.gdm.autoLogin.user = "nixuser";
+              };
+              services.spice-vdagentd.enable = true;
+              
+              # https://github.com/NixOS/nixpkgs/issues/21332#issuecomment-268730694
+              services.openssh = {
+                allowSFTP = true;
+                kbdInteractiveAuthentication = false;
+                enable = true;
+                forwardX11 = true;
+                passwordAuthentication = false;
+                permitRootLogin = "yes";
+                ports = [ 10023 ];
+                authorizedKeysFiles = [
+                  "${toString PedroRegisPOARKeys}"
+                  # "${toString RodrigoKeys}"
+                ];             
+              };
+              programs.ssh.forwardX11 = true;
+
+              # environment.loginShellInit = "if test \"$(tty)\" = \"/dev/ttyS0\" && ! pgrep -f xserver \n then startx &\n fi"; 
+              # See https://discourse.nixos.org/t/display-scaling-with-nixos-as-qemu-kvm-guest/4466 and https://discourse.nixos.org/t/nixos-as-a-guest-os-in-qemu-kvm-how-to-share-clipboard-displaying-scaling-etc/8124
+              services.qemuGuest.enable = true;
+
+              services.sshd.enable = true;
+
+              programs.dconf.enable = true;
+
+              environment.variables = {
+                VAGRANT_DEFAULT_PROVIDER = "libvirt";
+                # VAGRANT_DEFAULT_PROVIDER = "virtualbox";
+              };
+            
+              time.timeZone = "America/Recife";
+
+            # users.mutableUsers = false;
+            users.users.root = {
+              password = "root";
+              initialPassword = "root";
+              openssh.authorizedKeys.keyFiles = [
+                PedroRegisPOARKeys
+              ];
+            };
+          })
+        ];
+    }
+  ).config.system.build.vm
+)
+' < /dev/null &
+
+while ! nc -t -w 1 -z localhost 10023; do echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
+&& ssh-keygen -R '[localhost]:10023'; \
+ssh \
+-X \
+-o StrictHostKeyChecking=no \
+nixuser@localhost \
+-p 10023
+```
+
+```bash
+    xorg.libXScrnSaver
+    xorg.libXdamage
+    xorg.libX11
+    xorg.libxcb
+    xorg.libXcomposite
+    xorg.libXi
+    xorg.libXext
+    xorg.libXfixes
+    xorg.libXcursor
+    xorg.libXrender
+    xorg.libXrandr
+    mesa
+    cups
+    expat
+    ffmpeg
+    libdrm
+    libxkbcommon
+    at_spi2_atk
+    at_spi2_core
+    dbus
+    gdk_pixbuf
+    gtk3
+    cairo
+    pango
+    xorg.xauth
+    glib
+    nspr
+    atk
+    nss
+    gtk2
+    alsaLib
+    gnome2.GConf
+    unzip    
+```
+
+
+On the host:
+```bash
+xauth extract - $DISPLAY > xauth_extract
+```
+
+On the guest:
+```bash
+xauth merge /tmp/shared/xauth_extract
+```
+
+```bash
+export DISPLAY=nixos/unix:0
+```
+
+```bash
+journalctl -b 0 -u display-manager
+```
+
+```bash
+xauth extract - ${DISPLAY##localhost} | sudo -u nixuser xclock $DISPLAY
+```
+
+```bash
+xdpyinfo -display :0 -queryExtensions | grep 'MIT-SHM'
+```
+
+```bash
+while ! nc -t -w 1 -z localhost 10022; do echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
+&& ssh-keygen -R '[localhost]:10022'; \
+ssh -X -o StrictHostKeyChecking=no nixuser@localhost -p 10022; \
 rm -fv nixos.qcow2
 ```
 
