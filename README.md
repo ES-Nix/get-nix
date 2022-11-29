@@ -4002,7 +4002,7 @@ while ! test -f "$FULL_PATH_CLUSTER_ADMIN_KEY"; do echo Waiting for file "$FULL_
 && echo | sudo -S fix-k8s-cluster-admin-key \
 && watch -n 1 kubectl get pods --all-namespaces -o wide
 COMMANDS
-"$REMOVE_DISK" && rm -fv nixos.qcow2 id_ed25519
+# "$REMOVE_DISK" && rm -fv nixos.qcow2 id_ed25519
 ```
 Refs.:
 - https://stackoverflow.com/a/7122115
