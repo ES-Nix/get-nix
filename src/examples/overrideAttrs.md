@@ -1199,3 +1199,108 @@ nix build nixpkgs#stdenv.cc.cc.lib \
 && ls -al "$(nix eval --raw nixpkgs#stdenv.cc.cc.lib)/lib"
 ```
 
+### Trick to troubleshooting
+
+```bash
+nix-shell \
+--pure \
+-E \
+'
+with import <nixpkgs> {}; pkgsStatic.hello.overrideAttrs (old: { buildInputs = (old.buildInputs or []) ++ [ strace less ltrace vim ]; })
+' -c \
+'
+mkdir build-dir
+cd build-dir/
+unpackPhase
+cd hello-2.12.1
+./configure && make
+file hello
+./hello
+'
+```
+
+```bash
+nix \
+shell \
+--impure \
+-i \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (hello.overrideAttrs (old: { buildInputs = (old.buildInputs or []) ++ [ bash strace less ltrace vim ]; }))
+)
+' \
+--command \
+sh \
+-c \
+'
+mkdir build-dir \
+&& cd build-dir/ \
+&& unpackPhase \
+&& cd hello-2.12.1 \
+&& ./configure && make \
+&& file hello \
+./hello
+'
+```
+
+
+```bash
+nix \
+develop \
+--impure \
+-i \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (pkgsStatic.python3.overrideAttrs (old: { buildInputs = (old.buildInputs or []) ++ [ bash strace less ltrace vim ]; }))
+)
+' \
+--command \
+sh \
+-c \
+'
+rm -fr build-dir
+
+mkdir build-dir \
+&& cd build-dir/ \
+&& unpackPhase 
+
+ls -al
+'
+```
+
+```bash
+nix \
+shell \
+--impure \
+-i \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    stdenv.shell
+  (cowsay.overrideAttrs (old: { buildInputs = (old.buildInputs or []) ++ [ bash strace less ltrace vim ]; }))
+)
+' \
+--command \
+sh \
+-c \
+'
+rm -fr build-dir
+
+mkdir build-dir \
+&& cd build-dir/ \
+&& unpackPhase 
+
+ls -al
+'
+```
