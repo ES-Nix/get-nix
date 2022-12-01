@@ -1089,6 +1089,7 @@ run \
       builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
     ).lib.nixosSystem {
         system = "x86_64-linux";
+        # system = "aarch64-linux";
         modules = [
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-vm.nix"
@@ -1148,6 +1149,12 @@ run \
                   xorg.xclock
                   file
                   pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
+                  firefox
+                  (python3.buildEnv.override
+                    {
+                      extraLibs = with python3Packages; [ scikitimage opencv2 numpy ];
+                    }
+                  )
               ];
               shell = bashInteractive;
               uid = '"$(id -u)"';
@@ -6434,6 +6441,73 @@ python3 -c 'import tensorflow as tf; print(tf.Variable(tf.zeros([4, 3]))); print
 ```
 
 
+Does not exist.
+```bash
+# github:NixOS/nixpkgs/release-21.05
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/022caabb5f2265ad4006c1fa5b1ebe69fb0c3faf";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [opencv2])
+)' \
+--command \
+python3 -c 'import cv2'
+```
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [opencv3])
+)' \
+--command \
+python3 -c 'import cv2 as cv3; print(cv3.__version__)'
+```
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [opencv4])
+)' \
+--command \
+python3 -c 'import cv2 as cv4; print(cv4.__version__)'
+```
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [scikitimage opencv3 numpy])
+)' \
+--command \
+python3 -c 'from skimage.metrics import structural_similarity; import cv2; import numpy as np'
+```
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [scikitimage opencv3 numpy jupyter])
+)' \
+--command \
+python3 -c 'from skimage.metrics import structural_similarity; import cv2; import numpy as np'
+```
+
 ```bash
 nix \
 build \
@@ -6449,9 +6523,11 @@ build \
                                      matplotlib
                                      nltk
                                      numpy
+                                     opencv4
                                      pandas
                                      plotly
                                      scikitlearn
+                                     scikitimage
                                      scipy
                                      sympy
                                      tensorflow
@@ -6479,6 +6555,7 @@ build \
                                      matplotlib
                                      nltk
                                      numpy
+                                     opencv4
                                      pandas
                                      plotly
                                      scikitlearn

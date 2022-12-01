@@ -923,6 +923,51 @@ TODO: https://www.fbrs.io/nix-overlays/
 
 
 ```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+  let
+    pkgs = (import <nixpkgs> { overlays = [(self: super: { hello = self.neofetch; })]; });
+  in
+    with pkgs;[
+      hello
+    ]
+)' \
+--command \
+neofetch
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+  let
+    pkgs = (import <nixpkgs> { overlays = [(self: super: { coreutils = self.uutils-coreutils; })]; });
+  in
+    with pkgs;[
+      hello
+    ]
+)' \
+--command \
+hello
+```
+
+
+```bash
+nix build --impure --expr \
+'(import <nixpkgs> { overlays = [(final: prev: { bash = final.busybox; })]; }).gcc'
+```
+
+
+```bash
 nix build --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).openssl'
 ```
 

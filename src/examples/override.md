@@ -1,5 +1,10 @@
 ## The .overrides and .overrideAttrs
 
+
+```bash
+! ldd $(nix build --print-out-paths nixpkgs#pkgsStatic.sqlite)/bin/sqlite3 || echo Error
+```
+
 ```bash
 nix \
 build \
@@ -16,11 +21,31 @@ build \
 '
 ```
 
-import platform,sqlite3
-print("Oper Sys : %s %s" % (platform.system(), platform.release()))
-print("Platform : %s %s" % (platform.python_implementation(),platform.python_version()))
-print("SQLite   : %s" % (sqlite3.sqlite_version))
 
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      (pkgs.python3.override { sqlite = pkgsStatic.sqlite; })
+    )
+  )
+' \
+--command \
+python \
+-c \
+'
+import platform, sqlite3
+print("Oper Sys : %s %s" % (platform.system(), platform.release()))
+print("Platform : %s %s" % (platform.python_implementation(), platform.python_version()))
+print("SQLite   : %s" % (sqlite3.sqlite_version))
+'
+```
 
 [Customizing packages in Nix](https://bobvanderlinden.me/customizing-packages-in-nix/)
 
@@ -53,12 +78,37 @@ build \
     {
       packageOverrides = final: prev: {
         flask = prev.flask.overrideAttrs (oldAttrs: {
-        postFixup = (final.postFixup or "asdff") + "";
+          preFixup = (oldAttrs.preFixup or "") + "set -x";
         });
       };
     }
   )
 )'
+```
+
+
+
+```bash
+nix \
+shell \
+--refresh \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+      (python3.buildEnv.override
+        {
+          extraLibs = with python3Packages; [ numpy ];
+        }
+      )
+)
+' \
+--command \
+python \
+-c \
+'import numpy as np; np.show_config(); print(np.__version__)'
 ```
 
 
