@@ -1236,17 +1236,106 @@ build \
 Refs.:
 - https://gurkan.in/wiki/nix.html#override-example-optional-args
 
+```bash
+nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'
+(import <nixpkgs> {
+  overlays = [
+    (self: super: {
+      glibc = super.glibc.overrideAttrs (oldAttrs: {
+        version = "3.4.21";
+      });
+    })
+  ];
+  }
+).stdenv.cc.cc.lib
+'
+```
+
+```bash
+readelf -sV \
+$(nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'
+(import <nixpkgs> {
+  overlays = [
+    (self: super: {
+      glibc = super.glibc.overrideAttrs (oldAttrs: {
+        version = "3.4.21";
+      });
+    })
+  ];
+  }
+).stdenv.cc.cc.lib
+')/lib/libstdc++.so.6.0.28 \
+ | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V \
+ | tail -1
+```
+Refs.:
+- https://stackoverflow.com/a/10356740
+
+
+3.4.2
+3.4.21
+
+```bash
+nix \                                                                                                                                            
+build \
+--print-out-paths \
+--impure \
+--expr \
+'
+(import <nixpkgs> {
+  overlays = [
+    (self: super: {
+      glibc = super.glibc.overrideAttrs (oldAttrs: {
+        version = "3.4.28";
+      });
+    })
+  ];
+  }
+).gcc
+'
+```
+Refs.:
+- https://stackoverflow.com/a/10356740
+
+
 ### stdenv.cc.cc.lib
 
 
+Note: this does not need to build locally the derivation.
+So, it is fast!
+```bash
+nix \
+store \
+ls \
+--store https://cache.nixos.org/ \
+--long \
+--recursive \
+"$(nix eval --raw nixpkgs#stdenv.cc.cc.lib)"/lib
+```
+
+Not so good if what you need is just `nix build --print-out-paths`:
 ```bash
 nix build nixpkgs#stdenv.cc.cc.lib \
 && ls -al "$(nix eval --raw nixpkgs#stdenv.cc.cc.lib)/lib"
 ```
 
+
 ```bash
 ls -al $(nix build --print-out-paths nixpkgs#stdenv.cc.cc.lib)/lib
 ```
+
+
 
 ### Trick to troubleshooting
 
@@ -1309,3 +1398,114 @@ mkdir build-dir \
 && ./hello | cowsay
 '
 ```
+
+
+
+```bash
+nix-shell -E 'with import <nixpkgs> {}; stdenv.mkDerivation { name = "arm-shell"; buildInputs = [git gnumake gcc gcc-arm-embedded dtc]; }'
+```
+https://nixos.wiki/wiki/NixOS_on_ARM#Building_U-Boot_from_your_NixOS_PC
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (stdenv.mkDerivation { name = "arm-shell"; buildInputs = [hello];})
+)'
+```
+
+```bash
+nix \
+develop \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (stdenv.mkDerivation {
+      name = "arm-shell"; 
+      src = builtins.path { path = ./.; };
+      buildInputs = [git gnumake gcc gcc-arm-embedded dtc hello];
+      phases = [ "buildPhase" "installPhase" "fixupPhase" ];
+      installPhase = "mkdir $out";
+    })
+)'
+```
+https://nixos.wiki/wiki/NixOS_on_ARM#Building_U-Boot_from_your_NixOS_PC
+
+Broken:
+```bash
+git clone git://git.denx.de/u-boot.git \
+&& cd u-boot \
+&& git checkout v2017.03 \
+&& make -j4 CROSS_COMPILE=arm-none-eabi- orangepi_pc_defconfig \
+&& make -j4 CROSS_COMPILE=arm-none-eabi-
+```
+
+
+
+```bash
+cat $(nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (stdenv.mkDerivation {
+      name = "test-podman-sandbox"; 
+      src = builtins.path { path = ./.; };
+      buildInputs = [podman];
+      phases = [ "buildPhase" "installPhase" "fixupPhase" ];
+      installPhase = "mkdir $out; export HOME=$(mktemp -d); podman images &> $out/log.txt || true; exit 0";
+    })
+)'
+)/log.txt
+```
+
+
+```bash
+cat $(nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (stdenv.mkDerivation {
+      name = "test-sandbox"; 
+      src = builtins.path { path = ./.; };
+      buildInputs = [docker];
+      phases = [ "buildPhase" "installPhase" "fixupPhase" ];
+      installPhase = "mkdir $out; export HOME=$(mktemp -d); docker info &> $out/log.txt || true; exit 0";
+    })
+)')/log.txt
+```
+
+
+```bash
+nix \
+develop \
+-i \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (stdenv.mkDerivation {
+      name = "test-podman-sandbox"; 
+      src = builtins.path { path = ./.; };
+      buildInputs = [podman];
+      phases = [ "buildPhase" "installPhase" "fixupPhase" ];
+      installPhase = "mkdir $out; export HOME=$(mktemp -d); podman info > $out/log.txt";
+    })
+)'
+```
+
