@@ -12002,6 +12002,9 @@ file result/tarballs/nuxt-hello.tgz
 # result/tarballs/nuxt-hello.tgz: gzip compressed data, from Unix, original size modulo 2^32 5632
 ```
 
+
+#### hello-in-nuxt, mkYarnPackage + postBuild + distPhase
+
 ```bash
 mkdir hello-in-nuxt \
 && cd hello-in-nuxt
@@ -12090,7 +12093,6 @@ build \
 )'
 
 grep -q 'Welcome to Nuxt' result/libexec/nuxt-hello/deps/nuxt-hello/.output/public/index.html
-
 
 #--command \
 #bash \
