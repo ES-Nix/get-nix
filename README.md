@@ -12003,7 +12003,7 @@ file result/tarballs/nuxt-hello.tgz
 ```
 
 
-#### hello-in-nuxt, mkYarnPackage + postBuild + distPhase
+#### MWE: yarn, nuxt, mkYarnPackage + postBuild + distPhase
 
 ```bash
 mkdir hello-in-nuxt \
