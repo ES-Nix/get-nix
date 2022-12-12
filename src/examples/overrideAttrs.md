@@ -1766,6 +1766,51 @@ cd "$(mktemp -d)" \
 Refs.:
 - https://unix.stackexchange.com/a/673488
 - https://youtu.be/4yyLoLWq-Jw?t=634
+
+
+```bash
+nix \
+develop \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-isort";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+              (python3.buildEnv.override
+                {
+                  extraLibs = with python3Packages; [ isort ];
+                }
+              )
+          ];
+        };
+      };
+
+      testScript = ''
+        "machine.succeed(\"isort\")"
+      '';
+    })
+)
+' \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
+cd "$(mktemp -d)" # Important to avoid errors during unpack phase
+set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
+# set -x # Optional, if you want to display all commands that are run
+genericBuild
+'
+```
+
+
 ```bash
 nix \
 develop \
