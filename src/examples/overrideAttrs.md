@@ -1283,6 +1283,121 @@ Refs.:
 - https://stackoverflow.com/a/10356740
 
 
+```bash
+patchelf \
+--print-rpath \
+$(nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'
+(import <nixpkgs> {
+  overlays = [
+    (self: super: {
+      glibc = super.glibc.overrideAttrs (oldAttrs: {
+        version = "3.4.21";
+      });
+    })
+  ];
+  }
+).hello
+')/bin/hello | grep 'glibc-3.4.21/lib'
+```
+
+
+```bash
+patchelf \
+--print-rpath \
+$(nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'
+(import <nixpkgs> {
+  overlays = [
+    (self: super: {
+      glibc = super.glibc.overrideAttrs (oldAttrs: {
+        version = "2.15";
+      });
+    })
+  ];
+  }
+).hello
+')/bin/hello | grep 'glibc-2.15/lib'
+```
+
+
+```bash
+patchelf \
+--print-rpath \
+$(nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'
+(import <nixpkgs> {
+  overlays = [
+    (self: super: {
+      glibc = super.glibc.overrideAttrs (oldAttrs: {
+        version = "2.15";
+      });
+    })
+  ];
+  }
+).python3
+')/bin/python3 | grep 'glibc-2.15/lib'
+```
+
+```bash
+nix profile install nixpkgs#patchelf
+```
+
+
+```bash
+# nix-shell -p hello --command 'patchelf --print-rpath $(which hello)'
+
+nix \
+shell \
+-i \
+nixpkgs#hello \
+nixpkgs#patchelf \
+nixpkgs#which \
+nixpkgs#bash \
+--command \
+sh \
+-c \
+'patchelf --print-rpath $(which hello)'
+```
+
+
+
+```bash
+echo \
+| $(
+nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'
+(import <nixpkgs> {
+  overlays = [
+    (self: super: {
+      glibc = super.glibc.overrideAttrs (oldAttrs: {
+        version = "3.4.21";
+      });
+    })
+  ];
+  }
+).gcc
+' | tail -n1
+)/bin/gcc -E -Wp,-v - \
+| grep 3.4.21
+```
+
 3.4.2
 3.4.21
 
@@ -1307,6 +1422,20 @@ build \
 ```
 Refs.:
 - https://stackoverflow.com/a/10356740
+
+
+```bash
+nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+'
+(import <nixpkgs> { overlays = [ (self: super: { stdenv = super.stdenv // { overrides = self2: super2: super.stdenv.overrides self2 super2 // { coreutils = uutils-coreutils; }; }; }) ]; }).coreutils
+'
+```
+Refs.:
+- https://stackoverflow.com/a/58765599
 
 
 ### stdenv.cc.cc.lib
@@ -1368,7 +1497,33 @@ mkdir build-dir \
 && ./hello | cowsay
 ```
 
-Broken: why?
+TODO: it is big, cat $stdenv/setup | wc -l
+```bash
+source $stdenv/setup \
+&& phases="buildPhase" genericBuild
+```
+
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (hello.overrideAttrs (old: { buildInputs = (old.buildInputs or []) ++ [bash strace less ltrace vim cowsay]; }))
+)
+' \
+--command \
+bash \
+-c \
+'cat $stdenv/setup | wc -l | grep -q 1428'
+```
+
 ```bash
 nix \
 develop \
@@ -1389,6 +1544,7 @@ bash \
 '
 rm -fr build-dir
 
+source $stdenv/setup
 mkdir build-dir \
 && cd build-dir/ \
 && unpackPhase \
@@ -1399,13 +1555,280 @@ mkdir build-dir \
 '
 ```
 
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (hello.overrideAttrs (old: { 
+                                nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ breakpointHook ]; 
+                                buildInputs = (old.buildInputs or []) ++ [bashInteractive coreutils strace less ltrace vim hello];
+                              }
+                        )
+  )
+)
+' \
+--command \
+bash \
+-c \
+'
+rm -fr build-dir
 
+source $stdenv/setup
+mkdir build-dir \
+&& cd build-dir/ \
+&& unpackPhase \
+&& cd */ \
+&& pwd \
+&& ls -al \
+&& ./configure \
+&& phases="buildPhase" genericBuild \
+&& exec bash
+'
+```
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+nixpkgs#hello \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup
+
+cd "$(mktemp -d)" \
+&& unpackPhase \
+&& cd */ \
+&& pwd \
+&& phases="configurePhase buildPhase" genericBuild \
+&& ./hello
+'
+```
+Refs.:
+- https://unix.stackexchange.com/a/673488
+
+
+Other way:
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+nixpkgs#hello \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
+cd "$(mktemp -d)" # Important to avoid errors during unpack phase
+export out="$(pwd)/"tmp/out
+set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
+set -x # Optional, if you want to display all commands that are run
+genericBuild
+./hello
+'
+```
+
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f#pkgsStatic.hello \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
+cd "$(mktemp -d)" # Important to avoid errors during unpack phase
+pwd
+mkdir -pv "$(pwd)/"tmp/out
+export out="$(pwd)/"tmp/out
+set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
+set -x # Optional, if you want to display all commands that are run
+genericBuild
+./hello
+# echo d270c41c27556b41150c9a3af47fe8c1a9a1e8c3ed4838b7e0c5d5e312260827  hello | sha256sum -c
+'
+```
+TODO: why it is not deterministic, has the same sha256sum?
+
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f#ffmpeg \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
+cd "$(mktemp -d)" # Important to avoid errors during unpack phase
+#pwd
+#mkdir -pv "$(pwd)/"tmp/out
+#export out="$(pwd)/"tmp/out
+set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
+set -x # Optional, if you want to display all commands that are run
+genericBuild
+./ffmpeg
+'
+```
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f";
+  with legacyPackages.${builtins.currentSystem};
+  (ffmpeg.overrideAttrs (old: { 
+                                nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ ];
+                              }
+                        )
+  )
+)
+'
+```
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (ffmpeg.overrideAttrs (old: {
+                                nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ SDL2 ];
+                                buildInputs = (old.buildInputs or []) ++ [bashInteractive coreutils strace less ltrace vim hello];
+                              }
+                        )
+  )
+)
+' \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup
+
+cd "$(mktemp -d)" \
+&& unpackPhase \
+&& cd */ \
+&& pwd \
+&& phases="configurePhase buildPhase" genericBuild \
+&& ./ffmpeg
+'
+```
+Refs.:
+- https://unix.stackexchange.com/a/673488
+
+
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+nixpkgs#ffmpeg \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup
+
+cd "$(mktemp -d)" \
+&& unpackPhase \
+&& cd */ \
+&& pwd \
+&& phases="configurePhase buildPhase" genericBuild \
+&& ./ffmpeg
+'
+```
+Refs.:
+- https://unix.stackexchange.com/a/673488
+- https://youtu.be/4yyLoLWq-Jw?t=634
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (python3.overrideAttrs (old: { buildInputs = (old.buildInputs or []) ++ [bashInteractive coreutils strace less ltrace vim hello]; }))
+)
+' \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup
+
+cd "$(mktemp -d)" \
+&& unpackPhase \
+&& cd */ \
+&& pwd \
+&& phases="configurePhase buildPhase" genericBuild \
+&& exec bash
+'
+```
 
 ```bash
 nix-shell -E 'with import <nixpkgs> {}; stdenv.mkDerivation { name = "arm-shell"; buildInputs = [git gnumake gcc gcc-arm-embedded dtc]; }'
 ```
 https://nixos.wiki/wiki/NixOS_on_ARM#Building_U-Boot_from_your_NixOS_PC
 
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (hello.overrideAttrs (old: { buildInputs = (old.buildInputs or []) ++ [bashInteractive coreutils strace less ltrace vim hello]; }))
+)
+' \
+--command \
+bash \
+-c \
+'
+# exec bash
+rm -fr build-dir
+
+source $stdenv/setup
+mkdir build-dir \
+&& cd build-dir/ \
+&& unpackPhase \
+&& cd */ \
+&& exec bash
+'
+```
 
 ```bash
 nix \
@@ -1509,3 +1932,58 @@ develop \
 )'
 ```
 
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (import <nixpkgs> { overlays = [ (self: super: { stdenv = super.stdenv // { overrides = self2: super2: super.stdenv.overrides self2 super2 // { coreutils = uutils-coreutils; }; }; }) ]; }).coreutils
+)' \
+--command \
+uutils-coreutils --help
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (import <nixpkgs> { overlays = [ (self: super: { stdenv = super.stdenv // { overrides = self2: super2: super.stdenv.overrides self2 super2 // { glibc = super2.glibc.overrideAttrs (oldAttrs: { version = "3.4.21"; }); }; }; }) ]; }).gcc
+)' \
+--command \
+gcc --version
+```
+
+
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (import <nixpkgs> { overlays = [ (self: super: { stdenv = super.stdenv \
+                                                     // { overrides = self2: super2: super.stdenv.overrides self2 super2 \
+                                                     // { coreutils = uutils-coreutils; }; };
+                                                   }
+                                      )
+                                    ]; 
+                      }
+    ).hello
+)' \
+--command \
+hello
+```

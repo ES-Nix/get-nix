@@ -1151,6 +1151,7 @@ run \
                   xorg.xclock
                   file
                   pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
+                  bpytop
                   firefox
                   vscode
                   (python3.buildEnv.override
@@ -1285,7 +1286,6 @@ while ! nc -w 1 -z localhost 10022; do echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sl
 && ssh-keygen -R '[localhost]:10022'; \
 ssh \
 -i id_ed25519 \
--tt \
 -X \
 -o StrictHostKeyChecking=no \
 nixuser@localhost \
@@ -11796,7 +11796,7 @@ cd some_empty_folder # Important to avoid errors during unpack phase
 export out=~/tmpdev/bc-build/out
 source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
 set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
-set -x # Optional, if you want to display all commands that are run 
+set -x # Optional, if you want to display all commands that are run
 genericBuild
 ```
 
@@ -11867,3 +11867,335 @@ https://hoverbear.org/blog/nix-flake-live-media/
 https://scrive.github.io/nix-workshop/06-infrastructure/01-caching-nix.html
 
 
+
+##
+
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  [
+    (let
+      name = "vscode";
+      version = "1.74.0";
+     in
+      mkYarnPackage {
+        inherit name version;
+        src = builtins.fetchTarball {
+          url = "https://github.com/Microsoft/vscode/archive/${version}.tar.gz" ;
+          sha256 = "0b42c2xa2cpmhxmazpcwgxay2n4jmv74rwxqizh38cg8390jpvp2";
+        };
+      }
+    )
+  ]
+)'
+```
+
+
+Take a look in how huge this file is:
+https://github.com/hedgedoc/hedgedoc/blob/7be4ef6e70a7f4d60636945e8b7dce8ad9904a57/yarn.lock
+
+> 19456 lines (17587 sloc)
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.x86_64-linux;
+  [
+    (let
+      name = "hedgedoc";
+      version = "1.9.6";
+     in
+      mkYarnPackage {
+        inherit name version;
+        src = builtins.fetchTarball {
+          url = "https://github.com/hedgedoc/hedgedoc/archive/${version}.tar.gz" ;
+          sha256 = "120zcsfv8ifn7nrcw8kvhgmggaqjrxcm8kp4f4am5z051sglsama";
+        };
+      }
+    )
+  ]
+)'
+```
+TODO: how to do an DAG of that? It must be possible to do that with nix cli?!
+
+### hello-in-nuxt
+
+
+```bash
+mkdir hello-in-nuxt \
+&& cd hello-in-nuxt
+
+cat << 'EOF' > package.json
+{
+  "name": "nuxt-hello",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "nuxt",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "start": "nuxt start"
+  }
+}
+EOF
+
+mkdir pages \
+&& cat << 'EOF' > index.vue
+<template>
+  <h1>Hello nf1zknik5jvg5mci3g world!</h1>
+</template>
+EOF
+
+cat << 'EOF' >> .nuxtrc
+telemetry.consent=0
+telemetry.enabled=false
+EOF
+
+nix \
+shell \
+nixpkgs#yarn \
+nixpkgs#nodejs \
+--command \
+bash \
+-c \
+'yarn --lock && yarn add nuxt && yarn --lock && yarn run generate'
+```
+Refs.:
+- https://nuxtjs.org/docs/get-started/installation/
+
+Cleaning:
+```bash
+rm -fr .nuxt .output dist node_modules; yarn install && yarn run generate --offline
+# --offline --verbose --check-files --non-interactive
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f";
+  with legacyPackages.x86_64-linux;
+  [
+    (let
+      name = "nuxt-hello";
+      version = "0.0.0";
+     in
+      mkYarnPackage {
+        inherit name version;
+        src = builtins.path { path = "${./.}"; name = "nuxt-hello-src"; };
+      }
+    )
+  ]
+)'
+
+file result/tarballs/nuxt-hello.tgz
+# result/tarballs/nuxt-hello.tgz: gzip compressed data, from Unix, original size modulo 2^32 5632
+```
+
+```bash
+mkdir hello-in-nuxt \
+&& cd hello-in-nuxt
+
+#cat << 'EOF' > package.json
+#{
+#  "name": "nuxt-hello",
+#  "version": "0.0.1",
+#  "license": "MIT",
+#  "private": true,
+#  "scripts": {
+#    "dev": "nuxt",
+#    "build": "nuxt build",
+#    "generate": "nuxt generate",
+#    "start": "nuxt start"
+#  }
+#}
+#EOF
+
+mkdir pages \
+&& cat << 'EOF' > index.vue
+<template>
+  <h1>Hello nf1zknik5jvg5mci3g world!</h1>
+</template>
+EOF
+
+cat << 'EOF' >> .nuxtrc
+telemetry.consent=0
+telemetry.enabled=false
+EOF
+
+# If we have the yarn.lock we can skip and save some time.
+#nix \
+#shell \
+#github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f#yarn \
+#github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f#nodejs \
+#--command \
+#bash \
+#-c \
+#'yarn --lock && yarn add nuxt && yarn --lock'
+
+test -f yarn.lock || wget -O yarn.lock http://ix.io/4inx
+
+# After the first time that is ran yarn add nuxt it is done.
+# https://stackoverflow.com/a/61725333
+cat << 'EOF' > package.json
+{
+  "name": "nuxt-hello",
+  "version": "0.0.1",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "start": "nuxt start"
+  },
+  "dependencies": {
+    "nuxt": "^3.0.0"
+  }
+}
+EOF
+
+
+nix \
+build \
+-L \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f";
+  with legacyPackages.x86_64-linux;
+  [
+    (let
+      name = "nuxt-hello";
+      version = "0.0.0";
+     in
+      mkYarnPackage {
+        inherit name version;
+        src = builtins.path { path = "${./.}"; name = "nuxt-hello-src"; };
+        postBuild = "ls -al && export HOME=\"$(mktemp -d)\" && export TMPDIR=$HOME/tmp && mkdir -pv $TMPDIR && yarn generate --offline";
+        distPhase = "mkdir -pv dist"; # "ls -al && export HOME=\"$(mktemp -d)\" && export TMPDIR=$HOME/tmp && mkdir -pv $TMPDIR && yarn generate --offline";
+      }
+    )
+  ]
+)'
+
+grep -q 'Welcome to Nuxt' result/libexec/nuxt-hello/deps/nuxt-hello/.output/public/index.html
+
+
+#--command \
+#bash \
+#-c \
+#'
+#source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
+#cd "$(mktemp -d)" # Important to avoid errors during unpack phase
+#set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
+## set -x # Optional, if you want to display all commands that are run
+#genericBuild
+#'
+```
+
+TODO: try to help https://discourse.nixos.org/t/packaging-an-electron-app/20933
+
+
+```bash
+nix \
+develop \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f";
+  with legacyPackages.x86_64-linux;
+  [
+    (let
+      name = "nuxt-hello";
+      version = "0.0.0";
+     in
+      mkYarnPackage {
+        inherit name version;
+        src = builtins.path { path = "${./.}"; name = "nuxt-hello-src"; };
+      }
+    )
+  ]
+)' \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
+cd "$(mktemp -d)" # Important to avoid errors during unpack phase
+set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
+# set -x # Optional, if you want to display all commands that are run
+genericBuild
+'
+```
+
+
+```bash
+nix \
+develop \
+-i \
+--impure \
+nixpkgs#python3Packages.isort \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
+cd "$(mktemp -d)" # Important to avoid errors during unpack phase
+set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
+# set -x # Optional, if you want to display all commands that are run
+genericBuild
+'
+```
+
+Advanced Refs.:
+- https://discourse.nixos.org/t/explaining-nix-to-a-npm-user/12836/3
+- https://discourse.nixos.org/t/how-to-import-a-derivation-with-import/15375/3
+
+
+```bash
+{ lib, stdenv, fixup_yarn_lock, callPackage, yarn, nodejs-slim }:
+
+stdenv.mkDerivation {
+  pname = "foo";
+  version = "1.0.0";
+
+  src = lib.cleanSource ./.;
+
+  yarnOfflineCache = (callPackage ./yarn.nix {}).offline_cache;
+  # or fetchYarnDeps
+
+  nativeBuildInputs = [
+    fixup_yarn_lock yarn nodejs-slim
+  ];
+
+  configurePhase = ''
+    export HOME=$NIX_BUILD_TOP
+    yarn config --offline set yarn-offline-mirror $yarnOfflineCache
+    fixup_yarn_lock yarn.lock
+    yarn install --offline --frozen-lockfile --ignore-scripts --no-progress --non-interactive
+    patchShebangs node_modules/
+  '';
+
+  buildPhase = ''
+    ...
+  '';
+
+  installPhase = ''
+    ...
+    # if the node_modules dir is needed at runtime, move it to $out/libexec here
+  '';
+}
+```
+Ref.:
+- https://discourse.nixos.org/t/mkyarnpackage-lockfile-has-incorrect-entry/21586/3
