@@ -12201,3 +12201,32 @@ stdenv.mkDerivation {
 ```
 Ref.:
 - https://discourse.nixos.org/t/mkyarnpackage-lockfile-has-incorrect-entry/21586/3
+
+
+Broken, it is an generic example.
+```bash
+nix \
+build \
+--impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+    stdenv.mkDerivation {
+      name = "the-name-of-the-derivation";
+      src = fetchGit {
+                      url = "git+ssh://git@github.com/organization-name/repository-name";
+                      rev = "9f4590cd57f45d939d65aca8e6507f5aa28aeb87";
+                      ref = "gh-pages";
+                    };
+      buildPhase = "mkdir -pv $out/site; cp -R . $out/site";
+      dontInstall = true;
+    }
+  )
+'
+```

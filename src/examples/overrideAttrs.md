@@ -28,6 +28,32 @@ build \
 ```
 
 ```bash
+nix \
+build \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+    (binutils-unwrapped.overrideAttrs (old: {
+        name = "binutils-2.37";
+        src = pkgs.fetchurl {
+          url = "https://ftp.gnu.org/gnu/binutils/binutils-2.37.tar.xz";
+          sha256 = "sha256-gg2XJPAgo+acszeJOgtjwtsWHa3LDgb8Edwp6x6Eoyw=";
+        };
+        patches = [];
+      });
+    )
+)'
+ls -al result/bin
+```
+Refs.:
+- https://nixos.wiki/wiki/C
+
+
+
+
+```bash
 rm -fv result \
 && nix \
 build \
@@ -306,6 +332,10 @@ https://earthly.dev/blog/make-flags/
 
 https://crypto.stackexchange.com/questions/84271/why-openssh-prefers-ecdsa-nistp256-keys-over-384-and-521-and-those-over-ed255
 
+
+```bash
+nix eval --raw nixpkgs#python3.postFixup
+```
 
 ```bash
 nix \
@@ -920,7 +950,7 @@ https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-w
 
 
 TODO: https://www.fbrs.io/nix-overlays/
-
+https://discourse.nixos.org/t/how-to-get-cuda-working-in-blender/5918/5
 
 ```bash
 nix \
