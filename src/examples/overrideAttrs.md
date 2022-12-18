@@ -1189,6 +1189,8 @@ build \
 ).firefox-unwrapped'
 ```
 
+TODO: how to remove <nixpkgs> and use some let ... in?
+Test it: -isysroot nowhere to NIX_CFLAGS_COMPILE
 ```bash
 nix \
 shell \
@@ -1200,10 +1202,18 @@ shell \
     (import <nixpkgs> { overlays = [(self: super: { gcc = self.gcc10; })]; }).stdenv.cc
 )' \
 --command \
-gcc --version
+sh \
+-c \
+'
+gcc --version \
+&& echo | gcc -E -Wp,-v -
+'
 ```
 Refs.:
 - https://stackoverflow.com/a/62224124
+- https://github.com/NixOS/nixpkgs/issues/129595#issuecomment-897979569
+
+TODO: help this one https://discourse.nixos.org/t/how-to-override-current-gcc7-for-recompiling-gcc7-3/15958
 
 
 ```bash
@@ -1453,6 +1463,9 @@ build \
 Refs.:
 - https://stackoverflow.com/a/10356740
 
+
+TODO: do test all possible things overridable.
+`nix repl '<nixpkgs>' <<<'lib.attrNames (stdenv.overrides pkgs pkgs)'`
 
 ```bash
 nix \
@@ -1706,9 +1719,9 @@ bash \
 '
 source $stdenv/setup # loads the environment variable (`PATH`...) of the derivation to ensure we are not using the system variables
 cd "$(mktemp -d)" # Important to avoid errors during unpack phase
-#pwd
-#mkdir -pv "$(pwd)/"tmp/out
-#export out="$(pwd)/"tmp/out
+# pwd
+# mkdir -pv "$(pwd)/"tmp/out
+# export out="$(pwd)/"tmp/out
 set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs `set -e`)
 set -x # Optional, if you want to display all commands that are run
 genericBuild
@@ -2050,8 +2063,8 @@ shell \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
   with legacyPackages.${builtins.currentSystem};
-    (import <nixpkgs> { overlays = [ (self: super: { stdenv = super.stdenv \
-                                                     // { overrides = self2: super2: super.stdenv.overrides self2 super2 \
+    (import <nixpkgs> { overlays = [ (self: super: { stdenv = super.stdenv 
+                                                     // { overrides = self2: super2: super.stdenv.overrides self2 super2 
                                                      // { coreutils = uutils-coreutils; }; };
                                                    }
                                       )

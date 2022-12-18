@@ -478,6 +478,18 @@ install \
 nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4#{coreutils,graphviz}
 ```
 
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+    nix \
+    build \
+    github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4#hello \
+    --print-out-paths
+) | dot -Tps > hello.ps \
+&& echo 73443914cae501b96145b6d96b5cc27377582900e5182cbd152f7dcab05265b8'  'hello.ps | sha256sum -c
+```
+
 ```bash
 nix-store --query --graph --include-outputs \
 $(
@@ -490,10 +502,78 @@ $(
 && echo e9191c6519bf9ac34feda13b5f11b2e5e39fa4872b3a30f98617a2695f836e18'  'python311.ps | sha256sum -c
 ```
 
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+    nix \
+    build \
+    --derivation \
+    github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4#python3Packages.geopandas \
+    --print-out-paths
+) | dot -Tps > geopandas.ps \
+&& echo 260253c89cadbd72d662dfe5c34d8bee553bf3bd64dbdb5ca2b4677732ad4628'  'geopandas.ps | sha256sum -c
+```
+
 ```bash
 echo $(nix-store --query --graph $(nix-store --query $(nix eval --raw nixpkgs#hello.drvPath))) | dot -Tps > graph.ps \
 && sha256sum graph.ps
 ```
+
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+    nix \
+    build \
+    --derivation \
+    github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4#hello \
+    --print-out-paths
+) | dot -Tps > hello.ps \
+&& echo 73443914cae501b96145b6d96b5cc27377582900e5182cbd152f7dcab05265b8'  'hello.ps | sha256sum -c
+```
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+    nix \
+    build \
+    --impure \
+    --print-out-paths \
+    --expr \
+    '
+    (
+      with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+      with legacyPackages.${builtins.currentSystem};
+      with lib;
+      gcc
+    )
+    '
+) | dot -Tps > gcc.ps \
+&& echo 
+```
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+    nix \
+    build \
+    --derivation \
+    --impure \
+    --print-out-paths \
+    --expr \
+    '
+    (
+      with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+      with legacyPackages.${builtins.currentSystem};
+      with lib;
+      (gcc.overrideAttrs (oldAttrs: { propagetedBuildInputs = (oldAttrs.propagetedBuildInputs or []) ++ [hello]; }))
+    )
+    '
+) | dot -Tps > gcc.ps \
+&& echo 
+```
+
 
 ```bash
 FILE_NAME='graph.ps'
@@ -3269,6 +3349,11 @@ nix build nixpkgs#pkgsCross.s390x.busybox-sandbox-shell
 ```bash
 nix build nixpkgs#pkgsCross.armv7l-hf-multiplatform.dockerTools.examples.redis
 ```
+
+```bash
+nix build nixpkgs#pkgsCross.armv7l-hf-multiplatform.pkgsStatic.dockerTools.examples.redis
+```
+
 
 ```bash
 nix \
@@ -7756,6 +7841,8 @@ nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | 
 nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | wc -l
 ```
 
+
+
 ### vmTools.runInLinuxVM
 
 
@@ -8008,6 +8095,84 @@ run \
 ```bash
 nix \
 shell \
+--ignore-environment \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/b9a0cd40ede905f554399f3f165895dccfd35f3b";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    [
+      # busybox-sandbox-shell
+      # bashInteractive  
+      (nixosTest ({
+        name = "nixos-test-empty";
+        nodes = {
+          machine = { config, pkgs, ... }: {      
+          };
+        };
+        testScript = "";
+      })).driverInteractive
+    ]
+)
+' \
+--command nixos-test-driver --interactive
+```
+
+```bash
+start_all(); machine.shell_interact()
+```
+
+When it stops:
+```bash
+nix --version | grep -q 'nix (Nix) 2.12.0'
+```
+
+Does not work! It terminates.
+```bash
+...
+--command \
+sh \
+-c \
+'nixos-test-driver --interactive <<<"start_all(); machine.shell_interact()"'
+```
+
+
+
+```bash
+nix \
+shell \
+--ignore-environment \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/b9a0cd40ede905f554399f3f165895dccfd35f3b";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    [
+      # busybox-sandbox-shell
+      # bashInteractive  
+      (nixosTest ({
+        name = "nixos-test-empty";
+        nodes = {
+          machine = { config, pkgs, ... }: {
+            virtualisation.podman.enable = true;  
+          };
+        };
+        testScript = "";
+      })).driverInteractive
+    ]
+)
+' \
+--command nixos-test-driver --interactive
+```
+
+
+```bash
+nix \
+shell \
 --impure \
 --expr \
 '
@@ -8019,6 +8184,42 @@ shell \
       name = "nixos-test-empty";
       nodes = {
         machine = { config, pkgs, ... }: {
+          users = {
+            mutableUsers = false;
+            extraGroups.nixgroup.gid = 5678;
+              users.nixuser = {
+                home = "/home/nixuser";
+                createHome = true;
+                homeMode = "0700";
+                isSystemUser = true;
+                description = "nix user";
+                extraGroups = [
+                  "networkmanager"
+                  "libvirtd"
+                  "wheel"
+                  "nixgroup"
+                  "kvm"
+                  "qemu-libvirtd"
+                ];
+                packages = with pkgs; [
+                  # firefox
+                ];
+                shell = pkgs.bashInteractive;
+                uid = 1234;
+                group = "nixgroup";
+              };            
+            
+          };
+          # services.getty.autologinUser = "nixuser";
+          
+          environment.systemPackages = [
+              bashInteractive
+              coreutils
+              hello
+              figlet
+              xorg.xclock
+              (writeScriptBin "hackvm" "#! ${pkgs.runtimeShell} -e \n hello | figlet")              
+            ];
         };
       };
     
@@ -8027,12 +8228,86 @@ shell \
 ).driverInteractive
 ' \
 --command \
-sh \
+bash \
 -c \
 'nixos-test-driver --interactive'
 ```
 
+```bash
+start_all(); machine.shell_interact()
+```
 
+```bash
+hackvm
+```
+
+
+```bash
+cat $(which nixos-test-driver)
+```
+
+
+
+```bash
+cat > postgrest.nix << 'EOF'
+let
+
+  # Pin nixpkgs, see pinning tutorial for more details
+  nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/archive/0f8f64b54ed07966b83db2f20c888d5e035012ef.tar.gz";
+  pkgs = import nixpkgs {};
+
+  # Single source of truth for all tutorial constants
+  database      = "postgres";
+  schema        = "api";
+  table         = "todos";
+  username      = "authenticator";
+  password      = "mysecretpassword";
+  webRole       = "web_anon";
+  postgrestPort = 3000;
+
+  # NixOS module shared between server and client
+  sharedModule = {
+    # Since it's common for CI not to have $DISPLAY available, we have to explicitly tell the tests "please don't expect any screen available"
+    virtualisation.graphics = false;
+  };
+
+in pkgs.nixosTest ({
+  # NixOS tests are run inside a virtual machine, and here we specify system of the machine.
+  system = "x86_64-linux";
+
+  nodes = {
+    server = { config, pkgs, ... }: {
+      imports = [ sharedModule ];
+      users = {
+        mutableUsers = false;
+        users = {
+          # For ease of debugging the VM as the `root` user
+          root.password = "";
+
+          # Create a system user that matches the database user so that we
+          # can use peer authentication.  The tutorial defines a password,
+          # but it's not necessary.
+          "${username}".isSystemUser = true;
+        };
+      };
+    };
+  };
+
+  # Disable linting for simpler debugging of the testScript
+  skipLint = true;
+
+  testScript = ''
+    server.succeed("set -e; nix --version | grep 1.2.3")
+  '';
+})
+EOF
+
+nix-build postgrest.nix
+```
+
+```bash
+$(nix-build -A driverInteractive postgrest.nix)/bin/nixos-test-driver
+```
 
 ```bash
 nix \
@@ -9688,6 +9963,63 @@ localhost/pycharm-community:0.0.1
 ```
 
 
+
+### dockerTools.pullImage
+
+
+```bash
+nix repl '<nixpkgs>' <<<'builtins.functionArgs dockerTools.pullImage'
+```
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+    in
+    pkgs.dockerTools.buildImage {
+      name = "alpine";
+      tag = "0.0.1";
+      fromImage = pkgs.dockerTools.pullImage {
+        name = "library/alpine";
+        imageName = "alpine";
+        sha256 = "y+zY1sUyRkSQbPCYbGJ0cdmornKzZLpJfzqsO3oyVTI=";
+        # podman inspect docker.io/library/alpine:3.16.2 | jq ".[].Digest"
+        imageDigest = "sha256:65a2763f593ae85fab3b5406dc9e80f744ec5b449f269b699b5efd37a07ad32e";
+      };
+      
+      config = {
+        Cmd = [ "/bin/sh" ];
+        WorkingDir = "/data";
+        Volumes = {
+          "/data" = {};
+        };
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/alpine:0.0.1
+```
+Refs.:
+- https://discourse.nixos.org/t/how-to-create-a-docker-image-based-on-another-image-with-dockertools/16144/2
+- https://github.com/NixOS/nixpkgs/blob/4f0c549cece9626534ee4ab6f064604e62a8b21a/pkgs/build-support/docker/examples.nix#L90-L97
+
+
+
 #### dockerTools.buildImage for aarch64-linux, hello example with podman
 
 ```bash
@@ -11003,6 +11335,7 @@ TODO:
 ### sandbox
 
 Do watch:
+- [Eelco Dolstra - The Evolution of Nix (SoN2022 - public lecture series)](https://www.youtube.com/embed/h8hWX_aGGDc?start=766&end=816&version=3), start=766&end=816
 - [Jörg 'Mic92' Thalheim - About Nix sandboxes and breakpoints (NixCon 2018)](https://www.youtube.com/watch?v=ULqoCjANK-I)
 - [Build outside of the (sand)box (NixCon 2019)](https://www.youtube.com/watch?v=iWAowLWNra8)
 - [Nix on Darwin – History, challenges, and where it's going by Dan Peebles (NixCon 2017)](https://www.youtube.com/watch?v=73mnPBLL_20)
@@ -11381,7 +11714,12 @@ build \
 ```
 
 
-nix build --option sandbox true --impure --expr '
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr '
 (
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem};
@@ -11394,7 +11732,7 @@ nix build --option sandbox true --impure --expr '
     }
 )
 '
-
+```
 
 ```bash
 nix \
@@ -11762,6 +12100,63 @@ find: ‘/nix/var/nix/profiles/per-user’: No such file or directory
 ```
 
 
+```bash
+nix \
+build \
+--option sandbox true \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "test-sandbox";
+      dontUnpack = true;
+      buildInputs = [ coreutils gnugrep ];
+      buildPhase = "echo $(stat -c %U:%G /nix/store) | grep nobody:nixbld && mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+```
+
+```bash
+nix \
+develop \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "test-sandbox";
+      dontUnpack = true;
+      buildInputs = [ bashInteractive coreutils gnugrep ];
+      buildPhase = "echo $(stat -c %U:%G /nix/store) | grep root:nixbld && mkdir -p $out";
+      dontInstall = true;
+    }
+)
+' \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup \
+&& cd "$(mktemp -d)" \
+&& pwd 
+# mkdir -pv "$(pwd)/"tmp/out
+# export out="$(pwd)/"tmp/out
+set +e 
+# set -x
+genericBuild
+'
+```
+
+
+
+
 https://github.com/NixOS/nixpkgs/blob/0305391fb65b5bdaa8af3c48275ec0df1cdcc34e/pkgs/tools/nix/info/info.sh#L127
 https://github.com/NixOS/nixpkgs/blob/0305391fb65b5bdaa8af3c48275ec0df1cdcc34e/pkgs/tools/nix/info/sandbox.nix
 
@@ -11868,8 +12263,10 @@ https://scrive.github.io/nix-workshop/06-infrastructure/01-caching-nix.html
 
 
 
-##
+## mkYarnPackage
 
+
+### vscode
 
 ```bash
 nix \
@@ -11895,6 +12292,7 @@ shell \
 )'
 ```
 
+### hedgedoc
 
 Take a look in how huge this file is:
 https://github.com/hedgedoc/hedgedoc/blob/7be4ef6e70a7f4d60636945e8b7dce8ad9904a57/yarn.lock
@@ -11924,7 +12322,9 @@ shell \
   ]
 )'
 ```
-TODO: how to do an DAG of that? It must be possible to do that with nix cli?!
+TODO: how to do an DAG of an `yarn.lock`? It must be possible to do that with nix cli?!
+
+
 
 ### hello-in-nuxt
 
@@ -12203,7 +12603,7 @@ Ref.:
 - https://discourse.nixos.org/t/mkyarnpackage-lockfile-has-incorrect-entry/21586/3
 
 
-Broken, it is an generic example.
+Broken, it is a generic example.
 ```bash
 nix \
 build \
@@ -12230,3 +12630,251 @@ build \
   )
 '
 ```
+
+
+### Find that common/wierd bin/lib with some "name"
+
+May be the best place to begin:
+https://search.nixos.org/packages
+
+
+> Note: it is possible to inspect the remote official binary cache 
+> and use that to figure out stuff.
+
+This may be fast:
+```bash
+nix \
+store \
+ls \
+--store https://cache.nixos.org/ \
+--long \
+--recursive \
+"$(nix eval --raw nixpkgs#gnumake)"
+```
+
+
+This one may take while in the first time, because it downloads 
+from the cache and if some part is not in the cache it will be built:
+```bash
+nix run nixpkgs#gnumake -- --version
+```
+
+
+```bash
+ls -A "$(nix build --print-out-paths nixpkgs#binutils.out)/bin"
+```
+
+
+```bash
+nix \
+shell \
+--ignore-environment \
+nixpkgs#binutils \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#gnugrep \
+nixpkgs#which \
+--command \
+sh \
+-c \
+'objdump -p "$(which readelf)" | grep NEEDED'
+```
+
+Other weird one:
+```bash
+ls -A "$(nix build --print-out-paths nixpkgs#cdrtools)/bin"
+```
+
+Outs:
+```bash
+btcflash  cdda2mp3  cdda2ogg  cdda2wav  cdrecord  devdump  isodebug  isodump  isoinfo  isovfy  mkhybrid  mkisofs  readcd  rscsi  scgcheck  scgskeleton
+```
+
+#### The nix-locate
+
+It is really cool. It is able to find almost any output by name and/or ending path.
+
+MWE:
+```bash
+nix-locate -w 'bin/hello' 
+```
+
+It took more than 6Gigas of RAM to build its cache on my machine in the first time it was used. 
+
+Other example:
+```bash
+nix-locate -w 'lib/libyuv.a' 
+```
+Refs.:
+- https://www.youtube.com/watch?v=jhH2LWGUHhY&t=1290s
+
+
+##### A really hard to find package: pythonManylinuxPackages and its manylinux variants
+
+
+```bash
+ls -A "$(nix build --print-out-paths nixpkgs#nix build nixpkgs#pythonManylinuxPackages.manylinux1Package)"
+```
+
+
+```bash
+cat \
+$(
+nix \
+build \
+--impure \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "hello";
+          paths = [ hello ];
+          buildInputs = [ makeWrapper ];
+          postBuild = "wrapProgram $out/bin/hello --add-flags \"-t\" ";
+        }
+  )
+'
+)/bin/hello
+```
+Refs.:
+- https://gist.github.com/CMCDragonkai/9b65cbb1989913555c203f4fa9c23374
+- https://stackoverflow.com/a/49940561
+
+
+
+```bash
+cat \
+$(
+nix \
+build \
+--impure \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "hello";
+          paths = [ hello ];
+          buildInputs = [ makeWrapper ];
+          postBuild = "wrapProgram $out/bin/hello --set PATH ${lib.makeBinPath [ figlet ]}";
+        }
+  )
+')/bin/hello
+```
+
+
+```bash
+cat $(
+nix \
+build \
+--impure \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "python3";
+          paths = [ python3Full ];
+          buildInputs = [ makeWrapper ];
+          postBuild = "wrapProgram $out/bin/python3 --set LD_LIBRARY_PATH ${lib.makeLibraryPath (with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ])}";
+        }
+  )
+'
+)/bin/python3
+```
+Refs.:
+- https://gist.github.com/CMCDragonkai/9b65cbb1989913555c203f4fa9c23374
+- https://www.youtube.com/watch?v=jhH2LWGUHhY&t=1497s
+- https://stackoverflow.com/a/49940561
+
+
+```bash
+nix-store --query --graph --include-outputs $(
+nix \
+build \
+--impure \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "python3";
+          paths = [ python3Full ];
+          buildInputs = [ makeWrapper ];
+          postBuild = "wrapProgram $out/bin/python3 --set LD_LIBRARY_PATH ${lib.makeLibraryPath (with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ])}";
+        }
+  )
+'
+) | dot -Tps > python3.ps
+```
+
+
+
+```bash
+nix \
+shell \
+--ignore-environment \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "python3";
+          paths = [ (python3.withPackages (p: with p; [ pip ])) ];
+          buildInputs = [ makeWrapper ];
+          postBuild = "wrapProgram $out/bin/python3 --set LD_LIBRARY_PATH ${lib.makeLibraryPath (with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ])}";
+        }
+  )
+' \
+--command \
+python3 \
+-c \
+"import os; print(os.environ['LD_LIBRARY_PATH']); os.system('echo $LD_LIBRARY_PATH')"
+```
+
+
+```bash
+nix \
+shell \
+--ignore-environment \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "python3";
+          paths = [ (python3.withPackages (p: with p; [ pip ])) ];
+          buildInputs = [ makeWrapper ];
+          postBuild = "wrapProgram $out/bin/python3 --set LD_LIBRARY_PATH ${lib.makeLibraryPath (with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ])}";
+        }
+  )
+' \
+--command \
+python3 \
+-c \
+"from pprint import pprint; from pip._internal.models.target_python import TargetPython; pprint(len(TargetPython().get_tags()))"
+
+```
+Refs.:
+- https://stackoverflow.com/a/73830154
+- https://stackoverflow.com/a/68450405
+- https://stackoverflow.com/questions/50248524/module-pip-has-no-attribute-pep425tags#comment126655541_53384575
+- https://github.com/tensorflow/tensorflow/issues/9722
+- https://peps.python.org/pep-0425/
+- https://pypi.org/project/auditwheel/#limitations
+- https://peps.python.org/pep-0571/#platform-detection-for-installers
+- https://peps.python.org/pep-0599/#platform-detection-for-installers
+
+
