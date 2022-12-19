@@ -469,6 +469,7 @@ Refs.:
 - https://discourse.nixos.org/t/combining-override-and-overrideattrs/10089/2
 
 
+TODO: review this
 ```bash
 nix \
 build \
@@ -1509,8 +1510,48 @@ ls -al $(nix build --print-out-paths nixpkgs#stdenv.cc.cc.lib)/lib
 
 
 
-### Trick to troubleshooting
+### Trick to troubleshooting, master the nix develop
 
+> Note: 
+https://nixos.org/manual/nix/stable/#managing-build-environments
+https://stackoverflow.com/a/31627258
+
+Legacy, do not use.
+```bash
+nix-shell '<nixpkgs>' -A pan
+```
+
+Modern (ironically it is broken):
+```bash
+nix \
+develop \
+nixpkgs#pan \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup
+
+cd "$(mktemp -d)" \
+&& unpackPhase \
+&& cd */ \
+&& pwd \
+&& phases="configurePhase buildPhase" genericBuild \
+&& ./pan/gui/pan
+'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/017c0ef738ca1570b516c503d6327717e00ac8be/pkgs/applications/networking/newsreaders/pan/default.nix
+
+
+
+```bash
+unpackPhase
+cd pan-*
+configurePhase
+buildPhase
+./pan/gui/pan
+```
 
 ```bash
 nix \
@@ -1704,7 +1745,7 @@ genericBuild
 # echo d270c41c27556b41150c9a3af47fe8c1a9a1e8c3ed4838b7e0c5d5e312260827  hello | sha256sum -c
 '
 ```
-TODO: why it is not deterministic, has the same sha256sum?
+TODO: why it is not deterministic, has not the same sha256sum?
 
 
 ```bash
@@ -1961,7 +2002,9 @@ git clone git://git.denx.de/u-boot.git \
 
 
 ```bash
-cat $(nix \
+cat \
+$(
+nix \
 build \
 --print-out-paths \
 --impure \
@@ -2075,3 +2118,87 @@ shell \
 --command \
 hello
 ```
+
+
+### overlays, final.symlinkJoin
+
+
+```bash
+nix repl '<nixpkgs>' <<<'builtins.functionArgs symlinkJoin'
+```
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(  
+   let
+      overlay = final: prev: rec {
+        my-emacs =
+            final.symlinkJoin {
+              name = "my-emacs";
+              meta.mainProgram = "emacs";
+              paths = with final; [
+                emacs
+                deno # LSP: JavaScript support
+                nodePackages.vscode-html-languageserver-bin # LSP: HTML
+              ];
+              # symlinkJoin can not handle symlinked dirs and nodePackages
+              # symlinks ./bin -> ./lib/node_modules/.bin/.
+
+            };
+      };
+   in
+   import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41")
+  { overlays = [ overlay ]; }
+).emacs
+'
+```
+
+```bash
+cat << 'EOF' > flake.nix
+{
+  description = "Emacs, with runtime dependencies";
+
+  outputs = { nixpkgs, ... }:
+    let
+      overlay = final: prev: rec {
+        my-emacs =
+            final.symlinkJoin {
+              name = "my-emacs";
+              meta.mainProgram = "emacs";
+              paths = with final; [
+                emacs
+                deno # LSP: JavaScript support
+                nodePackages.vscode-html-languageserver-bin # LSP: HTML
+              ];
+
+              # symlinkJoin can't handle symlinked dirs and nodePackages
+              # symlinks ./bin -> ./lib/node_modules/.bin/.
+              postBuild = ''
+                for f in $out/lib/node_modules/.bin/*; do
+                   path="$(readlink --canonicalize-missing "$f")"
+                   ln -s "$path" "$out/bin/$(basename $f)"
+                done
+              '';
+            };
+      };
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in {
+      inherit overlay;
+      defaultPackage.x86_64-linux = pkgs.my-emacs;
+    };
+}
+EOF
+
+nix build -L .#
+```
+Refs.:
+- https://www.ertt.ca/blog/2022/01-12-nix-symlinkJoin-nodePackages/
+
+
