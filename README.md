@@ -8043,6 +8043,13 @@ build \
 ### nixosTest
 
 
+- https://nix.dev/tutorials/integration-testing-using-virtual-machines
+- https://nixos.org/manual/nixos/stable/index.html#sec-nixos-tests
+- https://nixos.mayflower.consulting/blog/2019/07/11/leveraging-nixos-tests-in-your-project/
+- https://twitter.com/_Ma27_/status/1325881957142700032
+- https://www.youtube.com/watch?v=5Z7IckV6gao
+- https://gianarb.it/blog/my-workflow-with-nixos
+
 #### nixosTest minimal
 
 ```bash
