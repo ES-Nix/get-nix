@@ -12287,6 +12287,70 @@ https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-
 
 
 
+#### builtins.break, --debugger
+
+
+[What's new in Nix 2.8.0 - 2.12.0?](https://www.youtube.com/embed/ypFLcMCSzNA?start=293&end=401&version=3),start=293&end=401
+https://github.com/NixOS/nix/issues/6649
+
+```bash
+cat << 'EOF' >> default.nix
+{ c = 6; d = 48; e = { f = 58; };}
+EOF
+```
+
+
+```bash
+nix eval --file default.nix --debugger
+```
+
+```bash
+cat << 'EOF' >> default.nix
+{ c = 6; d = builtins.break 48; e = { f = 58; };}
+EOF
+```
+
+
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    (hello.overrideAttrs
+      (oldAttrs: {
+          preFixup = (oldAttrs.preFixup or "") + "${builtins.break toString 1}";
+        }
+      )
+    )
+)' \
+--ignore-try \
+--debugger
+```
+
+
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    (hello.overrideAttrs
+      (oldAttrs: {
+          posFixup = (oldAttrs.posFixup or "") + "${builtins.break toString 1}";
+        }
+      )
+    )
+)' \
+--ignore-try \
+--debugger
+```
+
+
 ## NixOS modules
 
 
@@ -13244,3 +13308,21 @@ Refs.:
 
 TODO: why `sudo`? How to do the same without `sudo`?
 
+
+
+
+###
+
+TODO:
+https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-run.html#apps
+--bash-prompt value
+
+Set the bash-prompt setting.
+
+--bash-prompt-prefix value
+
+Set the bash-prompt-prefix setting.
+
+--bash-prompt-suffix value
+
+Set the bash-prompt-suffix setting.
