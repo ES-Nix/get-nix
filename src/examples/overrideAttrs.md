@@ -1512,7 +1512,7 @@ ls -al $(nix build --print-out-paths nixpkgs#stdenv.cc.cc.lib)/lib
 
 ### Trick to troubleshooting, master the nix develop
 
-> Note: 
+> Note: the nix-shell is from the legacy CLI
 https://nixos.org/manual/nix/stable/#managing-build-environments
 https://stackoverflow.com/a/31627258
 
@@ -2047,7 +2047,7 @@ build \
 ```bash
 nix \
 develop \
--i \
+--ignore-environment \
 --impure \
 --expr \
 '(
@@ -2063,7 +2063,34 @@ develop \
 )'
 ```
 
+TODO:
+```bash
+❯ nix-shell -p iana-etc
+[nix-shell:~]$ env | grep NIX_ETC
+NIX_ETC_SERVICES=/nix/store/aj866hr8fad8flnggwdhrldm0g799ccz-iana-etc-20210225/etc/services
+NIX_ETC_PROTOCOLS=/nix/store/aj866hr8fad8flnggwdhrldm0g799ccz-iana-etc-20210225/etc/protocols
+```
 
+```bash
+nix \
+develop \
+-i \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+  with legacyPackages.${builtins.currentSystem};
+    (stdenv.mkDerivation {
+      name = "test-podman-sandbox"; 
+      src = builtins.path { path = ./.; };
+      buildInputs = [iana-etc];
+      phases = [ "buildPhase" "installPhase" "fixupPhase" ];
+      installPhase = "mkdir $out; env > $out/log.txt";
+    })
+)'
+```
+
+## overlays
 
 ```bash
 nix \

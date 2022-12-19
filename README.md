@@ -8050,6 +8050,10 @@ build \
 - https://www.youtube.com/watch?v=5Z7IckV6gao
 - https://gianarb.it/blog/my-workflow-with-nixos
 
+
+TODO: related, might be tangential, testing nix it self:
+https://github.com/NixOS/nix/blob/26c7602c390f8c511f326785b570918b2f468892/tests/flakes/flakes.sh
+
 #### nixosTest minimal
 
 ```bash
@@ -8131,7 +8135,7 @@ shell \
 start_all(); machine.shell_interact()
 ```
 
-When it stops:
+When it stops (it does not show the prompt):
 ```bash
 nix --version | grep -q 'nix (Nix) 2.12.0'
 ```
@@ -11744,6 +11748,9 @@ build \
 '
 ```
 
+
+https://stackoverflow.com/questions/9422461/check-if-directory-mounted-with-bash#comment30386851_9422947
+
 ```bash
 nix \
 build \
@@ -12152,6 +12159,11 @@ build \
 '
 ```
 
+TODO: Test this in an nixosTest and in an runInLinuxVM
+- https://stackoverflow.com/questions/9422461/check-if-directory-mounted-with-bash#comment30386851_9422947
+- https://stackoverflow.com/a/47214691
+- https://discourse.nixos.org/t/using-fuse-inside-nix-derivation/8534/2
+- https://github.com/NixOS/nixpkgs/issues/101038
 
 ```bash
 nix \
@@ -12981,6 +12993,23 @@ nix run nixpkgs#gnumake -- --version
 
 ```bash
 ls -A "$(nix build --print-out-paths nixpkgs#binutils.out)/bin"
+```
+
+> `findmnt`, which is itself part of the util-linux
+> Refs.: https://stackoverflow.com/a/46025626
+
+```bash
+nix \
+shell \
+--ignore-environment \
+nixpkgs#util-linux \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#gnugrep \
+nixpkgs#which \
+--command \
+sh \
+-c \
+'file "$(which findmnt)"'
 ```
 
 
