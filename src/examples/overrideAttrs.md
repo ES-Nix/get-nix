@@ -2913,7 +2913,7 @@ build \
 '
 ```
 
-
+Broken as of now
 ```bash
 nix \
 build \
@@ -3054,6 +3054,9 @@ nix run .#
 Refs.:
 - https://discourse.nixos.org/t/how-to-create-a-poetry2nix-environment-with-a-flake/23604/9
 
+
+
+#### income-front, private repo
 
 ```bash
 nix \

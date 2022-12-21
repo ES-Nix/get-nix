@@ -13502,6 +13502,22 @@ ls -al $(nix build --impure --print-out-paths --expr '
 ')/lib
 ```
 
+##### manylinux1Package manylinux2010Package manylinux2014Package
+
+```bash
+ls -A $(nix build --impure --print-out-paths --expr '
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "pythonManylinuxLibs";
+          paths = with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ];
+        }
+  )
+')/lib | cut -d'>' -f2 | sort
+```
+
+###### python3Full manylinux1Package manylinux2010Package manylinux2014Package
 
 ```bash
 ls -A $(nix build --impure --print-out-paths --expr '
@@ -13543,6 +13559,9 @@ libc = CDLL("libc.so.6")
 libc.printf
 '
 ```
+
+
+##### LD_LIBRARY_PATH python3Full manylinux1Package manylinux2010Package manylinux2014Package
 
 ```bash
 nix \
@@ -13599,6 +13618,8 @@ TODO:
 libc = CDLL("libc.so.6")
 libc.printf
 
+TODO: 
+```bash
 from subprocess import Popen, PIPE
 
 def f(args):
@@ -13614,19 +13635,9 @@ def f(args):
     ]
     return attrs
 attrs = f("libc.so.6")
-
-```bash
-ls -A $(nix build --impure --print-out-paths --expr '
-  (
-    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
-    with legacyPackages.${builtins.currentSystem}; 
-        symlinkJoin {
-          name = "pythonManylinuxLibs";
-          paths = with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ];
-        }
-  )
-')/lib | cut -d'>' -f2 | sort
 ```
+
+
 
 ```bash
 nix-store --query --graph --include-outputs $(
