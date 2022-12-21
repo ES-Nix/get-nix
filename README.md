@@ -2414,6 +2414,64 @@ build \
 ```
 
 
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-python3-pottery";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            (python3.buildEnv.override
+              {
+                extraLibs = with python3Packages; [ 
+                  (
+                    let
+                      name = "pottery";
+                      version = "3.0.0";
+                    in
+                      python3Packages.buildPythonPackage rec {
+                        inherit name version;
+                        src = fetchFromGitHub {
+                          owner = "brainix";
+                          repo = "pottery";
+                          rev = "c7be6f1f25c5404a460b676cc60d4e6a931f8ee7";
+                          # sha256 = "${lib.fakeSha256}";
+                          sha256 = "sha256-LP7SjQ4B9xckTKoTU0m1hZvFPvACk9wvCi54F/mp6XM=";
+                        };
+                        # checkPhase = "true";
+                        # pythonImportsCheck = with python3Packages; [ pytest ];
+                        checkInputs = with python3Packages; [ pytest ];
+                        doCheck = true;
+                        buildInputs = with python3Packages; [ typing-extensions redis mmh3 uvloop ];
+                      }
+                    ) 
+                  ];
+                }
+              )
+          ];
+        };
+      };
+
+      testScript = ''
+        "machine.succeed(\"python\")"
+      '';
+    })
+)
+'
+```
+
+
+
 ```bash
 nix \
 build \
@@ -12290,8 +12348,8 @@ https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-
 #### builtins.break, --debugger
 
 
-[What's new in Nix 2.8.0 - 2.12.0?](https://www.youtube.com/embed/ypFLcMCSzNA?start=293&end=401&version=3),start=293&end=401
-https://github.com/NixOS/nix/issues/6649
+- [What's new in Nix 2.8.0 - 2.12.0?](https://www.youtube.com/embed/ypFLcMCSzNA?start=293&end=401&version=3),start=293&end=401
+- https://github.com/NixOS/nix/issues/6649
 
 ```bash
 cat << 'EOF' >> default.nix
@@ -12349,6 +12407,9 @@ eval \
 --ignore-try \
 --debugger
 ```
+
+TODO: take a look into these `nix repl` stuff that lilyball did
+https://discourse.nixos.org/t/in-overlays-when-to-use-self-vs-super/2968/9
 
 
 ## NixOS modules
@@ -12935,6 +12996,227 @@ set +e # To ensure the shell does not quit on errors/Ctrl+C ($stdenv/setup runs 
 genericBuild
 '
 ```
+Refs.:
+- https://nixos.wiki/wiki/Packaging/Python
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f";
+  with legacyPackages.x86_64-linux;
+  [
+    (let
+      name = "pottery";
+      version = "3.0.0";
+     in
+      python3Packages.buildPythonPackage rec {
+        inherit name version;
+        src = fetchFromGitHub {
+          owner = "brainix";
+          repo = "pottery";
+          rev = "c7be6f1f25c5404a460b676cc60d4e6a931f8ee7";
+          # sha256 = "${lib.fakeSha256}";
+          sha256 = "sha256-LP7SjQ4B9xckTKoTU0m1hZvFPvACk9wvCi54F/mp6XM=";
+        };
+        # checkPhase = "true";
+        # pythonImportsCheck = with python3Packages; [ pytest ];
+        checkInputs = with python3Packages; [ pytest ];
+        doCheck = true;
+        buildInputs = with python3Packages; [ typing-extensions redis mmh3 ];
+      }
+    )
+  ]
+)' \
+--command \
+python \
+-c \
+'from pottery import ReleaseUnlockedLock'
+```
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f";
+  with legacyPackages.x86_64-linux;
+  [
+    (
+      python3Packages.buildPythonPackage rec {
+          pname = "blspy";
+          version = "1.0.1";
+        
+          format = "wheel";
+          src = fetchFromGitHub {
+          owner = "Chia-Network";
+          repo = "bls-signatures";
+          rev = "97e7b63bee645a8b53c53197dd3ad7238908ea5a";
+          # sha256 = "${lib.fakeSha256}";
+          sha256 = "sha256-MSUlIHHj5c0rlxypNdmngPVlF7jaDw05hyTAll5N0mI=";
+          };
+        
+          buildInputs = [ stdenv.cc.cc.lib ];
+        
+          propagatedBuildInputs = [ python3Packages.setuptools ];
+        
+          nativeBuildInputs = [ pkgs.autoPatchelfHook ];  
+        
+          meta = with lib; {
+            description = "BLS Signatures implementation";
+            homepage = "https://github.com/Chia-Network/bls-signatures";
+            license = licenses.asl20;
+            maintainers = with maintainers; [ breakds ];
+          };
+        }
+    )
+  ]
+)
+'
+```
+
+Broken:
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(  
+   let
+  overlay = (self: super:
+    let
+      myOverride = {
+        packageOverrides = self: super: {
+          inotify_simple = super.buildPythonPackage rec {
+            pname = "inotify_simple";
+            version = "1.1.7";
+            doCheck = false;
+            src = super.fetchPypi {
+              inherit pname version;
+              sha256 = "1jvivp84cyp4x4rsw4g6bzbzqka7gaqhk4k4jqifyxnqqmbdgvcq";
+            };
+          };
+        };
+      };
+    in {
+      # Add an override for each required python version. 
+      # There’s currently no way to add a package that’s automatically picked up by 
+      # all python versions, besides editing python-packages.nix
+      python2 = super.python2.override myOverride;
+      python3 = super.python3.override myOverride;
+      python35 = super.python35.override myOverride;
+    }
+  );
+
+  pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlay ]; };
+in
+  with pkgs; [
+    pythonPackages.inotify_simple
+    python3Packages.inotify_simple
+    python35Packages.inotify_simple
+  ]
+)
+' \
+--command \
+python3 \
+-c \
+'from pottery import ReleaseUnlockedLock'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(  
+   let
+     overlay = (self: super: {
+       python = super.python.override {
+         packageOverrides = python-self: python-super: {
+           twisted = python-super.twisted.overrideAttrs (oldAttrs: {
+             src = super.fetchPypi {
+               pname = "twisted";
+               version = "19.10.0";
+               sha256 = "7394ba7f272ae722a74f3d969dcf599bc4ef093bc392038748a490f1724a515d";
+               extension = "tar.bz2";
+             };
+           });
+         };
+       };
+     });
+      
+      # Let"s put together a package set to use later
+      myPythonPackages = ps: with ps; [
+        twisted
+        # and other modules you"d like to add
+      ];      
+   in
+     (
+       import 
+       (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") 
+       { overlays = [ overlay ]; }
+     ).python3.withPackages myPythonPackages
+  )
+' \
+--command \
+python3 \
+-c \
+'import twisted'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (  
+    let
+     overlay = (self: super: {
+       python = super.python.override {
+         packageOverrides = python-self: python-super: {
+           twisted = python-super.twisted.overrideAttrs (oldAttrs: {
+             src = super.fetchPypi {
+               pname = "twisted";
+               version = "19.10.0";
+               # sha256 = "7394ba7f272ae722a74f3d969dcf599bc4ef093bc392038748a490f1724a515d";
+               sha256 = "${self.lib.fakeSha256}";
+               extension = "tar.bz2";
+             };
+           });
+         };
+       };
+     });
+      
+      # Let"s put together a package set to use later
+      myPythonPackages = ps: with ps; [
+        twisted
+        # and other modules you"d like to add
+      ];      
+    in
+      (
+        import 
+        (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") 
+        { overlays = [ overlay ]; }
+      ).python3.withPackages myPythonPackages
+  )
+' \
+--command \
+python3 \
+-c \
+'import twisted; print(twisted.__version__)'
+```
+
 
 
 ```bash
@@ -13205,6 +13487,146 @@ Refs.:
 - https://www.youtube.com/watch?v=jhH2LWGUHhY&t=1497s
 - https://stackoverflow.com/a/49940561
 
+
+
+```bash
+ls -al $(nix build --impure --print-out-paths --expr '
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "python3";
+          paths = [ python3Full ];
+        }
+  )
+')/lib
+```
+
+
+```bash
+ls -A $(nix build --impure --print-out-paths --expr '
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "python3";
+          paths = with pythonManylinuxPackages; [ python3Full manylinux1Package manylinux2010Package manylinux2014Package ];
+        }
+  )
+')/lib | wc -l | grep 27
+```
+
+
+```bash
+ls -A $(nix build --impure --print-out-paths --expr '
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "python3";
+          paths = with pythonManylinuxPackages; [ 
+                                                  python3Minimal
+                                                  manylinux1Package 
+                                                  manylinux2010Package 
+                                                  manylinux2014Package 
+                                                ];
+        }
+  )
+')/lib | wc -l
+```
+
+```bash
+result/bin/python3 -c \
+'
+from ctypes import CDLL
+libc = CDLL("libc.so.6")
+libc.printf
+'
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "python3";
+          paths = [ python3Full ];
+          buildInputs = [ makeWrapper ];
+          postBuild = "wrapProgram $out/bin/python3 --set LD_LIBRARY_PATH ${lib.makeLibraryPath (with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ])}";
+        }
+  )
+' \
+--command python3 -c \
+'
+from ctypes import CDLL
+
+libs = (
+"libcrypt.so.1",
+"libc.so.6",
+"libdl.so.2",
+"libgcc_s.so.1",
+"libglib-2.0.so.0",
+"libGL.so.1",
+"libgobject-2.0.so.0",
+"libgthread-2.0.so.0",
+"libICE.so.6",
+"libm.so.6",
+"libncursesw.so.5",
+"libnsl.so.1",
+"libpanelw.so.5",
+"libpthread.so.0",
+"libresolv.so.2",
+"librt.so.1",
+"libSM.so.6",
+"libstdc++.so.6",
+"libutil.so.1",
+"libX11.so.6",
+"libXext.so.6",
+"libXrender.so.1",
+)
+
+{lib:[item for item in dir(CDLL(lib)) if not item.startswith("__")] for lib in libs}
+any([bool(lib == getattr(CDLL(lib), "_name")) for lib in libs])
+'
+```
+
+TODO: 
+libc = CDLL("libc.so.6")
+libc.printf
+
+from subprocess import Popen, PIPE
+
+def f(args):
+    out = Popen(
+        args="nm " + args, 
+        shell=True, 
+        stdout=PIPE
+    ).communicate()[0].decode("utf-8")
+    
+    attrs = [
+        i.split(" ")[-1].replace("\r", "") 
+        for i in out.split("\n") if " T " in i
+    ]
+    return attrs
+attrs = f("libc.so.6")
+
+```bash
+ls -A $(nix build --impure --print-out-paths --expr '
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+        symlinkJoin {
+          name = "pythonManylinuxLibs";
+          paths = with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ];
+        }
+  )
+')/lib | cut -d'>' -f2 | sort
+```
 
 ```bash
 nix-store --query --graph --include-outputs $(

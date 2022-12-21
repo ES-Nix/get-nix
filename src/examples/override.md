@@ -32,6 +32,131 @@ shell \
   with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
   with legacyPackages.${builtins.currentSystem};
     (
+        let
+          python = pkgs.python38.override {
+            packageOverrides = self: super: {
+              pytest = super.pytest.overridePythonAttrs (old: rec {
+                doCheck = false;
+                doInstallCheck = false;
+              });
+            };
+          };
+          myPy = python.withPackages
+            (p: with p; [ numpy pip pytest ]);
+        in pkgs.mkShell {
+          buildInputs = with pkgs; [
+            myPy
+          ];
+        }
+    )
+  )
+' 
+
+\
+--command \
+python \
+-c \
+'
+```
+Refs.:
+- https://rgoswami.me/posts/ccon-tut-nix/#non-standard-python
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
+  with legacyPackages.${builtins.currentSystem};
+    (
+        let python =
+          let packageOverrides = self: super: {
+            dask = super.buildPythonPackage rec {
+              pname = "dask";
+              version = "2.15.0";
+              src = super.fetchPypi {
+                inherit pname version;
+                sha256 = "17bca7rdrkvwf8yib7g58hsd7yrmfaslnq10vm9sw9lzcyszl7li";
+              };
+              checkInputs = with pkgs.python3.pkgs; [ pytest ];
+              propagatedBuildInputs = with pkgs.python3.pkgs; [
+                bokeh cloudpickle dill fsspec numpy pandas partd toolz
+              ];
+              doCheck = false;
+            };
+          };
+          in pkgs.python3.override {
+            inherit packageOverrides;
+            self = python;
+          };
+        in pkgs.mkShell {
+          buildInputs = with pkgs; [
+            python3.pkgs.dask bashInteractive
+          ];
+        }
+    )
+  )                                                                                                                                                              
+' \
+--command \
+bash
+```
+
+
+https://stackoverflow.com/questions/72814871/nixpkgs-overlays-and-nixpkgs-config-packageoverrides-not-being-reflected-in-envi
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
+  with legacyPackages.${builtins.currentSystem};
+    (
+        let
+          overlay = (self: super: rec {
+            python3 = super.python3.override {
+              packageOverrides = self: super: {
+                Fabric = super.Fabric.overrideAttrs (old: rec{
+                  version = "1.14.post1";
+                  doInstallCheck = false;
+                  src =  super.fetchPypi {
+                    pname = "Fabric3";
+                    inherit version;
+                    sha256 = "108ywmx2xr0jypbx26cqszrighpzd96kg4ighs3vac1zr1g4hzk4";
+                  };
+                });
+              };
+            };
+        
+            python3Packages = python3.pkgs;
+          });
+        in
+        { pkgs ? import <nixpkgs> { overlays = [ overlay ]; } }:
+        pkgs.python3
+    )
+  )                                                                                                                                                              
+' \
+--command \
+bash
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
+  with legacyPackages.${builtins.currentSystem};
+    (
       (pkgs.python3.override { sqlite = pkgsStatic.sqlite; })
     )
   )

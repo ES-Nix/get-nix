@@ -950,6 +950,334 @@ https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-w
 #### overlays
 
 
+Old, not complete/fully copy and paste working, example:
+```bash
+let
+  overlay = self: super: {
+    hello = super.hello.overrideAttrs (old: {
+      doCheck = false;
+    });
+  };
+
+  pkgs = import <nixpkgs> { overlays = [ overlay ]; };
+
+in
+  pkgs.hello
+```
+Refs.:
+- https://www.haskellforall.com/2022/01/nixpkgs-overlays-are-monoids.html
+
+
+Bingo! These are the same? `<nixpkgs>` `(builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41")`
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    let
+      overlay = self: super: {
+        hello = super.hello.overrideAttrs (old: {
+          doCheck = false;
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlay ]; };
+    
+    in
+      pkgs.hello
+  )
+'
+```
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  (
+    let
+      overlay = self: super: {
+        hello = super.hello.overrideAttrs (oldAttrs: {
+          postInstall = "${self.cowsay}/bin/cowsay Installation complete";
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlay ]; };
+    
+    in
+      pkgs.hello
+  )
+'
+```
+
+
+Other format:
+```bash
+nix \
+build \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      overlay = final: prev:  {
+        hello = prev.hello.overrideAttrs (oldAttrs: {
+          postInstall = (oldAttrs.postInstall or "") + "${final.cowsay}/bin/cowsay Installation complete";
+        });
+      };
+
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in 
+      pkgs.hello
+  )
+'
+```
+
+
+TODO: it is wrong I believe...
+```bash
+nix \
+build \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      overlay = final: prev:  {
+        python3 = prev.python3.overrideAttrs (oldAttrs: {
+          postInstall = (oldAttrs.postInstall or "") + "${final.cowsay}/bin/cowsay Installation complete";
+        });
+      };
+
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in 
+      pkgs.python3
+  )
+'
+```
+
+Why this not work?
+```bash
+...
+in {
+  inherit overlay;
+  defaultPackage.x86_64-linux = pkgs.hello;
+}
+```
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = python-self: python-super: {
+            pottery = python-super.python3Packages.buildPythonPackage rec {
+                        name = "pottery";
+                        version = "3.0.0";
+                        src = super.fetchFromGitHub {
+                          owner = "brainix";
+                          repo = "pottery";
+                          rev = "c7be6f1f25c5404a460b676cc60d4e6a931f8ee7";
+                          # sha256 = "${lib.fakeSha256}";
+                          sha256 = "sha256-LP7SjQ4B9xckTKoTU0m1hZvFPvACk9wvCi54F/mp6XM=";
+                        };
+                        checkInputs = with python-self.python3Packages; [ pytest ];
+                        doCheck = true;
+                        buildInputs = with python-self.python3Packages; [ typing-extensions redis mmh3 uvloop ];
+                      };
+          };
+        };
+
+        # python3Packages = python3.pkgs;
+        pythonPackages = self.python.pkgs;
+      });
+
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in 
+      pkgs.python3
+  )
+'
+```
+
+
+##### More than one overlay
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  (
+    let
+    
+      overlay0 = self: super: {
+        hello = super.hello.overrideAttrs (oldAttrs: {
+          doCheck = false;
+        });
+      };
+
+      overlay1 = self: super: {
+        hello = super.hello.overrideAttrs (oldAttrs: {
+          postInstall = "${self.cowsay}/bin/cowsay Installation complete";
+        });
+      };
+
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlay0 overlay1 ]; };
+
+    in
+      pkgs.hello
+  )
+'
+```
+
+
+
+TODO: what is the difference?
+```bash
+nix \                                                                                                                                   
+shell \                                   
+--impure \                                 
+--expr \                                    
+'                               
+(                                    
+  let
+    overlay = (self: super: {
+      hello = super.hello.overrideAttrs (old: {
+        doCheck = false;
+      });
+    };);
+                                                                                                
+    # Let"s put together a package set to use later
+    myPythonPackages = ps: with ps; [             
+      pottery
+      # and other modules you"d like to add
+    ];      
+  in      
+     (import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41")
+             { overlays = [ overlay ]; }
+     ).python3.withPackages myPythonPackages
+```
+
+
+Broken:
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = self: super: {
+            pottery = self.callPackage rec {
+              version = "3.0.0";
+              doInstallCheck = false;
+              src =  super.fetchPypi {
+                pname = "pottery";
+                inherit version;
+                sha256 = "vT+k/i44Uz1TNuEnL8TnZcq7veFEMJzO6GdVCdXNewU=";
+              };
+            };
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Let"s put together a package set to use later
+      myPythonPackages = ps: with ps; [
+        pottery
+        # and other modules you"d like to add
+      ];    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlay ]; };  
+   in
+     pkgs.python3.withPackages myPythonPackages
+  )
+' \
+--command \
+python3 \
+-c \
+'from pottery import ReleaseUnlockedLock'
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f";
+  with legacyPackages.x86_64-linux;
+  [
+    (let
+      name = "pottery";
+      version = "3.0.0";
+     in
+      python3Packages.buildPythonPackage rec {
+        inherit name version;
+        src = fetchFromGitHub {
+          owner = "brainix";
+          repo = "pottery";
+          rev = "c7be6f1f25c5404a460b676cc60d4e6a931f8ee7";
+          # sha256 = "${lib.fakeSha256}";
+          sha256 = "sha256-LP7SjQ4B9xckTKoTU0m1hZvFPvACk9wvCi54F/mp6XM=";
+        };
+        # checkPhase = "true";
+        # pythonImportsCheck = with python3Packages; [ pytest ];
+        checkInputs = with python3Packages; [ pytest ];
+        doCheck = true;
+        buildInputs = with python3Packages; [ typing-extensions redis mmh3 ];
+      }
+    )
+  ]
+)' \
+--command \
+python \
+-c \
+'from pottery import ReleaseUnlockedLock'
+```
+
+<h2 id="the-package-is-built-successfully-but-it-panics-about-not-finding-libstdcso6-when-being-imported">The package is built successfully, but it panics about not finding “libstdc++.so.6” when being imported?</h2>
+
+TODO: kubernetes
+https://gitter.im/NixOS/chat?at=5ee7ab2d7a7f8d2d633852ed
+
+Recommended refs.:
+- [Nixpkgs - Overlays](https://www.youtube.com/watch?v=dGAL3gMXvug)
+- https://stackoverflow.com/a/52402289
+- 
+- examples: https://www.haskellforall.com/2022/01/nixpkgs-overlays-are-monoids.html
+- [NixOS: The DOs and DON'Ts of nixpkgs overlays](https://flyingcircus.io/blog/nixos-the-dos-and-donts-of-nixpkgs-overlays/)
+- [Nix overlays: the fixpoint and the (over)layer cake](https://blog.layus.be/posts/2020-06-12-nix-overlays.html)
+- https://discourse.nixos.org/t/what-are-overlays/14680/13
+- for python devs https://discourse.nixos.org/t/what-are-overlays/14680/13
+
+
 TODO: https://www.fbrs.io/nix-overlays/
 https://discourse.nixos.org/t/how-to-get-cuda-working-in-blender/5918/5
 
@@ -964,7 +1292,7 @@ shell \
   let
     pkgs = (import <nixpkgs> { overlays = [(self: super: { hello = self.neofetch; })]; });
   in
-    with pkgs;[
+    with pkgs; [
       hello
     ]
 )' \
@@ -1040,12 +1368,13 @@ run \
                   python3 = prev.python3.override {
                     packageOverrides = final: prev: {
                       flask = prev.flask.overrideAttrs (oldAttrs: {
-                          postFixup = (final.postFixup or "asdff") + "";
+                          postFixup = "${final.cowsay}/bin/cowsay Installation complete";
                         });
                       };
                     };
                   })
-               ]; 
+               ];
+    
   }
 ).python3Packages.flask
 '
@@ -2156,6 +2485,96 @@ nix repl '<nixpkgs>' <<<'builtins.functionArgs symlinkJoin'
 
 ```bash
 nix \
+shell \
+--impure \
+--expr \
+'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = self: super: {
+            Fabric = super.Fabric.overrideAttrs (old: rec{
+              version = "1.14.post1";
+              doInstallCheck = false;
+              src =  super.fetchPypi {
+                pname = "Fabric3";
+                inherit version;
+                sha256 = "108ywmx2xr0jypbx26cqszrighpzd96kg4ighs3vac1zr1g4hzk4";
+              };
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Let"s put together a package set to use later
+      myPythonPackages = ps: with ps; [
+        Fabric
+        # and other modules you"d like to add
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41")
+             { overlays = [ overlay ]; }
+             ).python3.withPackages myPythonPackages
+    )
+
+' \
+--command \
+python3 \
+-c \
+'import fabric; import fabric.version; print(fabric.version.get_version())'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = self: super: {
+            numpy = super.numpy.overrideAttrs (old: rec{
+              version = "1.23.0";
+              doInstallCheck = false;
+              src =  super.fetchPypi {
+                pname = "numpy";
+                inherit version;
+                sha256 = "vT+k/i44Uz1TNuEnL8TnZcq7veFEMJzO6GdVCdXNewU=";
+              };
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Let"s put together a package set to use later
+      myPythonPackages = ps: with ps; [
+        numpy
+        # and other modules you"d like to add
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41")
+             { overlays = [ overlay ]; }
+             ).python3.withPackages myPythonPackages
+    )
+
+' \
+--command \
+python3 \
+-c \
+'import numpy as np; print(np.__version__)'
+```
+
+
+```bash
+nix \
 build \
 --impure \
 --expr \
@@ -2229,3 +2648,437 @@ Refs.:
 - https://www.ertt.ca/blog/2022/01-12-nix-symlinkJoin-nodePackages/
 
 
+
+#####
+
+
+
+
+
+
+```bash
+cat << 'EOF' > flake.nix
+{
+  description = "Emacs, with runtime dependencies";
+
+  outputs = { nixpkgs, ... }:
+    let
+      overlay = final: prev: 
+        {
+          pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+            (python-final: python-prev: {
+              pottery = (python-final.buildPythonPackage rec {
+                          name = "pottery";
+                          version = "3.0.0";
+                          src = prev.fetchFromGitHub {
+                            owner = "brainix";
+                            repo = "pottery";
+                            rev = "c7be6f1f25c5404a460b676cc60d4e6a931f8ee7";
+                            # sha256 = "${lib.fakeSha256}";
+                            sha256 = "sha256-LP7SjQ4B9xckTKoTU0m1hZvFPvACk9wvCi54F/mp6XM=";
+                          };
+                          checkInputs = with prev.python3Packages; [ pytest ];
+                          doCheck = true;
+                          # buildInputs = with prev.python3Packages; [ uvloop ];
+                          propagatedBuildInputs = with prev.python3Packages; [ typing-extensions redis mmh3 uvloop ];
+                        });
+            })
+          ];
+        
+          python3 =
+            let
+              self = prev.python3.override {
+                inherit self;
+                packageOverrides = prev.lib.composeManyExtensions final.pythonPackagesOverlays;
+              }; in
+            self;
+        
+          python3Packages = final.python3.pkgs;
+        
+        };
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in {
+      inherit overlay;
+      # defaultPackage.x86_64-linux = pkgs.python3;
+      # defaultPackage.x86_64-linux = pkgs.python3Packages.pottery;
+      defaultPackage.x86_64-linux = (pkgs.python3.withPackages (ps: with ps; [ pottery numpy ]));    
+    };
+}
+EOF
+
+# nix build -L .#
+# nix shell .# --command python3 -c 'import sys; print(sys.path)'
+nix shell .# --command python3 -c 'from pottery import ReleaseUnlockedLock'
+```
+Refs.:
+- https://discourse.nixos.org/t/add-python-package-via-overlay/19783/4
+
+
+#### deeper...
+
+```bash
+django-admin-shell
+django-celery-results
+django-dry-rest-permissions
+django-extended-choices
+django-ip
+django-simple-history
+django-user-agents
+pottery          
+pycpfcnpj
+python-decouple
+django-ses = {extras = ["events"], version = "^3.1.0"}
+django-ufilter
+```
+
+
+```bash
+cat << 'EOF' > flake.nix
+{
+  description = "TODO";
+
+  outputs = { nixpkgs, ... }:
+    let
+      overlay = final: prev: 
+        {
+          pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+            (python-final: python-prev: {
+              pottery = (python-final.buildPythonPackage rec {
+                          name = "pottery";
+                          version = "3.0.0";
+                          src = prev.fetchFromGitHub {
+                            owner = "brainix";
+                            repo = "pottery";
+                            rev = "c7be6f1f25c5404a460b676cc60d4e6a931f8ee7";
+                            # sha256 = "${lib.fakeSha256}";
+                            sha256 = "sha256-LP7SjQ4B9xckTKoTU0m1hZvFPvACk9wvCi54F/mp6XM=";
+                          };
+                          checkInputs = with prev.python3Packages; [ pytest ];
+                          doCheck = true;
+                          # buildInputs = with prev.python3Packages; [ uvloop ];
+                          propagatedBuildInputs = with prev.python3Packages; [ typing-extensions redis mmh3 uvloop ];
+                        });
+            })
+          ];
+        
+          python3 =
+            let
+              self = prev.python3.override {
+                inherit self;
+                packageOverrides = prev.lib.composeManyExtensions final.pythonPackagesOverlays;
+              }; in
+            self;
+        
+          python3Packages = final.python3.pkgs;
+        
+        };
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in {
+      inherit overlay;
+      # defaultPackage.x86_64-linux = pkgs.python3;
+      # defaultPackage.x86_64-linux = pkgs.python3Packages.pottery;
+      defaultPackage.x86_64-linux = (pkgs.python3.withPackages (ps: with ps; [ 
+        pottery 
+      ]));    
+    };
+}
+EOF
+
+# nix build -L .#
+# nix shell .# --command python3 -c 'import sys; print(sys.path)'
+nix shell .# --command python3 -c \
+'
+from pottery import ReleaseUnlockedLock
+'
+```
+Refs.:
+- https://discourse.nixos.org/t/add-python-package-via-overlay/19783/4
+
+
+
+
+```bash
+cat << 'EOF' > flake.nix
+{
+  description = "TODO";
+
+  outputs = { nixpkgs, ... }:
+    let
+      overlay = final: prev: 
+        {
+          pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+            (python-final: python-prev: {
+              pycpfcnpj = (python-final.buildPythonPackage rec {
+                          name = "pycpfcnpj";
+                          version = "1.0.2";
+                          src = prev.fetchFromGitHub {
+                            owner = "matheuscas";
+                            repo = "pycpfcnpj";
+                            rev = "70451946ae001757e7d065933741d9b2d6e8513c";
+                            # sha256 = "${final.lib.fakeSha256}";
+                            sha256 = "sha256-TN3aKViaeLCcV4ypNyYlrktWhp5HAqfPgoO7aefJhbU=";
+                          };
+                          checkInputs = with prev.python3Packages; [ nose ];
+                          doCheck = true;                          
+                        });
+            })
+          ];
+        
+          python3 =
+            let
+              self = prev.python3.override {
+                inherit self;
+                packageOverrides = prev.lib.composeManyExtensions final.pythonPackagesOverlays;
+              }; in
+            self;
+        
+          python3Packages = final.python3.pkgs;
+        
+        };
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in {
+      inherit overlay;
+      # defaultPackage.x86_64-linux = pkgs.python3;
+      # defaultPackage.x86_64-linux = pkgs.python3Packages.pottery;
+      defaultPackage.x86_64-linux = (pkgs.python3.withPackages (ps: with ps; [ 
+        pycpfcnpj 
+      ]));    
+    };
+}
+EOF
+
+# nix build -L .#
+# nix shell .# --command python3 -c 'import sys; print(sys.path)'
+nix shell .# --command python3 -c \
+'
+from pycpfcnpj import cpfcnpj
+print(cpfcnpj.validate("67170904055")) 
+'
+```
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+    in
+      pkgs.poetry2nix.mkPoetryApplication {
+        projectDir = ./.;
+      }
+  )
+'
+```
+
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+    in
+      pkgs.poetry2nix.mkPoetryApplication rec {
+        src = pkgs.fetchFromGitHub {
+                            owner = "django-ses";
+                            repo = "django-ses";
+                            rev = "f9ebfab30d2b8dab9a9c73fc9ec2f36037533e65";
+                            # sha256 = "${pkgs.lib.fakeSha256}";
+                            sha256 = "sha256-daeOc8c4FLBu/Zvvdo2/FEszCzBR28z0lUxJFfv3fGk=";
+                          };
+        projectDir = "${src}";
+      }
+  )
+'
+```
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+    in
+      pkgs.poetry2nix.mkPoetryApplication rec {
+        src = pkgs.fetchFromGitHub {
+                            owner = "sdispater";
+                            repo = "pendulum";
+                            rev = "46b27c122d060ae9df139311ca0d4d880ac5137e";
+                            # sha256 = "${pkgs.lib.fakeSha256}";
+                            sha256 = "sha256-g23HZIuUuJUGdKiENH3wNOeb6eAGhCy6E6ZAlTe7O/k=";
+                          };
+        projectDir = "${src}";
+      }
+  )
+'
+```
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+    in
+      pkgs.poetry2nix.mkPoetryApplication rec {
+        src = pkgs.fetchFromGitHub {
+                            owner = "python-poetry";
+                            repo = "poetry";
+                            rev = "cfdba43923b7ec386c44583055077cb697ced7bd";
+                            sha256 = "sha256-USH1dYc4nwNUTcqzgfB/5iZSr2lY19TI0Z2BUdS6o2E=";
+                          };
+        projectDir = "${src}";
+      }
+  )
+'
+```
+
+
+TODO: make this huge thing work!
+
+```bash
+cat << 'EOF' > flake.nix
+{
+  description = "Application packaged using poetry2nix";
+
+  inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.poetry2nix = {
+    url = "github:nix-community/poetry2nix";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  inputs.poetry = {
+    url = "github:python-poetry/poetry";
+    flake = false;
+  };
+  
+  outputs = { self, nixpkgs, flake-utils, poetry2nix, poetry }:
+    {
+      # Nixpkgs overlay providing the application
+      overlay = nixpkgs.lib.composeManyExtensions [
+        poetry2nix.overlay
+        (final: prev: {
+          # The application
+          myapp = prev.poetry2nix.mkPoetryApplication {
+            projectDir = "${poetry}";
+          };
+          # The env
+          myenv = prev.poetry2nix.mkPoetryEnv {
+            projectDir = "${poetry}";
+          };
+
+          poetry2nix = prev.poetry2nix.overrideScope' (p2nixfinal: p2nixprev: {
+            # pyfinal & pyprev refers to python packages
+            defaultPoetryOverrides = (p2nixprev.defaultPoetryOverrides.extend (pyfinal: pyprev:
+              {
+                ### dodge infinite recursion ###
+                setuptools = prev.python310Packages.setuptools.override {
+                  inherit (pyfinal)
+                    bootstrapped-pip
+                    pipInstallHook
+                    setuptoolsBuildHook
+                  ;
+                };
+              }
+            ));
+          });
+        })
+      ];
+    } // (flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ self.overlay ];
+        };
+      in
+      {
+
+        packages.default = pkgs.myapp;
+        packages.myapp = pkgs.myapp;
+        packages.myenv = pkgs.myenv;
+        
+        devShells.dev = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            #(python310.withPackages (ps: with ps; [ poetry ]))
+            pkgs.myenv
+          ];
+        };
+        
+        devShells.default = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            (python310.withPackages (ps: with ps; [ poetry ]))
+          ];
+        };
+      }));
+}
+EOF
+
+nix build -L .#
+
+nix run .#
+```
+Refs.:
+- https://discourse.nixos.org/t/how-to-create-a-poetry2nix-environment-with-a-flake/23604/9
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+    in
+      pkgs.stdenv.mkDerivation {
+                name = "income-front";
+                src = fetchGit {
+                            # owner = "imobanco";
+                            # repo = "income-front";
+                            # rev = "cfdba43923b7ec386c44583055077cb697ced7bd";
+                            # sha256 = "";
+                            url = "git+ssh://git@github.com/imobanco/income-front/archive/refs/tags/v5.0.16.tar.gz";
+                          };
+                buildPhase = "mkdir -pv $out/site; cp -R . $out/site";
+                dontInstall = true;
+              }
+  )
+'
+```
