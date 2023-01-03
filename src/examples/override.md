@@ -382,3 +382,30 @@ build \
 
 
 
+
+```bash
+nix \
+build \
+-L \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ba6ba2b90096dc49f448aa4d4d783b5081b1cc87";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      (pkgs.podman.override { 
+          src = fetchFromGitHub {
+            owner = "containers";
+            repo = "podman";
+            rev = "9fbf91801d4540d48f51b11fb3ca33182d2525e7";
+            sha256 = "";
+          };
+      })
+    )
+  )
+'
+```
+
+
+  

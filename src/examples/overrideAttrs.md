@@ -424,6 +424,33 @@ build \
 '
 ```
 
+This is somewhere after podman version 4.3.1. Building podman from source:
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    with builtins.getFlake "github:NixOS/nixpkgs/ba6ba2b90096dc49f448aa4d4d783b5081b1cc87";
+    with legacyPackages.${builtins.currentSystem};
+      ( 
+        podman-unwrapped.overrideAttrs (oldAttrs: {
+            src = fetchFromGitHub {
+              owner = "containers";
+              repo = "podman"; 
+              rev = "9fbf91801d4540d48f51b11fb3ca33182d2525e7"; 
+              sha256 = "sha256-WX3/gKuHkZfotc/YtAXuCfLfkSh3HT8QmFqHrdMZNXI=";
+            }; 
+            patches = [];
+        }
+      )
+    )
+  )
+'
+```
+
 
 ```bash
 export NIXPKGS_ALLOW_BROKEN=1 \
@@ -947,7 +974,12 @@ nix why-depends --all nixpkgs#pkgsStatic.opencv nixpkgs#systemd
 
 https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-when-use-qemu-in-docker
 
-#### overlays
+#### overlay
+
+> O atributo/nome `overlay` (sem o s) foi deprecado.
+> The attribute/name `overlay` (without the `s`) was deprecated.
+Refs.:
+- https://t.me/nixosbrasil/69554
 
 
 Old, not complete/fully copy and paste working, example:
@@ -1025,7 +1057,7 @@ build \
 '
   (
     let
-      overlay = final: prev:  {
+      overlay = final: prev: {
         hello = prev.hello.overrideAttrs (oldAttrs: {
           postInstall = (oldAttrs.postInstall or "") + "${final.cowsay}/bin/cowsay Installation complete";
         });
@@ -1118,6 +1150,96 @@ build \
   )
 '
 ```
+
+
+The blender-bin flake.
+> Note: use `nix registry list` to check if this flake still exist 
+ 
+```bash
+nix \
+build \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nix-warez-blender = (builtins.getFlake github:edolstra/nix-warez/8b3c350e1632571c549ff304c290ae124d328cb5?dir=blender);
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") {
+        system = "x86_64-linux";
+        overlays = [ nix-warez-blender.overlays.default ];
+      };
+    in 
+      pkgs.blender
+  )
+'
+```
+Refs.:
+- https://discourse.nixos.org/t/how-to-get-cuda-working-in-blender/5918/5
+- 
+
+
+```bash
+nix-store --query --graph --include-outputs $(
+nix \
+build \
+--impure \
+--print-out-paths \
+--expr \
+'
+  (
+    let
+      nix-warez-blender = (builtins.getFlake github:edolstra/nix-warez/8b3c350e1632571c549ff304c290ae124d328cb5?dir=blender);
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") {
+        system = "x86_64-linux";
+        overlays = [ nix-warez-blender.overlays.default ];
+      };
+    in 
+      pkgs.blender
+  )
+'
+) | dot -Tps > blender-cuda.ps
+```
+
+
+
+
+```bash
+nix-store --query --graph --include-outputs $(                               
+nix \
+build \
+--impure \
+--print-out-paths \
+nixpkgs#hello) | sed '1d; $d' | sort > g1.txt
+```
+
+```bash
+nix-store --query --graph --include-outputs $(
+nix \
+build \
+--impure \
+--print-out-paths \
+--expr \
+'
+  (
+    let
+      overlay = final: prev: {
+        hello = prev.hello.overrideAttrs (oldAttrs: {
+          postInstall = (oldAttrs.postInstall or "") + "cp ${final.cowsay}/bin/cowsay $out/bin";
+        });
+      };
+
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in 
+      pkgs.hello
+  )
+'
+) | sed '1d; $d' | sort > g2.txt
+```
+
+https://youtu.be/YLLsY0tovr8?t=1540
 
 
 ##### More than one overlay
@@ -1263,6 +1385,10 @@ python \
 ```
 
 <h2 id="the-package-is-built-successfully-but-it-panics-about-not-finding-libstdcso6-when-being-imported">The package is built successfully, but it panics about not finding “libstdc++.so.6” when being imported?</h2>
+
+
+
+
 
 TODO: kubernetes
 https://gitter.im/NixOS/chat?at=5ee7ab2d7a7f8d2d633852ed
@@ -3083,5 +3209,34 @@ build \
                 dontInstall = true;
               }
   )
+'
+```
+
+
+
+
+```bash
+nix \
+-L \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ba6ba2b90096dc49f448aa4d4d783b5081b1cc87";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      podman-unwrapped.overrideAttrs (oldAttrs: {
+          src = fetchFromGitHub {
+            owner = "containers";
+            repo = "podman";
+            rev = "9fbf91801d4540d48f51b11fb3ca33182d2525e7";
+            sha256 = "sha256-WX3/gKuHkZfotc/YtAXuCfLfkSh3HT8QmFqHrdMZNXI=";
+          };
+          patches = [];
+      }
+    )
+  )
+)
 '
 ```

@@ -6725,22 +6725,24 @@ nix \
 run \
 --impure \
 --expr \
-'(  
-  with legacyPackages.${builtins.currentSystem};
-  let
-    nixpkgs = (with builtins.getFlake "nixpkgs");
-    overlay = final: prev: {
-      hello = prev.hello.overrideAttrs (oldAttrs: with final; {
-          postInstall = oldAttrs.postInstall + "${prev.hello}/bin/hello Installation complete";
-        }
-      );
-    };
-
-  pkgs = import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [ overlay ]; };
-
-  in
-    pkgs.hello
-)'
+'
+  (  
+    with legacyPackages.${builtins.currentSystem};
+    let
+      nixpkgs = (with builtins.getFlake "nixpkgs");
+      overlay = final: prev: {
+        hello = prev.hello.overrideAttrs (oldAttrs: with final; {
+            postInstall = oldAttrs.postInstall + "${prev.hello}/bin/hello Installation complete";
+          }
+        );
+      };
+  
+      pkgs = import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [ overlay ]; };
+  
+    in
+      pkgs.hello
+  )
+'
 ```
 
 
@@ -6877,13 +6879,78 @@ run \
 ```
 
 
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:22.04
+
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+     file \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser
+
+# The /nix is ignored by nix profile even if it is created
+# RUN mkdir /nix && chmod 0777 /nix && chown -v abcuser: /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+
+# Not DRY, I know
+RUN mkdir -pv $HOME/.local/bin \
+ && export PATH=/home/abcuser/.local/bin:"$PATH" \
+ && curl -L https://hydra.nixos.org/build/188965270/download/2/nix > nix \
+ && mv nix /home/abcuser/.local/bin \
+ && chmod +x /home/abcuser/.local/bin/nix \
+ && mkdir -p ~/.config/nix \
+ && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+
+EOF
+
+
+podman \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu22 .
+```
+
+
+```bash
+podman \
+run \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22:latest \
+bash \
+-c \
+'
+nix flake --version 
+'
+```
+
+
 ```bash
 nix \
 build \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with builtins.getFlake "github:NixOS/nixpkgs/b139e44d78c36c69bcbb825b20dbfa51e7738347";
   with legacyPackages.${builtins.currentSystem};
   (pkgsStatic.nix.override {
     storeDir = "/home/abcuser";
@@ -7924,7 +7991,7 @@ build \
 
 
 
-Some really more complex example:
+Some really more complex examples:
 - https://github.com/NixOS/nixpkgs/issues/177908#issuecomment-1160654806
 - https://github.com/NixOS/nixpkgs/issues/190809#issuecomment-1249224694
 
@@ -8095,6 +8162,38 @@ build \
 )
 '
 ```
+
+
+
+### vmTools.runInLinuxVM
+
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ba6ba2b90096dc49f448aa4d4d783b5081b1cc87";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  vmTools.runInLinuxImage (stdenv.mkDerivation {
+    name = "deb-compile";
+    src = patchelf.src;
+    diskImage = vmTools.diskImages.ubuntu1804x86_64;
+    diskImageFormat = "qcow2";
+    memSize = 512;
+    postHook = "dpkg-query --list";
+  })
+)
+'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/522bf206fd58ecfec1b6886e1acc879cb1b487cb/pkgs/build-support/vm/test.nix#L31-L40
+
+
 
 
 
@@ -10211,14 +10310,15 @@ build \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/f540aeda6f677354f1e7144ab04352f61aaa0118";
+    with builtins.getFlake "github:NixOS/nixpkgs/b139e44d78c36c69bcbb825b20dbfa51e7738347";
     with legacyPackages.${builtins.currentSystem};
 
     dockerTools.buildImage {
-      name = "nix";
-      tag = "0.0.1";
+      name = "snix";
+      tag = "2.13.0pre20221223_14f7dae";
 
       copyToRoot = [
+        # cacert
         pkgsStatic.nix
         # coreutils
         # bashInteractive
@@ -10229,7 +10329,9 @@ build \
         # Entrypoint = [ "${bashInteractive}/bin/bash" ];
         Entrypoint = [ "${pkgsStatic.busybox-sandbox-shell}/bin/sh" ];
         Env = [
-          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"          
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_CONFIG=extra-experimental-features = nix-command flakes"
         ];
       };
     }
@@ -10239,21 +10341,21 @@ build \
 podman load < result
 
 
-SHARED_DIRETORY_NAME=code
+SHARED_DIRECTORY_NAME=code
 # To clean all state
 # chown $(id -u):$(id -g) -R "$SHARED_DIRETORY_NAME"
 # rm -fr "$SHARED_DIRETORY_NAME" 
-test -d "$SHARED_DIRETORY_NAME" || mkdir -pv "$SHARED_DIRETORY_NAME"/tmp
+test -d "$SHARED_DIRECTORY_NAME" || mkdir -pv "$SHARED_DIRECTORY_NAME"/tmp
 
 # It pays of its ugliness
-test -f "$SHARED_DIRETORY_NAME"/.config/nix/nix.conf \
-|| mkdir -pv "$SHARED_DIRETORY_NAME"/.config/nix && echo 'experimental-features = nix-command flakes' > "$SHARED_DIRETORY_NAME"/.config/nix/nix.conf
+test -f "$SHARED_DIRECTORY_NAME"/.config/nix/nix.conf \
+|| mkdir -pv "$SHARED_DIRECTORY_NAME"/.config/nix && echo 'experimental-features = nix-command flakes' > "$SHARED_DIRECTORY_NAME"/.config/nix/nix.conf
 
 echo
 
 nix run nixpkgs#xorg.xhost -- + 
 
-
+# --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
@@ -10272,14 +10374,26 @@ run \
 --tty=true \
 --userns=keep-id \
 --rm=true \
---volume="$(pwd)"/"$SHARED_DIRETORY_NAME":"$HOME":U \
---volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume="$(pwd)"/"$SHARED_DIRECTORY_NAME":"$HOME":U \
 --workdir="$HOME" \
-localhost/nix:0.0.1 \
+localhost/snix:2.13.0pre20221223_14f7dae \
 -c \
 "nix --option experimental-features 'nix-command flakes' run nixpkgs#python310Packages.isort"
 ```
+Refs.:
+- [What's new in Nix 2.8.0 - 2.12.0?](https://youtu.be/ypFLcMCSzNA?t=495)
+- [Jérôme Petazzoni - Creating Optimized Images for Docker and Kubernetes | #FiqueEmCasaConf](https://www.youtube.com/watch?v=UbXv-T4IUXk)
+- [NYLUG Presents: Sneaking in Nix - Building Production Containers with Nix](https://www.youtube.com/watch?v=pfIDYQ36X0k )
+- [Nix + Docker, a match made in heaven](https://www.youtube.com/watch?v=WP_oAmV6C2U)
+- [Nixery - A Nix-backed container registry (NixCon 2019)](https://www.youtube.com/watch?v=pOI9H4oeXqA)
 
+```bash
+nix shell nixpkgs#bashInteractive nixpkgs#coreutils
+```
+
+```bash
+nix profile install nixpkgs#hello
+```
 
 
 ```bash
@@ -12352,7 +12466,7 @@ https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-
 - https://github.com/NixOS/nix/issues/6649
 
 ```bash
-cat << 'EOF' >> default.nix
+cat << 'EOF' > default.nix
 { c = 6; d = 48; e = { f = 58; };}
 EOF
 ```
@@ -12363,7 +12477,7 @@ nix eval --file default.nix --debugger
 ```
 
 ```bash
-cat << 'EOF' >> default.nix
+cat << 'EOF' > default.nix
 { c = 6; d = builtins.break 48; e = { f = 58; };}
 EOF
 ```
@@ -13311,7 +13425,7 @@ build \
 
 ### Find that common/wierd bin/lib with some "name"
 
-May be the best place to begin:
+Maybe the best place to begin:
 https://search.nixos.org/packages
 
 
@@ -13331,7 +13445,8 @@ ls \
 
 
 This one may take while in the first time, because it downloads 
-from the cache and if some part is not in the cache it will be built:
+from the cache and if some part is not in the "local store cache" it will be built:
+TODO: `.override` the `meta`
 ```bash
 nix run nixpkgs#gnumake -- --version
 ```
@@ -13378,10 +13493,54 @@ Other weird one:
 ls -A "$(nix build --print-out-paths nixpkgs#cdrtools)/bin"
 ```
 
-Outs:
+Outputs:
 ```bash
 btcflash  cdda2mp3  cdda2ogg  cdda2wav  cdrecord  devdump  isodebug  isodump  isoinfo  isovfy  mkhybrid  mkisofs  readcd  rscsi  scgcheck  scgskeleton
 ```
+
+```bash
+ls -A "$(nix build --print-out-paths nixpkgs#rustc.llvmPackages.clang.cc.lib)/lib"
+```
+
+
+```bash
+ls -A "$(nix build --print-out-paths nixpkgs#unixtools.xxd)/bin"
+```
+
+##### Using the nix repl
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'(builtins.getFlake "github:edolstra/dwarffs").rev'
+```
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames gcc'
+```
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'lib.attrNames yarn.override.__functionArgs'
+```
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames python3Packages' | tr ' ' '\n' | wc -l
+```
+
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames nodePackages_latest' | tr ' ' '\n' | wc -l
+```
+
+
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames aspellDicts' | tr ' ' '\n' | wc -l
+```
+
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames hunspellDicts' | tr ' ' '\n' | wc -l
+```
+
 
 #### The nix-locate
 
@@ -13392,6 +13551,7 @@ MWE:
 nix-locate -w 'bin/hello' 
 ```
 
+> Note: there is another way, just download it ready to use!
 It took more than 6Gigas of RAM to build its cache on my machine in the first time it was used. 
 
 Other example:
@@ -13399,14 +13559,15 @@ Other example:
 nix-locate -w 'lib/libyuv.a' 
 ```
 Refs.:
-- https://www.youtube.com/watch?v=jhH2LWGUHhY&t=1290s
+- [Connor Brewster - The Road to Nix at Replit (SoN2022 - public lecture series)](https://www.youtube.com/embed/jhH2LWGUHhY?start=1290&end=1335&version=3), start=1290&end=1335
+- [The Nix Hour #8](https://www.youtube.com/embed/cfCqauM9ztM?start=2685&end=2757&version=3), start=2685&end=2757
 
 
 ##### A really hard to find package: pythonManylinuxPackages and its manylinux variants
 
 
 ```bash
-ls -A "$(nix build --print-out-paths nixpkgs#nix build nixpkgs#pythonManylinuxPackages.manylinux1Package)"
+ls -A "$(nix build --print-out-paths nixpkgs#pythonManylinuxPackages.manylinux1Package)/lib"
 ```
 
 
@@ -13487,6 +13648,62 @@ Refs.:
 - https://www.youtube.com/watch?v=jhH2LWGUHhY&t=1497s
 - https://stackoverflow.com/a/49940561
 
+
+TODO: improve this
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.streamLayeredImage {
+      name = "python3manylinux";
+      tag = "0.0.1";
+      config = {
+        copyToRoot = [
+          # 
+        ];
+        Cmd = [
+          # 
+        ];
+        Entrypoint = [
+          "${bashInteractive}/bin/bash"
+          # "${pkgs.python3Full}/bin/python3" "-c" "from tkinter import Tk; window = Tk(); window.mainloop()"
+        ];
+        Env = [
+          "PATH=${bashInteractive}/bin:${ (symlinkJoin {
+            name = "python3";
+            paths = [ python3Full ];
+            buildInputs = [ makeWrapper ];
+            postBuild = "wrapProgram $out/bin/python3 --set LD_LIBRARY_PATH ${lib.makeLibraryPath (with pythonManylinuxPackages; [ manylinux1Package manylinux2010Package manylinux2014Package ])}";
+          })}/bin"
+          # TODO
+          # https://access.redhat.com/solutions/409033
+          # https://github.com/nix-community/home-manager/issues/703#issuecomment-489470035
+          # https://bbs.archlinux.org/viewtopic.php?pid=1805678#p1805678
+          # "LC_ALL=C"
+          # "LOCALE_ARCHIVE=${glibcLocales}/lib/locale/locale-archive"
+        ];
+      };
+    }
+  )
+'
+
+"$(readlink -f result)" | podman load
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/python3manylinux:0.0.1 \
+-c \
+"python -c 'import this'"
+```
 
 
 ```bash
@@ -13610,7 +13827,7 @@ libs = (
 )
 
 {lib:[item for item in dir(CDLL(lib)) if not item.startswith("__")] for lib in libs}
-any([bool(lib == getattr(CDLL(lib), "_name")) for lib in libs])
+all([lib == getattr(CDLL(lib), "_name") for lib in libs])
 '
 ```
 
@@ -13759,3 +13976,124 @@ Set the bash-prompt-prefix setting.
 --bash-prompt-suffix value
 
 Set the bash-prompt-suffix setting.
+
+
+#### 
+
+
+```bash
+sudo groupadd docker; \
+sudo usermod --append --groups docker "$USER" \
+&& sudo reboot
+```
+
+```bash
+nix \
+profile \
+install \
+nixpkgs#docker \
+&& sudo cp "$(nix eval --raw nixpkgs#docker)"/etc/systemd/system/{docker.service,docker.socket} /etc/systemd/system/ \
+&& sudo systemctl enable --now docker
+```
+Refs.: 
+- https://github.com/NixOS/nixpkgs/issues/70407
+- https://github.com/moby/moby/tree/e9ab1d425638af916b84d6e0f7f87ef6fa6e6ca9/contrib/init/systemd
+
+
+```bash
+docker \
+run \
+--rm \
+docker.io/library/alpine:3.14.2 \
+sh \
+-c \
+'apk add --no-cache curl'
+```
+
+```bash
+docker \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+--user='0' \
+--volume="$(pwd)":/code:rw \
+--workdir=/code \
+docker.io/library/alpine:3.14.2 \
+sh \
+-c \
+'touch abc123.txt'
+```
+
+#####
+
+
+```bash
+sudo apt-get update \
+&& sudo apt-get install -y uidmap
+
+
+nix \
+profile \
+install \
+nixpkgs#podman \
+&& mkdir -pv ~/.config/systemd/user \
+&& cp -v "$(nix eval --raw nixpkgs#podman)"/share/systemd/user/{podman-auto-update.service,podman-auto-update.timer,podman-kube@.service,podman-restart.service,podman.service,podman.socket} ~/.config/systemd/user \
+&& systemctl --user daemon-reload \
+&& systemctl --user enable --now podman.socket
+
+
+mkdir -p ~/.config/containers
+cat << 'EOF' >> ~/.config/containers/policy.json
+{
+    "default": [
+        {
+            "type": "insecureAcceptAnything"
+        }
+    ],
+    "transports":
+        {
+            "docker-daemon":
+                {
+                    "": [{"type":"insecureAcceptAnything"}]
+                }
+        }
+}
+EOF
+
+mkdir -p ~/.config/containers
+cat << 'EOF' >> ~/.config/containers/registries.conf
+[registries.search]
+registries = ['docker.io']
+[registries.block]
+registries = []
+EOF
+```
+
+
+#### podman rootfull
+
+```bash
+sudo groupadd podman; \
+sudo usermod --append --groups podman "$USER" \
+&& sudo reboot
+```
+
+```bash
+nix \
+profile \
+install \
+nixpkgs#podman \
+&& sudo cp "$(nix eval --raw nixpkgs#podman)"/share/systemd/user/{podman-auto-update.service,podman-auto-update.timer,podman-kube@.service,podman-restart.service,podman.service,podman.socket} /etc/systemd/system/ \
+&& sudo systemctl enable --now podman
+```
+
+```bash
+podman \
+run \
+--rm \
+docker.io/library/alpine:3.16.2 \
+sh \
+-c \
+'apk add --no-cache curl'
+```
