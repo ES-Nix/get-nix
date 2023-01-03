@@ -13541,6 +13541,19 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames aspellDicts' | tr '
 nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames hunspellDicts' | tr ' ' '\n' | wc -l
 ```
 
+##### Dummie certificates, acme
+
+
+> Note: if you have not seen some bahs/nix-fu like that it is almost magic.
+```bash
+ls -al "$(nix eval nixpkgs#path)"/nixos/tests/common/acme/server/acme.test.{cert,key}.pem
+```
+Refs.:
+- https://discourse.nixos.org/t/where-can-i-get-snakeoil-certificates/14628/4
+
+```bash
+nix repl --expr 'import <nixpkgs/nixos> {}' <<<'builtins.attrNames config.security.acme' | tr ' ' '\n'
+```
 
 #### The nix-locate
 
