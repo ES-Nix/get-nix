@@ -13460,6 +13460,16 @@ ls -A "$(nix build --print-out-paths --no-link nixpkgs#libressl| head -n1)/bin"
 ls -A "$(nix build --print-out-paths nixpkgs#binutils.out)/bin"
 ```
 
+```bash
+# Old nix
+# ls -A "$(nix-build '<nixpkgs>' -A pkgs.OVMF.fd --no-out-link)/FV/OVMF.fd"
+ls -A "$(nix build --print-out-paths --no-link nixpkgs#OVMF.fd)/FV/OVMF.fd"
+```
+
+```bash
+ls -A "$(nix build --print-out-paths --no-link nixpkgs#pkgsCross.aarch64-multiplatform-musl.OVMF.fd)/AAVMF" 
+```
+
 > `findmnt`, which is itself part of the util-linux
 > Refs.: https://stackoverflow.com/a/46025626
 
