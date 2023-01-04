@@ -13453,6 +13453,10 @@ nix run nixpkgs#gnumake -- --version
 
 
 ```bash
+ls -A "$(nix build --print-out-paths --no-link nixpkgs#libressl| head -n1)/bin"
+```
+
+```bash
 ls -A "$(nix build --print-out-paths nixpkgs#binutils.out)/bin"
 ```
 
@@ -13509,6 +13513,10 @@ ls -A "$(nix build --print-out-paths nixpkgs#unixtools.xxd)/bin"
 
 ##### Using the nix repl
 
+TODO: make some examples
+- https://stackoverflow.com/questions/71753915/how-can-i-search-in-nixpkgs-for-a-package-expression
+- https://stackoverflow.com/questions/56118564/asking-nix-for-metadata-about-the-given-package?noredirect=1&lq=1
+
 ```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'(builtins.getFlake "github:edolstra/dwarffs").rev'
 ```
@@ -13543,17 +13551,25 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames hunspellDicts' | tr
 
 ##### Dummie certificates, acme
 
+TODO:
+http://blog.tpleyer.de/posts/2020-01-17-nix-show-derivation-is-your-friend.html
+https://github.com/NixOS/nixpkgs/issues/34422#issuecomment-381349690
 
-> Note: if you have not seen some bahs/nix-fu like that it is almost magic.
+
+> Note: if you have not seen some bash-fu/nix-fu like that it is almost magic.
 ```bash
 ls -al "$(nix eval nixpkgs#path)"/nixos/tests/common/acme/server/acme.test.{cert,key}.pem
 ```
 Refs.:
 - https://discourse.nixos.org/t/where-can-i-get-snakeoil-certificates/14628/4
 
+> Note that here it is used `'<nixpkgs/nixos>'`
 ```bash
 nix repl --expr 'import <nixpkgs/nixos> {}' <<<'builtins.attrNames config.security.acme' | tr ' ' '\n'
 ```
+Refs.:
+- https://jorel.dev/NixOS4Noobs/options.html#method-3-using-the-nix-repl
+
 
 #### The nix-locate
 
