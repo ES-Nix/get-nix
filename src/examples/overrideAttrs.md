@@ -974,12 +974,16 @@ nix why-depends --all nixpkgs#pkgsStatic.opencv nixpkgs#systemd
 
 https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-when-use-qemu-in-docker
 
-#### overlay
+#### overlays
 
 > O atributo/nome `overlay` (sem o s) foi deprecado.
 > The attribute/name `overlay` (without the `s`) was deprecated.
 Refs.:
 - https://t.me/nixosbrasil/69554
+
+- jonringer explains the final/prev thing: https://discourse.nixos.org/t/what-are-overlays/14680/2
+- really cool example for python devs: https://discourse.nixos.org/t/what-are-overlays/14680/13
+
 
 
 Old, not complete/fully copy and paste working, example:

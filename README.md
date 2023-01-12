@@ -13559,7 +13559,53 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames aspellDicts' | tr '
 nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames hunspellDicts' | tr ' ' '\n' | wc -l
 ```
 
-##### Dummie certificates, acme
+
+1.
+```bash
+# You may need to install jq
+nix flake metadata nix --json | jq -r '.url'
+```
+
+2.1
+```bash
+nix repl --expr 'import <nixpkgs> {}'
+```
+
+2.2
+```bash
+:lf github:NixOS/nix/f58c30111261a3ad50a6cb462cb2df7c49aa82e4
+```
+
+```bash
+nix flake show nix
+```
+
+Really long build:
+```bash
+nix \
+build \
+--print-build-logs \
+--no-link \
+nix#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.install-force-no-daemon
+```
+
+
+```bash
+nix \
+show-derivation \
+nix#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.install-force-no-daemon
+```
+Refs.:
+- https://hydra.nixos.org/job/nix/maintenance-2.12/installerTests.fedora-36.x86_64-linux.install-force-daemon
+
+```bash
+nix \
+show-derivation \
+nix#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.install-force-no-daemon | jq -r '.[].env.buildCommand'
+```
+
+
+##### Dummies certificates, acme, snakeoil
 
 TODO:
 http://blog.tpleyer.de/posts/2020-01-17-nix-show-derivation-is-your-friend.html
