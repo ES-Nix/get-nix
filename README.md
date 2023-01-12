@@ -3229,6 +3229,13 @@ EOF
 nix -vvvvv build --expr '{ inputs.nixpkgs.url = "nixpkgs";  outputs = { ... }: {  }; }' --no-link
 ```
 
+```bash
+nix-build \
+--no-substitute \
+-E \
+'derivation { name = "foo"; system = "x86_64-linux"; builder = "/bin/sh"; args = ["-c" "echo foobar > \$out"]; }'
+```
+
 Hope it works:
 ```bash
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello --no-link
