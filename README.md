@@ -2170,7 +2170,8 @@ install \
 nixpkgs#hello \
 nixpkgs#lolcat \
 nixpkgs#figlet \
-nixpkgs#cowsay
+nixpkgs#cowsay \
+nixpkgs#ponysay
 ```
 
 
@@ -3419,6 +3420,9 @@ nix build nixpkgs#pkgsCross.armv7l-hf-multiplatform.dockerTools.examples.redis
 nix build nixpkgs#pkgsCross.armv7l-hf-multiplatform.pkgsStatic.dockerTools.examples.redis
 ```
 
+```bash
+echo "Hello Nix" | nix run "nixpkgs#ponysay"
+```
 
 ```bash
 nix \
@@ -3434,10 +3438,14 @@ shell \
       cowsay
     ]
   )
-'
-
-# hello | cowsay
+' \
+--command \
+sh \
+-c \
+'hello | cowsay'
 ```
+
+
 
 ```bash
 nix \
@@ -4032,12 +4040,13 @@ COMMANDS
 
 
 ```bash
-# nix run nixpkgs#xorg.xhost -- +localhost
+xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
 # export QEMU_OPTS='-nographic -display gtk,gl=on'
 export QEMU_NET_OPTS='hostfwd=tcp::10022-:10022'
 export QEMU_OPTS='-nographic'
 export SHARED_DIR="$(pwd)"
 
+export NIXPKGS_ALLOW_UNFREE=1
 
 nix \
 run \
@@ -4046,7 +4055,7 @@ run \
 '
 (
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4";
+    with builtins.getFlake "github:NixOS/nixpkgs/37b97ae3dd714de9a17923d004a2c5b5543dfa6d";
     with legacyPackages.${builtins.currentSystem};
     let
       # https://github.com/pedroregispoar.keys
@@ -4057,9 +4066,9 @@ run \
     ).lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-vm.nix"
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/37b97ae3dd714de9a17923d004a2c5b5543dfa6d")}/nixos/modules/virtualisation/build-vm.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/37b97ae3dd714de9a17923d004a2c5b5543dfa6d")}/nixos/modules/virtualisation/qemu-vm.nix"
+          "${toString (builtins.getFlake "github:NixOS/nixpkgs/37b97ae3dd714de9a17923d004a2c5b5543dfa6d")}/nixos/modules/installer/cd-dvd/channel.nix"
 
           ({
             # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
@@ -4823,7 +4832,7 @@ rm -fv nixos.qcow2
 
 ##### k8s, X11, build-vm, ssh 
 
-##### minimal
+###### minimal
 
 ```bash
 export HOST_MAPPED_PORT=10022
@@ -5043,7 +5052,8 @@ COMMANDS
 
 
 
-Adds vscode:
+###### k8s, X11, build-vm, ssh, adds vscode
+
 ```bash
 export HOST_MAPPED_PORT=10022
 export REMOVE_DISK=true
@@ -5051,8 +5061,11 @@ export QEMU_NET_OPTS='hostfwd=tcp::10022-:10022'
 export QEMU_OPTS='-nographic'
 export SHARED_DIR="$(pwd)"
 
+# Because vscode
+export NIXPKGS_ALLOW_UNFREE=1
+
 "$REMOVE_DISK" && rm -fv nixos.qcow2
-nc -v -4 localhost "$HOST_MAPPED_PORT" -w 1 -z && echo 'There is something already using the port:'"$HOST_MAPPED_PORT"
+nc -v -4 localhost "$HOST_MAPPED_PORT" -w 1 -z && { echo 'There is something already using the port:'"$HOST_MAPPED_PORT" && kill $(lsof -i:10022 -t)}
 
 # sudo lsof -t -i tcp:10022 -s tcp:listen
 # sudo lsof -t -i tcp:10022 -s tcp:listen | sudo xargs --no-run-if-empty kill
@@ -5069,7 +5082,7 @@ EOF
 
 chmod -v 0600 id_ed25519
 
-export NIXPKGS_ALLOW_UNFREE=1
+
 nix \
 run \
 --impure \
@@ -5257,11 +5270,46 @@ ssh \
 -tt \
 -o StrictHostKeyChecking=no \
 nixuser@localhost \
--p 10022<<'COMMANDS'
-timeout 20 code
-COMMANDS
-"$REMOVE_DISK" && rm -fv nixos.qcow2 id_ed25519
+-p 10022
+# <<'COMMANDS'
+# timeout 20 code
+# COMMANDS
+# "$REMOVE_DISK" && rm -fv nixos.qcow2 id_ed25519
 ```
+
+
+```bash
+test -d .vscode || mkdir -v .vscode
+
+cat <<'EOF' > .vscode/extensions.json
+{
+  "recommendations": ["dbaeumer.vscode-eslint@2.2.6", "esbenp.prettier-vscode@9.10.4", "Vue.volar@1.0.24", "bbenoist.Nix@1.0.1",]
+}
+EOF
+
+# code --extensions-dir .vscode
+# npm i
+
+npx json5 .vscode/extensions.json | \
+npx json-cli-tool --path=recommendations --output=newline | \
+xargs -L 1 code --install-extension
+```
+Refs.:
+- https://stackoverflow.com/a/74440032
+- https://code.visualstudio.com/docs/editor/extension-marketplace#_command-line-extension-management
+- https://stackoverflow.com/a/52055680
+
+
+https://discord.com/channels/692426888563523716/713450173094953022/839256975623847949
+
+https://discord.com/channels/692426888563523716/713450173094953022/1050139524266729553
+
+code --list-extensions --show-versions
+
+
+
+
+
 
 ##### k8s
 
@@ -10802,6 +10850,10 @@ nix profile remove "$(nix eval --raw github:ES-Nix/podman-rootless/from-nixpkgs#
 #### From apt-get, yes, it is possible, or should be
 
 
+> Note: it may be really older than what would be "the latest".
+> As of Ubuntu 22.04, the nix frozen by the Debian maintainers is
+> 2.6 while the latest as of today is 2.13.3.
+
 ```bash
 sudo apt-get -qq update \
 && sudo apt-get install -y nix-bin \
@@ -10835,6 +10887,64 @@ systemctl status nix-daemon
 nix flake --version
 ```
 https://stackoverflow.com/questions/3294072/get-last-dirname-filename-in-a-file-path-argument-in-bash#comment101491296_10274182
+
+
+#### The daemon version
+
+
+
+```bash
+NIX_RELEASE_VERSION=2.10.2 \
+&& curl -L https://releases.nixos.org/nix/nix-"${NIX_RELEASE_VERSION}"/install | sh -s -- --daemon \
+&& echo "Exiting the current shell session!" \
+&& exit 0
+```
+
+
+```bash
+nix \
+profile \
+install \
+nixpkgs#busybox \
+--option \
+experimental-features 'nix-command flakes'
+
+
+busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
+&& busybox grep 'nixos' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
+&& busybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
+&& busybox grep 'trace' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'show-trace = true' >> ~/.config/nix/nix.conf \
+&& busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
+&& busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
+
+
+echo 'PATH="$HOME"/.nix-profile/bin:"$PATH"' >> ~/."$(busybox basename $SHELL)"rc && . ~/."$( busybox basename $SHELL)"rc
+
+nix \
+profile \
+remove \
+"$(nix eval --raw nixpkgs#busybox)"
+
+nix store gc --verbose
+systemctl status nix-daemon
+nix flake --version
+```
+
+```bash
+home-manager generations
+```
+
+```bash
+home-manager --impure switch
+```
+
+Refs.:
+- https://github.com/containers/podman/issues/1182#issuecomment-769931235
+- https://github.com/ES-Nix/home-manager/blob/main/README.md
+
+
+
+##### Running examples 
 
 ```bash
 nix \
@@ -11504,7 +11614,7 @@ build \
 --expr \
 '
 let
-  nixos = (builtins.getFlake "github:NixOS/nixpkgs/d0f9857448e77df50d1e0b518ba0e835b797532a").lib.nixosSystem { 
+  nixos = (builtins.getFlake "github:NixOS/nixpkgs/1badc6db75d797f53c77d18d89c4eb8616d205cc").lib.nixosSystem { 
             system = "x86_64-linux"; 
             modules = [ 
                         "${toString (builtins.getFlake "github:NixOS/nixpkgs/d0f9857448e77df50d1e0b518ba0e835b797532a")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
@@ -11517,6 +11627,10 @@ in nixos.config.systemd.units."nix-daemon.service"
 ```bash
 cat result/nix-daemon.service | grep PATH | cut -d '=' -f3 | tr -d '"' | tr ':' '\n'
 ```
+
+### --daemon
+
+
 
 ### SoN2022 
 
@@ -13528,6 +13642,11 @@ ls -A "$(nix build --print-out-paths nixpkgs#rustc.llvmPackages.clang.cc.lib)/li
 ls -A "$(nix build --print-out-paths nixpkgs#unixtools.xxd)/bin"
 ```
 
+```bash
+# The man page is wrong, it points to procps-ng
+ls -A "$(nix build --print-out-paths nixpkgs#procps)/bin"
+```
+
 ##### Using the nix repl
 
 TODO: make some examples
@@ -14090,6 +14209,7 @@ nixpkgs#docker \
 Refs.: 
 - https://github.com/NixOS/nixpkgs/issues/70407
 - https://github.com/moby/moby/tree/e9ab1d425638af916b84d6e0f7f87ef6fa6e6ca9/contrib/init/systemd
+- https://stackoverflow.com/a/48973911
 
 
 ```bash

@@ -10,6 +10,25 @@ https://github.com/NixOS/nixpkgs/issues/79303#issuecomment-720647170
 
 ### hello
 
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+  (pkgsStatic.hello.overrideAttrs
+    (oldAttrs: {
+        patchPhase = (oldAttrs.patchPhase or "") + "sed -i \"s/Hello, world!/hello, Nix!/g\" src/hello.c";
+      }
+    )
+  )
+)'
+```
+
+
 ```bash
 nix \
 build \
@@ -26,6 +45,11 @@ build \
     )
 )'
 ```
+
+
+
+
+
 
 ```bash
 nix \
@@ -1630,6 +1654,67 @@ build \
 https://github.com/NixOS/nixpkgs/issues/62116#issuecomment-1225180043
 
 
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
+    with legacyPackages.${builtins.currentSystem}; 
+
+    (openssl_1_1.overrideAttrs 
+      (oldAttrs: {
+        src = fetchurl {
+          url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1g.tar.gz;
+          sha256 = "sha256-3bBHdPHjLwxJdR4htnIWrIeFLOsFa3UgmvJENABjbUY=";
+        };
+      })
+    )
+  )
+' \
+ --command \
+bash \
+-c \
+"
+openssl version
+
+timeout \
+2 \
+openssl s_client -connect oauth.hm.bb.com.br:443 -tls1_2
+openssl version
+"
+```
+
+#### Overriding firefox version
+
+
+```bash
+nix \
+build \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/345ff18c99af958afdbd57f077aae9af4000e864"; 
+    with legacyPackages."x86_64-linux"; 
+    
+    (firefox-unwrapped.overrideAttrs 
+      (oldAttrs: rec {
+        pname = "firefox";
+        ffversion = "82.0.3";
+        src = fetchurl {
+          url = "mirror://mozilla/firefox/releases/${ffversion}/source/firefox-${ffversion}.source.tar.xz";
+          sha512 = "0j5s5fkph9bm87lv53d4xvfj02qjfqzj5graxcc8air49iqswfmqjdzghna6bj9m8fbn6f5klgm6jbrmavdsycbps0y88x23b6kab5i";
+        };
+        patches = [];
+      })
+    )
+  )
+'
+```
+
+
 
 ```bash
 nix \
@@ -1637,11 +1722,32 @@ build \
 --impure \
 --expr \
 '
-(import <nixpkgs> {                                                                      
-  overlays = [
-    (self: super: {
-      firefox-unwrapped = super.firefox-unwrapped.overrideAttrs (oldAttrs: {
-        makeFlags = oldAttrs.makeFlags ++ [ "BUILD_OFFICIAL=1" ];
+(
+  import <nixpkgs> {
+    overlays = [
+      (self: super: {
+        firefox-unwrapped = super.firefox-unwrapped.overrideAttrs (oldAttrs: {
+          makeFlags = oldAttrs.makeFlags ++ [ "BUILD_OFFICIAL=1" ];
+      });
+    })
+  ];
+  }
+).firefox-unwrapped'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  import <nixpkgs> {
+    overlays = [
+      (self: super: {
+        firefox-unwrapped = super.firefox-unwrapped.overrideAttrs (oldAttrs: {
+          makeFlags = oldAttrs.makeFlags ++ [ "BUILD_OFFICIAL=1" ];
       });
     })
   ];

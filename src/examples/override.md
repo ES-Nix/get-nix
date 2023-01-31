@@ -174,6 +174,8 @@ print("SQLite   : %s" % (sqlite3.sqlite_version))
 
 [Customizing packages in Nix](https://bobvanderlinden.me/customizing-packages-in-nix/)
 
+
+
 ```bash
 nix \
 build \
