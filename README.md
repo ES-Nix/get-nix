@@ -10930,6 +10930,12 @@ systemctl status nix-daemon
 nix flake --version
 ```
 
+
+http://ix.io/4mKM
+http://ix.io/4mKN
+http://ix.io/4mKO
+echo '{ allowUnfree = true; android_sdk.accept_license = true; }' > config.nix
+
 ```bash
 home-manager generations
 ```
