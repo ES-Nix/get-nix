@@ -3214,6 +3214,9 @@ nix build --refresh github:ES-Nix/nix-qemu-kvm/dev#qemu.vm \
 
 ### Tests
 
+stdenvNoCC
+https://wellquite.org/posts/latex_fonts_and_nixos/
+
 #### Minimal build
 
 ```bash
