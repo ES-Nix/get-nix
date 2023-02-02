@@ -11620,10 +11620,10 @@ build \
 --expr \
 '
 let
-  nixos = (builtins.getFlake "github:NixOS/nixpkgs/1badc6db75d797f53c77d18d89c4eb8616d205cc").lib.nixosSystem { 
+  nixos = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3").lib.nixosSystem { 
             system = "x86_64-linux"; 
             modules = [ 
-                        "${toString (builtins.getFlake "github:NixOS/nixpkgs/d0f9857448e77df50d1e0b518ba0e835b797532a")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                        "${toString (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
                       ]; 
           };  
 in nixos.config.systemd.units."nix-daemon.service"
@@ -11633,6 +11633,41 @@ in nixos.config.systemd.units."nix-daemon.service"
 ```bash
 cat result/nix-daemon.service | grep PATH | cut -d '=' -f3 | tr -d '"' | tr ':' '\n'
 ```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+let 
+  nixpkgs = builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3";
+in
+  with nixpkgs; 
+  with legacyPackages.${builtins.currentSystem}; 
+    let
+      nixos = (nixpkgs).lib.nixosSystem { 
+                system = "x86_64-linux"; 
+                modules = [ 
+                            "${toString (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                              {
+                                security.wrappers = {
+                                    doas =
+                                        { setuid = true;
+                                          owner = "root";
+                                          group = "root";
+                                          source = "${doas}/bin/doas";
+                                        };
+                                };
+                              }
+                         ];
+              };  
+    in nixos.config.security.wrappers.doas
+'
+```
+
+
 
 ### --daemon
 
