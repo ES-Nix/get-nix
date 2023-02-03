@@ -2171,7 +2171,8 @@ nixpkgs#hello \
 nixpkgs#lolcat \
 nixpkgs#figlet \
 nixpkgs#cowsay \
-nixpkgs#ponysay
+nixpkgs#ponysay \
+nixpkgs#cmatrix
 ```
 
 
@@ -10249,6 +10250,68 @@ Refs.:
 
 
 
+```bash
+# podman pull alpine:3.17.1
+# podman inspect docker.io/library/alpine:3.17.1 | jq ".[].Digest"
+
+
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+    in
+    pkgs.dockerTools.buildImage {
+      name = "alpine";
+      tag = "3.17.1";
+      fromImage = pkgs.dockerTools.pullImage {
+        name = "library/alpine";
+        imageName = "alpine";
+        sha256 = "sha256-kmbL9Zc68Y1mq97NdBWpOM+VPYSy/jcXjGOYUu/Imsk=";
+        # podman inspect docker.io/library/alpine:3.16.2 | jq ".[].Digest"
+        imageDigest = "sha256:f271e74b17ced29b915d351685fd4644785c6d1559dd1f2d4189a5e851ef753a";
+      };
+
+      config = {
+        Cmd = [ "/bin/sh" ];
+        WorkingDir = "/data";
+        Volumes = {
+          "/data" = {};
+        };
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/alpine:3.17.1
+```
+
+```bash
+podman pull ubuntu:22.04 
+podman inspect docker.io/library/ubuntu:22.04 | jq ".[].Digest"
+# sha256:9a0bdde4188b896a372804be2384015e90e3f84906b750c1a53539b585fbbe7f
+
+podman pull docker.io/library/fedora:37
+podman inspect docker.io/library/fedora:37 | jq ".[].Digest"
+# sha256:3487c98481d1bba7e769cf7bcecd6343c2d383fdd6bed34ec541b6b23ef07664
+
+podman pull docker.io/nixos/nix:latest
+podman inspect docker.io/nixos/nix:latest | jq ".[].Digest"
+# sha256:af1b4e1eb819bf17374141fc4c3b72fe56e05f09e91b99062b66160a86c5d155
+```
+
 #### dockerTools.buildImage for aarch64-linux, hello example with podman
 
 ```bash
@@ -14353,3 +14416,5 @@ sh \
 -c \
 'apk add --no-cache curl'
 ```
+
+
