@@ -6102,6 +6102,19 @@ ls \
 "$(nix eval --raw nixpkgs#gtk3.dev)"/lib/pkgconfig/
 ```
 
+```bash
+nix \
+store \
+ls \
+--store https://cache.nixos.org/ \
+--long \
+--recursive \
+/nix/store/spy13ngvs1fyj82jw2w3nwczmdgcp3ck-firefox-23.0.1
+```
+Refs.:
+- http://sandervanderburg.blogspot.com/2013/09/managing-user-environments-with-nix.html
+
+
 
 #### Non nixpkgs flakes tests
 
