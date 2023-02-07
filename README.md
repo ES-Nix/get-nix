@@ -14418,3 +14418,34 @@ sh \
 ```
 
 
+## The nix patters
+
+A collection of supposed useful patters
+
+
+```nix
+stdenv.mkDerivation (finalAttrs: {
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/285b3ff0660640575186a4086e1f8dc0df2874b5/pkgs/tools/cd-dvd/ventoy-bin/default.nix#L52
+
+```nix
+  + optionalString (!withGtk3 && !withQt5) ''
+    rm "$VENTOY_PATH"/VentoyGUI.*
+  '' +
+  ''
+    runHook postInstall
+  '';
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/285b3ff0660640575186a4086e1f8dc0df2874b5/pkgs/tools/cd-dvd/ventoy-bin/default.nix#L178-L184
+
+
+```nix
+        makeWrapper "$VENTOY_PATH/$bin" "$out/bin/$wrapper" \
+                    --prefix PATH : "${lib.makeBinPath finalAttrs.buildInputs}" \
+                    --chdir "$VENTOY_PATH"
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/285b3ff0660640575186a4086e1f8dc0df2874b5/pkgs/tools/cd-dvd/ventoy-bin/default.nix#L157-L159
+
