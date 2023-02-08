@@ -6115,6 +6115,19 @@ Refs.:
 - http://sandervanderburg.blogspot.com/2013/09/managing-user-environments-with-nix.html
 
 
+```bash
+nix profile install /nix/store/spy13ngvs1fyj82jw2w3nwczmdgcp3ck-firefox-23.0.1
+```
+
+```bash
+nix profile install /nix/store/11f84ip9jkcdsahvaqzgp43zjafzzliy-firefox-39.0.3
+```
+
+-bash: /nix/store/11f84ip9jkcdsahvaqzgp43zjafzzliy-firefox-39.0.3: Is a directory
+
+real    6m59.605s
+user    1m4.156s
+sys     0m13.599s
 
 #### Non nixpkgs flakes tests
 
@@ -10925,6 +10938,37 @@ test $(curl -s -w '%{http_code}\n' localhost:8888 -o /dev/null) -eq 200 || echo 
 ```bash
 nix profile remove "$(nix eval --raw github:ES-Nix/podman-rootless/from-nixpkgs#podman)"
 ```
+
+
+#### From apk
+ 
+```bash
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+alpine \
+sh \
+-c \
+"
+echo 'https://dl-cdn.alpinelinux.org/alpine/edge/testing' | tee -a /etc/apk/repositories
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' | tee -a /etc/apk/repositories
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/community' | tee -a /etc/apk/repositories
+
+apk upgrade \
+&& apk update \
+&& apk add nix \
+&& nix --extra-experimental-features 'nix-command flakes' run nixpkgs#neofetch
+"
+```
+Refs.:
+- https://pkgs.alpinelinux.org/package/edge/testing/x86/nix
+- https://wiki.alpinelinux.org/wiki/Repositories
+- https://asciinema.org/a/424725
+- https://github.com/qbittorrent/qBittorrent/issues/5837#issuecomment-254978743
+
+
 
 #### From apt-get, yes, it is possible, or should be
 
