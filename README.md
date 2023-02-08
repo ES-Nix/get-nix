@@ -10970,8 +10970,12 @@ Refs.:
 
 
 
-#### From apt-get, yes, it is possible, or should be
 
+
+
+#### From apt-get
+
+Yes, it is possible, or it should be.
 
 > Note: it may be really older than what would be "the latest".
 > As of Ubuntu 22.04, the nix frozen by the Debian maintainers is
