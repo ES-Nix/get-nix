@@ -11037,6 +11037,7 @@ Refs.:
 - https://wiki.alpinelinux.org/wiki/Repositories#Edge
 - https://asciinema.org/a/424725
 - https://git.alpinelinux.org/aports/tree/testing/nix?h=master
+- [Add a script to install nix on non-systemd systems.](https://github.com/NixOS/nix/pull/3788)
 - https://github.com/qbittorrent/qBittorrent/issues/5837#issuecomment-254978743
 
 
