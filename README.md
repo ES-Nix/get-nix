@@ -11038,6 +11038,7 @@ Refs.:
 - https://asciinema.org/a/424725
 - https://git.alpinelinux.org/aports/tree/testing/nix?h=master
 - [Add a script to install nix on non-systemd systems.](https://github.com/NixOS/nix/pull/3788)
+- [How to install multi-user Nix on Alpine?](https://discourse.nixos.org/t/how-to-install-multi-user-nix-on-alpine/13909)
 - https://github.com/qbittorrent/qBittorrent/issues/5837#issuecomment-254978743
 
 
