@@ -2161,7 +2161,76 @@ podman rm --force "${CONTAINER_NAME}"
 ```
 
 
-echo $PATH
+```bash
+# Just because it has the user named podman
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+--user=podman \
+--workdir=/home/podman \
+quay.io/podman/stable
+
+# --volume=/nix/store:/home/podman/.local/share/nix/root:ro \
+```
+
+```bash
+mkdir -pv "$HOME"/.local/bin \
+&& export PATH="$HOME"/.local/bin:"$PATH" \
+&& curl -L https://hydra.nixos.org/build/207340490/download/1/nix > nix \
+&& mv nix "$HOME"/.local/bin \
+&& chmod +x "$HOME"/.local/bin/nix \
+&& mkdir -p "$HOME"/.config/nix \
+&& echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+```
+
+
+```bash
+nix \
+build \
+--experimental-features 'nix-command flakes' \
+--no-sandbox \
+--cores 0 \
+-j auto \
+--impure \
+--expr \
+'
+(builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.x86_64-linux.nixFlakes.override 
+{ 
+  storeDir = builtins.getEnv "NIX_STORE_DIR";
+  stateDir = builtins.getEnv "NIX_STATE_DIR";
+  confDir = builtins.getEnv "NIX_CONF_DIR";
+}
+'
+```
+Refs.:
+- https://gist.github.com/NickCao/0b938bd476e0bc2439e66663529d59bc
+
+
+
+```bash
+TARGET_HOME=/home/podman
+BUILD_HOME=/home/podman
+
+NIX_REMOTE=local?root=$BUILD_HOME/rootfs/ \
+	NIX_CONF_DIR=$BUILD_HOME/nix/etc \
+	NIX_LOG_DIR=$BUILD_HOME/nix/var/log/nix \
+	NIX_STORE=$BUILD_HOME/nix/store \
+	NIX_STATE_DIR=$BUILD_HOME/nix/var \
+	nix \
+	build \
+	--impure \
+	--expr \ 
+	'
+	  with import <nixpkgs> {}; 
+	  nix.override { storeDir = "'$TARGET_HOME'/nix/store"; stateDir = "'$TARGET_HOME'/nix/var"; confDir = "'$TARGET_HOME'/nix/etc"; }
+	'
+
+```
+Refs.:
+- https://gist.github.com/infinisil/1111bdfc548d41be744ca9a5d1fe2837
+
 
 ```bash
 nix \
@@ -10965,13 +11034,35 @@ apk upgrade \
 Refs.:
 - https://pkgs.alpinelinux.org/package/edge/testing/x86/nix
 - https://wiki.alpinelinux.org/wiki/Repositories
+- https://wiki.alpinelinux.org/wiki/Repositories#Edge
 - https://asciinema.org/a/424725
+- https://git.alpinelinux.org/aports/tree/testing/nix?h=master
 - https://github.com/qbittorrent/qBittorrent/issues/5837#issuecomment-254978743
 
 
+So based on: https://git.alpinelinux.org/aports/tree/testing/nix/fix-docs-build.patch
 
+TODO: test the `nix-doc` thing.
+```bash
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+alpine \
+sh \
+-c \
+"
+echo 'https://dl-cdn.alpinelinux.org/alpine/edge/testing' | tee -a /etc/apk/repositories
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' | tee -a /etc/apk/repositories
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/community' | tee -a /etc/apk/repositories
 
-
+apk upgrade \
+&& apk update \
+&& apk add nix nix-doc \
+&& nix --extra-experimental-features 'nix-command flakes' run nixpkgs#neofetch
+"
+```
 
 #### From apt-get
 
