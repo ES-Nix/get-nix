@@ -14040,6 +14040,10 @@ ls -A "$(nix build --print-out-paths nixpkgs#unixtools.xxd)/bin"
 ls -A "$(nix build --print-out-paths nixpkgs#procps)/bin"
 ```
 
+```bash
+ls -A "$(nix build --print-out-paths nixpkgs#nixVersions.nix_2_10)/bin"
+```
+
 ##### Using the nix repl
 
 TODO: make some examples
