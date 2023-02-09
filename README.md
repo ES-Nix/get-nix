@@ -6301,6 +6301,35 @@ Refs.:
 - https://discourse.nixos.org/t/how-to-check-hydra-build-status-of-pull-requests/8793
 
 
+
+##### Digging in ancients nixpkgs versions, 10+ years ago
+
+
+```bash
+git clone -b release-14.12 --single-branch https://github.com/NixOS/nixpkgs.git \
+&& cd nixpkgs \
+&& nix-instantiate --eval --json --expr 'with import ./. {}; firefox.outPath'
+```
+Refs.:
+- https://stackoverflow.com/a/46173041
+
+Tried it with `nix-instantiate . -A firefox | cut -d'.' -f1-3` and with 
+`nix-instantiate ./. -A firefox.outPath | cut -d'.' -f1-3` but finally it gives
+to the "outPath" hash `nix-instantiate --eval --expr 'with import ./. {}; firefox.outPath'`
+
+```bash
+nix path-info --closure-size --eval-store auto 'nixpkgs#glibc^*'
+```
+
+```bash
+nix path-info --closure-size --json --eval-store auto /nix/store/11f84ip9jkcdsahvaqzgp43zjafzzliy-firefox-39.0.3 
+# | jq 'map(.narSize) | add'
+```
+
+```bash
+nix path-info --json --closure-size $(nix eval --raw nixpkgs#hello.outPath) | jq .
+```
+
 #### Non nixpkgs flakes tests
 
 ```bash
