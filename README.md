@@ -2232,6 +2232,18 @@ Refs.:
 - https://gist.github.com/infinisil/1111bdfc548d41be744ca9a5d1fe2837
 
 
+
+About:
+```bash 
+$ENV{'NIX_REMOTE'} = "local?store=$nix_store_dir&state=$nix_state_dir&log=$nix_log_dir";
+$ENV{'NIX_STATE_DIR'} = $nix_state_dir; # FIXME: remove
+$ENV{'NIX_STORE_DIR'} = $nix_store_dir; # FIXME: remove
+```
+Refs.:
+- https://github.com/NixOS/hydra/pull/1237
+
+
+
 ```bash
 nix \
 profile \
