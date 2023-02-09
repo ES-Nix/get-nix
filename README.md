@@ -6185,6 +6185,72 @@ Refs.:
 
 
 ```bash
+curl https://cache.nixos.org/spy13ngvs1fyj82jw2w3nwczmdgcp3ck.narinfo
+```
+
+
+```bash
+StorePath: /nix/store/spy13ngvs1fyj82jw2w3nwczmdgcp3ck-firefox-23.0.1
+URL: nar/1bn124pan70p8w126swj84bafyn1spb5660l0wvcrpr9v6gy5amg.nar.xz
+Compression: xz
+FileHash: sha256:1bn124pan70p8w126swj84bafyn1spb5660l0wvcrpr9v6gy5amg
+FileSize: 2965932
+NarHash: sha256:48c431b99d5d8117a04932caa3416e876a5009f9c82f2cf23161eded196a09f8
+NarSize: 6765008
+References: 2mbpl01qzsk9kpdsxhi2flkpv0yhfc2q-atk-2.8.0 4g734xfwcv0h550g0cyjrzxyz1ryvgkk-freetype-2.4.11 67d3nrvv939mrjmf3y5pb4x097hcxcp6-glib-2.36.1 7mjplwq1r0agngqj27
+Deriver: 1ksc4ijx4sa59lzj42qa23b1pp04wl5a-firefox-23.0.1.drv
+System: x86_64-linux
+Sig: cache.nixos.org-1:NsZ1Bt7Ikef5Y0hyAVDsf+YbVAIzhidNd5K2JQFgAmz3JNY/oFpCssgyXVp7ItHKfURId9AaxiHF0skDFiYLDg==
+```
+
+
+```bash
+nix shell nixpkgs#hydra-check
+```
+
+
+```bash
+hydra-check --arch x86_64-linux --channel nixos/release-13.10 hello
+```
+
+```bash
+hydra-check --arch x86_64-linux --channel nixos/release-14.04 firefox
+```
+
+
+
+```bash
+hydra-check --arch x86_64-linux --channel master firefox
+```
+
+Interesting urls:
+- https://status.nixos.org
+- https://hydra.nixos.org/build/103222205#tabs-details
+- https://hydra.nixos.org/eval/1449?filter=gcc&compare=1283&full=#tabs-still-succeed
+- https://hydra.nixos.org/job/nixos/trunk-combined/tested
+
+```bash
+# HYDRA_BUILD_ID=103222205
+HYDRA_BUILD_ID=303510
+
+curl \
+-H "Content-Type: application/json" \
+https://hydra.nixos.org/build/"${HYDRA_BUILD_ID}"#tabs-details | jq -r '.buildoutputs.out.path'
+```
+
+```bash
+HYDRA_BUILD_ID=309392
+
+curl \
+-H "Content-Type: application/json" \
+https://hydra.nixos.org/build/"${HYDRA_BUILD_ID}"#tabs-details | jq -r '.buildoutputs.out.path'
+```
+
+```bash
+/nix/store/zfga9bvjrs810150kqp6kclyzr5qrscs-firefox-3.6
+```
+
+```bash
 nix profile install /nix/store/spy13ngvs1fyj82jw2w3nwczmdgcp3ck-firefox-23.0.1
 ```
 
@@ -6192,11 +6258,15 @@ nix profile install /nix/store/spy13ngvs1fyj82jw2w3nwczmdgcp3ck-firefox-23.0.1
 nix profile install /nix/store/11f84ip9jkcdsahvaqzgp43zjafzzliy-firefox-39.0.3
 ```
 
--bash: /nix/store/11f84ip9jkcdsahvaqzgp43zjafzzliy-firefox-39.0.3: Is a directory
+```bash
+git ls-remote https://github.com/nixos/nixpkgs-channels
+```
 
-real    6m59.605s
-user    1m4.156s
-sys     0m13.599s
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
+- https://github.com/NixOS/nix/issues/2431#issuecomment-613441385
+- https://discourse.nixos.org/t/how-to-check-hydra-build-status-of-pull-requests/8793
+
 
 #### Non nixpkgs flakes tests
 
@@ -13825,7 +13895,7 @@ ls \
 "$(nix eval --raw nixpkgs#gnumake)"
 ```
 
-
+/nix/store/69ixn6by9fa9gqmydk6zwszxd019p2dy-firefox-34.0.5
 This one may take while in the first time, because it downloads 
 from the cache and if some part is not in the "local store cache" it will be built:
 TODO: `.override` the `meta`
