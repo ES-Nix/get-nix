@@ -6165,6 +6165,27 @@ Note, selecting 'libalien-wxwidgets-perl' instead of 'wxperl-gtk-3-0-4-uni-gcc-3
 
 
 ```bash
+nix store ping --store https://cache.nixos.org
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-store-ping.html
+
+There could exist other "stores":
+```bash
+nix store ping --store local
+```
+
+```bash
+nix store ping --store daemon
+```
+
+```bash
+nix store ping --store ssh://mac1
+```
+
+
+
+```bash
 nix \
 store \
 verify \
