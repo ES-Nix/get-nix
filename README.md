@@ -7992,6 +7992,20 @@ nix-instantiate \
 '
 ```
 
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/747927516efcb5e31ba03b7ff32f61f6d47e7d87";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (pypks: with pypks; [ mmh3 ])
+)' \
+--command \
+python3 -c 'import mmh3; print(mmh3.__version__)'
+```
+
+ 
 
 ```bash
 { nix \
@@ -12902,9 +12916,10 @@ TODO: about the $TMPDIR, https://discourse.nixos.org/t/tmpdir-with-nix-build-and
 
 I am against that, unless there is not a better way known.
 
-https://github.com/NixOS/nixpkgs/blob/3fe1cbb848ea90827158bbd814c2189ff8043539/pkgs/development/tools/purescript/spago/default.nix#L39
-https://zimbatm.com/notes/nix-packaging-the-heretic-way
-https://discourse.nixos.org/t/is-there-a-way-to-mark-a-package-as-un-sandboxable/4174/2
+- https://github.com/NixOS/nixpkgs/blob/3fe1cbb848ea90827158bbd814c2189ff8043539/pkgs/development/tools/purescript/spago/default.nix#L39
+- https://zimbatm.com/notes/nix-packaging-the-heretic-way
+- https://discourse.nixos.org/t/is-there-a-way-to-mark-a-package-as-un-sandboxable/4174/2
+- https://stackoverflow.com/questions/65683206/how-do-i-include-my-source-code-in-nix-docker-tools-image
 
 > If the `sandbox` option is set to relaxed, then fixed-output derivations
 > and derivations that have the `__noChroot` attribute set to
@@ -14043,6 +14058,11 @@ ls -A "$(nix build --print-out-paths nixpkgs#procps)/bin"
 ```bash
 ls -A "$(nix build --print-out-paths nixpkgs#nixVersions.nix_2_10)/bin"
 ```
+
+
+TODO: document it
+iana-etc
+
 
 ##### Using the nix repl
 

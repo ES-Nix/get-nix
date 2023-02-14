@@ -860,7 +860,15 @@ python \
 ```
 
 
+iana-etc
+
 ### awscli
+
+
+> `nix-shell`/`nix develop` were originally designed for the specific use case of debugging 
+> nixpkgs stdenv-based builds, which use bash.
+Refs.:
+- https://stackoverflow.com/a/71112117
 
 TODO: document it better
 ```bash
