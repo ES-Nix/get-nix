@@ -12968,7 +12968,8 @@ I am against that, unless there is not a better way known.
 > true do not run in sandboxes.
 https://nixos.org/manual/nix/unstable/command-ref/conf-file.html?highlight=extra-
 
-
+TODO: examine it
+https://discourse.nixos.org/t/how-can-i-quickly-test-nixpkg-modifications-in-a-container-vm/23797/9
 
 ##### breakpointHook
 
