@@ -14759,3 +14759,8 @@ Refs.:
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/285b3ff0660640575186a4086e1f8dc0df2874b5/pkgs/tools/cd-dvd/ventoy-bin/default.nix#L157-L159
 
+
+
+TODO:
+https://github.com/NixOS/nixpkgs/pull/182445#issuecomment-1200277429
+
