@@ -14760,6 +14760,47 @@ Refs.:
 - https://github.com/NixOS/nixpkgs/blob/285b3ff0660640575186a4086e1f8dc0df2874b5/pkgs/tools/cd-dvd/ventoy-bin/default.nix#L157-L159
 
 
+TODO: change it in many ways
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with legacyPackages.${builtins.currentSystem};
+
+      let
+        imageEnv = pkgs.buildEnv {
+          name = "k3s-pause-image-env";
+          paths = with pkgs; [ tini (hiPrio coreutils) busybox ];
+        };
+        pauseImage = pkgs.dockerTools.streamLayeredImage {
+          name = "test.local/pause";
+          tag = "local";
+          contents = imageEnv;
+          config.Entrypoint = [ "/bin/tini" "--" "/bin/sleep" "inf" ];
+        };
+      in
+        pauseImage
+  )
+'
+
+podman load < result
+
+#podman \
+#run \
+#--interactive=true \
+#--tty=true \
+#--rm=true \
+#localhost/hello:0.0.1
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/3928cfa27d9925f9fbd1d211cf2549f723546a81/nixos/tests/k3s/single-node.nix
+
+
+
 
 TODO:
 https://github.com/NixOS/nixpkgs/pull/182445#issuecomment-1200277429
