@@ -10553,6 +10553,48 @@ podman inspect docker.io/nixos/nix:latest | jq ".[].Digest"
 # sha256:af1b4e1eb819bf17374141fc4c3b72fe56e05f09e91b99062b66160a86c5d155
 ```
 
+
+Is it flaky?
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8c619a1f3cedd16ea172146e30645e703d21bfc1");
+      pkgs = p.legacyPackages.x86_64-linux;
+    in
+    pkgs.dockerTools.buildImage {
+      name = "nix";
+      tag = "latest";
+      fromImage = pkgs.dockerTools.pullImage {
+        name = "nixos/nix";
+        imageName = "nixos/nix";
+        sha256 = "sha256-u/lRu0IX5AjO3ZnOh48g3p8iiZ8FuoWmbcOhJwDhdPI=";
+        # podman inspect docker.io/nixos/nix:latest | jq ".[].Digest"
+        imageDigest = "sha256:af1b4e1eb819bf17374141fc4c3b72fe56e05f09e91b99062b66160a86c5d155";
+      };
+      
+      config = {
+        Cmd = [ "/bin/sh" ];       
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \ 
+localhost/alpine:latest
+```
+
+
 #### dockerTools.buildImage for aarch64-linux, hello example with podman
 
 ```bash
