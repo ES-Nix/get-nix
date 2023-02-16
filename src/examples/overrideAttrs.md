@@ -2665,6 +2665,18 @@ develop \
 
 ## overlays
 
+Remember, unless P=NP, every thing has tradeoffs!
+
+
+> You probably built part of the app with one gcc version 
+> (and thus libstdc++ version) and part with another one.
+> https://github.com/NixOS/nixpkgs/issues/216361#issuecomment-1431560404
+> 
+> You were right! kind of. I was using an overlay that was based on an 
+> older nixpkgs. I had to rebase that on the current master, and now it works.
+
+
+
 ```bash
 nix \
 shell \

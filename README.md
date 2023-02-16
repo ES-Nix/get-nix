@@ -14926,6 +14926,27 @@ nix flake show templates
 TODO:
 https://github.com/NixOS/nixpkgs/pull/182445#issuecomment-1200277429
 
+##### The "always update" thing/idea/pattern
+
+The "always update" thing/idea/pattern, as in Debian like systems, 
+every day run `sudo apt-get update -y && sudo apt-get upgrade -y` 
+
+
+https://t.me/nixosbrasil/74597
+
+
+There is the "unstable channel".
+
+Using flakes is possible to always get latest, just don't commit the `flake.lock`.
+Refs.: TODO, better pinnig the time
+- [Thomas Bereknyei - Hydra, Nix's CI (SoN2022 - public lecture series)](https://youtu.be/AvOqaeK_NaE?t=2823)
+
+
+
+Real world example:
+- https://github.com/rust-lang/rustup/tree/49023e1cab12e6777cb2154401150da3f1185c7e
+
+
 
 
 ### Old bugs and workarounds 
