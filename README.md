@@ -10502,7 +10502,7 @@ build \
 --impure \
 --expr \
 '
-  ( 
+  (
     let
       p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
       pkgs = p.legacyPackages.${builtins.currentSystem};
@@ -10561,7 +10561,7 @@ build \
 --impure \
 --expr \
 '
-  ( 
+  (
     let
       p = (builtins.getFlake "github:NixOS/nixpkgs/8c619a1f3cedd16ea172146e30645e703d21bfc1");
       pkgs = p.legacyPackages.x86_64-linux;
@@ -10576,9 +10576,9 @@ build \
         # podman inspect docker.io/nixos/nix:latest | jq ".[].Digest"
         imageDigest = "sha256:af1b4e1eb819bf17374141fc4c3b72fe56e05f09e91b99062b66160a86c5d155";
       };
-      
+
       config = {
-        Cmd = [ "/bin/sh" ];       
+        Cmd = [ "/bin/sh" ];
       };
     }
   )
@@ -10591,9 +10591,48 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \ 
-localhost/alpine:latest
+localhost/nix:latest
 ```
 
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8c619a1f3cedd16ea172146e30645e703d21bfc1");
+      pkgs = p.legacyPackages.x86_64-linux;
+    in
+    pkgs.dockerTools.buildImage {
+      name = "docker-osx";
+      tag = "latest";
+      fromImage = pkgs.dockerTools.pullImage {
+        name = "sickcodes/docker-osx";
+        imageName = "sickcodes/docker-osx";
+        sha256 = "sha256-BVnOXiYRUg3ukjYJBYbazOfrIrzQt7aRB2LWPf1b+ZE=";
+        # podman inspect docker.io/sickcodes/docker-osx:latest | jq ".[].Digest"
+        imageDigest = "sha256:5220848f26e70d06c9ecefc28591d6819dfeb71ba5772c5b7e2390e9c23a7b16";
+      };
+
+      config = {
+        Cmd = [ "/bin/bash" ];
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/nix:latest
+```
 
 #### dockerTools.buildImage for aarch64-linux, hello example with podman
 
@@ -13097,6 +13136,22 @@ eval \
 TODO: take a look into these `nix repl` stuff that lilyball did
 https://discourse.nixos.org/t/in-overlays-when-to-use-self-vs-super/2968/9
 
+###### The nix.conf option trace-function-calls
+
+```bash
+nix --option trace-function-calls true build -L nixpkgs#pkgsStatic.gcc
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-function-calls
+
+
+```bash
+nix --option trace-verbose true build -L nixpkgs#pkgsStatic.gcc
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-verbose
+
+
 
 ## NixOS modules
 
@@ -14847,4 +14902,22 @@ Refs.:
 
 TODO:
 https://github.com/NixOS/nixpkgs/pull/182445#issuecomment-1200277429
+
+
+
+### Old bugs and workarounds 
+
+nix \
+--option tarball-ttl 0 \
+--option narinfo-cache-positive-ttl 0 \
+run \
+nixpkgs#hello
+
+Refs.:
+- https://github.com/NixOS/nix/issues/1115
+- https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-connect-timeout
+
+# 60 * 60 * 24 * 7 = 604800
+
+rm -frv ~/.cache/nix/
 

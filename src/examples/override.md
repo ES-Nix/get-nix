@@ -388,7 +388,7 @@ build \
 ```bash
 nix \
 build \
--L \
+--print-build-logs \
 --impure \
 --expr \
 '
@@ -410,4 +410,37 @@ build \
 ```
 
 
-  
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/0874168639713f547c05947c76124f78441ea46c");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+      fc-cache-fix = "${builtins.readFile ./fc-cache-fix.patch}";
+    in
+      ( 
+        pkgs.fontconfig.overrideAttrs (oldAttrs: {
+          patches = [ fc-cache-fix ];
+          # buildInputs = (oldAttrs.buildInputs or []) ++ [ pkgs.neovim pkgs.git ];
+        }
+      )
+    )
+  )
+'
+```
+
+
+source $stdenv/setup
+
+cd "$(mktemp -d)" \
+&& unpackPhase \
+&& cd */ 
+
+\
+&& pwd \
+&& phases="configurePhase buildPhase patchPhase" genericBuild
