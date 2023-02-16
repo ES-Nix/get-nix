@@ -13013,6 +13013,21 @@ https://discourse.nixos.org/t/how-can-i-quickly-test-nixpkg-modifications-in-a-c
 ##### breakpointHook
 
 
+Remember, the `-vvvv` exists!
+```bash
+nix \
+--option tarball-ttl 2419200 \
+--option narinfo-cache-positive-ttl 0 \
+-vvvv \
+run \
+nixpkgs#hello
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/1115
+- https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-connect-timeout
+
+
+
 ```bash
 cd some_empty_folder # Important to avoid errors during unpack phase
 export out=~/tmpdev/bc-build/out
@@ -14899,6 +14914,14 @@ Refs.:
 
 
 
+```bash
+nix registry list
+```
+
+```bash
+nix flake show templates
+```
+
 
 TODO:
 https://github.com/NixOS/nixpkgs/pull/182445#issuecomment-1200277429
@@ -14907,17 +14930,43 @@ https://github.com/NixOS/nixpkgs/pull/182445#issuecomment-1200277429
 
 ### Old bugs and workarounds 
 
+TODO: something still missing, or not it just does not exist
+
+
+
+
+```bash
 nix \
---option tarball-ttl 0 \
+--option tarball-ttl 2419200 \
 --option narinfo-cache-positive-ttl 0 \
+-vvv \
 run \
 nixpkgs#hello
-
+```
 Refs.:
 - https://github.com/NixOS/nix/issues/1115
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-connect-timeout
 
-# 60 * 60 * 24 * 7 = 604800
 
-rm -frv ~/.cache/nix/
+```bash
+# One month: 60 * 60 * 24 * 7 * 4 = 2419200
+```
+
+
+> If you mean the evaluation cache, there is currently no command I am aware of, 
+since it is still an experimental feature, but you can just manually delete 
+`~/.cache/nix/eval-cache-v2` for now.
+
+Refs.: 
+- https://discourse.nixos.org/t/is-there-a-nix-clean-command-for-the-cache/18844/7
+- https://discourse.nixos.org/t/is-there-a-nix-clean-command-for-the-cache/18844/8
+
+
+```bash
+rm -fv ~/.cache/nix/fetcher-cache-v*.sqlite
+```
+
+
+
+### Compiling nix from source
 
