@@ -806,6 +806,10 @@ Refs.:
 ```bash
 nix why-depends --all --derivation nixpkgs#gcc nixpkgs#glibc | cat
 nix why-depends --all --derivation nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes | cat
+
+# nix why-depends 
+# .#nixosConfigurations.pedroregispoar.config.system.build.toplevel 
+# /nix/store/ly9wcqk8pvxv46dm0zxdkgx6yq71j1j2-font-misc-misc-1.1.2.drv | cat
 ```
 
 TODO: 
@@ -8573,7 +8577,7 @@ shell \
   with lib;
     [
       # busybox-sandbox-shell
-      # bashInteractive  
+      # bashInteractive
       (nixosTest ({
         name = "nixos-test-empty";
         nodes = {
@@ -8621,6 +8625,37 @@ shell \
   with lib;
     [
       # busybox-sandbox-shell
+      # bashInteractive
+      (nixosTest ({
+        name = "nixos-test-empty";
+        nodes = {
+          machine = { config, pkgs, ... }: {
+            virtualisation.podman.enable = true;
+          };
+        };
+        testScript = "";
+      })).driverInteractive
+    ]
+)
+' \
+--command nixos-test-driver --interactive
+```
+
+
+WIP
+```bash
+nix \
+shell \
+--ignore-environment \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/b9a0cd40ede905f554399f3f165895dccfd35f3b";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    [
+      # busybox-sandbox-shell
       # bashInteractive  
       (nixosTest ({
         name = "nixos-test-empty";
@@ -8649,7 +8684,7 @@ shell \
   with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
-      name = "nixos-test-empty";
+      name = "nixos-test-nixuser";
       nodes = {
         machine = { config, pkgs, ... }: {
           users = {
@@ -8715,7 +8750,7 @@ cat $(which nixos-test-driver)
 ```
 
 
-
+TODO: add the reference
 ```bash
 cat > postgrest.nix << 'EOF'
 let
