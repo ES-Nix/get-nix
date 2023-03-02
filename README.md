@@ -14918,6 +14918,13 @@ A collection of supposed useful patters.
 
 
 
+About nix language + flakes + templates:
+- https://chrishayward.xyz/dotfiles/
+- https://github.com/Misterio77/nix-starter-configs
+- https://serokell.io/blog/deploy-rs https://github.com/serokell/deploy-rs https://discourse.nixos.org/t/using-deploy-rs-from-nixpkgs/22338
+- nix flake show templates
+
+
 Note: `${user.home}` and other variants
 ```nix
     machine.send_chars("${user.password}\n")
