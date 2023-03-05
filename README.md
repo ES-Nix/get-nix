@@ -8237,6 +8237,11 @@ build \
                                      scipy
                                      sympy
                                      tensorflow
+                                     
+                                     pip
+                                     virtualenv
+                                     wheel
+                                     # venvShellHook
                                    ]
                         )
 )'
@@ -8269,6 +8274,7 @@ build \
                                      scipy
                                      sympy
                                      tensorflow
+
                                     argon2-cffi
                                     behave  
                                     black                               
@@ -14988,7 +14994,9 @@ About nix language + flakes + templates:
 - https://chrishayward.xyz/dotfiles/
 - https://github.com/Misterio77/nix-starter-configs
 - https://serokell.io/blog/deploy-rs https://github.com/serokell/deploy-rs https://discourse.nixos.org/t/using-deploy-rs-from-nixpkgs/22338
-- nix flake show templates
+- https://serokell.io/blog/practical-nix-flakes
+- https://github.com/Misterio77/nix-config/tree/81a08a927424f44a26dd7b5c8047bb7aca457264/templates
+- nix flake show templates, nix flake init -t github:serokell/templates#python-poetry2nix
 
 
 Note: `${user.home}` and other variants
