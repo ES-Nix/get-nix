@@ -14213,6 +14213,17 @@ build \
 Maybe the best place to begin:
 https://search.nixos.org/packages
 
+```bash
+# nix-env -qaP .\*pytorch.\*
+nix search nixpkgs .\*pytorch.\* | grep cuda
+```
+
+```bash
+nix build nixpkgs#python311Packages.torchWithoutCuda
+```
+Refs.:
+- https://discourse.nixos.org/t/tweag-nix-dev-update-6/11195/2
+
 
 > Note: it is possible to inspect the remote official binary cache 
 > and use that to figure out stuff.
@@ -14228,7 +14239,9 @@ ls \
 "$(nix eval --raw nixpkgs#gnumake)"
 ```
 
+TODO: make this as example
 /nix/store/69ixn6by9fa9gqmydk6zwszxd019p2dy-firefox-34.0.5
+
 This one may take while in the first time, because it downloads 
 from the cache and if some part is not in the "local store cache" it will be built:
 TODO: `.override` the `meta`
