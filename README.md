@@ -15124,6 +15124,24 @@ Real world example:
 - https://github.com/rust-lang/rustup/tree/49023e1cab12e6777cb2154401150da3f1185c7e
 
 
+##### bash, POSIX
+
+
+```bash
+sh -c 'echo $0'
+```
+
+```bash
+sh <<-EOF
+echo $0
+EOF
+```
+
+```bash
+sh <<-'EOF'
+echo $0
+EOF
+```
 
 
 ### Old bugs and workarounds 
