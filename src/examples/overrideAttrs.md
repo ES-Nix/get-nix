@@ -3100,6 +3100,7 @@ EOF
 
 nix \
 build \
+--print-out-paths \
 --impure \
 --expr \
 $EXPR
