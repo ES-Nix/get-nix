@@ -2825,9 +2825,298 @@ shell \
 --command \
 python3 \
 -c \
-'import numpy as np; print(np.__version__)'
+'import numpy as np; np.show_config(); print(np.__version__)'
 ```
 
+
+First some idiomatic and simple example:
+```bash
+# nix flake metadata github:NixOS/nixpkgs/release-22.05
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/0874168639713f547c05947c76124f78441ea46c";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (p: with p; [
+                                     pandas
+                                   ]
+                        )
+)' \
+--command \
+python \
+-c \
+'import pandas as pd; print(pd.DataFrame(data={"col1": [1, 2], "col2": [3, 4]}))'
+```
+
+
+Testing the structure:
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = self: super: {
+            pandas = super.pandas;
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        pandas
+        # and other python packages
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/0ef02c4792fbde4b78957a46a8cb107b6c7aa3cc")
+             { overlays = [ overlay ]; }
+             ).python3.withPackages myPythonPackages
+    )
+
+' \
+--command \
+python \
+-c \
+'import pandas as pd; print(pd.DataFrame(data={"col1": [1, 2], "col2": [3, 4]}))'
+```
+
+
+
+```bash
+EXPR=$(cat <<-END
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = self: super: {
+            pandas = super.pandas;
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        pandas
+        # and other python packages
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/0ef02c4792fbde4b78957a46a8cb107b6c7aa3cc")
+             { overlays = [ overlay ]; }
+             ).python3.withPackages myPythonPackages
+    )
+END
+)
+
+nix \
+build \
+--impure \
+--expr \
+$EXPR
+```
+
+```bash
+nix-store --query --tree --include-outputs $(readlink -f result/bin/python3) | wc -l
+```
+
+```bash
+nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | dot -Tps > pandas.ps
+```
+
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = selfPy: superPy: {
+            pandas = superPy.pandas.overrideAttrs (oldAttrs: rec{
+              nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ super.patchelf super.addOpenGLRunpath ];
+              postFixup = let rpath = super.lib.makeLibraryPath [ super.stdenv.cc.cc.lib ]; in (oldAttrs.postFixup or "") + ''
+                find $out/${python3.sitePackages}/pandas/_libs/window -type f \( -name '*.so' -or -name '*.so.*' \) | while read lib; do
+                  echo "setting rpath for $lib..."
+                  patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}/pandas/lib" "$lib"
+                  addOpenGLRunpath "$lib"
+                done
+              '';
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        pandas
+        # and other python packages
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/0ef02c4792fbde4b78957a46a8cb107b6c7aa3cc")
+             { overlays = [ overlay ]; }
+             ).python3.withPackages myPythonPackages
+    )
+EOF
+)
+
+
+
+nix \
+shell \
+--impure \
+--expr \
+$EXPR \
+--command \
+python \
+-c \
+'import pandas as pd; print(pd.DataFrame(data={"col1": [1, 2], "col2": [3, 4]}))'
+```
+Refs.:
+- https://discourse.nixos.org/t/xorg-on-non-nixos/13455/2
+- https://stackoverflow.com/a/67972927
+
+
+
+```bash
+nix \
+log \
+$(
+  nix \
+  build \
+  --print-out-paths \
+  --impure \
+  --expr \
+  $EXPR
+) | cat
+``` 
+
+```bash
+nix-store --query --tree --include-outputs $(readlink -f result/bin/python3) | wc -l
+```
+
+```bash
+nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | dot -Tps > pandas-test-opengl.ps
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = selfPy: superPy: {
+            pandas = superPy.pandas.overrideAttrs (oldAttrs: rec{
+              nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ super.patchelf super.addOpenGLRunpath ];
+              postFixup = let rpath = super.lib.makeLibraryPath [ super.stdenv.cc.cc.lib ]; in (oldAttrs.postFixup or "") + ''
+                find $out/${python3.sitePackages}/pandas/lib -type f \( -name '*.so' -or -name '*.so.*' \) | while read lib; do
+                  echo "setting rpath for $lib..."
+                  patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}/pandas/lib" "$lib"
+                  addOpenGLRunpath "$lib"
+                done
+              '';
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        pandas
+        # and other python packages
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/0ef02c4792fbde4b78957a46a8cb107b6c7aa3cc")
+             { overlays = [ overlay ]; }
+             ).python3Packages.pandas
+    )
+EOF
+)
+
+
+nix \
+show-derivation \
+--impure \
+--expr \
+$EXPR | jq -r '.[].env.postFixup'
+```
+Refs.:
+- https://discourse.nixos.org/t/xorg-on-non-nixos/13455/2
+- https://stackoverflow.com/a/67972927
+
+
+
+##### The `window/aggregations.cpython-38-x86_64-linux-gnu.so` thing:
+
+```bash
+EXPR=$(cat <<-'EOF'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = selfPy: superPy: {
+            pandas = superPy.pandas.overrideAttrs (oldAttrs: rec{
+              nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ super.patchelf ];
+              postFixup = let rpath = super.lib.makeLibraryPath [ super.stdenv.cc.cc.lib ]; in (oldAttrs.postFixup or "") + ''
+                find $out/${python3.sitePackages}/pandas/_libs -type f \( -name '*.so' -or -name '*.so.*' \) | while read lib; do
+                  echo "setting rpath for $lib..."
+                  patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}/pandas/_libs" "$lib"
+                done
+              '';
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        pandas
+        # and other python packages
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/0ef02c4792fbde4b78957a46a8cb107b6c7aa3cc")
+             { overlays = [ overlay ]; }
+             ).python3Packages.pandas
+    )
+EOF
+)
+
+
+nix \
+build \
+--impure \
+--expr \
+$EXPR
+
+
+nix \
+show-derivation \
+--impure \
+--expr \
+$EXPR | jq -r '.[].env.postFixup'
+```
+Refs.:
+- https://discourse.nixos.org/t/xorg-on-non-nixos/13455/2
+- https://stackoverflow.com/a/67972927
+
+
+##### Emacs
 
 ```bash
 nix \
