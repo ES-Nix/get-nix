@@ -6326,11 +6326,16 @@ hydra-check --arch x86_64-linux --channel nixos/release-14.04 firefox
 hydra-check --arch x86_64-linux --channel master firefox
 ```
 
+```bash
+hydra-check --arch x86_64-linux --channel unstable nix
+```
+
 Interesting urls:
 - https://status.nixos.org
 - https://hydra.nixos.org/build/103222205#tabs-details
 - https://hydra.nixos.org/eval/1449?filter=gcc&compare=1283&full=#tabs-still-succeed
 - https://hydra.nixos.org/job/nixos/trunk-combined/tested
+- https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
 
 ```bash
 # HYDRA_BUILD_ID=103222205
@@ -15149,7 +15154,20 @@ EOF
 TODO: something still missing, or not it just does not exist
 
 
+```bash
+nix \
+run \
+nixpkgs#hello
+```
 
+
+```bash
+nix \
+--option tarball-ttl 2419200 \
+--option narinfo-cache-positive-ttl 0 \
+run \
+nixpkgs#hello
+```
 
 ```bash
 nix \
@@ -15161,6 +15179,8 @@ nixpkgs#hello
 ```
 Refs.:
 - https://github.com/NixOS/nix/issues/1115
+- https://discourse.nixos.org/t/pinned-nixpkgs-keeps-getting-garbage-collected/12912/2
+- https://discourse.nixos.org/t/confusion-about-tarball-ttl-and-its-default-value/20998/2
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-connect-timeout
 
 
@@ -15176,6 +15196,19 @@ since it is still an experimental feature, but you can just manually delete
 Refs.: 
 - https://discourse.nixos.org/t/is-there-a-nix-clean-command-for-the-cache/18844/7
 - https://discourse.nixos.org/t/is-there-a-nix-clean-command-for-the-cache/18844/8
+
+
+```bash
+ls -al ~/.cache/nix/*.sqlite
+```
+
+
+```bash
+nix run nixpkgs#sqlite -- ~/.cache/nix/binary-cache-v6.sqlite 'pragma integrity_check'
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/3545#issuecomment-621107449
+- https://github.com/NixOS/nix/issues/3091#issuecomment-1133549695
 
 
 ```bash
