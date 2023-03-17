@@ -3694,23 +3694,23 @@ nix \
 build \
 --expr \
 '
-(
   (
     (
-      builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
-    ).lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [ 
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
-        ];
-    }
-  ).config.system.build.vm
-)
+      (
+        builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
+      ).lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [ 
+            "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
+          ];
+      }
+    ).config.system.build.vm
+  )
 '
 ```
 
-If you try to execute that command with `nix run` rather then `nix build` it needs DISPLAY and 
-as is it is you does not have a way to login.
+If you try to execute that command with `nix run` rather then `nix build` it is going to need the `$DISPLAY` to be set and 
+as is it is configured you does not have a way to login (for example, a user with a password).
 
 
 ##### Custom build-vm
