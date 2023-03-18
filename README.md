@@ -15006,7 +15006,7 @@ sh \
 
 A collection of supposed useful patters.
 
-
+TODO: https://t.me/nixosbrasil/76003
 
 About nix language + flakes + templates:
 - https://chrishayward.xyz/dotfiles/
