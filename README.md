@@ -11557,6 +11557,8 @@ nixpkgs#hello
 ```bash
 nix \
 build \
+--refresh \
+--rebuild \
 --expr \
 '
 (
@@ -11578,7 +11580,8 @@ build \
 '
 
 # EXPECTED_SHA512='c24d5b36de84ebd88df2946bd65259d81cbfcb7da30690ecaeacb86e0c1028d4601e1f6165ea0775791c18161eee241092705cd350f0e935c715f2508c915741'
-EXPECTED_SHA512='5a761bd0f539a6ef53a002f73ee598e728565d7ac2f60a5947862d8795d233e3cf6bbf3c55f70a361f55e4b30e499238799d2ddb379e10a063d469d93276e3d8'
+# EXPECTED_SHA512='5a761bd0f539a6ef53a002f73ee598e728565d7ac2f60a5947862d8795d233e3cf6bbf3c55f70a361f55e4b30e499238799d2ddb379e10a063d469d93276e3d8'
+EXPECTED_SHA512='b6811ca1bc46b8b8dbc7dc94b62c71a83ef1a1dae0c7586e600010d8899100d2e58fb3aa585c398036f49b5e22a6a3ce10ceb142db0f37c098bc7e5a71894515'
 ISO_PATTERN_NAME='result/iso/nixos-21.11.20210618.4b4f4bf-x86_64-linux.iso'
 # sha512sum "${ISO_PATTERN_NAME}"
 echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
@@ -15149,6 +15152,28 @@ EOF
 ```
 
 
+```bash
+sudo \
+sh <<'EOF'
+
+echo "$USER"
+echo "$HOME"
+
+EOF
+```
+
+```bash
+sudo \
+--preserve-env=HOME,USER \
+sh <<'EOF'
+
+echo "$USER"
+echo "$HOME"
+
+EOF
+```
+
+
 ### Old bugs and workarounds 
 
 TODO: something still missing, or not it just does not exist
@@ -15215,6 +15240,13 @@ Refs.:
 rm -fv ~/.cache/nix/fetcher-cache-v*.sqlite
 ```
 
+
+```bash
+nix \
+--option eval-cache false \
+run \
+nixpkgs#hello
+```
 
 
 ### Compiling nix from source
