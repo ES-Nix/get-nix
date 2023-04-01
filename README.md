@@ -721,10 +721,17 @@ nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
  | cat 
 ```
 
+
 ```bash
 nix eval nix#checks --apply builtins.attrNames
 nix eval nix#checks.x86_64-linux --apply builtins.attrNames
 ```
+
+
+```bash
+nix eval nixpkgs#dockerTools.pullImage --apply builtins.functionArgs
+```
+
 
 Needs `dot`, `jq`, `tr`, `wc`:
 ```bash
@@ -2537,7 +2544,23 @@ build \
 nix build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python310Packages.rsa
 ```
 
+```bash
+nix build --rebuild nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python310Packages.rsa
+```
 
+```bash
+nix \
+    --option build-use-substitutes false \
+    --option substitute false \
+    --extra-experimental-features 'nix-command flakes' \
+    build \
+    --keep-failed \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --substituters "" \
+    'github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello'
+```
 
 
 ```bash
@@ -3574,11 +3597,41 @@ nix build nixpkgs#pkgsCross.s390x.busybox-sandbox-shell
 ```
 
 ```bash
+nix build nixpkgs#pkgsCross.aarch64-darwin.busybox-sandbox-shell
+```
+
+
+```bash
 nix build nixpkgs#pkgsCross.armv7l-hf-multiplatform.dockerTools.examples.redis
 ```
 
 ```bash
 nix build nixpkgs#pkgsCross.armv7l-hf-multiplatform.pkgsStatic.dockerTools.examples.redis
+```
+
+```bash
+export NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM=1
+nix build nixpkgs#pkgsCross.aarch64-darwin.pkgsStatic.dockerTools.examples.redis
+```
+
+```bash
+export NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM=1
+
+nix build --impure -L nixpkgs#pkgsCross.aarch64-darwin.pkgsStatic.hello
+```
+
+
+```bash
+export NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM=1; 
+
+nix build --impure --no-show-trace -L nixpkgs#pkgsCross.aarch64-darwin.pkgsStatic.busybox-sandbox-shell
+```
+
+
+```bash
+export NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM=1
+
+nix build --impure nixpkgs#pkgsCross.aarch64-darwin.pkgsStatic.dockerTools.examples.redis
 ```
 
 ```bash
@@ -11065,6 +11118,7 @@ nix --option experimental-features 'nix-command flakes' build nixpkgs#pkgsCross.
 nix --option experimental-features 'nix-command flakes' build nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python310Packages.rsa
 ```
 
+
 ```bash
 podman \
 exec \
@@ -14419,6 +14473,10 @@ iana-etc
 TODO: make some examples
 - https://stackoverflow.com/questions/71753915/how-can-i-search-in-nixpkgs-for-a-package-expression
 - https://stackoverflow.com/questions/56118564/asking-nix-for-metadata-about-the-given-package?noredirect=1&lq=1
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'busybox-sandbox-shell.meta.platforms'
+```
 
 ```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'(builtins.getFlake "github:edolstra/dwarffs").rev'
