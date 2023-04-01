@@ -3073,10 +3073,13 @@ In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment
 ```bash
 nix build nixpkgs#nix
 
-nix build github:NixOS/nix#nix-static
-nix build github:NixOS/nix/9feca5cdf64b82bfb06dfda07d19d007a2dfa1c1#nix-static
+nix build --no-link --print-build-logs github:NixOS/nix#nix-static
+nix build --no-link --print-build-logs github:NixOS/nix/2ef99cd10489929a755831251c3fad8f3df2faeb#nix-static
 
-nix build nixpkgs#pkgsStatic.nix
+nix build --no-link --print-build-logs github:NixOS/nixpkgs/3364b5b117f65fe1ce65a3cdd5612a078a3b31e3#pkgsStatic.nix
+nix build --no-link --print-build-logs github:NixOS/nixpkgs/3364b5b117f65fe1ce65a3cdd5612a078a3b31e3#nixStatic
+
+nix build --no-link --print-build-logs github:NixOS/nixpkgs/3364b5b117f65fe1ce65a3cdd5612a078a3b31e3#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix
 ```
 
 
