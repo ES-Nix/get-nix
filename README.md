@@ -6465,6 +6465,23 @@ Interesting urls:
 - https://hydra.nixos.org/job/nixos/trunk-combined/tested
 - https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
 
+
+
+```bash
+URL=https://hydra.nixos.org/job/nixos/trunk-combined/nixpkgs.nix.x86_64-linux/latest
+LATEST_ID_OF_NIX_HYDRA_SUCCESSFUL_BUILD="$(curl $URL | grep '"https://hydra.nixos.org/build/' | cut -d'/' -f5 | cut -d'"' -f1)"
+```
+
+
+```bash
+URL=https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest
+LATEST_ID_OF_NIX_STATIC_HYDRA_SUCCESSFUL_BUILD="$(curl $URL | grep '"https://hydra.nixos.org/build/' | cut -d'/' -f5 | cut -d'"' -f1)"
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
+- https://discourse.nixos.org/t/how-to-get-the-latest-unbroken-commit-for-a-broken-package-from-hydra/26354/4
+
+
 ```bash
 # HYDRA_BUILD_ID=103222205
 HYDRA_BUILD_ID=303510
