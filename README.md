@@ -7416,13 +7416,13 @@ ENV USER="abcuser"
 ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 
 # Not DRY, I know
-RUN mkdir -pv $HOME/.local/bin \
- && export PATH=/home/abcuser/.local/bin:"$PATH" \
- && curl -L https://hydra.nixos.org/build/188965270/download/2/nix > nix \
- && mv nix /home/abcuser/.local/bin \
- && chmod +x /home/abcuser/.local/bin/nix \
- && mkdir -p ~/.config/nix \
- && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+#RUN mkdir -pv $HOME/.local/bin \
+# && export PATH=/home/abcuser/.local/bin:"$PATH" \
+# && curl -L https://hydra.nixos.org/build/188965270/download/2/nix > nix \
+# && mv nix /home/abcuser/.local/bin \
+# && chmod +x /home/abcuser/.local/bin/nix \
+# && mkdir -p ~/.config/nix \
+# && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
 
 EOF
 
@@ -7539,16 +7539,22 @@ build \
 nix \
 build \
 --impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
 --expr \
-'(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-  (pkgsStatic.nix.override {
-    storeDir = "/home/abcuser/.nix/store";
-    stateDir = "/home/abcuser/.nix/var";
-    confDir = "/home/abcuser/.nix/etc";
-  })
-)'
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/3364b5b117f65fe1ce65a3cdd5612a078a3b31e3";
+    with legacyPackages.${builtins.currentSystem};
+      (pkgsStatic.nix.override {
+        storeDir = "/home/abcuser/.nix/store";
+        stateDir = "/home/abcuser/.nix/var";
+        confDir = "/home/abcuser/.nix/etc";
+      })
+  )
+'
 ```
 https://rgoswami.me/posts/local-nix-no-root/#patches
 
