@@ -8499,6 +8499,58 @@ nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | 
 ```
 
 
+```bash
+nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | dot -Tpdf > glue.pdf
+nix-store --query --graph --include-outputs $(readlink -f result/bin/python3) | wc -l
+```
+
+
+```bash
+nix-store --query --graph --include-outputs \
+$(nix path-info github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello) \
+ | wc -l 
+```
+
+```bash
+nix-store --query --graph --include-outputs \
+$(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello) \
+ | wc -l 
+```
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix path-info github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello) \
+ | dot -Tps > glue.ps
+```
+
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+  nix path-info --derivation \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.gcc-unwrapped
+) \
+ | wc -l
+```
+
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+  nix path-info --derivation \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.gcc-unwrapped
+) \
+ | dot -Tps > pkgsCross.aarch64-multiplatform-musl.gcc-unwrapped.ps
+```
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(
+  nix path-info --derivation \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.gcc-unwrapped
+) \
+ | wc -l
+```
 
 ### vmTools.runInLinuxVM
 
