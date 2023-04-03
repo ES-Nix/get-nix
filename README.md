@@ -2211,23 +2211,202 @@ nix profile install nixpkgs#hello
 
 #### Testing the installer
 
+
+
+curl -I https://playing-bucket-nix-cache-test.s3.amazonaws.com/nix
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:22.04
+
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+     file \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser
+
+# The /nix is ignored by nix profile even if it is created
+# RUN mkdir /nix && chmod 0777 /nix && chown -v abcuser: /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+
+# Not DRY, I know
+RUN mkdir -pv $HOME/.local/bin \
+ && export PATH=/home/abcuser/.local/bin:"$PATH" \
+ && curl -L https://playing-bucket-nix-cache-test.s3.amazonaws.com/nix > nix \
+ && mv nix /home/abcuser/.local/bin \
+ && chmod +x /home/abcuser/.local/bin/nix \
+ && mkdir -p ~/.config/nix \
+ && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+
+EOF
+
+
+podman \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu22-nix .
+```
+
+```bash
+podman \
+run \
+--device=/dev/fuse:rw \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--group-add=keep-groups \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-nix \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22-nix:latest \
+sh \
+-c \
+'
+nix profile install nixpkgs#hello
+'
+```
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:22.04
+
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+     file \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser
+
+# The /nix is ignored by nix profile even if it is created
+# RUN mkdir /nix && chmod 0777 /nix && chown -v abcuser: /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+
+# Not DRY, I know
+RUN mkdir -pv $HOME/.local/bin \
+ && export PATH=/home/abcuser/.local/bin:"$PATH" \
+ && curl -L https://hydra.nixos.org/build/214630375/download/2/nix > nix \
+ && mv nix /home/abcuser/.local/bin \
+ && chmod +x /home/abcuser/.local/bin/nix \
+ && mkdir -p ~/.config/nix \
+ && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+
+EOF
+
+
+podman \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu22 .
+```
+
+
+Bloated:
+```bash
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/fuse:rw \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--env="HOME=${HOME:-:/home/someuser}" \
+--env="PATH=/bin:$HOME/.nix-profile/bin" \
+--env="TMPDIR=${HOME}" \
+--env="USER=${USER:-:someuser}" \
+--group-add=keep-groups \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-nix \
+--privileged=true \
+--tty=true \
+--userns=keep-id \
+--rm=true \
+--volume="$(pwd)"/"$SHARED_DIRETORY_NAME":"$HOME":U \
+--workdir="$HOME" \
+localhost/unprivileged-ubuntu22:latest
+```
+
+
+```bash
+podman \
+run \
+--device=/dev/fuse:rw \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--group-add=keep-groups \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-nix \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22:latest \
+sh \
+-c \
+'
+nix profile install nixpkgs#hello
+'
+```
+
+
 ```bash
 curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
 ```
 
 
 ```bash
+URL=https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest
+LATEST_ID_OF_NIX_STATIC_HYDRA_SUCCESSFUL_BUILD="$(curl $URL | grep '"https://hydra.nixos.org/build/' | cut -d'/' -f5 | cut -d'"' -f1)"
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
+- https://discourse.nixos.org/t/how-to-get-the-latest-unbroken-commit-for-a-broken-package-from-hydra/26354/4
+
+
+```bash
 # https://hydra.nixos.org/project/nix
-BUILD_ID='185724653'
-curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/1/nix > nix
+BUILD_ID='214630375'
+curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/2/nix > nix
 chmod +x nix
 
 # mkdir -pv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
 # ln -sfv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/abcuser/profile "${HOME}"/.nix-profile
-```
 
-```bash
 ./nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#hello
+
+ls -Ahl $(dirname $(readlink -f ~/.nix-profile))
+
 ```
 
 
@@ -3112,7 +3291,7 @@ nix path-info -rsSh nixpkgs#pkgsStatic.nix
 
 ```bash
 nix build github:NixOS/nix#nix-static
-nix path-info -rsSh github:NixOS/nix#nix-static
+nix path-info -rsSh --eval-store auto --store https://cache.nixos.org/ github:NixOS/nix#nix-static
 ```
 
 nix search nixpkgs ' sed'
@@ -14566,6 +14745,10 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames gcc'
 
 ```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'lib.attrNames yarn.override.__functionArgs'
+```
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'lib.attrNames pkgsStatic.nix.override.__functionArgs'
 ```
 
 ```bash
