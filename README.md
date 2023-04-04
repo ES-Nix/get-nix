@@ -3564,6 +3564,22 @@ nix store gc \
 --option keep-outputs false
 ```
 
+TODO:
+```bash
+nix \
+store \
+gc \
+--verbose \
+--option keep-build-log false \
+--option keep-derivations false \
+--option keep-env-derivations false \
+--option keep-failed false \
+--option keep-going false \
+--option keep-outputs false \
+&& nix-collect-garbage --delete-old
+```
+
+
 ## Tests
 
 This is an environment that is used to test the installer:
