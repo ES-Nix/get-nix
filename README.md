@@ -123,8 +123,53 @@ du -L -h -s /nix
 ```bash
 jq --version || nix profile install nixpkgs#jq
 nix path-info --json --all | jq 'map(.narSize) | add'
-nix path-info nixpkgs#nix_2_4
+
+nix \
+path-info \
+--eval-store auto \
+--closure-size \
+--human-readable \
+--json \
+--store https://cache.nixos.org \
+nixpkgs#hello | jq 'map(.narSize) | add' | numfmt --to=iec-i
+
+
+
+nix \
+path-info \
+--eval-store auto \
+--closure-size \
+--human-readable \
+--json \
+--recursive \
+--store https://cache.nixos.org \
+nixpkgs#hello | jq 'map(.narSize) | add' | numfmt --to=iec-i
+
+
+nix \
+path-info \
+--eval-store auto \
+--closure-size \
+--human-readable \
+--json \
+--recursive \
+--store https://cache.nixos.org \
+nixpkgs#python3 | jq 'map(.narSize) | add' | numfmt --to=iec-i
+
+
+nix \
+path-info \
+--eval-store auto \
+--closure-size \
+--human-readable \
+--json \
+--recursive \
+--store https://cache.nixos.org \
+nixpkgs#qemu | jq 'map(.narSize) | add' | numfmt --to=iec-i
+
 ```
+Refs.:
+- https://unix.stackexchange.com/a/74228
 
 ```bash
 echo "$(dirname "$(dirname "$(readlink -f "$(which nix)")")")"
@@ -8711,6 +8756,13 @@ nix-store --query --graph --include-outputs \
 $(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello) \
  | wc -l 
 ```
+
+```bash
+nix-store --query --graph --include-outputs \
+$(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello) \
+ | wc -l 
+```
+nix path-info -rsSh $(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello)
 
 ```bash
 nix-store --query --graph --include-outputs --force-realise \
