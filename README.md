@@ -160,6 +160,7 @@ nixpkgs#python3 | jq 'map(.narSize) | add' | numfmt --to=iec-i
 nix \
 path-info \
 --eval-store auto \
+--extra-experimental-features 'nix-command flakes' \
 --closure-size \
 --human-readable \
 --json \
@@ -8791,6 +8792,33 @@ $(
 ```
 
 ```bash
+nix-store --query --requisites --include-outputs \
+$(
+  nix \
+  path-info \
+  --eval-store auto \
+  --store https://cache.nixos.org \
+  --recursive \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.gcc-unwrapped
+) \
+ | wc -l
+```
+--recursive \
+
+
+--dry-run
+
+
+```bash
+nix-store --query --requisites --include-outputs  \
+$(
+  nix path-info --derivation \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.gcc-unwrapped
+) \
+ | wc -l
+```
+
+```bash
 nix-store --query --graph --include-outputs --force-realise \
 $(
   nix path-info --derivation \
@@ -8798,6 +8826,156 @@ $(
 ) \
  | wc -l
 ```
+
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+  nix path-info --derivation \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped
+) \
+ | dot -Tps > pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped.ps
+```
+
+```bash
+nix-store --query --graph --include-outputs \
+$(
+    nix \
+    path-info \
+    --eval-store auto \
+    --store https://cache.nixos.org \
+    --recursive \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped
+) \
+ | dot -Tps > pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped.ps
+```
+
+
+```bash
+nix \
+path-info \
+--eval-store auto \
+--derivation \
+--no-use-registries \
+--store https://cache.nixos.org \
+github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped
+```
+
+```bash
+nix \
+eval \
+--derivation \
+--raw \
+github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped
+
+```
+
+
+```bash
+nix \
+eval \
+--eval-store auto \
+--derivation \
+--no-use-registries \
+--raw \
+--store https://cache.nixos.org \
+github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped
+
+```
+
+```bash
+#     --recursive \
+nix-store --query --graph --include-outputs \
+$(
+    nix \
+    --option eval-cache false \
+    path-info \
+    --eval-store auto \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#glibc
+) \
+ | dot -Tps > glibc.ps
+```
+
+```bash
+nix-store --query --requisites --include-outputs \
+$(
+  nix path-info github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#glibc
+) \
+ | wc -l
+```
+
+```bash
+nix-store --query --requisites --include-outputs \
+$(
+    nix \
+    --option eval-cache false \
+    path-info \
+    --eval-store auto \
+    --recursive \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#glibc
+) \
+ | wc -l
+```
+
+
+Runtime only?
+```bash
+nix \
+--option eval-cache false \
+path-info \
+--eval-store auto \
+--recursive \
+--store https://cache.nixos.org \
+$(nix --option eval-cache false eval --raw github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello)
+```
+
+```bash
+nix \
+--option eval-cache false \
+path-info \
+--eval-store auto \
+--recursive \
+--store https://cache.nixos.org \
+$(nix --option eval-cache false eval --derivation --raw github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello)
+```
+
+```bash
+nix \
+--option eval-cache false \
+path-info \
+--eval-store auto \
+--recursive \
+--store https://cache.nixos.org \
+$(nix --option eval-cache false eval --raw github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello)
+```
+
+```bash
+nix \
+--option eval-cache false \
+path-info \
+--eval-store auto \
+--no-use-registries \
+--recursive \
+--store https://cache.nixos.org \
+github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#glibc
+```
+
+
+
+
+```bash
+nix eval nixpkgs#hello.out.outputs
+
+nix eval nixpkgs#gcc.out.outputs
+
+nix eval nixpkgs#nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped.out.outputs
+
+nix eval nixpkgs#glibc.out.outputs
+```
+
+
 
 ### vmTools.runInLinuxVM
 
@@ -15631,6 +15809,18 @@ echo "$USER"
 echo "$HOME"
 
 EOF
+```
+
+```bash
+# TODO: is it different?
+# export "$(cat .env | xargs -L 1)" 
+export $(cat .env | xargs -L 1)
+```
+Refs.:
+- https://xeiaso.net/blog/nix-flakes-terraform
+
+```bash
+rm -frv {*,.*}
 ```
 
 
