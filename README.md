@@ -806,6 +806,7 @@ nix eval --impure --json --expr 'builtins.map (p: p.name) (import <nixpkgs/nixos
 
 nix eval --raw nixpkgs#git.outPath; echo
 nix realisation info nixpkgs#hello --json
+nix --extra-experimental-features ca-derivations realisation info nixpkgs#hello --json
 
 nix eval --expr '(import <nixpkgs> {}).vscode.version'
 nix eval --impure --expr '(import <nixpkgs> {}).vscode.version'
@@ -6633,6 +6634,30 @@ verify \
 ```
 
 
+TODO: use the `--ofiline` flag.
+```bash
+nix \
+--option eval-cache false \
+--option tarball-ttl 2419200 \
+--option narinfo-cache-positive-ttl 0 \
+store \
+verify \
+--recursive \
+--print-build-logs \
+--sigs-needed 1 \
+--store https://cache.nixos.org/ \
+"$(
+    nix \
+    --option eval-cache false \
+    --option tarball-ttl 2419200 \
+    --option narinfo-cache-positive-ttl 0 \
+    eval \
+    --raw \
+    nixpkgs#hello
+)"
+```
+
+
 ```bash
 nix \
 store \
@@ -6776,7 +6801,7 @@ Refs.:
 
 Tried it with `nix-instantiate . -A firefox | cut -d'.' -f1-3` and with 
 `nix-instantiate ./. -A firefox.outPath | cut -d'.' -f1-3` but finally it gives
-to the "outPath" hash `nix-instantiate --eval --expr 'with import ./. {}; firefox.outPath'`
+the "outPath" hash and only the last line of the above code worked.
 
 ```bash
 nix path-info --closure-size --eval-store auto 'nixpkgs#glibc^*'
@@ -8506,6 +8531,20 @@ python3 -c 'import pandas as pd; pd.DataFrame(); print(pd.__version__)'
 
 ```bash
 nix \
+build \
+--rebuild \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with legacyPackages.${builtins.currentSystem};
+  python3.withPackages (p: with p; [ pandas ])
+)'
+```
+
+
+```bash
+nix \
 shell \
 --expr \
 '(
@@ -8803,11 +8842,224 @@ $(
 ) \
  | wc -l
 ```
+
+
+```bash
+nix-store --query --requisites --include-outputs \
+$(
+  nix \
+  path-info \
+  --eval-store auto \
+  --store https://cache.nixos.org \
+  --recursive \
+    nixpkgs#python3
+) \
+ | wc -l
+```
+
+
+```bash
+nix-store --store https://cache.nixos.org --query --requisites --include-outputs \
+$(
+  nix \
+  path-info \
+  --eval-store auto \
+  --store https://cache.nixos.org \
+  --derivation \
+  nixpkgs#python3
+) \
+ | wc -l
+```
+
+```bash
+nix \
+  path-info \
+  --eval-store auto \
+  --store https://cache.nixos.org \
+  --json \
+  nixpkgs#python3 | jq .
+```
+
+```bash
+nix-store --store https://cache.nixos.org --query --requisites --include-outputs \
+$(
+    nix \
+    eval \
+    --eval-store auto \
+    --raw \
+    --store https://cache.nixos.org \
+    nixpkgs#python3
+) \
+ | wc -l
+```
+
+
+```bash
+nix-store --query --requisites \
+$(
+    nix \
+    eval \
+    --eval-store auto \
+    --raw \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#python3
+) \
+| wc -l
+```
+
+```bash
+nix \
+path-info \
+--eval-store auto \
+--store https://cache.nixos.org \
 --recursive \
+$(
+    nix \
+    eval \
+    --eval-store auto \
+    --raw \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#python3
+) \
+| wc -l
+```
 
 
---dry-run
 
+
+```bash
+nix \
+path-info \
+--eval-store auto \
+--store https://cache.nixos.org \
+--recursive \
+$(
+nix \
+eval \
+--raw \
+github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#hello
+) \
+| wc -l
+```
+
+```bash
+nix \
+path-info \
+--eval-store auto \
+--store https://cache.nixos.org \
+--recursive \
+$(
+    nix \
+    path-info \
+    --derivation \
+    --eval-store auto \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#python3
+) \
+| wc -l
+```
+
+```bash
+nix \
+path-info \
+--derivation \
+--eval-store auto \
+--store https://cache.nixos.org \
+--recursive \
+$(
+    nix \
+    path-info \
+    --derivation \
+    --eval-store auto \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#python3
+) \
+| wc -l
+```
+
+
+```bash
+nix \
+path-info \
+--eval-store auto \
+--store https://cache.nixos.org \
+--recursive \
+$(
+    nix \
+    path-info \
+    --derivation \
+    --eval-store auto \
+    --recursive \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#python3
+) \
+| wc -l
+```
+
+
+```bash
+nix \
+path-info \
+--eval-store auto \
+--store https://cache.nixos.org \
+--recursive \
+$(
+    nix \
+    path-info \
+    --derivation \
+    --eval-store auto \
+    --recursive \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped
+) \
+| wc -l
+```
+
+
+```bash
+nix \
+path-info \
+--derivation \
+--eval-store auto \
+--store https://cache.nixos.org \
+--recursive \
+$(
+    nix \
+    path-info \
+    --derivation \
+    --eval-store auto \
+    --recursive \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#python3
+) \
+| wc -l
+```
+
+```bash
+nix \
+path-info \
+--derivation \
+--eval-store auto \
+--store https://cache.nixos.org \
+--recursive \
+$(
+    nix \
+    path-info \
+    --derivation \
+    --eval-store auto \
+    --recursive \
+    --store https://cache.nixos.org \
+    github:NixOS/nixpkgs/b7ce17b1ebf600a72178f6302c77b6382d09323f#hello
+) \
+| wc -l
+```
+
+
+file $(readlink $(which python3))
+
+```bash
+nix-store --query --requisites $(which python3) | wc -l
+```
 
 ```bash
 nix-store --query --requisites --include-outputs  \
@@ -13797,6 +14049,7 @@ https://discourse.nixos.org/t/how-can-i-quickly-test-nixpkg-modifications-in-a-c
 Remember, the `-vvvv` exists!
 ```bash
 nix \
+--option eval-cache false \
 --option tarball-ttl 2419200 \
 --option narinfo-cache-positive-ttl 0 \
 -vvvv \
@@ -15838,6 +16091,7 @@ nixpkgs#hello
 
 ```bash
 nix \
+--option eval-cache false \
 --option tarball-ttl 2419200 \
 --option narinfo-cache-positive-ttl 0 \
 run \
@@ -15846,6 +16100,7 @@ nixpkgs#hello
 
 ```bash
 nix \
+--option eval-cache false \
 --option tarball-ttl 2419200 \
 --option narinfo-cache-positive-ttl 0 \
 -vvv \
@@ -15857,6 +16112,7 @@ Refs.:
 - https://discourse.nixos.org/t/pinned-nixpkgs-keeps-getting-garbage-collected/12912/2
 - https://discourse.nixos.org/t/confusion-about-tarball-ttl-and-its-default-value/20998/2
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-connect-timeout
+- https://github.com/NixOS/nix/issues/4258#issuecomment-791262337
 
 
 ```bash
