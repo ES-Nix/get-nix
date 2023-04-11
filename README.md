@@ -702,6 +702,7 @@ nix path-info --derivation --json --recursive nixpkgs#hello | jq .
 nix eval --raw nixpkgs#hello.drvPath
 nix eval --raw nixpkgs#lib.version
 nix eval nixpkgs#lib.fakeSha256
+nix eval --impure --expr '((builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}.stdenv.isDarwin)'
 
 echo $(nix-store --query --graph $(nix eval --raw nixpkgs#hello.drvPath)) | dot -Tpdf > hello.pdf
 ```
@@ -9206,25 +9207,48 @@ $(nix --option eval-cache false eval --raw github:NixOS/nixpkgs/3954218cf613eba8
 ```bash
 nix \
 --option eval-cache false \
+--option tarball-ttl 2419200 \
+--option narinfo-cache-positive-ttl 0 \
 path-info \
 --eval-store auto \
---no-use-registries \
 --recursive \
 --store https://cache.nixos.org \
-github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#glibc
+github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#nerdfonts
 ```
 
+--no-use-registries \
 
+```bash
+export NIXPKGS_ALLOW_UNFREE=1
 
+nix \
+--option eval-cache false \
+--option tarball-ttl 2419200 \
+--option narinfo-cache-positive-ttl 0 \
+path-info \
+--eval-store auto \
+--impure \
+--recursive \
+--store https://cache.nixos.org \
+github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello-unfree
+```
+
+```bash
+nix eval --impure --raw github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello-unfree
+```
 
 ```bash
 nix eval nixpkgs#hello.out.outputs
 
+# TODO: something is missing, I guess. The enrdfonts shoudl have more outputs :thinking:
+nix eval nixpkgs#nerdfonts.out.outputs
+
 nix eval nixpkgs#gcc.out.outputs
 
-nix eval nixpkgs#nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped.out.outputs
+nix eval nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped.out.outputs
 
 nix eval nixpkgs#glibc.out.outputs
+
 ```
 
 
@@ -12661,7 +12685,7 @@ build \
                         
                         # https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
                         users.extraGroups.nixgroup.gid = 999;
-                        
+
                         users.users.nixuser = {
                         isSystemUser = true;
                         password = "";
@@ -12685,7 +12709,7 @@ build \
                           firefox
                           (python3.buildEnv.override
                             {
-                              extraLibs = with python3Packages; [ scikitimage opencv2 numpy ];
+                              extraLibs = with python3Packages; [ pandas ];
                             }
                           )
                         ];
@@ -12694,11 +12718,11 @@ build \
                         autoSubUidGidRange = true;
                         
                         openssh.authorizedKeys.keyFiles = [
-                        nixuserKeys
+                          nixuserKeys
                         ];
                         
                         openssh.authorizedKeys.keys = [
-                        "${nixuserKeys}"
+                          "${nixuserKeys}"
                         ];
                         };
                         
@@ -12714,12 +12738,12 @@ build \
                         };
                         
                         virtualisation = {
-                        # following configuration is added only when building VM with build-vm
-                        # memorySize = 3072; # Use MiB memory.
-                        # diskSize = 4096; # Use MiB memory.
-                        # cores = 3;         # Simulate 3 cores.
-                        #
-                        docker.enable = true;
+                          # following configuration is added only when building VM with build-vm
+                          # memorySize = 3072; # Use MiB memory.
+                          # diskSize = 4096; # Use MiB memory.
+                          # cores = 3;         # Simulate 3 cores.
+                          #
+                          docker.enable = true;
                         };
                         security.polkit.enable = true;
                         
@@ -12735,21 +12759,21 @@ build \
                         
                         nixpkgs.config.allowUnfree = true;
                         nix = {
-                        package = pkgsStatic.nix;
-                        # package = pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix;
-                        extraOptions = "experimental-features = nix-command flakes repl-flake";
-                        readOnlyStore = false;
+                          package = pkgsStatic.nix;
+                          # package = pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix;
+                          extraOptions = "experimental-features = nix-command flakes repl-flake";
+                          readOnlyStore = false;
                         };
                         
                         # Enable the X11 windowing system.
                         services.xserver = {
-                        enable = true;
-                        displayManager.gdm.enable = true;
-                        displayManager.startx.enable = true;
-                        logFile = "/var/log/X.0.log";
-                        desktopManager.xterm.enable = true;
-                        # displayManager.gdm.autoLogin.enable = true;
-                        # displayManager.gdm.autoLogin.user = "nixuser";
+                          enable = false;
+                          # displayManager.gdm.enable = false;
+                          # displayManager.startx.enable = false;
+                          # logFile = "/var/log/X.0.log";
+                          # desktopManager.xterm.enable = true;
+                          # displayManager.gdm.autoLogin.enable = true;
+                          # displayManager.gdm.autoLogin.user = "nixuser";
                         };
                         services.spice-vdagentd.enable = true;
                         
@@ -12774,16 +12798,7 @@ build \
                         programs.dconf.enable = true;
                         
                         time.timeZone = "America/Recife";
-                        
-                        environment.variables.KUBECONFIG = "/etc/kubernetes/cluster-admin.kubeconfig";
-                        environment.etc."containers/registries.conf" = {
-                            mode = "0644";
-                            text = "[registries.search] \n registries = [\"docker.io\", \"localhost\"]";
-                        };
-                        
-                        # Is this ok to kubernetes? Why free -h still show swap stuff but with 0?
-                        swapDevices = pkgs.lib.mkForce [ ];
-                        
+
                         system.stateVersion = "22.11";
                         
                         users.users.root = {
