@@ -11312,6 +11312,90 @@ build \
 --expr \
 '
   (
+    with builtins.getFlake "github:NixOS/nixpkgs/5a156c2e89c1eca09b40bcdcee86760e0e4d79a9";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.buildImage {
+    # https://github.com/NixOS/nixpkgs/issues/176081
+    name = "oci-static-xorg-xclock";
+    tag = "latest";
+    config = {
+      contents = with pkgs; [
+        pkgsStatic.busybox-sandbox-shell
+
+        # bashInteractive
+        # coreutils
+
+        # TODO: test this xskat
+        xorg.xclock
+        # https://unix.stackexchange.com/questions/545750/fontconfig-issues
+        # fontconfig
+      ];
+      Env = [
+        "FONTCONFIG_FILE=${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
+        "FONTCONFIG_PATH=${pkgs.fontconfig.out}/etc/fonts/"
+        # "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+        # "PATH=${pkgs.coreutils}/bin:${pkgs.hello}/bin:${pkgs.findutils}/bin"
+        # :${pkgs.coreutils}/bin:${pkgs.fontconfig}/bin
+        "PATH=/bin:${pkgs.pkgsStatic.busybox-sandbox-shell}/bin:${pkgs.xorg.xclock}/bin"
+
+        # https://access.redhat.com/solutions/409033
+        # https://github.com/nix-community/home-manager/issues/703#issuecomment-489470035
+        # https://bbs.archlinux.org/viewtopic.php?pid=1805678#p1805678
+        "LC_ALL=C"
+      ];
+
+      # Entrypoint = [ "bash" ];
+      # Entrypoint = [ "sh" ];
+
+      Cmd = [ "xclock" ];
+    };
+    
+    runAsRoot = ''
+      #!${pkgs.stdenv}
+      ${pkgs.dockerTools.shadowSetup}
+      groupadd --gid 56789 nixgroup
+      useradd --no-log-init --uid 12345 --gid nixgroup nixuser
+
+      mkdir -pv ./home/nixuser
+      chmod 0700 ./home/nixuser
+      chown 12345:56789 -R ./home/nixuser
+
+      # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
+      mkdir -pv ./home/nixuser/.local/share/fonts
+    '';    
+    }
+  )
+'
+
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=1234 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/xorg.xclock:latest
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
     with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
     with legacyPackages.${builtins.currentSystem};
 
@@ -14061,13 +14145,13 @@ https://discourse.nixos.org/t/how-can-i-quickly-test-nixpkg-modifications-in-a-c
 ##### breakpointHook
 
 
-Remember, the `-vvvv` exists!
+Remember, the `-vvvvvvvvv` ( 9 `v`s) exists!
 ```bash
 nix \
 --option eval-cache false \
 --option tarball-ttl 2419200 \
 --option narinfo-cache-positive-ttl 0 \
--vvvv \
+-vvvvvvvvv \
 run \
 nixpkgs#hello
 ```
@@ -14207,6 +14291,7 @@ nix --option trace-function-calls true build -L nixpkgs#pkgsStatic.gcc
 ```
 Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-function-calls
+- https://www.mankier.com/5/nix.conf
 
 
 ```bash
