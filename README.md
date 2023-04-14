@@ -8521,12 +8521,57 @@ shell \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with builtins.getFlake "github:NixOS/nixpkgs/96ba1c52e54e74c3197f4d43026b3f3d92e83ff9";
   with legacyPackages.${builtins.currentSystem};
   python3.withPackages (p: with p; [ pandas ])
 )' \
 --command \
 python3 -c 'import pandas as pd; pd.DataFrame(); print(pd.__version__)'
+```
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+      customPython3 = (pkgs.python3.withPackages (p: with p; [ pandas ]));
+    in
+      [
+        customPython3
+        (pkgs.writeScriptBin "python3_site_packages" "echo ${customPython3}/${customPython3.sitePackages}/pandas/_libs/window && ls -al ${customPython3}/${customPython3.sitePackages}/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so" )
+      ]
+  )
+'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+      customPython3 = (pkgs.python3.withPackages (p: with p; [ pandas ]));
+    in
+      [
+        customPython3
+        (pkgs.writeScriptBin "python3_site_packages" "ldd ${customPython3}/${customPython3.sitePackages}/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so" )
+      ]
+  )
+' \
+--command \
+python3_site_packages
 ```
 
 
@@ -8543,7 +8588,7 @@ build \
 )'
 ```
 
-
+python3.sitePackages
 ```bash
 nix \
 shell \
@@ -8748,6 +8793,101 @@ build \
                       )
   ]
 )'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/96ba1c52e54e74c3197f4d43026b3f3d92e83ff9";
+  with legacyPackages.${builtins.currentSystem};
+  python3.withPackages (p: with p; [
+
+    # django-admin-shell
+    # django-celery-results
+    # django-dry-rest-permissions
+    # django-extended-choices
+    # django-ip
+    # django-simple-history
+    # django-user-agents
+    # pottery          
+    # pycpfcnpj                  
+    # python-decouple
+    # django-ses = {extras = ["events"], version = "^3.1.0"}
+    # django-ufilter = { git="https://github.com/imobanco/django-ufilter.git",  branch="django-version"}
+    argon2-cffi
+    behave  
+    black                               
+    boto3
+    coverage
+    django
+    django-cors-headers
+    django-debug-toolbar
+    django-polymorphic
+    django-rest-polymorphic
+    django-storages
+    djangorestframework
+    djangorestframework-simplejwt
+    drf-spectacular
+    factory_boy
+    faker
+    flake8
+    freezegun
+    gunicorn
+    holidays
+    ipdb         
+    isort
+    pandas
+    pendulum
+    pillow
+    psycopg2
+    pyjwt
+    pymupdf
+    requests
+    tblib
+    user-agents
+                                   ]
+                        )
+)
+'
+```
+
+```bash
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/96ba1c52e54e74c3197f4d43026b3f3d92e83ff9";
+  with legacyPackages.${builtins.currentSystem};
+  python3.withPackages (p: with p; [
+    django-admin-shell
+    # django-celery-results
+    # django-dry-rest-permissions
+    # django-extended-choices
+    # django-ip
+    # django-simple-history
+    # django-user-agents
+    # pottery          
+    # pycpfcnpj                  
+    # python-decouple
+    # django-ses = {extras = ["events"], version = "^3.1.0"}
+    # django-ufilter = { git="https://github.com/imobanco/django-ufilter.git",  branch="django-version"}
+    ]
+  )
+)
+'
 ```
 
 
@@ -9101,6 +9241,11 @@ $(
     github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped
 ) \
  | dot -Tps > pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped.ps
+```
+
+
+```bash
+nix path-info --derivation --recursive nixpkgs#hello | xargs nix build --no-link --print-build-logs
 ```
 
 
@@ -15784,7 +15929,7 @@ shell \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/01c02c84d3f1536c695a2ec3ddb66b8a21be152b"; 
+    with builtins.getFlake "github:NixOS/nixpkgs/96ba1c52e54e74c3197f4d43026b3f3d92e83ff9"; 
     with legacyPackages.${builtins.currentSystem}; 
         symlinkJoin {
           name = "python3";
@@ -15800,6 +15945,11 @@ python3 \
 "import os; print(os.environ['LD_LIBRARY_PATH']); os.system('echo $LD_LIBRARY_PATH')"
 ```
 
+
+Broken:
+```bash
+nix build --no-link -L nixpkgs#pythonManylinuxPackages.manylinux1Package
+```
 
 ```bash
 nix \

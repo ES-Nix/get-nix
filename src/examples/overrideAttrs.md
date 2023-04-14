@@ -2947,7 +2947,7 @@ EXPR=$(cat <<-'EOF'
               postFixup = let rpath = super.lib.makeLibraryPath [ super.stdenv.cc.cc.lib ]; in (oldAttrs.postFixup or "") + ''
                 find $out/${python3.sitePackages}/pandas/_libs/window -type f \( -name '*.so' -or -name '*.so.*' \) | while read lib; do
                   echo "setting rpath for $lib..."
-                  patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}/pandas/lib" "$lib"
+                  patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}/pandas/_libs/window " "$lib"
                   addOpenGLRunpath "$lib"
                 done
               '';
@@ -2977,7 +2977,7 @@ nix \
 shell \
 --impure \
 --expr \
-$EXPR \
+"$EXPR" \
 --command \
 python \
 -c \
@@ -2998,7 +2998,7 @@ $(
   --print-out-paths \
   --impure \
   --expr \
-  $EXPR
+  "$EXPR"
 ) | cat
 ``` 
 
@@ -3023,7 +3023,7 @@ EXPR=$(cat <<-'EOF'
               postFixup = let rpath = super.lib.makeLibraryPath [ super.stdenv.cc.cc.lib ]; in (oldAttrs.postFixup or "") + ''
                 find $out/${python3.sitePackages}/pandas/lib -type f \( -name '*.so' -or -name '*.so.*' \) | while read lib; do
                   echo "setting rpath for $lib..."
-                  patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}/pandas/lib" "$lib"
+                  patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}/pandas/_libs/window " "$lib"
                   addOpenGLRunpath "$lib"
                 done
               '';
@@ -3061,6 +3061,29 @@ Refs.:
 
 
 ##### The `window/aggregations.cpython-38-x86_64-linux-gnu.so` thing:
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+      customPython3 = (pkgs.python3.withPackages (p: with p; [ pandas ]));
+    in
+      [
+        customPython3
+        (pkgs.writeScriptBin "python3_site_packages" "ldd ${customPython3}/${customPython3.sitePackages}/pandas/_libs/window/aggregations.cpython-310-${builtins.currentSystem}-gnu.so" )
+      ]
+  )
+' \
+--command \
+python3_site_packages
+```
 
 ```bash
 EXPR=$(cat <<-'EOF'
@@ -3100,10 +3123,12 @@ EOF
 
 nix \
 build \
+--no-link \
+--print-build-logs \
 --print-out-paths \
 --impure \
 --expr \
-$EXPR
+"$EXPR"
 
 
 nix \
