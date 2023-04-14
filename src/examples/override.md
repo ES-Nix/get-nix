@@ -386,6 +386,28 @@ build \
 ```
 
 
+```bash
+nix \
+show-derivation \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with legacyPackages.${builtins.currentSystem};
+    (
+      podman-unwrapped.override {
+        systemd = null;
+      }
+  )
+)
+'
+```
+
+```bash
+nix build --no-link --print-build-logs nixpkgs#podman.inputDerivation
+```
+
 ## nginx
 
 TODO:
