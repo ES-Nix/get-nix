@@ -2646,6 +2646,7 @@ nixpkgs#pkgsCross.s390x.pkgsStatic.busybox-sandbox-shell \
 ```bash
 nix \
 build \
+--no-link \
 --store "${HOME}" \
 nixpkgs#pkgsCross.aarch64-darwin.pkgsStatic.busybox-sandbox-shell \
 --option sandbox true
@@ -9392,8 +9393,9 @@ nix eval nixpkgs#gcc.out.outputs
 
 nix eval nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped.out.outputs
 
-nix eval nixpkgs#glibc.out.outputs
+nix eval nixpkgs#shadow.out.outputs
 
+nix eval nixpkgs#glibc.out.outputs
 ```
 
 
