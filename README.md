@@ -16380,6 +16380,7 @@ Refs.:
 - https://discourse.nixos.org/t/confusion-about-tarball-ttl-and-its-default-value/20998/2
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-connect-timeout
 - https://github.com/NixOS/nix/issues/4258#issuecomment-791262337
+- https://github.com/NixOS/nix/issues/6228#issuecomment-1242879750
 
 
 ```bash
