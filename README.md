@@ -9399,6 +9399,10 @@ nix eval nixpkgs#glibc.out.outputs
 ```
 
 
+```bash
+nix eval nixpkgs#darwin.builder.meta.platforms
+```
+
 
 ### vmTools.runInLinuxVM
 
@@ -15480,6 +15484,17 @@ TODO: make some examples
 ```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'busybox-sandbox-shell.meta.platforms'
 ```
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames lib' | tr ' ' '\n'
+```
+
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames pkgs' | tr ' ' '\n'
+```
+
+
+
 
 ```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'(builtins.getFlake "github:edolstra/dwarffs").rev'
