@@ -16381,6 +16381,7 @@ Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-connect-timeout
 - https://github.com/NixOS/nix/issues/4258#issuecomment-791262337
 - https://github.com/NixOS/nix/issues/6228#issuecomment-1242879750
+- https://www.tweag.io/blog/2020-06-25-eval-cache/
 
 
 ```bash
