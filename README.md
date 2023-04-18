@@ -16406,6 +16406,7 @@ nix run nixpkgs#sqlite -- ~/.cache/nix/binary-cache-v6.sqlite 'pragma integrity_
 ```
 Refs.:
 - https://github.com/NixOS/nix/issues/3545#issuecomment-621107449
+- https://github.com/NixOS/nix/issues/6056#issuecomment-1031533794
 - https://github.com/NixOS/nix/issues/3091#issuecomment-1133549695
 
 
