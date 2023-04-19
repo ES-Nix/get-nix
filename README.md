@@ -774,6 +774,10 @@ nix eval nix#checks --apply builtins.attrNames
 nix eval nix#checks.x86_64-linux --apply builtins.attrNames
 ```
 
+```bash
+nix eval nixpkgs#vmTools.diskImages --apply builtins.attrNames
+```
+
 
 ```bash
 nix eval nixpkgs#dockerTools.pullImage --apply builtins.functionArgs
