@@ -12,8 +12,9 @@ echo 'The installer has identified the running shell as: '"${NIX_GUESSED_USER_SH
 FULL_PATH_TO_GUESSED_SHELL_RC="${HOME}"/."${NIX_GUESSED_USER_SHELL}"rc
 # FULL_PATH_TO_DIRENVRC="${HOME}"/.direnvrc
 
-STRING_EVAL_DIRENV_HOOK='eval "$(direnv hook '
-FULL_STRING_EVAL_DIRENV_HOOK="${STRING_EVAL_DIRENV_HOOK}""${NIX_GUESSED_USER_SHELL}"')"'
+OPEN_STRING_EVAL_DIRENV_HOOK='eval "$(direnv hook '
+CLOSE_STRING_EVAL_DIRENV_HOOK=')"'
+FULL_STRING_EVAL_DIRENV_HOOK="${OPEN_STRING_EVAL_DIRENV_HOOK}""${NIX_GUESSED_USER_SHELL}""${CLOSE_STRING_EVAL_DIRENV_HOOK}"
 
 # nix flake metadata github:NixOS/nixpkgs/release-22.05
 readlink "$(which direnv)" >/dev/null || nix profile install github:NixOS/nixpkgs/60e774ff2ca18570a93a2992fd18b8f5bf3ba57b#direnv
