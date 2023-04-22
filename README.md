@@ -14544,6 +14544,29 @@ eval \
 TODO: take a look into these `nix repl` stuff that lilyball did
 https://discourse.nixos.org/t/in-overlays-when-to-use-self-vs-super/2968/9
 
+
+#### builtins.trace 
+
+
+```bash
+builtins.trace "file loaded" (
+  self: super: builtins.trace ("overlay invoked: ${toString ((super.count or 0) + 1)}") ({
+    count = (super.count or 0) + 1;
+
+    gnupatch = super.gnupatch.overrideAttrs (old: { count = (old.count or 0) + 1; });
+    gawk = super.gawk.overrideAttrs (old: { count = (old.count or 0) + 1; } );
+    bzip2 = super.bzip2.overrideAttrs (old: { count = (old.count or 0) + 1; } );
+
+    atop = super.atop.overrideAttrs (old: { count = (old.count or 0) + 1; } );
+    strace = super.strace.overrideAttrs (old: { count = (old.count or 0) + 1; } );
+    vim = super.vim.overrideAttrs (old: { count = (old.count or 0) + 1; } );
+  })
+)
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/34086#issuecomment-360984573
+
+
 ###### The nix.conf option trace-function-calls
 
 ```bash
