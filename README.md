@@ -3343,8 +3343,18 @@ nix path-info -rsSh nixpkgs#pkgsStatic.nix
 ```
 
 ```bash
-nix build github:NixOS/nix#nix-static
+nix build -L --no-link github:NixOS/nix#nix-static
 nix path-info -rsSh --eval-store auto --store https://cache.nixos.org/ github:NixOS/nix#nix-static
+
+nix \
+path-info \
+--closure-size \
+--human-readable \
+--recursive \
+--size \
+--eval-store auto \
+--store https://cache.nixos.org/ \
+github:NixOS/nix#nix-static
 ```
 
 nix search nixpkgs ' sed'
@@ -3692,27 +3702,74 @@ nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.python3Minimal --no
 nix \
 build \
 --impure \
+--no-link \
 --expr \
 '(import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {}).nixosTests.podman'
 ```
 
-
 ```bash
 nix \
 build \
 --impure \
+--no-link \
+--print-build-logs \
 --expr \
-'let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {}; in pkgs.nixosTests.podman'
+'(import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {}).nixosTests.podman.driverInteractive'
 ```
 
 ```bash
 nix \
 build \
+--no-link \
+--print-build-logs \
+--expr \
+'(import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") { system = "x86_64-linux"; }).nixosTests.podman.driverInteractive'
+```
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--expr \
+'(import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") { system = "aarch64-linux"; }).nixosTests.podman.driverInteractive'
+```
+
+
+```bash
+nix \
+build \
 --impure \
+--no-link \
+--print-build-logs \
+--expr \
+'let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {}; in pkgs.nixosTests.podman'
+```
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--expr \
+'(import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") { system = "x86_64-linux"; }).nixosTests.podman.driverInteractive'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
 --expr \
 '
   let
-    pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {};
+    nt = (import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {} ).nixosTests;
     nodes = {
         machine = { config, pkgs, ... }: {
           environment.systemPackages = with pkgs; [
@@ -3720,13 +3777,17 @@ build \
           ];
         };
       };
-  in pkgs.nixosTests ({
+  in nt ({
       name = "hello-test";
       nodes = nodes;
       testScript = ''"machine.succeed(\"hello\")"'';
     })
 '
 ```
+
+
+.legacyPackages."x86_64-linux".nixosTest
+
 
 
 That is insane to be possible, but it is, well hope it does not brake for you:
@@ -6310,8 +6371,51 @@ dockerTools.buildImage {
     #    '';
   };
 ```
+"$(dirname "$(readlink -f "$(which coreutils)")")" \
+"$(dirname "$(readlink -f "$(which bash)")")" \
+
+```bash
+docker \
+run \
+--env=PATH=/root/.nix-profile/bin:"$(dirname "$(readlink -f "$(which bash)")")":"$(dirname "$(readlink -f "$(which coreutils)")")":/usr/bin:/bin \
+--interactive=true \
+--privileged=true \
+--tty=true \
+--rm=true \
+--volume=/nix/store/:/nix/store/:ro \
+docker.io/nixpkgs/nix-flakes \
+bash
+```
 
 
+```bash
+docker run -d --name=data-container-1 --volume=/srv --rm ubuntu sh -c \
+'while ! false; do echo $(date +"%d/%m/%Y %H:%M:%S:%3N") > /srv/foo.txt; sleep 2; done'
+while ! false; do docker run -t -i --rm --volumes-from data-container-1:ro alpine sh -c 'cat /srv/foo.txt'; sleep 1; done
+```
+
+
+```bash
+docker run -d --name=data-nix-container --volume=/nix:/srv/nix:rw --rm busybox sh -c 'sleep infinity'
+docker run -t -i --rm --volumes-from data-nix-container:ro docker.io/nixpkgs/nix-flakes
+```
+
+
+```bash
+docker run -t -i --rm docker.io/nixpkgs/nix-flakes
+```
+
+```bash
+docker run --env=PATH=/root/.nix-profile/bin:"$(dirname "$(readlink -f "$(which nix)")")":"$(dirname "$(readlink -f "$(which bash)")")":"$(dirname "$(readlink -f "$(which coreutils)")")":/usr/bin:/bin -t -i --rm --volumes-from data-nix-container:ro docker.io/nixpkgs/nix-flakes bash
+
+docker run --env=SSL_CERT_FILE="$(nix eval --raw $(echo $NIX_PATH | cut -d'=' -f2)#cacert)"/etc/ssl/certs/ca-bundle.crt \
+--env=PATH=/root/.nix-profile/bin:"$(dirname "$(readlink -f "$(which nix)")")":"$(dirname "$(readlink -f "$(which bash)")")":"$(dirname "$(readlink -f "$(which coreutils)")")":/usr/bin:/bin \
+-t \
+-i \
+--rm \
+--volumes-from data-nix-container:ro \
+docker.io/nixpkgs/nix-flakes bash
+```
 
 ```bash
 podman \
@@ -13373,6 +13477,7 @@ cat result/nix-daemon.service | grep PATH | cut -d '=' -f3 | tr -d '"' | tr ':' 
 nix \
 build \
 --impure \
+--print-build-logs \
 --expr \
 '
 let 
@@ -13387,12 +13492,12 @@ in
                             "${toString (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
                               {
                                 security.wrappers = {
-                                    doas =
-                                        { setuid = true;
-                                          owner = "root";
-                                          group = "root";
-                                          source = "${doas}/bin/doas";
-                                        };
+                                    doas = { 
+                                              setuid = true;
+                                              owner = "root";
+                                              group = "root";
+                                              source = "${doas}/bin/doas";
+                                           };
                                 };
                               }
                          ];
