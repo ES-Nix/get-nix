@@ -6371,8 +6371,7 @@ dockerTools.buildImage {
     #    '';
   };
 ```
-"$(dirname "$(readlink -f "$(which coreutils)")")" \
-"$(dirname "$(readlink -f "$(which bash)")")" \
+
 
 ```bash
 docker \
@@ -6400,6 +6399,57 @@ docker run -d --name=data-nix-container --volume=/nix:/srv/nix:rw --rm busybox s
 docker run -t -i --rm --volumes-from data-nix-container:ro docker.io/nixpkgs/nix-flakes
 ```
 
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/nixpkgs/nix-flakes:latest
+
+RUN nix profile install nixpkgs#awscli nixpkgs#findutils
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+EOF
+
+
+podman \
+build \
+--file=Containerfile \
+--tag=nix-flakes-awscli .
+```
+
+
+
+```bash
+podman \
+run \
+--tty=true \
+--interactive=true \
+--rm=true \
+--volume=/nix/store/vd7m25a2r2v96ir53nrk8yxv73lnzc9s-hello-2.12.1:/nix/store/vd7m25a2r2v96ir53nrk8yxv73lnzc9s-hello-2.12.1:rw \
+--volume=/nix/store/wv33zvn4m0j6qlipy5ybfrixgipnfnyj-xgcc-12.2.0-libgcc:/nix/store/wv33zvn4m0j6qlipy5ybfrixgipnfnyj-xgcc-12.2.0-libgcc:rw \
+--volume=/nix/store/jrid72i6ii9wx2ia6fyr2b1plri2m07l-libunistring-1.1:/nix/store/jrid72i6ii9wx2ia6fyr2b1plri2m07l-libunistring-1.1:rw \
+--volume=/nix/store/y382xj6bh8h4mmm22sw1a6q81rijrxl7-libidn2-2.3.4:/nix/store/y382xj6bh8h4mmm22sw1a6q81rijrxl7-libidn2-2.3.4:rw \
+--volume=/nix/store/1n2l5law9g3b77hcfyp50vrhhssbrj5g-glibc-2.37-8:/nix/store/1n2l5law9g3b77hcfyp50vrhhssbrj5g-glibc-2.37-8:rw \
+--volume="$HOME"/.aws/config:/root/.aws/config:ro \
+--volume="$HOME"/.aws/credentials:/root/.aws/credentials:ro \
+localhost/nix-flakes-awscli
+```
+
+
+```bash
+export NIXPKGS_ALLOW_UNFREE=1
+
+nix path-info --impure --recursive /nix/store/vd7m25a2r2v96ir53nrk8yxv73lnzc9s-hello-2.12.1 \
+| wc -l 
+
+nix path-info --impure --recursive /nix/store/vd7m25a2r2v96ir53nrk8yxv73lnzc9s-hello-2.12.1 \
+| xargs -I{} nix \
+    copy \
+    --max-jobs $(nproc) \
+    -vvv \
+    --no-check-sigs \
+    {} \
+    --to 's3://playing-bucket-nix-cache-test'
+```
+
 
 ```bash
 docker run -t -i --rm docker.io/nixpkgs/nix-flakes
@@ -6410,9 +6460,9 @@ docker run --env=PATH=/root/.nix-profile/bin:"$(dirname "$(readlink -f "$(which 
 
 docker run --env=SSL_CERT_FILE="$(nix eval --raw $(echo $NIX_PATH | cut -d'=' -f2)#cacert)"/etc/ssl/certs/ca-bundle.crt \
 --env=PATH=/root/.nix-profile/bin:"$(dirname "$(readlink -f "$(which nix)")")":"$(dirname "$(readlink -f "$(which bash)")")":"$(dirname "$(readlink -f "$(which coreutils)")")":/usr/bin:/bin \
--t \
--i \
---rm \
+--tty=true \
+--interactive=true \
+--tty=true \
 --volumes-from data-nix-container:ro \
 docker.io/nixpkgs/nix-flakes bash
 ```
