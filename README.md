@@ -9551,6 +9551,9 @@ nix eval nixpkgs#gcc.out.outputs
 
 nix eval nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.gcc-unwrapped.out.outputs
 
+nix eval nixpkgs#python3Packages.z3.outputs
+nix eval nixpkgs#z3.outputs
+
 nix eval nixpkgs#shadow.out.outputs
 
 nix eval nixpkgs#glibc.out.outputs
