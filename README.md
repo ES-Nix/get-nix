@@ -16373,6 +16373,13 @@ Refs.:
 - https://sourcegraph.com/github.com/NixOS/nixpkgs/-/blob/nixos/tests/lightdm.nix
 
 
+```nix
+ifThenElse = cond: t: f: if cond then t else f
+```
+Refs.:
+- [Nix if-then-else expressions](https://ops.functionalalgebra.com/2016/06/12/if-then-else/)
+
+
 
 ```nix
 stdenv.mkDerivation (finalAttrs: {
