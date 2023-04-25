@@ -6415,6 +6415,51 @@ build \
 --tag=nix-flakes-awscli .
 ```
 
+```bash
+podman \
+run \
+--tty=true \
+--interactive=false \
+--rm=true \
+--volume="$HOME"/.aws/config:/root/.aws/config:ro \
+--volume="$HOME"/.aws/credentials:/root/.aws/credentials:ro \
+docker.io/nixpkgs/nix-flakes \
+nix --version
+```
+
+
+```bash
+podman \
+run \
+--tty=true \
+--interactive=true \
+--rm=true \
+--volume="$HOME"/.aws/config:/root/.aws/config:ro \
+--volume="$HOME"/.aws/credentials:/root/.aws/credentials:ro \
+localhost/nix-flakes-awscli
+```
+
+
+```bash
+NIX_PATH_TO_SEND=/nix/store/wv33zvn4m0j6qlipy5ybfrixgipnfnyj-xgcc-12.2.0-libgcc
+
+podman \
+run \
+--tty=true \
+--interactive=true \
+--rm=true \
+--volume="$HOME"/.aws/config:/root/.aws/config:ro \
+--volume="$HOME"/.aws/credentials:/root/.aws/credentials:ro \
+localhost/nix-flakes-awscli \
+nix \
+    copy \
+    --max-jobs $(nproc) \
+    -vvv \
+    --no-check-sigs \
+    $NIX_PATH_TO_SEND \
+    --to 's3://playing-bucket-nix-cache-test'
+```
+
 
 
 ```bash
@@ -9544,7 +9589,7 @@ nix eval --impure --raw github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc
 ```bash
 nix eval nixpkgs#hello.out.outputs
 
-# TODO: something is missing, I guess. The enrdfonts shoudl have more outputs :thinking:
+# TODO: something is missing, I guess. The nerdfonts should have more outputs :thinking:
 nix eval nixpkgs#nerdfonts.out.outputs
 
 nix eval nixpkgs#gcc.out.outputs
