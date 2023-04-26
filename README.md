@@ -9606,6 +9606,13 @@ nix eval nixpkgs#glibc.out.outputs
 
 
 ```bash
+nix eval nixpkgs#qemu.meta.mainProgram
+
+nix eval nixpkgs#qemu.pname
+```
+
+
+```bash
 nix eval nixpkgs#darwin.builder.meta.platforms
 ```
 
