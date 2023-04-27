@@ -16432,6 +16432,8 @@ About nix language + flakes + templates:
 - https://serokell.io/blog/practical-nix-flakes
 - https://github.com/Misterio77/nix-config/tree/81a08a927424f44a26dd7b5c8047bb7aca457264/templates
 - nix flake show templates, nix flake init -t github:serokell/templates#python-poetry2nix
+- https://github.com/Hoverbear-Consulting/flake
+
 
 
 Note: `${user.home}` and other variants
