@@ -2787,6 +2787,7 @@ nix \
     --extra-experimental-features 'nix-command flakes' \
     build \
     --keep-failed \
+    --max-jobs 0 \
     --no-link \
     --print-build-logs \
     --print-out-paths \
@@ -6419,7 +6420,7 @@ build \
 podman \
 run \
 --tty=true \
---interactive=false \
+--interactive=true \
 --rm=true \
 --volume="$HOME"/.aws/config:/root/.aws/config:ro \
 --volume="$HOME"/.aws/credentials:/root/.aws/credentials:ro \
