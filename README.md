@@ -9155,6 +9155,15 @@ $(nix path-info github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#he
  | dot -Tps > glue.ps
 ```
 
+```bash
+nix eval nixpkgs#hello.drvPath --raw \
+| xargs nix-store -qR \
+| grep '\.drv$' \
+| xargs -n1 nix show-derivation \
+| jq -s '.[] | select(.[] | .env | has("outputHash")) | keys | .[]' -r \
+| xargs nix build --no-link --print-out-paths
+```
+
 
 ```bash
 nix-store --query --graph --include-outputs \
