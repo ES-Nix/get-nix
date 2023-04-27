@@ -14671,6 +14671,8 @@ https://discourse.nixos.org/t/in-overlays-when-to-use-self-vs-super/2968/9
 #### builtins.trace 
 
 
+https://unix.stackexchange.com/a/721439
+
 ```nix
 builtins.trace "file loaded" (
   self: super: builtins.trace ("overlay invoked: ${toString ((super.count or 0) + 1)}") ({
