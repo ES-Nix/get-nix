@@ -13636,15 +13636,19 @@ Do watch:
 # nix-shell -p "(steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run"
 # https://github.com/NixOS/nixpkgs/issues/32881#issuecomment-371815465
 
+export NIXPKGS_ALLOW_UNFREE=1 
+
 nix \
 shell \
 --impure \
 --expr \
-'(
-  with builtins.getFlake "nixpkgs"; 
-  with legacyPackages.${builtins.currentSystem}; 
-  (steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run
-)'
+'
+  (
+    with builtins.getFlake "nixpkgs"; 
+    with legacyPackages.${builtins.currentSystem}; 
+      (steam.override { extraPkgs = pkgs: [pkgs.fuse];}).run
+  )
+'
 ```
 
 ```bash
@@ -13730,15 +13734,15 @@ build \
 --impure \
 --expr \
 '
-(                                                                                                     
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-    runCommand "_" 
-        { 
-           nativeBuildInputs = [ coreutils ];
-        } 
-      "mkdir $out; ls -al /; echo; ls -al /build; pwd"
-)
+  (                                                                                                     
+    with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+    with legacyPackages.${builtins.currentSystem};
+      runCommand "_" 
+          { 
+             nativeBuildInputs = [ coreutils ];
+          } 
+        "mkdir $out; ls -al /; echo; ls -al /build; pwd"
+  )
 '
 ```
 
@@ -13768,16 +13772,20 @@ log \
 ```bash
 nix \
 build \
+--no-link \
+--print-build-logs \
 --impure \
 --expr \
 '
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-  with lib;
-    runCommand "my-test" {} "echo a > /tmp/a; ls -al /tmp; sleep 1; mkdir $out"
-)
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      runCommand "my-test" {} "echo a > /tmp/a; ls -al /tmp; sleep 1; mkdir $out"
+  )
 '
+
+cat /tmp/a
 ```
 
 ```bash
@@ -13786,12 +13794,12 @@ build \
 --impure \
 --expr \
 '
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-  with lib;
-    runCommand "my-test" {} "echo a > /tmp/a; ls -al /tmp; sleep 1; mkdir $out"
-)
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      runCommand "my-test" {} "echo a > /tmp/a; ls -al /tmp; sleep 1; mkdir $out"
+  )
 ' | cat
 ```
 Refs.:
@@ -13926,17 +13934,17 @@ build \
 --impure \
 --expr \
 '
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-    stdenv.mkDerivation {
-      name = "demo";
-      dontUnpack = true;
-      buildInputs = [ coreutils ];
-      buildPhase = "test $(ls -A /tmp | wc -c) -eq 0; mkdir $out";
-      dontInstall = true;
-    }
-)
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+    with legacyPackages.${builtins.currentSystem};
+      stdenv.mkDerivation {
+        name = "demo";
+        dontUnpack = true;
+        buildInputs = [ coreutils ];
+        buildPhase = "test $(ls -A /tmp | wc -c) -eq 0; mkdir $out";
+        dontInstall = true;
+      }
+  )
 '
 ```
 
@@ -13991,17 +13999,17 @@ build \
 --impure \
 --expr \
 '
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-    stdenv.mkDerivation {
-      name = "demo";
-      dontUnpack = true;
-      buildInputs = [ mount ];
-      buildPhase = "test $(mount | wc -l) -eq 111; mkdir $out";
-      dontInstall = true;
-    }
-)
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+    with legacyPackages.${builtins.currentSystem};
+      stdenv.mkDerivation {
+        name = "demo";
+        dontUnpack = true;
+        buildInputs = [ mount ];
+        buildPhase = "test $(mount | wc -l) -eq 111; mkdir $out";
+        dontInstall = true;
+      }
+  )
 '
 ```
 
@@ -14232,17 +14240,17 @@ build \
 --impure \
 --expr \
 '
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-    stdenv.mkDerivation {
-      name = "demo";
-      dontUnpack = true;
-      nativeBuildDependencies = [ coreutils ];
-      buildPhase = "echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd /bin/sh | sha256sum -c && mkdir $out";
-      dontInstall = true;
-    }
-)
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+    with legacyPackages.${builtins.currentSystem};
+      stdenv.mkDerivation {
+        name = "demo";
+        dontUnpack = true;
+        nativeBuildDependencies = [ coreutils ];
+        buildPhase = "echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd /bin/sh | sha256sum -c && mkdir $out";
+        dontInstall = true;
+      }
+  )
 '
 ```
 
@@ -14402,17 +14410,17 @@ build \
 --impure \
 --expr \
 '
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-    stdenv.mkDerivation {
-      name = "test-sandbox";
-      dontUnpack = true;
-      buildInputs = [ coreutils gnugrep ];
-      buildPhase = "echo $(stat -c %U:%G /nix/store) | grep nobody:nixbld && mkdir $out";
-      dontInstall = true;
-    }
-)
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+    with legacyPackages.${builtins.currentSystem};
+      stdenv.mkDerivation {
+        name = "test-sandbox";
+        dontUnpack = true;
+        buildInputs = [ coreutils gnugrep ];
+        buildPhase = "echo $(stat -c %U:%G /nix/store) | grep nobody:nixbld && mkdir $out";
+        dontInstall = true;
+      }
+  )
 '
 ```
 
@@ -14653,7 +14661,7 @@ https://discourse.nixos.org/t/in-overlays-when-to-use-self-vs-super/2968/9
 #### builtins.trace 
 
 
-```bash
+```nix
 builtins.trace "file loaded" (
   self: super: builtins.trace ("overlay invoked: ${toString ((super.count or 0) + 1)}") ({
     count = (super.count or 0) + 1;
@@ -14675,7 +14683,8 @@ Refs.:
 ###### The nix.conf option trace-function-calls
 
 ```bash
-nix --option trace-function-calls true build -L nixpkgs#pkgsStatic.gcc
+nix --option trace-function-calls true \
+build --no-link --print-build-logs nixpkgs#pkgsStatic.gcc
 ```
 Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-function-calls
@@ -16509,6 +16518,30 @@ nix registry list
 nix flake show templates
 ```
 
+
+```bash
+mkdir -pv c-hello \
+&& cd c-hello \
+&& nix flake init --template github:NixOS/templates#c-hello \
+&& git init \
+&& git add . \
+&& nix flake show .# \
+&& nix build -L .# \
+&& nix run .#
+```
+
+```bash
+rm -frv c-hello
+```
+
+```bash
+nix flake check .#
+```
+
+
+```bash
+sh -c 'if [ "$(uname)" == "Darwin" ]; then echo "--daemon"; fi'
+```
 
 TODO:
 https://github.com/NixOS/nixpkgs/pull/182445#issuecomment-1200277429
