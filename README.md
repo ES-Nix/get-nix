@@ -9164,6 +9164,8 @@ nix eval nixpkgs#hello.drvPath --raw \
 | jq -s '.[] | select(.[] | .env | has("outputHash")) | keys | .[]' -r \
 | xargs nix build --no-link --print-out-paths
 ```
+Refs.:
+- https://gist.github.com/balsoft/f312b15a9d46400bd66d386a23015323
 
 
 ```bash
