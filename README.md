@@ -1192,6 +1192,8 @@ From:
 
 
 ```bash
+
+
 export HOST_MAPPED_PORT=10022
 export REMOVE_DISK=true
 export QEMU_NET_OPTS='hostfwd=tcp::10022-:10022'
@@ -1218,15 +1220,12 @@ chmod -v 0600 id_ed25519
 
 export NIXPKGS_ALLOW_UNFREE=1
 
-nix \
-run \
---impure \
---expr \
-'
+
+EXPR_NIX='
 (
   (
     with builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4";
-    with legacyPackages.${builtins.currentSystem};
+    with legacyPackages."x86_64-linux";
     let
       nixuserKeys = writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly";
     in
@@ -1293,18 +1292,18 @@ run \
                   gitFull
                   xorg.xclock
                   file
-                  pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
+                  # pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
                   bpytop
-                  firefox
-                  vscode
-                  (python3.buildEnv.override
-                    {
-                      extraLibs = with python3Packages; [ scikitimage opencv2 numpy ];
-                    }
-                  )
+                  # firefox
+                  # vscode
+                  # (python3.buildEnv.override
+                  #   {
+                  #     extraLibs = with python3Packages; [ scikitimage opencv2 numpy ];
+                  #   }
+                  # )
               ];
               shell = bashInteractive;
-              uid = '"$(id -u)"';
+              uid = 1234;
               autoSubUidGidRange = true;
 
               openssh.authorizedKeys.keyFiles = [
@@ -1341,9 +1340,13 @@ run \
                 # following configuration is added only when building VM with build-vm
                 memorySize = 3072; # Use MiB memory.
                 diskSize = 4096; # Use MiB memory.
-                cores = 3;         # Simulate 3 cores.
+                cores = 7;         # Simulate 3 cores.
                 #
-                docker.enable = true;
+                podman.enable = true;
+
+                #
+                useNixStoreImage = true;
+                writableStore = true; # TODO
               };
               security.polkit.enable = true;
 
@@ -1354,16 +1357,17 @@ run \
                 "vfio-pci"
               ];
 
-              hardware.opengl.enable = true;
-              hardware.opengl.driSupport = true;
+              # hardware.opengl.enable = true;
+              # hardware.opengl.driSupport = true;
 
               nixpkgs.config.allowUnfree = true;
               nix = {
                 package = pkgsStatic.nix;
                 # package = pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix;
                 extraOptions = "experimental-features = nix-command flakes repl-flake";
-                readOnlyStore = false;
+                readOnlyStore = true;
               };
+
               boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
               # Enable the X11 windowing system.
@@ -1399,16 +1403,6 @@ run \
               programs.dconf.enable = true;
 
               time.timeZone = "America/Recife";
-
-              environment.variables.KUBECONFIG = "/etc/kubernetes/cluster-admin.kubeconfig";
-              environment.etc."containers/registries.conf" = {
-                mode = "0644";
-                text = "[registries.search] \n registries = [\"docker.io\", \"localhost\"]";
-              };
-
-              # Is this ok to kubernetes? Why free -h still show swap stuff but with 0?
-              swapDevices = pkgs.lib.mkForce [ ];
-
             system.stateVersion = "22.11";
 
             users.users.root = {
@@ -1423,7 +1417,58 @@ run \
     }
   ).config.system.build.vm
 )
-' < /dev/null &
+'
+
+nix \
+--option eval-cache false \
+--option extra-trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+--option extra-trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
+--option build-use-substitutes true \
+--option substitute true \
+--extra-experimental-features 'nix-command flakes' \
+build \
+--keep-failed \
+--no-link \
+--max-jobs auto \
+--print-build-logs \
+--print-out-paths \
+--substituters "s3://playing-bucket-nix-cache-test" \
+--expr \
+"$EXPR_NIX"
+
+
+nix \
+--option eval-cache false \
+--option trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+--option trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
+--option build-use-substitutes false \
+--option substitute false \
+--extra-experimental-features 'nix-command flakes' \
+build \
+--keep-failed \
+--no-link \
+--max-jobs 0 \
+--print-build-logs \
+--print-out-paths \
+--substituters "https://playing-bucket-nix-cache-test.s3.amazonaws.com" \
+--expr \
+"$EXPR_NIX"
+
+nix \
+build \
+--max-jobs auto \
+--no-link \
+--no-show-trace \
+--print-build-logs \
+--expr \
+"$EXPR_NIX"
+
+
+nix \
+run \
+--impure \
+--expr "$EXPR_NIX" \
+ < /dev/null &
 
 while ! nc -w 1 -z localhost 10022; do echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
 && ssh-keygen -R '[localhost]:10022'; \
@@ -1475,14 +1520,18 @@ du -hs $(readlink -f $(which nix))
 
               programs.dconf.enable = true;
 
+            # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+            # boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+
 ```bash
 export HOST_MAPPED_PORT=10022
 export REMOVE_DISK=true
-export QEMU_NET_OPTS='hostfwd=tcp::10022-:10022'
+export QEMU_NET_OPTS='hostfwd=tcp::10022-:10022,hostfwd=tcp:127.0.0.1:8000-:8000'
 export QEMU_OPTS='-nographic'
 export SHARED_DIR="$(pwd)"
 
 "$REMOVE_DISK" && rm -fv nixos.qcow2
+nc 1>/dev/null 2>/dev/null || nix profile install nixpkgs#netcat
 nc -v -4 localhost "$HOST_MAPPED_PORT" -w 1 -z && echo 'There is something already using the port:'"$HOST_MAPPED_PORT"
 
 # sudo lsof -t -i tcp:10022 -s tcp:listen
@@ -1505,7 +1554,7 @@ EXPR_NIX='
 (
   (
     with builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4";
-    with legacyPackages.${builtins.currentSystem};
+    with legacyPackages."aarch64-linux";
     let
       nixuserKeys = writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly";
     in
@@ -1520,8 +1569,6 @@ EXPR_NIX='
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
 
           ({
-            # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
-            boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
             boot.kernelParams = [
               "console=tty0"
               "console=ttyAMA0,115200n8"
@@ -1561,7 +1608,7 @@ EXPR_NIX='
               description = "The VM tester user";
               group = "nixgroup";
               extraGroups = [
-                              "docker"
+                              "podman"
                               "kvm"
                               "libvirtd"
                               "wheel"
@@ -1569,9 +1616,12 @@ EXPR_NIX='
               packages = [
                   direnv
                   file
+                  gnumake
+                  which
+                  coreutils
               ];
               shell = bashInteractive;
-              uid = '"$(id -u)"';
+              uid = "1234";
               autoSubUidGidRange = true;
 
               openssh.authorizedKeys.keyFiles = [
@@ -1587,107 +1637,13 @@ EXPR_NIX='
                 # following configuration is added only when building VM with build-vm
                 memorySize = 3072; # Use MiB memory.
                 diskSize = 1024 * 16; # Use MiB memory.
-                cores = 6;         # Simulate 3 cores.
+                cores = 6;         # Simulate 6 cores.
+                
                 #
                 docker.enable = false;
-                useNixStoreImage = true;
-                writableStore = true; # TODO
-              };
-
-              nixpkgs.config.allowUnfree = true;
-              nix = {
-                package = nix;
-                extraOptions = "experimental-features = nix-command flakes repl-flake";
-                readOnlyStore = true;
-              };
-
-              # https://github.com/NixOS/nixpkgs/issues/21332#issuecomment-268730694
-              services.openssh = {
-                allowSFTP = true;
-                kbdInteractiveAuthentication = false;
-                enable = true;
-                forwardX11 = false;
-                passwordAuthentication = false;
-                permitRootLogin = "yes";
-                ports = [ 10022 ];
-                authorizedKeysFiles = [
-                  "${toString nixuserKeys}"
-                ];
-              };
-
-            time.timeZone = "America/Recife";
-            system.stateVersion = "22.11";
-
-            users.users.root = {
-              password = "root";
-              initialPassword = "root";
-              openssh.authorizedKeys.keyFiles = [
-                nixuserKeys
-              ];
-            };
-          })
-        ];
-    }
-  ).config.system.build.vm
-)
-' 
-
-
-EXPR_NIX='
-(
-  (
-    with builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4";
-    with legacyPackages.${builtins.currentSystem};
-    let
-      nixuserKeys = writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly";
-    in
-    (
-      builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
-    ).lib.nixosSystem {
-        system = "aarch64-linux";
-        modules = [
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-vm.nix"
-          # "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-guest.nix"
-          "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/installer/cd-dvd/channel.nix"
-
-          ({
-            # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
-            boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
-            boot.kernelParams = [
-              "console=tty0"
-              "console=ttyAMA0,115200n8"
-              # Set sensible kernel parameters
-              # https://nixos.wiki/wiki/Bootloader
-              # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
-              "boot.shell_on_fail"
-              "panic=30"
-              "boot.panic_on_fail" # reboot the machine upon fatal boot issues
-              # TODO: test it
-              "intel_iommu=on"
-              "iommu=pt"
-
-              # https://discuss.linuxcontainers.org/t/podman-wont-run-containers-in-lxd-cgroup-controller-pids-unavailable/13049/2
-              # https://github.com/NixOS/nixpkgs/issues/73800#issuecomment-729206223
-              # https://github.com/canonical/microk8s/issues/1691#issuecomment-977543458
-              # https://github.com/grahamc/nixos-config/blob/35388280d3b06ada5882d37c5b4f6d3baa43da69/devices/petunia/configuration.nix#L36
-              # cgroup_no_v1=all
-              "swapaccount=0"
-              "systemd.unified_cgroup_hierarchy=0"
-              "group_enable=memory"
-            ];
-
-            boot.tmpOnTmpfs = false;
-            # https://github.com/AtilaSaraiva/nix-dotfiles/blob/main/lib/modules/configHost/default.nix#L271-L273
-            boot.tmpOnTmpfsSize = "100%";
-
-              virtualisation = {
-                # following configuration is added only when building VM with build-vm
-                memorySize = 3072; # Use MiB memory.
-                diskSize = 1024 * 16; # Use MiB memory.
-                cores = 6;         # Simulate 3 cores.
+                podman.enable = true;
+                
                 #
-                docker.enable = false;
                 useNixStoreImage = true;
                 writableStore = true; # TODO
               };
