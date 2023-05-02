@@ -1190,9 +1190,20 @@ From:
 
 ##### build-vm, qemu-vm, pkgsStatic.nix, ssh, X11
 
+```bash
+mkdir -pv ~/sandbox/sandbox && cd $_
+```
+
+
+Cleaning?
+```bash
+pgrep qemu | xargs kill
+
+rm -f nixos.qcow2
+```
 
 ```bash
-
+mkdir -pv ~/sandbox/sandbox && cd $_
 
 export HOST_MAPPED_PORT=10022
 export REMOVE_DISK=true
@@ -1395,6 +1406,14 @@ EXPR_NIX='
                   "${toString nixuserKeys}"
                 ];
               };
+
+              # https://stackoverflow.com/a/71247061
+              # https://nixos.wiki/wiki/Firewall
+              # networking.firewall = {
+              #   enable = true;
+              #   allowedTCPPorts = [ 22 80 443 10022 8000 ];
+              # };              
+              
               programs.ssh.forwardX11 = true;
               services.qemuGuest.enable = true;
 
@@ -1419,40 +1438,40 @@ EXPR_NIX='
 )
 '
 
-nix \
---option eval-cache false \
---option extra-trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
---option extra-trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
---option build-use-substitutes true \
---option substitute true \
---extra-experimental-features 'nix-command flakes' \
-build \
---keep-failed \
---no-link \
---max-jobs auto \
---print-build-logs \
---print-out-paths \
---substituters "s3://playing-bucket-nix-cache-test" \
---expr \
-"$EXPR_NIX"
-
-
-nix \
---option eval-cache false \
---option trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
---option trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
---option build-use-substitutes false \
---option substitute false \
---extra-experimental-features 'nix-command flakes' \
-build \
---keep-failed \
---no-link \
---max-jobs 0 \
---print-build-logs \
---print-out-paths \
---substituters "https://playing-bucket-nix-cache-test.s3.amazonaws.com" \
---expr \
-"$EXPR_NIX"
+#nix \
+#--option eval-cache false \
+#--option extra-trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+#--option extra-trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
+#--option build-use-substitutes true \
+#--option substitute true \
+#--extra-experimental-features 'nix-command flakes' \
+#build \
+#--keep-failed \
+#--no-link \
+#--max-jobs auto \
+#--print-build-logs \
+#--print-out-paths \
+#--substituters "s3://playing-bucket-nix-cache-test" \
+#--expr \
+#"$EXPR_NIX"
+#
+#
+#nix \
+#--option eval-cache false \
+#--option trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+#--option trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
+#--option build-use-substitutes false \
+#--option substitute false \
+#--extra-experimental-features 'nix-command flakes' \
+#build \
+#--keep-failed \
+#--no-link \
+#--max-jobs 0 \
+#--print-build-logs \
+#--print-out-paths \
+#--substituters "https://playing-bucket-nix-cache-test.s3.amazonaws.com" \
+#--expr \
+#"$EXPR_NIX"
 
 nix \
 build \
@@ -1470,7 +1489,9 @@ run \
 --expr "$EXPR_NIX" \
  < /dev/null &
 
-while ! nc -w 1 -z localhost 10022; do echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
+
+while ! ssh -i id_ed25519 -o StrictHostKeyChecking=no nixuser@localhost -p 10022 <<<'nix flake metadata nixpkgs'; do \
+  echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
 && ssh-keygen -R '[localhost]:10022'; \
 ssh \
 -i id_ed25519 \
@@ -1524,6 +1545,8 @@ du -hs $(readlink -f $(which nix))
             # boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
 
 ```bash
+mkdir -pv ~/sandbox/sandbox && cd $_
+
 export HOST_MAPPED_PORT=10022
 export REMOVE_DISK=true
 export QEMU_NET_OPTS='hostfwd=tcp::10022-:10022,hostfwd=tcp:127.0.0.1:8000-:8000'
@@ -1531,8 +1554,8 @@ export QEMU_OPTS='-nographic'
 export SHARED_DIR="$(pwd)"
 
 "$REMOVE_DISK" && rm -fv nixos.qcow2
-nc 1>/dev/null 2>/dev/null || nix profile install nixpkgs#netcat
-nc -v -4 localhost "$HOST_MAPPED_PORT" -w 1 -z && echo 'There is something already using the port:'"$HOST_MAPPED_PORT"
+# nc 1>/dev/null 2>/dev/null || nix profile install nixpkgs#netcat
+# nc -v -4 localhost "$HOST_MAPPED_PORT" -w 1 -z && echo 'There is something already using the port:'"$HOST_MAPPED_PORT"
 
 # sudo lsof -t -i tcp:10022 -s tcp:listen
 # sudo lsof -t -i tcp:10022 -s tcp:listen | sudo xargs --no-run-if-empty kill
@@ -1556,13 +1579,15 @@ EXPR_NIX='
     with builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4";
     with legacyPackages."aarch64-linux";
     let
-      nixuserKeys = writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly";
+      a = 0;      
     in
     (
       builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4"
     ).lib.nixosSystem {
         system = "aarch64-linux";
-        modules = [
+        modules = let
+                     nixuserKeys = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly";      
+          in [
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/build-vm.nix"
           "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-vm.nix"
           # "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/modules/virtualisation/qemu-guest.nix"
@@ -1621,15 +1646,15 @@ EXPR_NIX='
                   coreutils
               ];
               shell = bashInteractive;
-              uid = "1234";
+              uid = 1234;
               autoSubUidGidRange = true;
 
               openssh.authorizedKeys.keyFiles = [
-                nixuserKeys
+                "${ writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly" }"
               ];
 
               openssh.authorizedKeys.keys = [
-                "${nixuserKeys}"
+                "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly"
               ];
             };
 
@@ -1665,7 +1690,7 @@ EXPR_NIX='
                 permitRootLogin = "yes";
                 ports = [ 10022 ];
                 authorizedKeysFiles = [
-                  "${toString nixuserKeys}"
+                  "${ writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly" }"
                 ];
               };
 
@@ -1676,7 +1701,7 @@ EXPR_NIX='
               password = "root";
               initialPassword = "root";
               openssh.authorizedKeys.keyFiles = [
-                nixuserKeys
+                "${ writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly" }"
               ];
             };
           })
@@ -1684,15 +1709,94 @@ EXPR_NIX='
     }
   ).config.system.build.vm
 )
-' 
+'
+
+#nix \
+#build \
+#--max-jobs auto \
+#--no-link \
+#--no-show-trace \
+#--print-build-logs \
+#--expr \
+#"$EXPR_NIX"
+
+nix eval --no-show-trace --system aarch64-linux --impure --raw --expr "$EXPR_NIX"
+
+time \
+nix \
+--option eval-cache false \
+--option extra-trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+--option extra-substituters "s3://playing-bucket-nix-cache-test" \
+build \
+--keep-failed \
+--max-jobs 0 \
+--no-link \
+--no-show-trace \
+--print-build-logs \
+--print-out-paths \
+--system aarch64-linux \
+--expr \
+"$EXPR_NIX"
+
+time \
+nix \
+--option eval-cache false \
+--option extra-trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+--option extra-substituters "s3://playing-bucket-nix-cache-test" \
+build \
+--keep-failed \
+--max-jobs 0 \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+/nix/store/8b3wiyl47pkknbd4dca4i8va70a8ijx9-nixos-vm
+
+nix \
+--option eval-cache false \
+--option extra-trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+--option extra-trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
+--option build-use-substitutes true \
+--option substitute true \
+--extra-experimental-features 'nix-command flakes' \
+build \
+--keep-failed \
+--no-link \
+--no-show-trace \
+--max-jobs auto \
+--print-build-logs \
+--print-out-paths \
+--substituters "s3://playing-bucket-nix-cache-test" \
+--expr \
+"$EXPR_NIX"
+
+
+nix \
+--option eval-cache false \
+--option trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+--option trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
+--option build-use-substitutes false \
+--option substitute false \
+--extra-experimental-features 'nix-command flakes' \
+build \
+--keep-failed \
+--no-link \
+--no-show-trace \
+--max-jobs 0 \
+--print-build-logs \
+--print-out-paths \
+--substituters "s3://playing-bucket-nix-cache-test" \
+--expr \
+"$EXPR_NIX"
 
 
 nix \
 build \
--L \
---impure \
+--max-jobs auto \
+--no-link \
+--no-show-trace \
+--print-build-logs \
 --expr \
-$EXPR_NIX 
+"$EXPR_NIX"
 
 nix \
 run \
@@ -1701,11 +1805,11 @@ run \
 $EXPR_NIX \
 < /dev/null &
 
-while ! nc -t -w 1 -z localhost 10022; do echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
+while ! ssh -i id_ed25519 -o StrictHostKeyChecking=no nixuser@localhost -p 10022 <<<'nix flake metadata nixpkgs'; do \
+  echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
 && ssh-keygen -R '[localhost]:10022'; \
 ssh \
 -i id_ed25519 \
--tt \
 -X \
 -o StrictHostKeyChecking=no \
 nixuser@localhost \
@@ -1716,6 +1820,58 @@ nixuser@localhost \
 #"$REMOVE_DISK" && rm -fv nixos.qcow2 id_ed25519
 ```
 
+
+Build it from s3 cache:
+```bash
+nix \
+--option eval-cache false \
+--option trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+--option extra-substituters "s3://playing-bucket-nix-cache-test" \
+build \
+--keep-failed \
+--max-jobs 0 \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+$(nix eval --no-show-trace --system aarch64-linux --impure --raw --expr "$EXPR_NIX")
+
+/nix/store/9n0rlk33i4d8pq6qrx0825zwwc37qn4i-nixos-vm
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/6672#issuecomment-1251573660
+
+
+```bash
+time \
+nix \
+--option eval-cache false \
+--option trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+--option extra-substituters "s3://playing-bucket-nix-cache-test" \
+build \
+--keep-failed \
+--max-jobs 0 \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/6672#issuecomment-1251573660
+
+
+
+
+```bash
+nix \
+--option eval-cache false \
+store \
+ls \
+--store 's3://playing-bucket-nix-cache-test/' \
+--long \
+--recursive \
+/nix/store/9n0rlk33i4d8pq6qrx0825zwwc37qn4i-nixos-vm
+```
 
 #### Other similar projects
 
@@ -6407,6 +6563,7 @@ run \
 --rm=true \
 --volume="$HOME"/.aws/config:/root/.aws/config:ro \
 --volume="$HOME"/.aws/credentials:/root/.aws/credentials:ro \
+--volume=/nix/var/nix:/nix/var/nix:ro \
 localhost/nix-flakes-awscli \
 nix \
     copy \
@@ -6433,6 +6590,20 @@ run \
 --volume="$HOME"/.aws/config:/root/.aws/config:ro \
 --volume="$HOME"/.aws/credentials:/root/.aws/credentials:ro \
 localhost/nix-flakes-awscli
+```
+
+```bash
+docker \
+run \
+--tty=true \
+--interactive=true \
+--rm=true \
+--volume="$HOME"/.aws/config:/root/.aws/config:ro \
+--volume="$HOME"/.aws/credentials:/root/.aws/credentials:ro \
+--volume=/nix/store/vwgplalqfgjbnyv84z2d96k51nhqk30q-hello-static-aarch64-unknown-linux-musl-2.12.1/bin/hello:/nix/store/vwgplalqfgjbnyv84z2d96k51nhqk30q-hello-static-aarch64-unknown-linux-musl-2.12.1/bin/hello:ro \
+--volume=/nix/var/nix:/nix/var/nix:ro \
+docker.io/nixpkgs/nix-flakes \
+nix path-info /nix/store/vwgplalqfgjbnyv84z2d96k51nhqk30q-hello-static-aarch64-unknown-linux-musl-2.12.1/bin/hello
 ```
 
 
@@ -9584,6 +9755,10 @@ nix eval nixpkgs#qemu.pname
 nix eval nixpkgs#darwin.builder.meta.platforms
 ```
 
+
+```bash
+nix eval --system aarch64-linux --impure --raw --expr 'builtins.currentSystem'
+```
 
 ### vmTools.runInLinuxVM
 
