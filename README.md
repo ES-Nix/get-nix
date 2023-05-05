@@ -900,7 +900,15 @@ file /home/ubuntu/.nix-profile | rg 'broken' \
 ```
 It can be a symbolic link broken!
 
+```bash
+diff \
+<( printf '%s\n' $(stat -c %U:%G /nix/store | sha256sum | cut -c-64) ) \
+<( printf '%s\n' "07bf134bf6994cd4e9b9c2aca004b70f8eff1e9bc60e30fa597076ecbcd33b5d" )
+```
 
+```bash
+lscpu | grep op-mode
+```
 
 ## TMP, TMPDIR, XDG_RUNTIME_DIR
 
@@ -2853,10 +2861,94 @@ Out:
 result/bin/hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, not stripped
 ```
 
+'
+let 
+  nixpkgs = builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3";
+in
+
+with subtest(\"Multiple hello, flags -t and -g\"):
+              assert \"hello, world\" == machine.succeed(\"hello -t\")
+              assert \"ABXZ\" == machine.succeed(\"hello -g ABXZ\")"
+assert \"Hello, world!\" == 
+```bash
+EXPR_NIX='
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      nixosTest ({
+        name = "nixos-test";
+        nodes = {
+          machine = { config, pkgs, ... }: {
+            environment.systemPackages = [
+              hello
+            ];          
+          };
+        };
+  
+        testScript = ''
+          "print(machine.succeed(\"hello\"))"
+        '';
+      })
+  )
+'
+
+nix \
+build \
+--no-link \
+--impure \
+--expr \
+"$EXPR_NIX"
+
+time \
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+```
+
 
 ```bash
 nix \
 build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            pkgsStatic.hello
+          ];
+        };
+      };
+
+      testScript = ''
+        "machine.succeed(\"hello\")"
+      '';
+    })
+)
+'
+```
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
 --impure \
 --expr \
 '
@@ -2871,6 +2963,39 @@ build \
           boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
           environment.systemPackages = [
             pkgsCross.aarch64-multiplatform-musl.pkgsStatic.hello
+          ];
+        };
+      };
+
+      testScript = ''
+        "machine.succeed(\"hello\")"
+      '';
+    })
+)
+'
+```
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-cross";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+          environment.systemPackages = [
+            pkgsCross.x86_64-embedded.pkgsStatic.hello
+            # pkgsStatic.hello
           ];
         };
       };
@@ -3031,6 +3156,47 @@ build \
 )
 '
 ```
+
+#### Mac
+
+TODO: test it! Make it work.
+```bash
+{ inputs.nixpkgs.url =
+    "github:NixOS/nixpkgs/e39a5efc4504099194032dfabdf60a0c4c78f181";
+
+  outputs = { nixpkgs, ... }: {
+    checks.aarch64-darwin.default =
+      nixpkgs.legacyPackages.aarch64-darwin.nixosTest {
+        name = "test";
+
+        nodes.machine = {
+          nixpkgs.pkgs = nixpkgs.legacyPackages.aarch64-linux.pkgs;
+
+          virtualisation.host.pkgs =
+            nixpkgs.legacyPackages.aarch64-darwin;
+        };
+
+        testScript = "";
+      };
+  };
+}
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/193336
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+
+'
+```
+
 
 #### Nesting
 
@@ -9760,6 +9926,10 @@ nix eval nixpkgs#darwin.builder.meta.platforms
 nix eval --system aarch64-linux --impure --raw --expr 'builtins.currentSystem'
 ```
 
+```bash
+nix eval --raw nixpkgs#stdenv.buildPlatform.parsed.cpu.name
+```
+
 ### vmTools.runInLinuxVM
 
 
@@ -15799,6 +15969,15 @@ ls -A "$(nix build --print-out-paths --no-link nixpkgs#OVMF.fd)/FV/OVMF.fd"
 
 ```bash
 ls -A "$(nix build --print-out-paths --no-link nixpkgs#pkgsCross.aarch64-multiplatform-musl.OVMF.fd)/AAVMF" 
+```
+
+```bash
+nix build --no-show-trace --print-build-logs --system aarch64-linux nixpkgs#ubootQemuAarch64
+```
+
+```bash
+export NIXPKGS_ALLOW_UNFREE=1 \
+&& nix show-derivation --impure --system aarch64-linux nixpkgs#ubootPinebookPro
 ```
 
 > `findmnt`, which is itself part of the util-linux
