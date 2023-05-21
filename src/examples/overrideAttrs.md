@@ -870,6 +870,10 @@ iana-etc
 Refs.:
 - https://stackoverflow.com/a/71112117
 
+```bash
+nix develop nixpkgs#pkgsStatic.hello -c "$SHELL" -c 'echo $mesonFlags'
+```
+
 TODO: document it better
 ```bash
 nix \
