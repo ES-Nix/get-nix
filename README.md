@@ -709,6 +709,15 @@ nix eval --impure nixpkgs#stdenv.isDarwin
 nix eval --raw --impure --expr \
 '(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.hello)'
 
+nix eval --raw --impure --expr \
+'(let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs") { system = "${builtins.currentSystem}"; }; in pkgs.hello)'
+
+nix eval --raw --impure --expr \
+'(let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs") { system = "${builtins.currentSystem}"; overlays = [(self: super: { hello = self.python3; })]; }; in pkgs.hello)'
+
+nix run --impure --expr \
+'(let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs") { system = "${builtins.currentSystem}"; overlays = [(self: super: { hello = self.python3; })]; }; in pkgs.hello)'
+
 nix shell --impure --expr \
 '(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.buildFHSUserEnv (pkgs.appimageTools.defaultFhsEnvArgs // { name = "fhs"; profile = "export FHS=1"; runScript = "bash"; targetPkgs = pkgs: (with pkgs; [ hello cowsay ]); }))' \
 --command fhs -c 'hello | cowsay' 
@@ -16895,7 +16904,7 @@ About nix language + flakes + templates:
 - nix flake show templates, nix flake init -t github:serokell/templates#python-poetry2nix
 - https://github.com/Hoverbear-Consulting/flake
 
-
+TODO: https://github.com/NixOS/nixpkgs/blob/f91ee3065de91a3531329a674a45ddcb3467a650/pkgs/top-level/all-packages.nix#L14-L27
 
 Note: `${user.home}` and other variants
 ```nix

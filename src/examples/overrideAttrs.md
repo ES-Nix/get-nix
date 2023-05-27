@@ -1795,6 +1795,44 @@ TODO: help this one https://discourse.nixos.org/t/how-to-override-current-gcc7-f
 
 
 ```bash
+# stdenvNoCC
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
+    with legacyPackages.${builtins.currentSystem};
+      (stdenv.override 
+        (
+          { cc = null; hasCC = false; }
+      
+          // lib.optionalAttrs (stdenv.hostPlatform.isDarwin && (stdenv.hostPlatform != stdenv.buildPlatform)) {
+            # TODO: This is a hack to use stdenvNoCC to produce a CF when cross
+            # compiling. It is not very sound. The cross stdenv has:
+            #   extraBuildInputs = [ targetPackages.darwin.apple_sdks.frameworks.CoreFoundation ]
+            # and uses stdenvNoCC. In order to make this not infinitely recursive, we
+            # need to exclude this extraBuildInput.
+            extraBuildInputs = [];
+          }
+        )
+      )
+  )
+' \
+--command \
+sh \
+-c \
+'
+gcc --version \
+&& echo | gcc -E -Wp,-v -
+'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/f91ee3065de91a3531329a674a45ddcb3467a650/pkgs/top-level/all-packages.nix#L34-L45
+
+
+```bash
 nix \
 shell \
 --impure \
@@ -1802,12 +1840,16 @@ shell \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
   with legacyPackages.${builtins.currentSystem};
-    (import <nixpkgs> { overlays = [(self: super: { hello = self.python3; })]; }).hello
+    (import <nixpkgs> { overlays = [(self: super: { hello = self.python3; })]; } ).hello
 )' \
 --command \
 python --version
 ```
 
+```bash
+nix run --impure --expr \
+'(let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs") { system = "${builtins.currentSystem}"; overlays = [(self: super: { hello = self.python3; })]; }; in pkgs.hello)'
+```
 
 https://stackoverflow.com/a/56706514
 
