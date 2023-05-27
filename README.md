@@ -702,7 +702,16 @@ nix path-info --derivation --json --recursive nixpkgs#hello | jq .
 nix eval --raw nixpkgs#hello.drvPath
 nix eval --raw nixpkgs#lib.version
 nix eval nixpkgs#lib.fakeSha256
+
 nix eval --impure --expr '((builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}.stdenv.isDarwin)'
+nix eval --impure nixpkgs#stdenv.isDarwin
+
+nix eval --raw --impure --expr \
+'(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.hello)'
+
+nix shell --impure --expr \
+'(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.buildFHSUserEnv (pkgs.appimageTools.defaultFhsEnvArgs // { name = "fhs"; profile = "export FHS=1"; runScript = "bash"; targetPkgs = pkgs: (with pkgs; [ hello cowsay ]); }))' \
+--command fhs -c 'hello | cowsay' 
 
 echo $(nix-store --query --graph $(nix eval --raw nixpkgs#hello.drvPath)) | dot -Tpdf > hello.pdf
 ```
@@ -2942,6 +2951,142 @@ build \
 '
 ```
 
+
+##### Internet in nixosTest
+
+Broken:
+```bash
+EXPR_NIX='
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      nixosTest ({
+        name = "nixos-test-internet";
+        nodes = {
+          machine = { config, pkgs, ... }: {           
+            nix = {
+              settings = {
+                sandbox = false;
+              };
+            };
+          };
+        };
+  
+        testScript = ''
+          "print(machine.succeed(\"ping -c3 8.8.8.8\"))"
+        '';
+      })
+  )
+'
+
+nix \
+--option sandbox false \
+build \
+--no-link \
+--impure \
+--expr \
+"$EXPR_NIX"
+
+
+time \
+nix \
+--option sandbox false \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+```
+
+
+```bash
+EXPR_NIX='
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      nixosTest ({
+        name = "nixos-test";
+        nodes = {
+          machine = { config, pkgs, ... }: {
+            environment.systemPackages = [
+              hello
+            ];
+            
+            nix = {
+              settings = {
+                sandbox = false;
+              };
+            };
+            
+          };
+        };
+  
+        testScript = ''
+          "print(machine.succeed(\"curl hydra.iohk.io/nix-cache-info\"))"
+        '';
+      })
+  )
+'
+
+nix \
+build \
+--print-build-logs \
+--no-link \
+--impure \
+--expr \
+"$EXPR_NIX"
+
+time \
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+```
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    nixosTest ({
+      name = "nixos-test-relaxed-sandbox";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            hello
+          ];
+            nix = {
+              settings = {
+                sandbox = "relaxed";
+              };
+            };
+        };
+      };
+
+      testScript = ''
+        "machine.succeed(\"hello\")"
+      '';
+    })
+)
+'
+```
 
 
 ```bash
@@ -14351,44 +14496,43 @@ build \
 https://stackoverflow.com/questions/9422461/check-if-directory-mounted-with-bash#comment30386851_9422947
 
 ```bash
+EXPR_NIX='
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with legacyPackages.${builtins.currentSystem};
+    stdenv.mkDerivation {
+      name = "demo";
+      dontUnpack = true;
+      buildInputs = [ coreutils ];
+      buildPhase = "echo foo-bar > /tmp/state.txt; mkdir $out";
+      dontInstall = true;
+    }
+)
+'
+
+nix \
+build \
+--option sandbox false \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR_NIX"
+
+#nix \
+#log \
+#--option sandbox true \
+#--impure \
+#--expr \
+#"$EXPR_NIX" | cat
+
 nix \
 build \
 --option sandbox true \
+--print-build-logs \
+--rebuild \
 --impure \
 --expr \
-'
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-    stdenv.mkDerivation {
-      name = "demo";
-      dontUnpack = true;
-      buildInputs = [ coreutils ];
-      buildPhase = "ls -al /tmp; mkdir $out";
-      dontInstall = true;
-    }
-)
-'
-
-
-nix \
-log \
---option sandbox true \
---impure \
---expr \
-'
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-    stdenv.mkDerivation {
-      name = "demo";
-      dontUnpack = true;
-      buildInputs = [ coreutils ];
-      buildPhase = "ls -al /tmp; mkdir $out";
-      dontInstall = true;
-    }
-)
-' | cat
+"$EXPR_NIX"
 ```
 
 
@@ -14662,21 +14806,24 @@ sudo apt-get update -y && sudo apt-get install -y cowsay
 ```bash
 nix \
 build \
+--print-build-logs \
 --option sandbox false \
 --impure \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with builtins.getFlake "github:NixOS/nixpkgs/eb751d65225ec53de9cf3d88acbf08d275882389";
   with legacyPackages.${builtins.currentSystem};
     stdenv.mkDerivation {
       name = "test-sandbox";
       dontUnpack = true;
-      buildPhase = "mkdir $out; cowsay $(echo abcz | sha256sum -) > $out/log.txt";
+      buildPhase = "mkdir $out; echo abcz | sha256sum - > /tmp/log.txt";
       dontInstall = true;
     }
 )
 '
+
+cat /tmp/log.txt
 ```
 
 
