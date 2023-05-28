@@ -7334,6 +7334,9 @@ Refs.:
 - http://sandervanderburg.blogspot.com/2013/09/managing-user-environments-with-nix.html
 
 
+TODO: how to find the oldest commmit
+https://stackoverflow.com/questions/5188914/how-to-show-the-first-commit-by-git-log
+
 ```bash
 curl https://cache.nixos.org/spy13ngvs1fyj82jw2w3nwczmdgcp3ck.narinfo
 ```
