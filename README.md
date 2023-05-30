@@ -9617,6 +9617,18 @@ nix eval nixpkgs#hello.drvPath --raw \
 Refs.:
 - https://gist.github.com/balsoft/f312b15a9d46400bd66d386a23015323
 
+```bash
+# TODO: Take a look in
+# nix show-derivation --help
+nix show-derivation --recursive /run/current-system | wc -l
+```
+
+```bash
+# TODO: Take a look in
+# nix show-derivation --help
+nix show-derivation --recursive hello.inputDerivation | wc -l
+```
+
 
 ```bash
 nix-store --query --graph --include-outputs \
