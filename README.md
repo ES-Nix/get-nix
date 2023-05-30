@@ -17183,6 +17183,14 @@ rm -frv {*,.*}
 ```
 
 
+```bash
+echo '$(date)' | xargs -0 -L1 -I {} bash -c "printit '{}'"
+```
+Refs
+- https://stackoverflow.com/a/63850911
+
+
+
 ### Old bugs and workarounds 
 
 TODO: something still missing, or not it just does not exist
