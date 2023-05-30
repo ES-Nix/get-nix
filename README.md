@@ -14923,6 +14923,83 @@ TODO: Test this in an nixosTest and in an runInLinuxVM
 - https://discourse.nixos.org/t/using-fuse-inside-nix-derivation/8534/2
 - https://github.com/NixOS/nixpkgs/issues/101038
 
+
+```bash
+nix \
+develop \
+--ignore-environment \
+nixpkgs#hello \
+--command \
+sh \
+-c \
+'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
+```
+
+
+```bash
+nix \
+develop \
+--ignore-environment \
+nixpkgs#hello \
+--command \
+sh \
+-c \
+'
+  source $stdenv/setup && cd "$(mktemp -d)" \
+  && phasesList="unpackPhase configurePhase buildPhase checkPhase installPhase fixupPhase installCheckPhase distPhase" \
+  && for phase in $phasesList ; do echo $phase": "$(type -t $phase); done
+'
+```
+Refs.:
+- [Nix Fundamentals](https://www.youtube.com/embed/m4sv2M9jRLg?start=1160&end=1631&version=3), start=1160&end=1631
+
+
+
+```bash
+nix \
+develop \
+--ignore-environment \
+nixpkgs#pkgsStatic.redis \
+--command \
+sh \
+-c \
+'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
+```
+
+
+```bash
+nix \
+develop \
+--ignore-environment \
+nixpkgs#ffmpeg \
+--command \
+sh \
+-c \
+'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
+```
+
+
+
+```bash
+nix \
+develop \
+--ignore-environment \
+nixpkgs#hello \
+--command \
+bash \
+-c \
+'
+source $stdenv/setup \
+&& cd "$(mktemp -d)" \
+&& pwd
+
+# set +e
+# set -x
+genericBuild
+'
+```
+
+
 ```bash
 nix \
 develop \
