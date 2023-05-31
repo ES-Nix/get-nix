@@ -3051,8 +3051,8 @@ build \
 "$EXPR_NIX"
 ```
 Refs.:
+- https://discourse.nixos.org/t/actually-having-internet-access-in-nixos-test/14280
 - https://discourse.nixos.org/t/nixos-tests-with-internet-access/10601
-
 
 ```bash
 EXPR_NIX='
