@@ -826,6 +826,10 @@ buildInputs = [ hello ];
 nix eval --impure --expr 'with import <nixpkgs/nixos>{}; /etc/nixos#nixosConfigurations."$(hostname)".config.environment.systemPackages.outPath'
 
 nix eval --impure --json --expr 'builtins.map (p: p.name) (import <nixpkgs/nixos> {}).config.environment.systemPackages' | jq -c | jq -r '.[]' | sort -u
+nix eval --impure --expr '(import <nixpkgs/nixos> {}).config.system.build.toplevel'
+nix eval --impure --expr '(import <nixpkgs/nixos> {}).config.system.build.toplevel.inputDerivation'
+
+nix eval --impure --json --expr 'builtins.map (p: p.name) (import (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")/nixos {}).config.environment.systemPackages' | jq -c | jq -r '.[]' | sort -u
 
 nix eval --raw nixpkgs#git.outPath; echo
 nix realisation info nixpkgs#hello --json
@@ -2961,7 +2965,44 @@ build \
 ```
 
 
+```bash
+nix build -L --no-link --print-out-paths nixpkgs#nixosTests.node-red
+```
+
 ##### Internet in nixosTest
+
+
+First:
+https://discourse.nixos.org/t/cannot-access-internet-in-nix-build-even-with-no-sandbox/25510
+
+```bash
+EXPR_NIX='
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+        stdenv.mkDerivation {
+          name = "test-network-access";
+          src = ./.;
+          buildInputs = [ pkgs.iputils ];
+          installPhase = "ping -c 3 8.8.8.8 && mkdir $out";
+        }
+  )
+'
+
+
+# --option sandbox false \
+nix \
+--no-sandbox \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR_NIX"
+```
+Refs.:
+- https://discourse.nixos.org/t/cannot-access-internet-in-nix-build-even-with-no-sandbox/25510/2
 
 Broken:
 ```bash
@@ -12044,6 +12085,183 @@ build \
 
 
 ```bash
+$(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.helloOnRoot) | podman load
+```
+
+```bash
+podman load < $(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.redis)
+```
+
+
+Bonus:
+```bash
+EXPR_NIX='
+  (
+    let
+      overlayPkgsStaticRedis = self: super: {
+        redis = super.pkgsStatic.redis.overrideAttrs (old: {
+          doCheck = false;
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlayPkgsStaticRedis ]; };
+    
+    in
+      pkgs.dockerTools.examples.redis
+  )
+'
+
+cat $(nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR_NIX") | podman load
+```
+
+
+```bash
+EXPR_NIX='
+  (
+    let
+      overlayPkgsStaticRedis = self: super: {
+        redis = super.pkgsStatic.redis.overrideAttrs (old: {
+          doCheck = false;
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlayPkgsStaticRedis ]; };
+    
+    in
+      pkgs.dockerTools.examples.redis
+  )
+'
+
+cat $(nix \
+build \
+--print-out-paths \
+--no-link \
+--print-build-logs \
+--impure \
+nixpkgs#pkgsStatic.redis) | podman load
+```
+
+
+```bash
+nix \
+build \
+--print-out-paths \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+  (
+    let
+      overlayPkgsStaticRedis = self: super: {
+        redis = super.pkgsStatic.redis.overrideAttrs (old: {
+          doCheck = false;
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlayPkgsStaticRedis ]; };
+    
+    in
+
+      pkgs.dockerTools.buildImage {
+        name = "redis";
+        tag = "0.0.1";
+        config = {
+          Cmd = [
+            "${pkgs.redis}/bin/redis-server"
+          ];
+        };
+      }
+  )
+'
+
+cat $(nix \                                                                                                     
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR_NIX") | podman load
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/redis:latest
+```
+
+
+```bash
+EXPR_NIX='
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.dockerTools.buildImageWithNixDb {
+        name = "nix";
+        tag = "latest";
+        copyToRoot = pkgs.buildEnv {
+          name = "image-root";
+          pathsToLink = [ "/bin" ];
+          paths = [
+            # nix-store uses cat program to display results as specified by
+            # the image env variable NIX_PAGER.
+            # pkgs.coreutils
+            pkgs.pkgsStatic.less
+            pkgs.pkgsStatic.nix
+            pkgs.pkgsStatic.busybox-sandbox-shell
+            # pkgs.bash
+            # pkgs.hello
+            # pkgs.hello.buildInputs
+            pkgs.path
+          ];
+        };
+        config = {
+          Env = [
+            "PAGER=less -F"
+            # A user is required by nix
+            # https://github.com/NixOS/nix/blob/9348f9291e5d9e4ba3c4347ea1b235640f54fd79/src/libutil/util.cc#L478
+            "USER=nobody"
+            "NIX_PATH=nixpkgs=${pkgs.path}"
+            "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"            
+            "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+          ];
+        };
+      }
+)
+'
+
+cat $(nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR_NIX") | podman load
+
+podman run -it --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp --rm localhost/nix \
+nix run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+
+podman run -it --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp --network=none --rm localhost/nix \
+nix run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+```
+
+```bash
+podman run -it --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp --rm localhost/nix \
+nix run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+```
+
+```bash
 nix \
 build \
 --impure \
@@ -12108,6 +12326,256 @@ run \
 localhost/hello:0.0.1
 ```
 
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.buildImage {
+
+      name = "oci-redis";
+      tag = "0.0.1";
+      
+      config = {
+        contents = with pkgs; [
+          # pkgsStatic.redis.inputDerivation
+          redis
+          path
+        ];
+
+        Env = [
+          "USER=root"
+          "NIX_PATH=nixpkgs=${(builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0")}"
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+        ];
+      
+        Entrypoint = [ 
+                        "${pkgs.nix}/bin/nix" 
+                          "--option" "substitute" "false" 
+                          "--option" "eval-cache" "false" 
+                          "--option" "use-registries" "false" 
+                          "--option" "build-users-group" "" 
+                          "--option" "experimental-features" "nix-command flakes" 
+                     ];
+      };  
+    }
+  )
+'
+
+
+podman load < result
+
+
+podman \
+run \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
+--privileged=true \
+--rm=true \
+--tty=true \
+localhost/oci-redis:0.0.1 flake --version
+
+
+podman \
+run \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
+--network=none \
+--privileged=true \
+--rm=true \
+--tty=true \
+localhost/oci-redis:0.0.1 flake metadata github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0
+
+
+podman \
+run \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
+--privileged=true \
+--network=none \
+--rm=true \
+--tty=true \
+localhost/oci-redis:0.0.1 build -L \
+github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0#redis
+```
+
+
+--include nixpkgs=$(nix eval --raw github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0#path)
+nix eval --raw --expr '"${(builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0")}"'
+
+```bash
+nix \
+build \
+-vvvvvvvvv \
+--include nixpkgs=https://github.com/NixOS/nixpkgs/archive/58c85835512b0db938600b6fe13cc3e3dc4b364e.tar.gz \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'{}'
+```
+
+```bash
+nix \
+build \
+--print-out-paths \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/574100ab789d682d5ec194c819569c35ddc7a475";
+    with legacyPackages.${builtins.currentSystem};
+  
+    stdenv.mkDerivation rec {
+      name = "nixpkgs-21.03pre243353.6d4b93323e7";
+      version = "2020-09-11";
+    
+      src = fetchurl {
+        url = "https://releases.nixos.org/nixpkgs/${name}/nixexprs.tar.xz";
+        sha256 = "1ri1mqvihviz80765p3p59i2irhnbn7vbvah0aacpkks60m9m0id";
+      };
+    
+      dontBuild = true;
+      preferLocalBuild = true;
+    
+      installPhase = "cp -a . $out";
+    }
+  )
+'
+```
+Refs.:
+- https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582/srcs/2020-09-11.nix
+
+
+```bash
+nix \
+build \
+--print-out-paths \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0";
+    with legacyPackages.${builtins.currentSystem};
+  
+    stdenv.mkDerivation rec {
+      name = "nixpkgs-22.05.20230427.50fc86b";
+      version = "2022-05-11";
+    
+      src = builtins.fetchTarball {
+            name = "nixos-22.05";
+            url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.05.tar.gz";
+            sha256 = "0d643wp3l77hv2pmg2fi7vyxn4rwy0iyr8djcw1h5x72315ck9ik";
+        };
+    
+      doCheck = false;
+      dontBuild = true;
+      preferLocalBuild = true;
+    
+      installPhase = "cp -a . $out";
+      
+      phases = [ "installPhase" ];
+    }
+  )
+'
+```
+Refs.:
+- https://git.sr.ht/~jamii/focus/commit/22839da3da1851f2a61b07d48edb9d69641498a0
+
+```bash
+nix flake metadata github:NixOS/nixpkgs/release-22.05 
+# github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0
+```
+
+```bash
+nix \
+eval \
+--raw \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in nixos.config.environment.etc.os-release.text
+'
+```
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.nix-community.org/nixpkgs/nix-flakes
+
+RUN nix build nixpkgs#hello.inputDerivation
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+EOF
+
+
+podman \
+build \
+--tag test-hello-input-derivation \
+.
+
+
+podman \
+run \
+--interactive=true \
+--network=none \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-hello-input-derivation \
+bash \
+-c \
+'nix build nixpkgs#hello && nix run nixpkgs#hello'
+```
+
+```bash
+cat > Dockerfile << 'EOF'
+FROM docker.nix-community.org/nixpkgs/nix-flakes
+
+RUN nix build --no-link nixpkgs#pkgsStatic.redis.inputDerivation
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+EOF
+
+
+docker \
+build \
+--tag test-redis-input-derivation \
+.
+
+
+docker \
+run \
+--interactive=true \
+--network=none \
+--privileged=true \
+--tty=true \
+--rm=true \
+test-redis-input-derivation:latest \
+bash \
+-c \
+'nix build nixpkgs#pkgsStatic.redis && nix shell nixpkgs#pkgsStatic.redis --command redis-cli --version'
+```
 
 ```bash
 nix \
@@ -14023,7 +14491,7 @@ in
 
 ### nixos.config.systemd.units."nix-daemon.service"
 
-
+Broken:
 ```bash
 nix \
 build \
@@ -14038,6 +14506,84 @@ in nixos.config.systemd.units."nix-daemon.service"
 Refs.:
 - https://discourse.nixos.org/t/how-to-use-modules-on-other-linux-distributions/7406/2
 
+```bash
+nix \
+eval \
+--raw \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in nixos.config.system.build.toplevel
+'
+```
+
+
+
+```bash
+nix \
+eval \
+--raw \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in nixos.config.environment.etc.os-release.text
+'
+```
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in nixos.config.system.build.toplevel
+'
+```
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in nixos.config.system.build.toplevel.inputDerivation
+'
+```
 
 ```bash
 nix \

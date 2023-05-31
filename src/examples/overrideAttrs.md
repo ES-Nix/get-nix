@@ -1040,7 +1040,12 @@ Refs.:
 - https://www.haskellforall.com/2022/01/nixpkgs-overlays-are-monoids.html
 
 
-Bingo! These are the same? `<nixpkgs>` `(builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41")`
+Bingo! These are the same? 
+- `<nixpkgs>` 
+- `(builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41")`
+YES!
+
+
 ```bash
 nix \
 build \
@@ -3671,6 +3676,34 @@ nix run .#
 Refs.:
 - https://discourse.nixos.org/t/how-to-create-a-poetry2nix-environment-with-a-flake/23604/9
 
+
+#### dockerTools.examples.redis + overlays
+
+
+```bash
+EXPR_NIX='
+  (
+    let
+      overlayPkgsStaticRedis = self: super: {
+        redis = super.pkgsStatic.redis.overrideAttrs (old: {
+          doCheck = false;
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlayPkgsStaticRedis ]; };
+    
+    in
+      pkgs.dockerTools.examples.redis
+  )
+'
+
+cat $(nix \
+build \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR_NIX") | podman load
+```
 
 
 #### income-front, private repo
