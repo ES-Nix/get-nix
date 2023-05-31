@@ -15605,6 +15605,9 @@ TODO: HUGE, https://github.com/NixOS/nix/issues?page=2&q=is%3Aissue+is%3Aopen+sa
 
 TODO: about the $TMPDIR, https://discourse.nixos.org/t/tmpdir-with-nix-build-and-sandbox/11761
 
+TODO: this OCI image forces sandbox = false 
+https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582/default.nix#L23
+
 ##### __noChroot = true;
 
 I am against that, unless there is not a better way known.
