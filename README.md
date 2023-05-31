@@ -12255,6 +12255,8 @@ nix run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
 podman run -it --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp --network=none --rm localhost/nix \
 nix run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
 ```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/28561
 
 ```bash
 podman run -it --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp --rm localhost/nix \
