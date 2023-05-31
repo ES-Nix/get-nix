@@ -3050,6 +3050,8 @@ build \
 --expr \
 "$EXPR_NIX"
 ```
+Refs.:
+- https://discourse.nixos.org/t/nixos-tests-with-internet-access/10601
 
 
 ```bash
