@@ -12635,78 +12635,54 @@ build \
     with legacyPackages.${builtins.currentSystem};
 
     dockerTools.buildImage {
-    # https://github.com/NixOS/nixpkgs/issues/176081
-    name = "oci-static-xorg-xclock";
-    tag = "latest";
-    config = {
-      contents = with pkgs; [
-        pkgsStatic.busybox-sandbox-shell
-
-        # bashInteractive
-        # coreutils
-
-        # TODO: test this xskat
-        xorg.xclock
-        # https://unix.stackexchange.com/questions/545750/fontconfig-issues
-        # fontconfig
-      ];
-      Env = [
-        "FONTCONFIG_FILE=${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
-        "FONTCONFIG_PATH=${pkgs.fontconfig.out}/etc/fonts/"
-        # "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-        # "PATH=${pkgs.coreutils}/bin:${pkgs.hello}/bin:${pkgs.findutils}/bin"
-        # :${pkgs.coreutils}/bin:${pkgs.fontconfig}/bin
-        "PATH=/bin:${pkgs.pkgsStatic.busybox-sandbox-shell}/bin:${pkgs.xorg.xclock}/bin"
-
-        # https://access.redhat.com/solutions/409033
-        # https://github.com/nix-community/home-manager/issues/703#issuecomment-489470035
-        # https://bbs.archlinux.org/viewtopic.php?pid=1805678#p1805678
-        "LC_ALL=C"
-      ];
-
-      # Entrypoint = [ "bash" ];
-      # Entrypoint = [ "sh" ];
-
-      Cmd = [ "xclock" ];
-    };
+        # https://github.com/NixOS/nixpkgs/issues/176081
+        name = "oci-xorg-xclock";
+        tag = "latest";
+        config = {
+          contents = with pkgs; [
+            # TODO: test this xskat
+            # pkgsStatic.xorg.xclock
+            
+            # https://unix.stackexchange.com/questions/545750/fontconfig-issues
+            # fontconfig
+          ];
+          Env = [
+            "FONTCONFIG_FILE=${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
+            "FONTCONFIG_PATH=${pkgs.fontconfig.out}/etc/fonts/"
+            # "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            # "PATH=${pkgs.coreutils}/bin:${pkgs.hello}/bin:${pkgs.findutils}/bin"
+            # :${pkgs.coreutils}/bin:${pkgs.fontconfig}/bin
+            "PATH=/bin:${pkgs.pkgsStatic.busybox-sandbox-shell}/bin:${pkgs.pkgsStatic.xorg.xclock}/bin"
     
-    runAsRoot = ''
-      #!${pkgs.stdenv}
-      ${pkgs.dockerTools.shadowSetup}
-      groupadd --gid 56789 nixgroup
-      useradd --no-log-init --uid 12345 --gid nixgroup nixuser
-
-      mkdir -pv ./home/nixuser
-      chmod 0700 ./home/nixuser
-      chown 12345:56789 -R ./home/nixuser
-
-      # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
-      mkdir -pv ./home/nixuser/.local/share/fonts
-    '';    
+            # https://access.redhat.com/solutions/409033
+            # https://github.com/nix-community/home-manager/issues/703#issuecomment-489470035
+            # https://bbs.archlinux.org/viewtopic.php?pid=1805678#p1805678
+            "LC_ALL=C"
+          ];
+          Cmd = [ "xclock" ];
+        };
     }
   )
 '
 
 
-"$(readlink -f result)" | podman load
+podman load < result
 
 nix run nixpkgs#xorg.xhost -- +
 podman \
 run \
---device=/dev/fuse \
---device=/dev/kvm \
 --env="DISPLAY=${DISPLAY:-:0.0}" \
 --interactive=true \
---privileged=true \
+--mount=type=tmpfs,destination=/var \
+--privileged=false \
 --rm=true \
 --tty=true \
 --user=1234 \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/xorg.xclock:latest
+localhost/oci-xorg-xclock:latest
 nix run nixpkgs#xorg.xhost -- -
 ```
-
-
+ 
 
 ```bash
 nix \
@@ -12889,6 +12865,278 @@ localhost/pycharm-community:0.0.1
 ```
 
 
+```nix
+#let
+#  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0");
+#  nixos = nixpkgs.lib.nixosSystem { 
+#            system = "x86_64-linux"; 
+#            modules = [ 
+#                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+#                      ]; 
+#          };  
+#in nixos.config.environment.etc.os-release.text
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0"); 
+      pkgs = import nixpkgs {};
+    in
+    pkgs.dockerTools.streamLayeredImage { 
+      name = "xorg.xclock";
+      tag = "0.0.1";       
+      config = {
+        Cmd = [ 
+          "${pkgs.xorg.xclock}/bin/xclock" 
+        ];
+
+        Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
+
+        Env = [
+          "FONTCONFIG_FILE=${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
+          "FONTCONFIG_PATH=${pkgs.fontconfig.out}/etc/fonts/"        
+          "HOME=/home/appuser"
+        ];
+
+        # https://discourse.nixos.org/t/certificate-validation-broken-in-all-electron-chromium-apps-and-browsers/15962/7
+        # extraCommands = "
+        #   ${pkgs.coreutils}/bin/mkdir -pv ./etc
+        #  ${pkgs.coreutils}/bin/mkdir -pv -m0700 ./home/appuser
+        # ";
+        
+        runAsRoot = "
+          #!${pkgs.stdenv}
+          ${pkgs.dockerTools.shadowSetup}
+          groupadd --gid 56789 appgroup
+          useradd --no-log-init --uid 12345 --gid appgroup appuser
+    
+          mkdir -pv ./home/appuser
+          chmod 0700 ./home/appuser
+          chown 12345:56789 -R ./home/appuser
+    
+          # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
+          mkdir -pv ./home/appuser/.local/share/fonts
+        ";
+            
+      };
+    }
+  )
+'
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=appuser \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/xorg.xclock:0.0.1
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0"); 
+      pkgs = import nixpkgs {};
+    in
+    pkgs.dockerTools.streamLayeredImage { 
+      name = "xorg.xclock";
+      tag = "0.0.1";       
+      config = {
+        # Cmd = [ 
+        #  "${pkgs.xorg.xclock}/bin/xclock" 
+        # ];
+
+        Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
+
+        Env = [
+          "FONTCONFIG_FILE=${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
+          "FONTCONFIG_PATH=${pkgs.fontconfig.out}/etc/fonts/"        
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+          "HOME=/home/appuser"
+          "TMPDIR=/tmp"
+        ];
+
+        # https://discourse.nixos.org/t/certificate-validation-broken-in-all-electron-chromium-apps-and-browsers/15962/7
+        extraCommands = "
+          ${pkgs.coreutils}/bin/mkdir -pv ./etc/pki/tls/certs
+          ${pkgs.coreutils}/bin/ln -sv ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt ./etc/pki/tls/certs
+          
+          ${pkgs.coreutils}/bin/mkdir -pv -m1777 ./tmp
+          
+          ${pkgs.coreutils}/bin/mkdir -pv -m0700 ./home/appuser
+          ${pkgs.coreutils}/bin/echo \ 
+          appuser:x:1000:100:The application user:/home/appuser:${pkgs.bashInteractive}/bin/bash \
+          > ./etc/passwd
+        "; 
+      };
+    }
+  )
+'
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=appuser \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/xorg.xclock:0.0.1
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    let
+      # nix flake metadata github:nixified-ai/flake
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    
+      nixified-ai = (builtins.getFlake "github:nixified-ai/flake/0c58f8cba3fb42c54f2a7bf9bd45ee4cbc9f2477"); 
+      nixified-ai-pkgs = import nixified-ai {};
+    in
+    pkgs.dockerTools.streamLayeredImage { 
+      name = "koboldai-nvidia";
+      tag = "${nixified-ai.shortRev}";       
+      config = {    
+        Cmd = [ 
+          "${nixified-ai.packages.x86_64-linux.koboldai-nvidia}/bin/koboldai" 
+        ];
+      };
+    }
+  )
+'
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--user=1234 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/koboldai-nvidia:0.0.1
+nix run nixpkgs#xorg.xhost -- -
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    let
+      # nix flake metadata github:nixified-ai/flake
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    
+      nixified-ai = (builtins.getFlake "github:nixified-ai/flake/0c58f8cba3fb42c54f2a7bf9bd45ee4cbc9f2477"); 
+      nixified-ai-pkgs = import nixified-ai {};
+    in
+    pkgs.dockerTools.streamLayeredImage { 
+      name = "koboldai-nvidia";
+      # tag = "${nixified-ai.shortRev}";       
+      tag = "0.0.1";
+    
+      contents = with pkgs; [
+        # cacert
+        # pkgsStatic.nix
+        coreutils
+        bashInteractive
+      ];
+            
+      config = {
+        Cmd = [ 
+          "${nixified-ai.packages.x86_64-linux.koboldai-nvidia}/bin/koboldai" 
+        ];
+        
+        Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
+        
+        Env = [
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+          "HOME=/home/appuser"
+          "TMPDIR=/tmp"
+        ];
+        
+        # https://discourse.nixos.org/t/certificate-validation-broken-in-all-electron-chromium-apps-and-browsers/15962/7
+        extraCommands = "
+          ${pkgs.coreutils}/bin/mkdir -pv ./etc/pki/tls/certs
+          ${pkgs.coreutils}/bin/ln -sv ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt ./etc/pki/tls/certs
+          
+          ${pkgs.coreutils}/bin/mkdir -pv -m1777 ./tmp
+          
+          ${pkgs.coreutils}/bin/mkdir -pv -m0700 ./home/appuser
+        "; 
+
+      };
+    }
+  )
+'
+
+"$(readlink -f result)" | podman load
+
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--user=1234 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/koboldai-nvidia:0.0.1
+nix run nixpkgs#xorg.xhost -- -
+```
+
 
 ### dockerTools.pullImage
 
@@ -12945,6 +13193,75 @@ Refs.:
 - https://github.com/NixOS/nixpkgs/blob/4f0c549cece9626534ee4ab6f064604e62a8b21a/pkgs/build-support/docker/examples.nix#L90-L97
 
 
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      # nix flake metadata github:nixified-ai/flake
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    
+      nixified-ai = (builtins.getFlake "github:nixified-ai/flake/0c58f8cba3fb42c54f2a7bf9bd45ee4cbc9f2477"); 
+      nixified-ai-pkgs = import nixified-ai {};
+    in
+    pkgs.dockerTools.buildImage {
+      name = "alpine";
+      tag = "0.0.1";
+      fromImage = pkgs.dockerTools.pullImage {
+        name = "library/alpine";
+        imageName = "alpine";
+        sha256 = "y+zY1sUyRkSQbPCYbGJ0cdmornKzZLpJfzqsO3oyVTI=";
+        # podman inspect docker.io/library/alpine:3.16.2 | jq ".[].Digest"
+        imageDigest = "sha256:65a2763f593ae85fab3b5406dc9e80f744ec5b449f269b699b5efd37a07ad32e";
+      };
+      
+      config = {
+        Cmd = [ "/bin/sh" ];
+
+      contents = with pkgs; [
+        # cacert
+        # pkgsStatic.nix
+        # coreutils
+        # bashInteractive
+        # hello
+      ];
+
+        # Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
+
+        Env = [
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+          "HOME=/home/appuser"
+          "TMPDIR=/tmp"
+          "PATH=${pkgs.hello}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ];
+        WorkingDir = "/data";
+        Volumes = {
+          "/data" = {};
+        };
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/alpine:0.0.1 \
+hello
+```
+        # '${nixified-ai.packages.x86_64-linux.koboldai-nvidia}/bin
 
 ```bash
 # podman pull alpine:3.17.1
