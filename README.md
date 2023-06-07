@@ -13224,13 +13224,13 @@ build \
       config = {
         Cmd = [ "/bin/sh" ];
 
-      contents = with pkgs; [
-        # cacert
-        # pkgsStatic.nix
-        # coreutils
-        # bashInteractive
-        # hello
-      ];
+        contents = with pkgs; [
+            # cacert
+            # pkgsStatic.nix
+            # coreutils
+            # bashInteractive
+            # hello
+        ];
 
         # Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
 
@@ -13258,10 +13258,84 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \
+--user=guest \
 localhost/alpine:0.0.1 \
 hello
 ```
-        # '${nixified-ai.packages.x86_64-linux.koboldai-nvidia}/bin
+
+```bash
+nix \
+build \
+--print-build-logs \
+--impure \
+--expr \
+'
+  ( 
+    let
+      # nix flake metadata github:nixified-ai/flake
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    
+      nixified-ai = (builtins.getFlake "github:nixified-ai/flake/0c58f8cba3fb42c54f2a7bf9bd45ee4cbc9f2477"); 
+      nixified-ai-pkgs = import nixified-ai {};
+    in
+    pkgs.dockerTools.buildImage {
+      name = "alpine-koboldai";
+      tag = "0.0.1";
+      fromImage = pkgs.dockerTools.pullImage {
+        name = "library/alpine";
+        imageName = "alpine";
+        sha256 = "y+zY1sUyRkSQbPCYbGJ0cdmornKzZLpJfzqsO3oyVTI=";
+        # podman inspect docker.io/library/alpine:3.16.2 | jq ".[].Digest"
+        imageDigest = "sha256:65a2763f593ae85fab3b5406dc9e80f744ec5b449f269b699b5efd37a07ad32e";
+      };
+      
+      config = {
+        Cmd = [ "/bin/sh" ];
+
+      contents = with pkgs; [
+        # cacert
+        # pkgsStatic.nix
+        # coreutils
+        # bashInteractive
+        # hello
+      ];
+
+        # Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
+
+        extraCommands = "
+          ${pkgs.coreutils}/bin/mkdir -pv -m0700 ./home/guest
+        "; 
+
+        Env = [
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+          "HOME=/home/guest"
+          "TMPDIR=/tmp"
+          "TRANSFORMERS_CACHE=/tmp"
+          "PATH=${nixified-ai.packages.x86_64-linux.koboldai-nvidia}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ];
+        WorkingDir = "/home/guest";
+        # Volumes = {
+        #  "/data" = {};
+        # };
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+--user=guest \
+localhost/alpine-koboldai:0.0.1
+```
+
 
 ```bash
 # podman pull alpine:3.17.1
