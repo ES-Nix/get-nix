@@ -10142,6 +10142,10 @@ nix eval --system aarch64-linux --impure --raw --expr 'builtins.currentSystem'
 nix eval --raw nixpkgs#stdenv.buildPlatform.parsed.cpu.name
 ```
 
+```bash
+nix eval --raw nixpkgs#qt5.qtbase.qtPluginPrefix
+```
+
 ### vmTools.runInLinuxVM
 
 
