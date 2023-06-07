@@ -10145,6 +10145,9 @@ nix eval --raw nixpkgs#stdenv.buildPlatform.parsed.cpu.name
 ```bash
 nix eval --raw nixpkgs#qt5.qtbase.qtPluginPrefix
 ```
+Refs.:
+- https://github.com/Mic92/nix-ld/blob/29f15b1f7e37810689974ef169496c51f6403a1b/examples/masterpdfeditor.nix#L16
+
 
 ### vmTools.runInLinuxVM
 
