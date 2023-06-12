@@ -6783,69 +6783,71 @@ TODO: is this working?
 )
 ```
 
+
 ```bash
-dockerTools.buildImage {
-    # https://github.com/NixOS/nixpkgs/issues/176081
-    name = "oci-static-xorg-xclock";
-    tag = "latest";
-    config = {
-      contents = with pkgs; [
-        pkgsStatic.busybox-sandbox-shell
-
-        # bashInteractive
-        # coreutils
-
-        # TODO: test this xskat
-        xorg.xclock
-        # https://unix.stackexchange.com/questions/545750/fontconfig-issues
-        # fontconfig
-      ];
-      Env = [
-        "FONTCONFIG_FILE=${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
-        "FONTCONFIG_PATH=${pkgs.fontconfig.out}/etc/fonts/"
-        # "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-        # "PATH=${pkgs.coreutils}/bin:${pkgs.hello}/bin:${pkgs.findutils}/bin"
-        # :${pkgs.coreutils}/bin:${pkgs.fontconfig}/bin
-        "PATH=/bin:${pkgs.pkgsStatic.busybox-sandbox-shell}/bin:${pkgs.xorg.xclock}/bin"
-
-        # https://access.redhat.com/solutions/409033
-        # https://github.com/nix-community/home-manager/issues/703#issuecomment-489470035
-        # https://bbs.archlinux.org/viewtopic.php?pid=1805678#p1805678
-        "LC_ALL=C"
-      ];
-
-      # Entrypoint = [ "bash" ];
-      # Entrypoint = [ "sh" ];
-
-      Cmd = [ "xclock" ];
-    };
-
-    #runAsRoot = ''
-    #  echo 'Some message from runAsRoot echo.'
-    #  echo "$(pwd)"
-    #
-    #  mkdir ./abcde
-    #  id > ./abcde/my-id-output.txt
-    #'';
-    runAsRoot = ''
-      #!${pkgs.stdenv}
-      ${pkgs.dockerTools.shadowSetup}
-      groupadd --gid 56789 nixgroup
-      useradd --no-log-init --uid 12345 --gid nixgroup nixuser
-
-      mkdir -pv ./home/nixuser
-      chmod 0700 ./home/nixuser
-      chown 12345:56789 -R ./home/nixuser
-
-      # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
-      mkdir -pv ./home/nixuser/.local/share/fonts
-    '';
-
-    #    extraCommands = ''
-    #      ${pkgs.coreutils}/bin/mkdir -pv ./etc/pki/tls/certs
-    #      ${pkgs.coreutils}/bin/ln -sv ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt ./etc/pki/tls/certs
-    #    '';
-  };
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0"); 
+      pkgs = import nixpkgs {};
+    in
+    pkgs.dockerTools.buildImage {
+        # https://github.com/NixOS/nixpkgs/issues/176081
+        name = "oci-static-xorg-xclock";
+        tag = "latest";
+        config = {
+          contents = with pkgs; [
+            pkgsStatic.busybox-sandbox-shell
+    
+            # bashInteractive
+            # coreutils
+    
+            # TODO: test this xskat
+            xorg.xclock
+            # https://unix.stackexchange.com/questions/545750/fontconfig-issues
+            # fontconfig
+          ];
+          Env = [
+            "FONTCONFIG_FILE=${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
+            "FONTCONFIG_PATH=${pkgs.fontconfig.out}/etc/fonts/"
+            # "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            # "PATH=${pkgs.coreutils}/bin:${pkgs.hello}/bin:${pkgs.findutils}/bin"
+            # :${pkgs.coreutils}/bin:${pkgs.fontconfig}/bin
+            "PATH=/bin:${pkgs.pkgsStatic.busybox-sandbox-shell}/bin:${pkgs.xorg.xclock}/bin"
+    
+            # https://access.redhat.com/solutions/409033
+            # https://github.com/nix-community/home-manager/issues/703#issuecomment-489470035
+            # https://bbs.archlinux.org/viewtopic.php?pid=1805678#p1805678
+            "LC_ALL=C"
+          ];
+    
+          # Entrypoint = [ "bash" ];
+          # Entrypoint = [ "sh" ];
+    
+          Cmd = [ "xclock" ];
+        };
+    
+        runAsRoot = "
+          #!${pkgs.stdenv}
+          ${pkgs.dockerTools.shadowSetup}
+          groupadd --gid 56789 nixgroup
+          useradd --no-log-init --uid 12345 --gid nixgroup nixuser
+    
+          mkdir -pv ./home/nixuser
+          chmod 0700 ./home/nixuser
+          chown 12345:56789 -R ./home/nixuser
+    
+          # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
+          mkdir -pv ./home/nixuser/.local/share/fonts
+        ";
+      };
+    
 ```
 
 
@@ -8619,6 +8621,9 @@ build \
 )'
 ```
 
+```bash
+nix eval --raw --expr 'builtins.storeDir'
+```
 
 ```bash
       storeDir = "/home/ubuntu/nix/store";
@@ -9664,6 +9669,16 @@ Refs.:
 # TODO: Take a look in
 # nix show-derivation --help
 nix show-derivation --recursive /run/current-system | wc -l
+```
+
+```bash
+nix eval --raw nixpkgs#lib.version
+```
+
+```bash
+nix-store --query --graph --include-outputs \
+$(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#nixosTests.kubernetes.rbac-multi-node.driverInteractive.inputDerivation) \
+ | dot -Tps > rbac.ps
 ```
 
 ```bash
@@ -11844,7 +11859,7 @@ start_all(); server.shell_interact();
 ###### Minimal
 
 
-8zZtsUMmd5U
+
 
 ```bash
 nix \
@@ -12214,36 +12229,31 @@ EXPR_NIX='
     nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e");
     pkgs = import nixpkgs { };    
   in
-    pkgs.dockerTools.buildImageWithNixDb {
+    pkgs.dockerTools.buildImage {
         name = "nix";
         tag = "latest";
-        copyToRoot = pkgs.buildEnv {
-          name = "image-root";
-          pathsToLink = [ "/bin" ];
-          paths = [
-            # nix-store uses cat program to display results as specified by
-            # the image env variable NIX_PAGER.
-            # pkgs.coreutils
-            pkgs.pkgsStatic.less
-            pkgs.pkgsStatic.nix
-            pkgs.pkgsStatic.busybox-sandbox-shell
-            # pkgs.bash
-            # pkgs.hello
-            # pkgs.hello.buildInputs
-            pkgs.path
-          ];
-        };
         config = {
           Env = [
-            "PAGER=less -F"
+            # "PAGER=less -F"
             # A user is required by nix
             # https://github.com/NixOS/nix/blob/9348f9291e5d9e4ba3c4347ea1b235640f54fd79/src/libutil/util.cc#L478
-            "USER=nobody"
-            "NIX_PATH=nixpkgs=${pkgs.path}"
-            "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-            "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"            
-            "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+            "USER=foobar"
+            "NIX_PATH=nixpkgs=${pkgs.releaseTools.channel { name = "nixpkgs-unstable"; src = pkgs.path; }}"
+            # "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            # "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"            
+            # "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+            "A=${pkgs.hello.inputDerivation}"
           ];
+            Entrypoint = [ "${pkgs.bashInteractive}/bin/"];
+
+            # Entrypoint = [ 
+            #                 "${pkgs.pkgsStatic.nix}/bin/nix" 
+            #                   "--option" "substitute" "false" 
+            #                   "--option" "eval-cache" "false" 
+            #                   "--option" "use-registries" "false" 
+            #                   "--option" "build-users-group" "" 
+            #                   "--option" "experimental-features" "nix-command flakes" 
+            #              ];          
         };
       }
 )
@@ -12258,25 +12268,146 @@ build \
 --expr \
 "$EXPR_NIX") | podman load
 
-podman run -it --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp --rm localhost/nix \
-nix run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+podman \
+run \
+--interactive=true \
+--privileged=true \
+--tty=true \
+--rm=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--rm=true \
+localhost/nix:0.0.0 \
+run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
 
-podman run -it --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp --network=none --rm localhost/nix \
-nix run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+podman \
+run \
+--interactive=true \
+--network=none \
+--tty=true \
+--rm=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--rm=true \
+localhost/nix \
+run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/pull/28561
 - https://github.com/NixOS/nixpkgs/pull/28561#issuecomment-325791919
 
 ```bash
-podman run -it --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp --rm localhost/nix \
-nix run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+podman \
+run \
+-it \
+--privileged=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
+--network=none \
+--rm=true 
+localhost/nix \
+    nix \
+    --option build-users-group "" \
+    --option eval-cache false \
+    --option tarball-ttl 2419200 \
+    --option narinfo-cache-positive-ttl 0 \
+    run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
 ```
+
+
+
+
+```bash
+EXPR_NIX='
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.dockerTools.buildImage {
+        name = "nix";
+        tag = "0.0.0";
+        config = {
+          copyToRoot = [
+            pkgs.hello.inputDerivation
+          ];        
+          Env = [
+            "USER=foobar"
+            "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          ];
+
+            Entrypoint = [ 
+                            "${pkgs.pkgsStatic.nix}/bin/nix" 
+                              "--option" "substitute" "false" 
+                              "--option" "eval-cache" "false" 
+                              "--option" "use-registries" "false" 
+                              "--option" "build-users-group" "" 
+                              "--option" "experimental-features" "nix-command flakes" 
+                         ];          
+        };
+      }
+)
+'
+
+cat $(nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR_NIX") | podman load
+
+podman \
+run \
+--interactive=true \
+--privileged=true \
+--tty=true \
+--rm=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--rm=true \
+localhost/nix-hello-build-inputs:latest \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+
+podman \
+run \
+--interactive=true \
+--privileged=true \
+--tty=true \
+--rm=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--rm=true \
+localhost/nix:0.0.0 \
+    develop \
+    github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello \
+    --command \
+    sh \
+    -c \
+    'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
+
+
+podman \
+run \
+--interactive=true \
+--network=none \
+--tty=true \
+--rm=true \
+--mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
+--rm=true \
+localhost/nix \
+run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+```
+
 
 ```bash
 nix \
 build \
 --impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
 --expr \
 '
   (
@@ -12310,6 +12441,9 @@ localhost/hello:0.0.1
 nix \
 build \
 --impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
 --expr \
 '
   (
@@ -12528,12 +12662,29 @@ in nixos.config.environment.etc.os-release.text
 '
 ```
 
+```bash
+nix \
+eval \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in nixos.config.boot.kernelParams
+'
+```
+
 
 ```bash
 cat > Containerfile << 'EOF'
 FROM docker.nix-community.org/nixpkgs/nix-flakes
 
-RUN nix build nixpkgs#hello.inputDerivation
+RUN nix build --no-link nixpkgs#hello.inputDerivation
 
 ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
 
@@ -12593,6 +12744,8 @@ bash \
 nix \
 build \
 --impure \
+--print-out-paths \
+--print-build-logs \
 --expr \
 '
   (
@@ -12634,6 +12787,8 @@ nix run nixpkgs#xorg.xhost -- -
 ```bash
 nix \
 build \
+--print-out-paths \
+--print-build-logs \
 --impure \
 --expr \
 '
@@ -12695,6 +12850,8 @@ nix run nixpkgs#xorg.xhost -- -
 nix \
 build \
 --impure \
+--print-out-paths \
+--print-build-logs \
 --expr \
 '
   (
@@ -12779,6 +12936,8 @@ Broken, it opens, but some things still missing:
 nix \
 build \
 --impure \
+--print-out-paths \
+--print-build-logs \
 --expr \
 '
   (
@@ -12836,6 +12995,8 @@ nix run nixpkgs#xorg.xhost -- -
 nix \
 build \
 --impure \
+--print-out-paths \
+--print-build-logs \
 --expr \
 '
   (
@@ -12889,6 +13050,8 @@ localhost/pycharm-community:0.0.1
 nix \
 build \
 --impure \
+--print-out-paths \
+--print-build-logs \
 --expr \
 '
   (
@@ -12896,7 +13059,7 @@ build \
       nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0"); 
       pkgs = import nixpkgs {};
     in
-    pkgs.dockerTools.streamLayeredImage { 
+    pkgs.dockerTools.buildImage { 
       name = "xorg.xclock";
       tag = "0.0.1";       
       config = {
@@ -12937,7 +13100,7 @@ build \
   )
 '
 
-"$(readlink -f result)" | podman load
+podman load < result
 
 nix run nixpkgs#xorg.xhost -- +
 podman \
@@ -12958,6 +13121,8 @@ nix run nixpkgs#xorg.xhost -- -
 nix \
 build \
 --impure \
+--print-out-paths \
+--print-build-logs \
 --expr \
 '
   (
@@ -13023,6 +13188,8 @@ nix run nixpkgs#xorg.xhost -- -
 nix \
 build \
 --impure \
+--print-out-paths \
+--print-build-logs \
 --expr \
 '
   (
@@ -13067,10 +13234,746 @@ nix run nixpkgs#xorg.xhost -- -
 ```
 
 
+
 ```bash
 nix \
 build \
 --impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+      pkgs.dockerTools.buildImage { 
+        name = "busybox-sandbox-shell";
+        tag = "0.0.1";
+        config = {
+          Entrypoint = [ "${pkgs.pkgsStatic.busybox-sandbox-shell}/bin/sh" ];
+        };
+      }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--rm=true \
+--tty=true \
+--user=12345 \
+localhost/busybox-sandbox-shell:0.0.1
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+      pkgs.dockerTools.buildImage { 
+        name = "dev-no-nix";
+        tag = "0.0.1";
+        copyToRoot = with pkgs; [
+          bashInteractive
+          busybox
+          coreutils
+          findutils
+          which
+          gnugrep
+        ];
+        config = {
+          Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
+        };
+      }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--rm=true \
+--tty=true \
+--user=0 \
+localhost/dev-no-nix:0.0.1 \
+-c \
+'
+mkdir -pv /home/nixuser \
+&& addgroup nixgroup --gid 4455 \
+&& adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser
+'
+```
+
+
+```bash
+podman \
+run \
+--env="PATH=/home/nixuser/.local/bin:/bin:/usr/bin" \
+--interactive=true \
+--rm=true \
+--tty=false \
+--user=0 \
+busybox<<'COMMANDS'
+mkdir -pv /home/nixuser \
+&& addgroup nixgroup --gid 4455 \
+&& adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser \
+&& su \
+-l \
+nixuser \
+sh \
+-c \
+'
+mkdir -pv "$HOME"/.local/bin \
+&& cd "$HOME"/.local/bin \
+&& wget -O- https://hydra.nixos.org/build/221401908/download/2/nix > nix \
+&& chmod -v +x nix \
+&& cd - \
+&& export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
+&& nix flake --version
+'
+COMMANDS
+```
+
+
+RUN nix flake metadata github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397
+
+RUN nix build --no-link --print-build-logs --print-out-paths \
+        github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello.inputDerivation
+```bash
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+    pkgs.dockerTools.buildImage { 
+      name = "busybox-sandbox-shell";
+      tag = "${pkgs.pkgsStatic.busybox-sandbox-shell.version}";
+      config = {
+        Entrypoint = [ "${pkgs.pkgsStatic.busybox-sandbox-shell}/bin/sh" ];
+      };
+    }
+  )
+'
+
+podman load < result
+
+
+cat > Containerfile << 'EOF'
+FROM alpine as certs
+RUN apk update && apk add ca-certificates
+
+
+FROM docker.io/library/busybox as test-busybox
+
+# https://stackoverflow.com/a/45397221
+COPY --from=certs /etc/ssl/certs /etc/ssl/certs
+
+RUN mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && wget -O- https://hydra.nixos.org/build/221401908/download/2/nix > nix \
+ && chmod -v +x nix \
+ && cd - \
+ && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
+ && nix flake --version
+
+RUN echo \
+ && nix build --no-link --print-build-logs --print-out-paths \
+        github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix \
+ && nix build --no-link --print-build-logs --print-out-paths \
+        github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#cacert
+
+FROM localhost/busybox-sandbox-shell:1.36.0 as busybox-sandbox-shell-etc
+
+# FROM localhost/empty:0.0.0 as nix
+# FROM docker.io/tianon/toybox as nix
+FROM quay.io/podman/stable as nix
+
+USER podman
+
+COPY --from=certs /etc/ssl/certs /etc/ssl/certs
+COPY --from=test-busybox --chown=nixuser:nixgroup /home/nixuser /home/nixuser
+COPY --from=test-busybox --chown=nixuser:nixgroup /etc/passwd /etc/passwd
+COPY --from=test-busybox /etc/group /etc/group
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+EOF
+
+
+#podman \
+#build \
+#--tag test-busybox \
+#--target nix \
+#.
+
+
+podman \
+build \
+--tag busybox-sandbox-shell-etc \
+--target busybox-sandbox-shell-etc \
+.
+
+podman \
+run \
+--interactive=true \
+--network=host \
+--privileged=false \
+--tty=true \
+--rm=true \
+localhost/test-busybox \
+sh \
+-c \
+'nix build github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
+&& nix run github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello
+'
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      # nix flake metadata github:nixified-ai/flake
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+    pkgs.dockerTools.streamLayeredImage { 
+      name = "nix";  
+      tag = "0.0.1";
+
+      contents = with pkgs; [
+        pkgsStatic.nix
+        coreutils
+        bashInteractive
+      ];
+
+      config = {
+        Env = [
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "GIT_SSL_CAINFO=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+          "HOME=/home/appuser"
+          "USER=appuser"
+          "TMPDIR=/tmp"
+        ];
+        
+        Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
+
+        runAsRoot = "mkdir ./abcde && id > ./abcde/my-id-output.txt";
+
+        # https://discourse.nixos.org/t/certificate-validation-broken-in-all-electron-chromium-apps-and-browsers/15962/7
+        extraCommands = "
+          ${pkgs.coreutils}/bin/mkdir -pv ./etc/pki/tls/certs
+          ${pkgs.coreutils}/bin/ln -sv ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt ./etc/pki/tls/certs
+
+          ${pkgs.coreutils}/bin/mkdir -pv -m1777 ./tmp
+
+          ${pkgs.coreutils}/bin/mkdir -pv -m0700 ./home/appuser
+          
+          ${pkgs.coreutils}/bin/mkdir -pv -m0555 ./var/nixpkgs
+          ${pkgs.coreutils}/bin/cp -v ${pkgs.path} ./var/nixpkgs
+
+          ${pkgs.coreutils}/bin/mkdir -p ./home/appuser/.nix-defexpr/channels
+          ${pkgs.coreutils}/bin/ln -s ./var/nixpkgs ./home/appuser/.nix-defexpr/channels
+
+          ${pkgs.buildPackages.nix}/bin/nix-store -vvvv --init
+        ";
+
+      };
+    }
+  )
+'
+
+"$(readlink -f result)" | podman load
+
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--user=0 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/nix:0.0.1 \
+bash
+
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+    # pkgs.dockerTools.streamLayeredImage { 
+    pkgs.dockerTools.buildImage { 
+      name = "nix";
+      tag = "0.0.1";
+    
+      contents = with pkgs; [
+        pkgsStatic.nix
+      ];
+            
+      config = {
+        Env = [
+          "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "GIT_SSL_CAINFO=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+          "HOME=/home/nixuser"
+          "USER=nixuser"
+          "TMPDIR=/tmp"
+        ];
+
+        Cmd = [ 
+          "${pkgs.pkgsStatic.nix}/bin/nix" 
+          "shell"
+          "github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix"
+        ];
+
+        Entrypoint = [ "${pkgs.pkgsStatic.busybox-sandbox-shell}/bin/sh" ];
+
+      };
+    }
+  )
+'
+
+# "$(readlink -f result)" | podman load
+podman load < result
+
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--user=12345 \
+localhost/nix:0.0.1
+
+```
+
+
+    runAsRoot = "
+      #!${pkgs.stdenv}
+      ${pkgs.dockerTools.shadowSetup}
+      groupadd --gid 56789 nixgroup
+      useradd --no-log-init --uid 12345 --gid nixgroup nixuser
+
+      mkdir -pv ./home/nixuser
+      chmod 0700 ./home/nixuser
+      chown 12345:56789 -R ./home/nixuser ./nix
+    ";
+
+
+```bash
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+        pkgs.dockerTools.buildImage {
+            name = "empty";
+            tag = "0.0.0";
+          }
+  )
+'
+
+podman load < result
+```
+
+
+
+```bash
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+        pkgs.dockerTools.buildImage {
+            name = "empty";
+            tag = "0.0.0";
+          }
+  )
+'
+
+podman load < result
+
+cat > Containerfile << 'EOF'
+FROM docker.nix-community.org/nixpkgs/nix-flakes as cached
+
+RUN nix build --no-link github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#pkgsStatic.busybox-sandbox-shell
+
+# RUN nix copy --to /tmp/outputs github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#pkgsStatic.busybox-sandbox-shell --no-check-sigs
+RUN mkdir -pv /tmp/outputs \
+ && cp -v $(nix \
+      build \
+        --no-link \
+        --print-build-logs \
+        --print-out-paths \
+        github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#pkgsStatic.busybox-sandbox-shell)/bin/busybox \
+      /tmp/outputs/busybox-sandbox-shell \
+ && cp -v $(nix \
+      build \
+        --no-link \
+        --print-build-logs \
+        --print-out-paths \
+        github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#pkgsStatic.busybox)/bin/busybox \
+      /tmp/outputs/busybox \      
+    && echo \
+    && cp -v $(nix \
+         build \
+           --no-link \
+           --print-build-logs \
+           --print-out-paths \
+           github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#pkgsStatic.nix)/bin/nix \
+         /tmp/outputs/nix \
+    && echo \
+    && cp -v $(nix \
+         build \
+           --no-link \
+           --print-build-logs \
+           --print-out-paths \
+           github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#cacert)/etc/ssl/certs/ca-bundle.crt \
+         /tmp/outputs/ca-bundle.crt
+
+RUN echo 'root:x:0:0:root:/root:/bin/sh' >> /tmp/outputs/passwd \
+ && echo 'nixuser:x:1122:3344:nixgroup:/home/nixuser:/bin/sh' >> /tmp/outputs/passwd \
+ && echo \
+ && echo 'root:x:0:' >> /tmp/outputs/group \
+ && echo 'kvm:x:109:nixuser' >> /tmp/outputs/group \
+ && echo 'nixgroup:x:3344:nixuser' >> /tmp/outputs/group
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+
+FROM localhost/empty:0.0.0 as busybox-sandbox-shell-certs-nix
+
+COPY --from=cached /tmp/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cached /tmp/outputs/busybox /bin/busybox
+RUN busybox mkdir -pv -m 1777 /tmp
+
+COPY --from=cached /tmp/outputs/nix /bin/nix
+
+COPY --from=cached /tmp/outputs/passwd /etc/passwd
+COPY --from=cached /tmp/outputs/group /etc/group
+
+COPY --from=cached /tmp/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+
+CMD [ "/bin/sh" ]
+
+USER nixuser
+
+WORKDIR /home/nixuser
+
+ENV HOME=/home/nixuser
+ENV PATH=/home/nixuser/.nix-profile/bin:/usr/bin:/bin
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
+ENV GIT_SSL_CAINFO=/etc/ssl/certs/ca-bundle.crt
+ENV NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
+
+RUN nix flake --version
+
+RUN nix \
+    build \
+    --no-link \
+    --print-out-paths \
+    --print-build-logs \
+    github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello.inputDerivation
+
+EOF
+
+
+podman \
+build \
+--tag busybox-sandbox-shell-certs-nix \
+--target busybox-sandbox-shell-certs-nix \
+.
+
+podman \
+run \
+--interactive=true \
+--network=none \
+--privileged=true \
+--mount=type=tmpfs,tmpfs-size=1G,destination=/tmp \
+--tty=true \
+--rm=true \
+localhost/busybox-sandbox-shell \
+sh \
+-c \
+'
+nix \
+    --option use-registries false \
+    build \
+    --no-link \
+    --print-out-paths \
+    --print-build-logs \
+    github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello
+'
+
+podman \
+run \
+--interactive=true \
+--network=host \
+--privileged=true \
+--mount=type=tmpfs,tmpfs-size=1G,destination=/tmp \
+--tty=true \
+--rm=true \
+localhost/busybox-sandbox-shell \
+sh \
+-c \
+'
+nix \
+    build \
+    --no-link \
+    --print-out-paths \
+    --print-build-logs \
+    github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello
+
+nix run github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello
+'
+```
+
+nix build nixpkgs#pkgsStatic.python3
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.nix-community.org/nixpkgs/nix-flakes
+
+RUN nix build --no-link nixpkgs#hello.inputDerivation
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+EOF
+
+
+podman \
+build \
+--tag test-hello-input-derivation \
+.
+
+
+podman \
+run \
+--interactive=true \
+--network=none \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-hello-input-derivation \
+bash \
+-c \
+'nix build nixpkgs#hello && nix run nixpkgs#hello'
+```
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:22.04
+
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     ca-certificates \
+     curl \
+     file \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser
+
+# If is added nix statically compiled works!
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+# ENV NIX_PAGER="cat"
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && curl -L https://hydra.nixos.org/build/221401908/download/2/nix > nix \
+ && chmod -v +x nix
+
+RUN nix flake metadata github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397
+
+RUN nix build --no-link --print-build-logs --print-out-paths \
+        github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello.inputDerivation
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu22 .
+
+podman \
+run \
+--network=none \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22:latest \
+bash \
+-c \
+'
+nix flake metadata github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397
+'
+
+
+podman \
+run \
+--network=none \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/unprivileged-ubuntu22:latest \
+bash \
+-c \
+'
+  nix --option use-registries false build --no-link --print-build-logs --print-out-paths \
+  github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
+  && nix --option use-registries false build --no-link --print-build-logs --print-out-paths --rebuild \
+       github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello
+'
+```
+
+
+```bash
+nix eval --expr 'builtins.storeDir'
+nix shell github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix --command nix eval --raw --expr 'builtins.storeDir'
+```
+
+
+```bash
+nix run github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#nix-info -- --markdown
+```
+
+
+
+
+runAsRoot = "
+  #!${pkgs.runtimeShell}
+  ${pkgs.dockerTools.shadowSetup}
+  groupadd --gid 56789 appgroup
+  useradd --no-log-init --uid 12345 --gid appgroup appuser
+
+  ${pkgs.coreutils}/bin/mkdir -pv ./home/appuser
+  chmod 0700 ./home/appuser
+  chown 12345:56789 -R ./home/appuser
+
+  # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
+  ${pkgs.coreutils}/bin/mkdir -pv ./home/appuser/.local/share/fonts
+";
+
+```bash
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
 --expr \
 '
   (
@@ -13100,7 +14003,7 @@ build \
         ];
         
         Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
-        
+
         Env = [
           "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
           "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
@@ -13161,7 +14064,7 @@ build \
 '
   ( 
     let
-      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
       pkgs = p.legacyPackages.${builtins.currentSystem};
     in
     pkgs.dockerTools.buildImage {
@@ -13357,7 +14260,7 @@ build \
 '
   (
     let
-      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      nixpks = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
       pkgs = p.legacyPackages.${builtins.currentSystem};
     in
     pkgs.dockerTools.buildImage {
@@ -18088,9 +18991,82 @@ Refs.: TODO, better pinnig the time
 - [Thomas Bereknyei - Hydra, Nix's CI (SoN2022 - public lecture series)](https://youtu.be/AvOqaeK_NaE?t=2823)
 
 
-
 Real world example:
 - https://github.com/rust-lang/rustup/tree/49023e1cab12e6777cb2154401150da3f1185c7e
+
+
+
+```bash
+nix \
+build \
+--impure \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  let
+    pkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0").legacyPackages.${builtins.currentSystem};
+  in pkgs.releaseTools.channel { name = "nixpkgs-unstable"; src = pkgs.path; }
+'
+```
+Refs.:
+- 
+
+> The `programs.sqlite` is only generated for the `nixos-` prefixed channels.
+Refs.: https://discourse.nixos.org/t/command-not-found-unable-to-open-database/3807/4
+
+
+```bash
+nix \
+build \
+--impure \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  let
+    pkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0").legacyPackages.${builtins.currentSystem};
+    
+    # To find the channel url:
+    # https://channels.nixos.org/ > nixos-22.05 > nixexprs.tar.gz
+    # All the available channels you can browse https://releases.nixos.org
+    nixos_tarball = pkgs.fetchzip {
+      url = "https://releases.nixos.org/nixos/22.05/nixos-22.05.3737.3933d8bb912/nixexprs.tar.xz";
+      sha256 = "sha256-+xhJb0vxEAnF3hJ6BZ1cbndYKZwlqYJR/PWeJ3aVU8k=";
+    };
+  in 
+    pkgs.runCommand "program.sqlite" {} "cp ${nixos_tarball}/programs.sqlite $out"
+'
+```
+Refs.:
+- https://discourse.nixos.org/t/how-to-specify-programs-sqlite-for-command-not-found-from-flakes/22722/3
+- https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582/srcs/2020-09-11.nix
+
+nix \
+eval \
+--raw \
+--impure \
+--expr \
+'
+let
+  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0").legacyPackages.${builtins.currentSystem};
+in 
+  map (drv: [("closure-" + baseNameOf drv) drv]) [ pkgs.hello ]
+'
+
+nix \
+eval \
+--raw \
+--impure \
+--expr \
+'
+let
+  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0").legacyPackages.${builtins.currentSystem};
+in 
+  [ pkgs.hello pkgs.figlet ]
+'
 
 
 ##### bash, POSIX
@@ -18222,6 +19198,12 @@ Refs.:
 - https://github.com/NixOS/nix/issues/6056#issuecomment-1031533794
 - https://github.com/NixOS/nix/issues/3091#issuecomment-1133549695
 
+
+```bash
+nix shell nixpkgs#sqlite --command sqlite3 "$HOME"/.cache/nix/binary-cache-v6.sqlite .fullschema
+```
+Refs.:
+- https://stackoverflow.com/a/494643
 
 ```bash
 rm -fv ~/.cache/nix/fetcher-cache-v*.sqlite
