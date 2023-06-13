@@ -12679,6 +12679,27 @@ in nixos.config.boot.kernelParams
 '
 ```
 
+```bash
+nix \
+build \
+--no-link --print-build-logs \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/virtualisation/docker-image.nix" 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+                      ]; 
+          };  
+in nixos.config.system.build.tarball
+'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/49855#issuecomment-438536985
+
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -19220,3 +19241,37 @@ nixpkgs#hello
 
 ### Compiling nix from source
 
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix
+
+nix \
+build \
+--rebuild \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix
+```
+
+
+### nix-channel, channels
+
+
+
+```bash
+ pedro@nixos  ~  cat ~/.nix-defexpr/channels
+cat: /home/pedro/.nix-defexpr/channels: No such file or directory
+ ✘ pedro@nixos  ~  file ~/.nix-defexpr/channels
+/home/pedro/.nix-defexpr/channels: broken symbolic link to /nix/var/nix/profiles/per-user/pedro/channels
+ pedro@nixos  ~  cat /nix/var/nix/profiles/per-user/pedro/channels                       
+cat: /nix/var/nix/profiles/per-user/pedro/channels: No such file or directory
+ ✘ pedro@nixos  ~  ls /nix/var/nix/profiles/per-user/pedro/channels
+ls: cannot access '/nix/var/nix/profiles/per-user/pedro/channels': No such file or directory
+ ✘ pedro@nixos  ~  ls /nix/var/nix/profiles/per-user/pedro         
+profile  profile-6-link
+```
