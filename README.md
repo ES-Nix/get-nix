@@ -851,6 +851,7 @@ nix-store --query --requisites /run/current-system
 
 nix profile list
 # For NixOS systems:
+nix profile list --profile /nix/var/nix/profiles/per-user/"$USER"/profile
 nix profile list --profile /nix/var/nix/profiles/default
 ls -al /nix/var/nix/profiles/default
 ls -al ~/.nix-profile/bin/
@@ -3842,6 +3843,9 @@ nix path-info -r "$(nix eval --raw nixpkgs#hello)" --store https://cache.nixos.o
 nix store ls --store https://cache.nixos.org/ -lR /nix/store/0i2jd68mp5g6h2sa5k9c85rb80sn8hi9-hello-2.10
 
 ```bash
+nix eval --raw github:NixOS/nixpkgs/release-20.03#ocaml.version
+nix eval --raw github:NixOS/nixpkgs/release-21.11#ocaml.version
+
 nix run github:NixOS/nixpkgs/release-20.03#ocaml -- --version
 nix run github:NixOS/nixpkgs/release-21.11#ocaml -- --version
 ```
@@ -8147,8 +8151,92 @@ function n() {
 nix flake metadata --refresh github:NixOS/nixpkgs/$(git ls-remote git://github.com/NixOS/nixpkgs.git nixos-21.11 | tail -1 | cut -f 1)
 
 git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 10
+```
 
 
+```bash
+nix eval github:NixOS/nixpkgs/release-20.03#nix.version
+nix eval github:NixOS/nixpkgs/release-20.09#nix.version
+nix eval github:NixOS/nixpkgs/release-21.05#nix.version
+nix eval github:NixOS/nixpkgs/release-21.11#nix.version
+nix eval github:NixOS/nixpkgs/release-22.05#nix.version
+nix eval github:NixOS/nixpkgs/release-22.11#nix.version
+nix eval github:NixOS/nixpkgs/release-23.05#nix.version
+nix eval github:NixOS/nixpkgs/nixpkgs-unstable#nix.version
+
+nix eval github:NixOS/nixpkgs/nixos-20.03#nix.version
+nix eval github:NixOS/nixpkgs/nixos-20.09#nix.version
+nix eval github:NixOS/nixpkgs/nixos-21.05#nix.version
+nix eval github:NixOS/nixpkgs/nixos-21.11#nix.version
+nix eval github:NixOS/nixpkgs/nixos-22.05#nix.version
+nix eval github:NixOS/nixpkgs/nixos-22.11#nix.version
+nix eval github:NixOS/nixpkgs/nixos-23.05#nix.version
+
+nix eval github:NixOS/nixpkgs/nixos-20.03-small#nix.version
+nix eval github:NixOS/nixpkgs/nixos-20.09-small#nix.version
+nix eval github:NixOS/nixpkgs/nixos-21.05-small#nix.version
+nix eval github:NixOS/nixpkgs/nixos-21.11-small#nix.version
+nix eval github:NixOS/nixpkgs/nixos-22.05-small#nix.version
+nix eval github:NixOS/nixpkgs/nixos-22.11-small#nix.version
+nix eval github:NixOS/nixpkgs/nixos-23.05-small#nix.version
+
+nix eval github:NixOS/nixpkgs/nixos-unstable#nix.version
+nix eval github:NixOS/nixpkgs/nixos-unstable-small#nix.version
+```
+
+
+```bash
+nix registry list | grep '^user  '
+
+
+nix eval nixpkgs#lib.version 
+nix eval nixpkgs#nix.version
+nix flake metadata nixpkgs
+
+nix registry pin nixpkgs github:NixOS/nixpkgs/release-20.03
+
+nix eval nixpkgs#lib.version 
+nix eval nixpkgs#nix.version
+nix flake metadata nixpkgs
+
+nix registry pin nixpkgs github:NixOS/nixpkgs/release-21.11
+
+nix eval nixpkgs#lib.version 
+nix eval nixpkgs#nix.version
+nix flake metadata nixpkgs
+
+nix registry pin nixpkgs github:NixOS/nixpkgs/release-23.05
+
+nix eval nixpkgs#lib.version 
+nix eval nixpkgs#nix.version
+nix flake metadata nixpkgs
+
+nix flake metadata github:NixOS/nixpkgs/nixos-unstable
+nix registry add nixos-unstable github:NixOS/nixpkgs/nixos-unstable
+nix eval nixos-unstable#lib.version
+nix eval nixos-unstable#nix.version
+nix flake metadata nixos-unstable
+```
+
+nix \
+--option flake-registry https://raw.githubusercontent.com/serokell/flake-registry/master/flake-registry.json \
+eval nixpkgs#lib.version
+
+nix flake metadata github:NixOS/nixpkgs/nixpkgs-unstable
+nix registry pin nixpkgs github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799
+
+```bash
+nix eval github:NixOS/nixpkgs/release-20.03#python3.version
+nix eval github:NixOS/nixpkgs/release-20.09#python3.version
+nix eval github:NixOS/nixpkgs/release-21.05#python3.version
+nix eval github:NixOS/nixpkgs/release-21.11#python3.version
+nix eval github:NixOS/nixpkgs/release-22.05#python3.version
+nix eval github:NixOS/nixpkgs/release-22.11#python3.version
+nix eval github:NixOS/nixpkgs/release-23.05#python3.version
+nix eval github:NixOS/nixpkgs/nixpkgs-unstable#python3.version
+```
+
+```bash
 nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#nodejs-12_x -- --version
 nix run github:NixOS/nixpkgs/7a200487a17af17a0774257533c979a1daba858d#nodejs-12_x -- --version
 nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#nodejs-12_x -- --version
@@ -8170,6 +8258,9 @@ nix run github:NixOS/nixpkgs/release-20.03#python3 -- --version
 nix run github:NixOS/nixpkgs/release-20.09#python3 -- --version
 nix run github:NixOS/nixpkgs/release-21.05#python3 -- --version
 nix run github:NixOS/nixpkgs/release-21.11#python3 -- --version
+nix run github:NixOS/nixpkgs/release-22.05#python3 -- --version
+nix run github:NixOS/nixpkgs/release-22.11#python3 -- --version
+nix run github:NixOS/nixpkgs/release-23.05#python3 -- --version
 
 nix run github:NixOS/nixpkgs/nixos-20.03#python3 -- --version
 nix run github:NixOS/nixpkgs/nixos-20.09#python3 -- --version
@@ -9399,103 +9490,195 @@ shell \
 python3 -c 'from skimage.metrics import structural_similarity; import cv2; import numpy as np'
 ```
 
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/0874168639713f547c05947c76124f78441ea46c";
+  with legacyPackages.x86_64-linux;
+  python3.withPackages (pypkgs: with pypkgs; [ 
+                                     einops
+                                     sentencepiece
+                                     torch
+                                     transformers
+                                   ]
+                        )
+)' \
+--command \
+python
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/7e63eed145566cca98158613f3700515b4009ce3");
+      pkgs = import nixpkgs { };    
+    in
+    
+      pkgs.python3.withPackages (pypkgs: with pypkgs; [
+                                       beautifulsoup4
+                                       pandas
+                                       requests
+                                     ]
+                                )
+  )
+'
+```
+
+
+```bash
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+
+
+URL = 'https://debit.com.br/tabelas/tabela-completa.php?indice=cdi'
+
+page = requests.get(URL)
+soup = BeautifulSoup(page.content, "html.parser")
+tags = [tag for tag in soup.find_all('tr') if not tag.findChild('th') and '\n%' not in list(tag.children)[3].text]
+
+d = [
+  {'ano': list(tag.children)[1].text, 'valor': list(tag.children)[3].text, 'type': 'cdi'}
+  for tag in tags
+]
+
+df = pd.DataFrame.from_dict(d)
+df = df[df['ano'] >= '01/1990']
+df.head
+df.to_json('cdi.json')
+```
+
+
+
+
 ```bash
 nix \
 build \
 --expr \
-'(
-  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
-  with legacyPackages.x86_64-linux;
-  python3.withPackages (p: with p; [
-                                     geopandas
-                                     jupyter
-                                     jupyterlab
-                                     keras
-                                     matplotlib
-                                     nltk
-                                     numpy
-                                     opencv4
-                                     pandas
-                                     plotly
-                                     scikitlearn
-                                     scikitimage
-                                     scipy
-                                     sympy
-                                     tensorflow
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/7e63eed145566cca98158613f3700515b4009ce3");
+      pkgs = import nixpkgs { };    
+    in
+      pkgs.python3.withPackages (pypkgs: with pypkgs; [
+                                       beautifulsoup4
+                                       einops
+                                       geopandas
+                                       jupyter
+                                       jupyterlab
+                                       keras
+                                       matplotlib
+                                       nltk
+                                       numpy
+                                       opencv4
+                                       pandas
+                                       plotly
+                                       requests
+                                       scikitimage
+                                       scikitlearn
+                                       scipy
+                                       sentencepiece
+                                       sympy
+                                       tensorflow
+                                       torch
+                                       transformers
                                      
-                                     pip
-                                     virtualenv
-                                     wheel
-                                     # venvShellHook
-                                   ]
-                        )
-)'
+                                       pip
+                                       virtualenv
+                                       wheel
+                                     ]
+                          )
+  )
+'
 ```
 
 
 ```bash
 nix \
 build \
+--impure \
 --print-out-paths \
 --expr \
-'(
-  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
-  with legacyPackages.x86_64-linux;
-  [
-    texlive.combined.scheme-medium
-    pandoc
-    (python3.withPackages (p: with p; [
-                                     geopandas
-                                     jupyter
-                                     jupyterlab
-                                     keras
-                                     matplotlib
-                                     nltk
-                                     numpy
-                                     opencv4
-                                     pandas
-                                     plotly
-                                     scikitlearn
-                                     scipy
-                                     sympy
-                                     tensorflow
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/7e63eed145566cca98158613f3700515b4009ce3");
+        pkgs = import nixpkgs { };    
+      in
+        with pkgs;[
+          texlive.combined.scheme-medium
+          pandoc
+          (python3.withPackages (pypkgs: with pypkgs; [
+                                         beautifulsoup4
+                                         einops
+                                         geopandas
+                                         jupyter
+                                         jupyterlab
+                                         keras
+                                         matplotlib
+                                         nltk
+                                         numpy
+                                         opencv4
+                                         pandas
+                                         plotly
+                                         requests
+                                         scikitimage
+                                         scikitlearn
+                                         scipy
+                                         sentencepiece
+                                         sympy
+                                         tensorflow
+                                         torch
+                                         transformers
 
-                                    argon2-cffi
-                                    behave  
-                                    black                               
-                                    boto3
-                                    coverage
-                                    django
-                                    django-cors-headers
-                                    django-debug-toolbar
-                                    django-polymorphic
-                                    django-rest-polymorphic
-                                    django-storages
-                                    djangorestframework
-                                    djangorestframework-simplejwt
-                                    drf-spectacular
-                                    factory_boy
-                                    faker
-                                    flake8
-                                    freezegun
-                                    gunicorn
-                                    holidays
-                                    ipdb         
-                                    isort
-                                    pandas
-                                    pendulum
-                                    pillow
-                                    psycopg2
-                                    pyjwt
-                                    pymupdf
-                                    requests
-                                    tblib
-                                    user-agents                                     
-                                   ]
+                                         argon2-cffi
+                                         behave  
+                                         black                               
+                                         boto3
+                                         coverage
+                                         django
+                                         django-cors-headers
+                                         django-debug-toolbar
+                                         django-polymorphic
+                                         django-rest-polymorphic
+                                         django-storages
+                                         djangorestframework
+                                         djangorestframework-simplejwt
+                                         drf-spectacular
+                                         factory_boy
+                                         faker
+                                         flake8
+                                         freezegun
+                                         gunicorn
+                                         holidays
+                                         ipdb         
+                                         isort
+                                         pandas
+                                         pendulum
+                                         pillow
+                                         psycopg2
+                                         pyjwt
+                                         pymupdf
+                                         requests
+                                         tblib
+                                         user-agents
+                                     ]
+                          )
                         )
-                      )
-  ]
-)'
+    ]
+  )
+'
 ```
 
 
@@ -13381,11 +13564,108 @@ mkdir -pv "$HOME"/.local/bin \
 COMMANDS
 ```
 
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine as certs
+RUN apk update && apk add --no-cache ca-certificates
 
+
+FROM docker.io/library/busybox as busybox-ca-certificates-nix
+
+# https://stackoverflow.com/a/45397221
+COPY --from=certs /etc/ssl/certs /etc/ssl/certs
+
+RUN mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser
+
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && wget -O- https://hydra.nixos.org/build/224275015/download/1/nix > nix \
+ && chmod -v +x nix \
+ && cd - \
+ && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
+ && nix flake --version \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799 \
+ && nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.nix
+
+# Entrypoint [ "nix" ]
+# CMD nix shell nixpkgs#pkgsStatic.nix -c sh
+
+
+FROM localhost/busybox-ca-certificates-nix:latest as hello-input-derivation
+RUN nix build --no-link --print-build-logs --print-out-paths \
+        nixpkgs#hello.inputDerivation
+EOF
+
+
+
+podman \
+build \
+--tag busybox-ca-certificates-nix \
+--target busybox-ca-certificates-nix \
+.
+
+podman \
+build \
+--tag hello-input-derivation \
+--target hello-input-derivation \
+.
+
+#podman \
+#run \
+#--interactive=true \
+#--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+#--network=none \
+#--privileged=true \
+#--rm=true \
+#--tty=true \
+#localhost/busybox-ca-certificates-nix:latest \
+#sh \
+#-c \
+#'nix build --no-link --print-build-logs --print-out-paths nixpkgs#hello'
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+localhost/busybox-ca-certificates-nix:latest \
+nix \
+shell \
+nixpkgs#pkgsStatic.nix \
+-c \
+sh
+```
+
+
+```bash
 RUN nix flake metadata github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397
 
 RUN nix build --no-link --print-build-logs --print-out-paths \
         github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello.inputDerivation
+```
+
 ```bash
 nix \
 build \
@@ -13414,7 +13694,7 @@ podman load < result
 
 cat > Containerfile << 'EOF'
 FROM alpine as certs
-RUN apk update && apk add ca-certificates
+RUN apk update && apk add --no-cache ca-certificates
 
 
 FROM docker.io/library/busybox as test-busybox
@@ -13440,17 +13720,18 @@ ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 
 RUN mkdir -pv "$HOME"/.local/bin \
  && cd "$HOME"/.local/bin \
- && wget -O- https://hydra.nixos.org/build/221401908/download/2/nix > nix \
+ && wget -O- https://hydra.nixos.org/build/224275015/download/1/nix > nix \
  && chmod -v +x nix \
  && cd - \
  && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
- && nix flake --version
+ && nix flake --version \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799
 
 RUN echo \
  && nix build --no-link --print-build-logs --print-out-paths \
-        github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix \
+        nixpkgs#pkgsStatic.nix \
  && nix build --no-link --print-build-logs --print-out-paths \
-        github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#cacert
+        nixpkgs#cacert
 
 FROM localhost/busybox-sandbox-shell:1.36.0 as busybox-sandbox-shell-etc
 
@@ -13497,7 +13778,8 @@ run \
 localhost/test-busybox \
 sh \
 -c \
-'nix build github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
+'
+nix build github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
 && nix run github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello
 '
 ```
@@ -13525,6 +13807,7 @@ build \
         pkgsStatic.nix
         coreutils
         bashInteractive
+        hello
       ];
 
       config = {
@@ -13581,9 +13864,415 @@ run \
 --tty=true \
 --user=0 \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/nix:0.0.1 \
-bash
+localhost/nix:0.0.1
+```
 
+
+
+```bash
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      # nix flake metadata github:nixified-ai/flake
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+      # pkgs.dockerTools.streamLayeredImage { 
+      pkgs.dockerTools.buildImage { 
+        name = "cache-nix";  
+        tag = "0.0.1";
+        # tag = "${pkgs.pkgsStatic.version}";
+
+        copyToRoot = with pkgs; [
+          pkgsStatic.nix.out
+          pkgsStatic.coreutils.out
+          bashInteractive.out
+        ];
+
+        runAsRoot = "
+          #!${pkgs.stdenv}
+          ${pkgs.dockerTools.shadowSetup}
+          groupadd --gid 5678 appgroup && useradd --no-log-init --uid 1234 --gid appgroup appuser 
+          groupadd kvm && usermod --append --groups kvm appuser
+    
+          mkdir -pv home/appuser && chmod -v 0700 home/appuser
+  
+          # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
+          mkdir -pv home/appuser/.local/share/fonts
+          
+          ## 
+          mkdir -pv home/appuser/outputs
+          mkdir -pv home/appuser/outputs/foo-bar/nix
+          mkdir -pv home/abcuser/.local/bin
+  
+          cp -v etc/passwd home/appuser/outputs/passwd
+          cp -v etc/group home/appuser/outputs/group
+          cp -v ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt home/appuser/outputs/ca-bundle.crt
+
+          cp -v ${pkgs.pkgsStatic.nix}/bin/nix home/appuser/outputs/nix
+
+          cp -v ${pkgs.pkgsStatic.busybox-sandbox-shell}/bin/busybox home/appuser/outputs/busybox-sandbox-shell
+          cp -v ${pkgs.pkgsStatic.busybox}/bin/busybox home/appuser/outputs/busybox
+          ## 
+
+          chown -v 1234:5678 -R home/appuser
+          
+          # 
+          mkdir -pv -m1777 tmp
+        ";
+
+        config = {
+          Env = [
+            "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            "GIT_SSL_CAINFO=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            "NIX_CONFIG=extra-experimental-features = nix-command flakes"
+            "HOME=/home/appuser"
+            "USER=appuser"
+            "TMPDIR=/tmp"
+          ];
+          Entrypoint = [ "${pkgs.bashInteractive}/bin/bash" ];
+          WorkingDir = "/home/appuser";
+          User = "appuser:appgroup";
+        };
+      }
+  )
+'
+
+podman load < result
+
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/cache-nix:0.0.1 -c 'nix flake --version'
+
+nix \
+build \
+--impure \
+--print-out-paths \
+--print-build-logs \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      pkgs = import nixpkgs {};
+    in
+        pkgs.dockerTools.buildImage {
+            name = "empty";
+            tag = "0.0.0";
+          }
+  )
+'
+
+podman load < result
+
+cat > Containerfile << 'EOF'
+
+
+FROM localhost/empty:0.0.0 as base
+
+ENV HOME=/home/appuser
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+ENV PATH=/home/appuser/.nix-profile/bin:/usr/bin:/bin
+ENV USER=appuser
+
+ENV GIT_SSL_CAINFO=/etc/ssl/certs/ca-bundle.crt
+ENV NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
+
+USER appuser
+
+WORKDIR /home/appuser
+
+
+
+FROM localhost/cache-nix:0.0.1 as cache-nix
+
+
+
+FROM localhost/empty:0.0.0 as busybox-sandbox-shell
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+
+ENV HOME=/home/appuser
+ENV USER=appuser
+
+USER appuser
+
+WORKDIR /home/appuser
+
+
+
+FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+CMD [ "/bin/sh" ]
+
+
+
+FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+CMD [ "/bin/sh" ]
+
+
+
+FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-nix
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+CMD [ "/bin/sh" ]
+
+
+
+FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox
+
+COPY --from=cache-nix /home/appuser/outputs/busybox /home/abcuser/.local/bin/busybox
+COPY --from=cache-nix /home/appuser/outputs/busybox /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+CMD [ "/bin/sh" ]
+
+FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox-nix
+
+COPY --from=cache-nix /home/appuser/outputs/busybox /home/abcuser/.local/bin/busybox
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+CMD [ "/bin/sh" ]
+
+#RUN nix flake --version \
+# && echo \
+# && nix flake metadata -vvvv github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89
+
+
+
+FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-nix-cached
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+CMD [ "/bin/sh" ]
+
+#RUN /home/abcuser/.local/bin/nix flake --version \
+# && echo \
+# && /home/abcuser/.local/bin/nix flake metadata -vvvv github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89
+
+
+
+FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-slash-nix
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/foo-bar/nix /nix
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+CMD [ "/bin/sh" ]
+
+
+
+FROM localhost/base:0.0.0 as tmp-certs-slash-nix
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/foo-bar/nix /nix
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+
+
+
+FROM localhost/empty:0.0.0 as tmp-certs-nix
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+
+EOF
+
+
+podman \
+build \
+--tag base:0.0.0 \
+--target base \
+.
+
+podman \
+build \
+--tag busybox-sandbox-shell \
+--target busybox-sandbox-shell \
+.
+
+podman \
+build \
+--tag busybox-sandbox-shell-tmp \
+--target busybox-sandbox-shell-tmp \
+.
+
+podman \
+build \
+--tag busybox-sandbox-shell-certs \
+--target busybox-sandbox-shell-certs \
+.
+
+podman \
+build \
+--tag busybox-sandbox-shell-tmp-certs \
+--target busybox-sandbox-shell-tmp-certs \
+.
+
+podman \
+build \
+--tag busybox-sandbox-shell-tmp-certs-busybox \
+--target busybox-sandbox-shell-tmp-certs-busybox \
+.
+
+podman \
+build \
+--tag busybox-sandbox-shell-tmp-certs-busybox-nix \
+--target busybox-sandbox-shell-tmp-certs-busybox-nix \
+.
+
+podman \
+build \
+--tag busybox-sandbox-shell-tmp-certs-nix \
+--target busybox-sandbox-shell-tmp-certs-nix \
+.
+
+podman \
+build \
+--tag busybox-sandbox-shell-tmp-certs-nix-cached \
+--target busybox-sandbox-shell-tmp-certs-nix-cached \
+.
+
+podman \
+build \
+--tag tmp-certs-nix \
+--target tmp-certs-nix \
+.
+
+podman \
+build \
+--tag tmp-certs-slash-nix \
+--target tmp-certs-slash-nix \
+.
+
+
+podman \
+build \
+--tag busybox-sandbox-shell-tmp-certs \
+--target busybox-sandbox-shell-tmp-certs \
+.
+
+
+podman \
+run \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+localhost/busybox-sandbox-shell:latest \
+sh \
+-c \
+'cd / && echo *'
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/busybox-sandbox-shell-tmp-certs-busybox:latest \
+sh \
+-c \
+'ls -al'
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/busybox-sandbox-shell-tmp-certs-busybox-nix:latest \
+nix flake --version
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/busybox-sandbox-shell-tmp-certs-nix:latest \
+nix flake --version
 ```
 
 
@@ -13649,7 +14338,6 @@ run \
 --tty=true \
 --user=12345 \
 localhost/nix:0.0.1
-
 ```
 
 
@@ -13779,6 +14467,7 @@ USER nixuser
 
 WORKDIR /home/nixuser
 
+ENV USER=nixuser
 ENV HOME=/home/nixuser
 ENV PATH=/home/nixuser/.nix-profile/bin:/usr/bin:/bin
 ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
@@ -13788,6 +14477,10 @@ ENV GIT_SSL_CAINFO=/etc/ssl/certs/ca-bundle.crt
 ENV NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
 
 RUN nix flake --version
+RUN nix flake metadata github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89
+
+
+FROM localhost/busybox-sandbox-shell-certs-nix as test-hello-input-derivation
 
 RUN nix \
     build \
@@ -13808,7 +14501,7 @@ build \
 podman \
 run \
 --interactive=true \
---network=none \
+--network=host \
 --privileged=true \
 --mount=type=tmpfs,tmpfs-size=1G,destination=/tmp \
 --tty=true \
@@ -13818,7 +14511,6 @@ sh \
 -c \
 '
 nix \
-    --option use-registries false \
     build \
     --no-link \
     --print-out-paths \
@@ -13847,15 +14539,25 @@ nix \
 
 nix run github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello
 '
+
+nix \
+shell \
+github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#bashInteractive \
+github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#coreutils \
+github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#pkgsStatic.nix
+
+nix build github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#pkgsStatic.python3
 ```
 
-nix build nixpkgs#pkgsStatic.python3
+
+
 
 ```bash
 cat > Containerfile << 'EOF'
 FROM docker.nix-community.org/nixpkgs/nix-flakes
 
-RUN nix build --no-link nixpkgs#hello.inputDerivation
+RUN nix build --no-link --print-build-logs --print-out-paths \
+ github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello.inputDerivation
 
 ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
 
@@ -13878,7 +14580,12 @@ run \
 localhost/test-hello-input-derivation \
 bash \
 -c \
-'nix build nixpkgs#hello && nix run nixpkgs#hello'
+'
+nix build github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello \
+&& echo ### \
+&& nix build --rebuild github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello \
+&& nix run github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#hello
+'
 ```
 
 ```bash
@@ -13955,7 +14662,7 @@ bash \
 -c \
 '
   nix --option use-registries false build --no-link --print-build-logs --print-out-paths \
-  github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
+  && github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
   && nix --option use-registries false build --no-link --print-build-logs --print-out-paths --rebuild \
        github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello
 '
@@ -13972,8 +14679,9 @@ nix shell github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStat
 nix run github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#nix-info -- --markdown
 ```
 
-
-
+```bash
+nix profile install nixpkgs#hello --profile "$HOME"/.local/share/nix/root/nix/var/nix/profiles/per-user/"$USER"/profile
+```
 
 runAsRoot = "
   #!${pkgs.runtimeShell}
@@ -16820,6 +17528,38 @@ sh \
 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
 ```
 
+```bash
+nix \
+develop \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799"); 
+      pkgs = import nixpkgs {};
+    in
+      pkgs.stdenv.mkDerivation {
+        name = "python-env";
+        dontUnpack = true; 
+        buildInputs = with pkgs;[ (python3.withPackages (p: with p; [ pyttsx3 ])) espeak-classic ];
+        
+        buildPhase = "mkdir $out";
+        dontInstall = true;
+        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ 
+            # pkgs.pythonManylinuxPackages.manylinux1Package
+            pkgs.pythonManylinuxPackages.manylinux2010Package                                                                  
+            pkgs.pythonManylinuxPackages.manylinux2014Package 
+            pkgs.xorg.libX11 
+            pkgs.glib 
+            pkgs.stdenv.cc.cc.lib 
+            pkgs.zlib
+        ];
+    }
+  )
+'
+```
+
+
 
 ```bash
 nix \
@@ -18215,6 +18955,9 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames python3Packages' | 
 nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames nodePackages_latest' | tr ' ' '\n' | wc -l
 ```
 
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames javaPackages' | tr ' ' '\n' | wc -l
+```
 
 
 ```bash
