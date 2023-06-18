@@ -7972,13 +7972,17 @@ env | sort
 ps -aux | grep apt
 ```
 
+```bash
 cat /etc/passwd | grep sh
-From: https://askubuntu.com/a/1206350
+```
+Refs.:
+- https://askubuntu.com/a/1206350
 
+```bash
 stat "$(which chsh)"
-
-
-https://unix.stackexchange.com/questions/111365/how-to-change-default-shell-to-zsh-chsh-says-invalid-shell
+```
+Refs.:
+- https://unix.stackexchange.com/questions/111365/how-to-change-default-shell-to-zsh-chsh-says-invalid-shell
 
 
 ```bash
@@ -8153,7 +8157,22 @@ nix flake metadata --refresh github:NixOS/nixpkgs/$(git ls-remote git://github.c
 git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 10
 ```
 
+### nix registry pin nixpkgs
 
+> This command adds an entry to the user registry that maps flake reference url 
+> to the corresponding locked flake reference, that is, a flake reference that 
+> specifies an exact revision or content hash. This ensures that until this 
+> registry entry is removed, all uses of url will resolve to exactly the same flake.
+> https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-registry-pin.html#description
+
+
+Eelco Dolstra explaining this:
+[Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=919&version=3), start=817&end=919
+
+
+#### Investigation
+
+Useful to fast navigate and check something that you are interested:
 ```bash
 nix eval github:NixOS/nixpkgs/release-20.03#nix.version
 nix eval github:NixOS/nixpkgs/release-20.09#nix.version
@@ -8186,6 +8205,31 @@ nix eval github:NixOS/nixpkgs/nixos-unstable-small#nix.version
 
 
 ```bash
+nix eval github:NixOS/nixpkgs/release-20.03#python3.version
+nix eval github:NixOS/nixpkgs/release-20.09#python3.version
+nix eval github:NixOS/nixpkgs/release-21.05#python3.version
+nix eval github:NixOS/nixpkgs/release-21.11#python3.version
+nix eval github:NixOS/nixpkgs/release-22.05#python3.version
+nix eval github:NixOS/nixpkgs/release-22.11#python3.version
+nix eval github:NixOS/nixpkgs/release-23.05#python3.version
+nix eval github:NixOS/nixpkgs/nixpkgs-unstable#python3.version
+```
+
+
+```bash
+nix run github:NixOS/nix#nix-static -- flake metadata github:NixOS/nixpkgs/nixos-21.11
+
+nix run github:NixOS/nix#nix-static -- run github:NixOS/nixpkgs/nixos-22.05#python3 -- --version
+nix run github:NixOS/nix#nix-static -- show-config --json
+
+nix run github:NixOS/nixpkgs/nixpkgs-unstable#pkgsStatic.nix -- show-config
+```
+
+
+### Examples
+
+
+```bash
 nix registry list | grep '^user  '
 
 
@@ -8213,76 +8257,31 @@ nix flake metadata nixpkgs
 
 nix flake metadata github:NixOS/nixpkgs/nixos-unstable
 nix registry add nixos-unstable github:NixOS/nixpkgs/nixos-unstable
+
 nix eval nixos-unstable#lib.version
 nix eval nixos-unstable#nix.version
 nix flake metadata nixos-unstable
 ```
 
+
+```bash
 nix \
---option flake-registry https://raw.githubusercontent.com/serokell/flake-registry/master/flake-registry.json \
+--option flake-registry https://raw.githubusercontent.com/serokell/flake-registry/6fd0b94e3e40b409a7cd352c1c78f0477e4a9069/flake-registry.json \
 eval nixpkgs#lib.version
+```
+Refs.:
+- https://github.com/serokell/flake-registry/tree/6fd0b94e3e40b409a7cd352c1c78f0477e4a9069#serokell-flake-registry
 
-nix flake metadata github:NixOS/nixpkgs/nixpkgs-unstable
+
+```bash
+# nix flake metadata github:NixOS/nixpkgs/nixpkgs-unstable
 nix registry pin nixpkgs github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799
-
-```bash
-nix eval github:NixOS/nixpkgs/release-20.03#python3.version
-nix eval github:NixOS/nixpkgs/release-20.09#python3.version
-nix eval github:NixOS/nixpkgs/release-21.05#python3.version
-nix eval github:NixOS/nixpkgs/release-21.11#python3.version
-nix eval github:NixOS/nixpkgs/release-22.05#python3.version
-nix eval github:NixOS/nixpkgs/release-22.11#python3.version
-nix eval github:NixOS/nixpkgs/release-23.05#python3.version
-nix eval github:NixOS/nixpkgs/nixpkgs-unstable#python3.version
-```
-
-```bash
-nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#nodejs-12_x -- --version
-nix run github:NixOS/nixpkgs/7a200487a17af17a0774257533c979a1daba858d#nodejs-12_x -- --version
-nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#nodejs-12_x -- --version
-
-nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python3 -- --version
-nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python3 -- --version
-
-nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python37 -- --version
-nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python37 -- --version
-
-nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python38 -- --version
-nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python38 -- --version
-
-nix run github:NixOS/nixpkgs/e3e553c5f547f42629739d0491279eeb25e25cb2#python39 -- --version
-nix run github:NixOS/nixpkgs/7a6f7df2e4ef9c7563b73838c7f86a1d6dd0755b#python39 -- --version
-
-
-nix run github:NixOS/nixpkgs/release-20.03#python3 -- --version
-nix run github:NixOS/nixpkgs/release-20.09#python3 -- --version
-nix run github:NixOS/nixpkgs/release-21.05#python3 -- --version
-nix run github:NixOS/nixpkgs/release-21.11#python3 -- --version
-nix run github:NixOS/nixpkgs/release-22.05#python3 -- --version
-nix run github:NixOS/nixpkgs/release-22.11#python3 -- --version
-nix run github:NixOS/nixpkgs/release-23.05#python3 -- --version
-
-nix run github:NixOS/nixpkgs/nixos-20.03#python3 -- --version
-nix run github:NixOS/nixpkgs/nixos-20.09#python3 -- --version
-nix run github:NixOS/nixpkgs/nixos-21.05#python3 -- --version
-nix run github:NixOS/nixpkgs/nixos-21.11#python3 -- --version
-nix run github:NixOS/nixpkgs/nixpkgs-unstable#python3 -- --version
-
-nix run github:NixOS/nixpkgs/nixos-21.11#pkgsStatic.nix
-nix run github:NixOS/nixpkgs/nixos-22.05#pkgsStatic.nix
-nix run github:NixOS/nixpkgs/nixpkgs-unstable#pkgsStatic.nix
-
-nix run github:NixOS/nix#nix-static -- flake metadata github:NixOS/nixpkgs/nixos-21.11
-
-nix run github:NixOS/nix#nix-static -- run github:NixOS/nixpkgs/nixos-22.05#python3 -- --version
-nix run github:NixOS/nix#nix-static -- show-config --json
-
-
-nix flake metadata github:NixOS/nixpkgs/nixos-21.11 --json | jq --join-output '.url'
-nix flake metadata github:NixOS/nixpkgs/nixos-22.05 --json | jq --join-output '.url'
 ```
 
 
+
+
+### ?
 
 ```bash
 nix \
@@ -8310,23 +8309,17 @@ run \
 ```
 
 
-nix \
-run \
---impure \
---expr \
-'with (import <nixpkgs> {}); let
-  overlay = final: prev: {
-    openssl = prev.openssl.override {
-      static = true;
-    };
-  };
+```bash
+nix eval --impure --raw nixpkgs#openssl.postPatch
+```
 
-  pkgs = import <nixpkgs> { overlays = [ overlay ]; };
+```bash
+nix build --impure --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.openssl.bin
+```
 
-in
-  pkgs.hello'
-
+```bash
 nix run --impure --expr '(import <nixpkgs> { overlays = [(final: prev: { static = true; })]; }).hello'
+```
 
 ```bash
 nix \
@@ -8362,39 +8355,48 @@ nix \
 run \
 --impure \
 --expr \
-'(
+'
+(
   import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [(final: prev: { static = true; })]; }
-).openssl'
+).openssl
+'
 ```
 
-
+```bash
 nix-instantiate \
 --option pure-eval true \
 --eval \
 --impure \
 --expr \
-'with (import <nixpkgs> {}); let
-  overlay = final: prev: {
-    openssl = prev.openssl.override {
-      static = true;
-    };
-  };
+'
+  (
+    let
+        overlay = final: prev: {
+          openssl = prev.openssl.override {
+            static = true;
+          };
+        };
 
-  pkgs = import (with builtins.getFlake "nixpkgs";) { overlays = [ overlay ]; };
-
-in
-  pkgs.hello'
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/7e63eed145566cca98158613f3700515b4009ce3");
+      pkgs = import nixpkgs { overlays = [ overlay ]; };    
+    in
+      pkgs.hello
+  )
+'
+```
 
 ```bash
 nix \
 build \
 --impure \
 --expr \
-'(
+'
+(
 with builtins.getFlake "nixpkgs"; 
 with legacyPackages.${builtins.currentSystem};
 hello
-)'
+)
+'
 ```
 
 
@@ -13607,9 +13609,10 @@ RUN mkdir -pv "$HOME"/.local/bin \
 # CMD nix shell nixpkgs#pkgsStatic.nix -c sh
 
 
-FROM localhost/busybox-ca-certificates-nix:latest as hello-input-derivation
-RUN nix build --no-link --print-build-logs --print-out-paths \
-        nixpkgs#hello.inputDerivation
+FROM localhost/busybox-ca-certificates-nix:latest as hellow
+
+RUN nix develop nixpkgs#path nixpkgs#hello --profile ./hellow
+
 EOF
 
 
@@ -13622,22 +13625,23 @@ build \
 
 podman \
 build \
---tag hello-input-derivation \
---target hello-input-derivation \
+--tag hellow \
+--target hellow \
 .
 
-#podman \
-#run \
-#--interactive=true \
-#--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
-#--network=none \
-#--privileged=true \
-#--rm=true \
-#--tty=true \
-#localhost/busybox-ca-certificates-nix:latest \
-#sh \
-#-c \
-#'nix build --no-link --print-build-logs --print-out-paths nixpkgs#hello'
+podman \
+run \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--network=none \
+--privileged=true \
+--rm=true \
+--tty=false \
+localhost/hellow:latest \
+sh \
+<<'COMMANDS'
+nix develop ./hellow --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
+COMMANDS
 
 podman \
 run \
@@ -13657,6 +13661,9 @@ nixpkgs#pkgsStatic.nix \
 -c \
 sh
 ```
+
+nix develop nixpkgs#hello --profile ./foo-bar --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild' \
+&& nix develop ./foo-bar --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
 
 
 ```bash
@@ -17541,7 +17548,7 @@ develop \
       pkgs.stdenv.mkDerivation {
         name = "python-env";
         dontUnpack = true; 
-        buildInputs = with pkgs;[ (python3.withPackages (p: with p; [ pyttsx3 ])) espeak-classic ];
+        buildInputs = with pkgs;[ (python3.withPackages (p: with p; [ pandas ])) hello ];
         
         buildPhase = "mkdir $out";
         dontInstall = true;
