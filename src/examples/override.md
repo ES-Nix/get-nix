@@ -517,3 +517,13 @@ cd "$(mktemp -d)" \
 \
 && pwd \
 && phases="configurePhase buildPhase patchPhase" genericBuild
+
+    let
+      #
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+
+      nixuserKeys = pkgs.writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly";
+    in
+(wine.override { wineBuild = "wine64"; })
+https://nixos.wiki/wiki/Wine
