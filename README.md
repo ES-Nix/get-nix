@@ -793,6 +793,11 @@ nix eval --apply builtins.attrNames nix#checks.x86_64-linux
 ```
 
 ```bash
+nix eval --apply builtins.attrNames nixpkgs#python3Packages | tr ' ' '\n' | wc -l
+```
+
+
+```bash
 nix eval --apply builtins.attrNames nixpkgs#vmTools.diskImages
 ```
 
@@ -8252,6 +8257,13 @@ nix eval github:NixOS/nixpkgs/release-23.05#python3.version
 nix eval github:NixOS/nixpkgs/nixpkgs-unstable#python3.version
 ```
 
+```bash
+nix \
+flake \
+metadata \
+--refresh \
+github:NixOS/nixpkgs/$(git ls-remote git://github.com/NixOS/nixpkgs.git nixos-21.11 | tail -1 | cut -f 1)
+```
 
 ```bash
 nix run github:NixOS/nix#nix-static -- flake metadata github:NixOS/nixpkgs/nixos-21.11
@@ -9712,6 +9724,812 @@ build \
                                          requests
                                          tblib
                                          user-agents
+                                     ]
+                          )
+                        )
+    ]
+  )
+'
+```
+
+
+
+```bash
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+        pkgs = import nixpkgs { };    
+      in
+        with pkgs;[
+          # texlive.combined.scheme-medium
+          # pandoc
+          (python3.withPackages (pyPkgs: with pyPkgs; [
+                                        # awswrangler
+                                        # azure-storage-file-datalake
+                                        # backports-zoneinfo
+                                        # bs4
+                                        # contourpy
+                                        # et-xmlfile
+                                        # gitpython
+                                        # great-expectations
+                                        # ipython-genutils
+                                        # jaraco-classes
+                                        # jupyter-core
+                                        # jupyter-server
+                                        # mysql-connector-python
+                                        # opensearch-py
+                                        # pkgutil-resolve-name
+                                        # psycopg2-binary
+                                        # pyproject-hooks
+                                        # redshift-connector
+                                        # tensorflow-serving-api
+                                        # trove-classifiers
+                                        # xlsxwriter
+                                        # zope-interface
+                                        absl-py
+                                        adal
+                                        aenum
+                                        aiobotocore
+                                        aiohttp
+                                        aioitertools
+                                        aiosignal
+                                        alembic
+                                        altair
+                                        anyio
+                                        appdirs
+                                        argcomplete
+                                        arrow
+                                        asgiref
+                                        asn1crypto
+                                        astroid
+                                        async-timeout
+                                        asynctest
+                                        attrs
+                                        awscli
+                                        azure-common
+                                        azure-core
+                                        azure-identity
+                                        azure-mgmt-core
+                                        azure-nspkg
+                                        azure-storage-blob
+                                        azure-storage-common
+                                        babel
+                                        backcall
+                                        backoff
+                                        bcrypt
+                                        beautifulsoup4
+                                        black
+                                        bleach
+                                        blinker
+                                        boto3
+                                        botocore
+                                        build
+                                        cachecontrol
+                                        cached-property
+                                        cachetools
+                                        cattrs
+                                        certifi
+                                        cffi
+                                        cfn-lint
+                                        chardet
+                                        charset-normalizer
+                                        cleo
+                                        click
+                                        click-plugins
+                                        cloudpickle
+                                        colorama
+                                        contextlib2
+                                        coverage
+                                        crashtest
+                                        croniter
+                                        cryptography
+                                        cycler
+                                        cython
+                                        databricks-cli
+                                        datadog
+                                        debugpy
+                                        decorator
+                                        deepdiff
+                                        defusedxml
+                                        deprecated
+                                        dill
+                                        distlib
+                                        distro
+                                        dnspython
+                                        docker
+                                        docopt
+                                        docutils
+                                        dulwich
+                                        elasticsearch
+                                        entrypoints
+                                        exceptiongroup
+                                        fastapi
+                                        fastjsonschema
+                                        filelock
+                                        flake8
+                                        flask
+                                        flatbuffers
+                                        fonttools
+                                        frozenlist
+                                        fsspec
+                                        future
+                                        gast
+                                        gitdb
+                                        google-api-core
+                                        google-api-python-client
+                                        google-auth
+                                        google-auth-httplib2
+                                        google-auth-oauthlib
+                                        google-cloud-bigquery
+                                        google-cloud-bigquery-storage
+                                        google-cloud-core
+                                        google-cloud-pubsub
+                                        google-cloud-secret-manager
+                                        google-cloud-storage
+                                        google-crc32c
+                                        google-pasta
+                                        google-resumable-media
+                                        googleapis-common-protos
+                                        greenlet
+                                        grpc-google-iam-v1
+                                        grpcio
+                                        grpcio-status
+                                        grpcio-tools
+                                        gunicorn
+                                        h11
+                                        h5py
+                                        html5lib
+                                        httpcore
+                                        httplib2
+                                        httpx
+                                        huggingface-hub
+                                        humanfriendly
+                                        hvac
+                                        idna
+                                        imageio
+                                        importlib-metadata
+                                        importlib-resources
+                                        iniconfig
+                                        ipykernel
+                                        ipython
+                                        isodate
+                                        isort
+                                        itsdangerous
+                                        jedi
+                                        jeepney
+                                        jinja2
+                                        jmespath
+                                        joblib
+                                        jsonpatch
+                                        jsonpath-ng
+                                        jsonpointer
+                                        jsonschema
+                                        jupyter-client
+                                        keras
+                                        keyring
+                                        kiwisolver
+                                        kubernetes
+                                        lazy-object-proxy
+                                        llvmlite
+                                        lockfile
+                                        loguru
+                                        lxml
+                                        mako
+                                        markdown
+                                        markdown-it-py
+                                        markupsafe
+                                        marshmallow
+                                        marshmallow-enum
+                                        matplotlib
+                                        matplotlib-inline
+                                        mccabe
+                                        mdurl
+                                        mistune
+                                        mlflow
+                                        mock
+                                        more-itertools
+                                        msal
+                                        msal-extensions
+                                        msgpack
+                                        msrest
+                                        msrestazure
+                                        multidict
+                                        mypy
+                                        mypy-extensions
+                                        nbclassic
+                                        nbconvert
+                                        nbformat
+                                        nest-asyncio
+                                        networkx
+                                        nltk
+                                        notebook
+                                        notebook-shim
+                                        numba
+                                        numpy
+                                        oauth2client
+                                        oauthlib
+                                        openpyxl
+                                        orjson
+                                        oscrypto
+                                        packaging
+                                        pandas
+                                        paramiko
+                                        parso
+                                        pathspec
+                                        pbr
+                                        pendulum
+                                        pexpect
+                                        pg8000
+                                        pickleshare
+                                        pillow
+                                        pip
+                                        pkginfo
+                                        platformdirs
+                                        pluggy
+                                        ply
+                                        poetry
+                                        poetry-core
+                                        poetry-plugin-export
+                                        portalocker
+                                        progressbar2
+                                        prometheus-client
+                                        prompt-toolkit
+                                        proto-plus
+                                        protobuf
+                                        psutil
+                                        psycopg2
+                                        ptyprocess
+                                        py
+                                        py4j
+                                        pyarrow
+                                        pyasn1
+                                        pyasn1-modules
+                                        pycodestyle
+                                        pycparser
+                                        pycryptodome
+                                        pycryptodomex
+                                        pydantic
+                                        pyflakes
+                                        pygments
+                                        pyjwt
+                                        pylint
+                                        pymongo
+                                        pymysql
+                                        pynacl
+                                        pyodbc
+                                        pyopenssl
+                                        pyparsing
+                                        pyrsistent
+                                        pysocks
+                                        pyspark
+                                        pytest
+                                        pytest-cov
+                                        pytest-runner
+                                        python-dateutil
+                                        python-dotenv
+                                        python-json-logger
+                                        python-slugify
+                                        python-utils
+                                        pytz
+                                        pytz-deprecation-shim
+                                        pytzdata
+                                        pyyaml
+                                        pyzmq
+                                        rapidfuzz
+                                        redis
+                                        regex
+                                        requests
+                                        requests-aws4auth
+                                        requests-file
+                                        requests-oauthlib
+                                        requests-toolbelt
+                                        responses
+                                        retry
+                                        rfc3986
+                                        rich
+                                        rsa
+                                        ruamel-yaml
+                                        ruamel-yaml-clib
+                                        s3fs
+                                        s3transfer
+                                        sagemaker
+                                        scikit-learn
+                                        scipy
+                                        scramp
+                                        secretstorage
+                                        selenium
+                                        send2trash
+                                        sentencepiece
+                                        sentry-sdk
+                                        setuptools
+                                        setuptools-scm
+                                        shapely
+                                        shellingham
+                                        simplejson
+                                        six
+                                        slack-sdk
+                                        smart-open
+                                        smmap
+                                        sniffio
+                                        snowflake-connector-python
+                                        snowflake-sqlalchemy
+                                        sortedcontainers
+                                        soupsieve
+                                        sqlalchemy
+                                        sqlparse
+                                        starlette
+                                        statsmodels
+                                        tabulate
+                                        tenacity
+                                        tensorboard
+                                        tensorboard-data-server
+                                        tensorflow
+                                        tensorflow-estimator
+                                        termcolor
+                                        text-unidecode
+                                        threadpoolctl
+                                        tinycss2
+                                        tokenizers
+                                        toml
+                                        tomli
+                                        tomlkit
+                                        toolz
+                                        torch
+                                        tornado
+                                        tox
+                                        tqdm
+                                        traitlets
+                                        transformers
+                                        typeguard
+                                        typer
+                                        typing-extensions
+                                        typing-inspect
+                                        tzdata
+                                        tzlocal
+                                        unidecode
+                                        uritemplate
+                                        urllib3
+                                        uvicorn
+                                        virtualenv
+                                        watchdog
+                                        wcwidth
+                                        webencodings
+                                        websocket-client
+                                        websockets
+                                        werkzeug
+                                        wheel
+                                        wrapt
+                                        xlrd
+                                        xmltodict
+                                        yarl
+                                        zipp
+                                     ]
+                          )
+                        )
+    ]
+  )
+'
+```
+Refs.:
+- https://pythonwheels.com/
+- https://mayeut.github.io/manylinux-timeline/
+
+
+```bash
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+        pkgs = import nixpkgs { };    
+      in
+        with pkgs;[
+          # texlive.combined.scheme-medium
+          # pandoc
+          (python3.withPackages (pyPkgs: with pyPkgs; [
+                                        # awswrangler
+                                        # azure-storage-file-datalake
+                                        # backports-zoneinfo
+                                        # bs4
+                                        # contourpy
+                                        # et-xmlfile
+                                        # gitpython
+                                        # great-expectations
+                                        # ipython-genutils
+                                        # jaraco-classes
+                                        # jupyter-core
+                                        # jupyter-server
+                                        # mysql-connector-python
+                                        # opensearch-py
+                                        # pkgutil-resolve-name
+                                        # psycopg2-binary
+                                        # pyproject-hooks
+                                        # redshift-connector
+                                        # tensorflow-serving-api
+                                        # trove-classifiers
+                                        # xlsxwriter
+                                        # zope-interface
+            
+                                        absl-py
+                                        adal
+                                        aenum
+                                        aiobotocore
+                                        aiohttp
+                                        aioitertools
+                                        aiosignal
+                                        alembic
+                                        altair
+                                        anyio
+                                        appdirs
+                                        argcomplete
+                                        argon2-cffi
+                                        arrow
+                                        asgiref
+                                        asn1crypto
+                                        astroid
+                                        asynctest
+                                        async-timeout
+                                        attrs
+                                        awscli
+                                        azure-common
+                                        azure-core
+                                        azure-identity
+                                        azure-mgmt-core
+                                        azure-nspkg
+                                        azure-storage-blob
+                                        azure-storage-common
+                                        babel
+                                        backcall
+                                        backoff
+                                        bcrypt
+                                        beautifulsoup4
+                                        behave  
+                                        black
+                                        black                               
+                                        bleach
+                                        blinker
+                                        boto3
+                                        botocore
+                                        build
+                                        cachecontrol
+                                        cached-property
+                                        cachetools
+                                        cattrs
+                                        certifi
+                                        cffi
+                                        cfn-lint
+                                        chardet
+                                        charset-normalizer
+                                        cleo
+                                        click
+                                        click-plugins
+                                        cloudpickle
+                                        colorama
+                                        contextlib2
+                                        coverage
+                                        crashtest
+                                        croniter
+                                        cryptography
+                                        cycler
+                                        cython
+                                        databricks-cli
+                                        datadog
+                                        debugpy
+                                        decorator
+                                        deepdiff
+                                        defusedxml
+                                        deprecated
+                                        dill
+                                        distlib
+                                        distro
+                                        django
+                                        django-cors-headers
+                                        django-debug-toolbar
+                                        django-polymorphic
+                                        djangorestframework
+                                        djangorestframework-simplejwt
+                                        django-rest-polymorphic
+                                        django-storages
+                                        dnspython
+                                        docker
+                                        docopt
+                                        docutils
+                                        drf-spectacular
+                                        dulwich
+                                        einops
+                                        elasticsearch
+                                        entrypoints
+                                        exceptiongroup
+                                        factory_boy
+                                        faker
+                                        fastapi
+                                        fastjsonschema
+                                        filelock
+                                        flake8
+                                        flask
+                                        flatbuffers
+                                        fonttools
+                                        freezegun
+                                        frozenlist
+                                        fsspec
+                                        future
+                                        gast
+                                        geopandas
+                                        gitdb
+                                        google-api-core
+                                        google-api-python-client
+                                        googleapis-common-protos
+                                        google-auth
+                                        google-auth-httplib2
+                                        google-auth-oauthlib
+                                        google-cloud-bigquery
+                                        google-cloud-bigquery-storage
+                                        google-cloud-core
+                                        google-cloud-pubsub
+                                        google-cloud-secret-manager
+                                        google-cloud-storage
+                                        google-crc32c
+                                        google-pasta
+                                        google-resumable-media
+                                        greenlet
+                                        grpc-google-iam-v1
+                                        grpcio
+                                        grpcio-status
+                                        grpcio-tools
+                                        gunicorn
+                                        h11
+                                        h5py
+                                        holidays
+                                        html5lib
+                                        httpcore
+                                        httplib2
+                                        httpx
+                                        huggingface-hub
+                                        humanfriendly
+                                        hvac
+                                        idna
+                                        imageio
+                                        importlib-metadata
+                                        importlib-resources
+                                        iniconfig
+                                        ipdb         
+                                        ipykernel
+                                        ipython
+                                        isodate
+                                        isort
+                                        itsdangerous
+                                        jedi
+                                        jeepney
+                                        jinja2
+                                        jmespath
+                                        joblib
+                                        jsonpatch
+                                        jsonpath-ng
+                                        jsonpointer
+                                        jsonschema
+                                        jupyter
+                                        jupyter-client
+                                        jupyterlab
+                                        keras
+                                        keyring
+                                        kiwisolver
+                                        kubernetes
+                                        lazy-object-proxy
+                                        llvmlite
+                                        lockfile
+                                        loguru
+                                        lxml
+                                        mako
+                                        markdown
+                                        markdown-it-py
+                                        markupsafe
+                                        marshmallow
+                                        marshmallow-enum
+                                        matplotlib
+                                        matplotlib-inline
+                                        mccabe
+                                        mdurl
+                                        mistune
+                                        mlflow
+                                        mock
+                                        more-itertools
+                                        msal
+                                        msal-extensions
+                                        msgpack
+                                        msrest
+                                        msrestazure
+                                        multidict
+                                        mypy
+                                        mypy-extensions
+                                        nbclassic
+                                        nbconvert
+                                        nbformat
+                                        nest-asyncio
+                                        networkx
+                                        nltk
+                                        notebook
+                                        notebook-shim
+                                        numba
+                                        numpy
+                                        oauth2client
+                                        oauthlib
+                                        opencv4
+                                        openpyxl
+                                        orjson
+                                        oscrypto
+                                        packaging
+                                        pandas
+                                        paramiko
+                                        parso
+                                        pathspec
+                                        pbr
+                                        pendulum
+                                        pexpect
+                                        pg8000
+                                        pickleshare
+                                        pillow
+                                        pip
+                                        pkginfo
+                                        platformdirs
+                                        plotly
+                                        pluggy
+                                        ply
+                                        poetry
+                                        poetry-core
+                                        poetry-plugin-export
+                                        portalocker
+                                        progressbar2
+                                        prometheus-client
+                                        prompt-toolkit
+                                        protobuf
+                                        proto-plus
+                                        psutil
+                                        psycopg2
+                                        ptyprocess
+                                        py
+                                        py4j
+                                        pyarrow
+                                        pyasn1
+                                        pyasn1-modules
+                                        pycodestyle
+                                        pycparser
+                                        pycryptodome
+                                        pycryptodomex
+                                        pydantic
+                                        pyflakes
+                                        pygments
+                                        pyjwt
+                                        pylint
+                                        pymongo
+                                        pymupdf
+                                        pymysql
+                                        pynacl
+                                        pyodbc
+                                        pyopenssl
+                                        pyparsing
+                                        pyrsistent
+                                        pysocks
+                                        pyspark
+                                        pytest
+                                        pytest-cov
+                                        pytest-runner
+                                        python-dateutil
+                                        python-dotenv
+                                        python-json-logger
+                                        python-slugify
+                                        python-utils
+                                        pytz
+                                        pytzdata
+                                        pytz-deprecation-shim
+                                        pyyaml
+                                        pyzmq
+                                        rapidfuzz
+                                        redis
+                                        regex
+                                        requests
+                                        requests-aws4auth
+                                        requests-file
+                                        requests-oauthlib
+                                        requests-toolbelt
+                                        responses
+                                        retry
+                                        rfc3986
+                                        rich
+                                        rsa
+                                        ruamel-yaml
+                                        ruamel-yaml-clib
+                                        s3fs
+                                        s3transfer
+                                        sagemaker
+                                        scikitimage
+                                        scikit-learn
+                                        scikitlearn
+                                        scipy
+                                        scramp
+                                        secretstorage
+                                        selenium
+                                        send2trash
+                                        sentencepiece
+                                        sentry-sdk
+                                        setuptools
+                                        setuptools-scm
+                                        shapely
+                                        shellingham
+                                        simplejson
+                                        six
+                                        slack-sdk
+                                        smart-open
+                                        smmap
+                                        sniffio
+                                        snowflake-connector-python
+                                        snowflake-sqlalchemy
+                                        sortedcontainers
+                                        soupsieve
+                                        sqlalchemy
+                                        sqlparse
+                                        starlette
+                                        statsmodels
+                                        sympy
+                                        tabulate
+                                        tblib
+                                        tenacity
+                                        tensorboard
+                                        tensorboard-data-server
+                                        tensorflow
+                                        tensorflow-estimator
+                                        termcolor
+                                        text-unidecode
+                                        threadpoolctl
+                                        tinycss2
+                                        tokenizers
+                                        toml
+                                        tomli
+                                        tomlkit
+                                        toolz
+                                        torch
+                                        tornado
+                                        tox
+                                        tqdm
+                                        traitlets
+                                        transformers
+                                        typeguard
+                                        typer
+                                        typing-extensions
+                                        typing-inspect
+                                        tzdata
+                                        tzlocal
+                                        unidecode
+                                        uritemplate
+                                        urllib3
+                                        user-agents
+                                        uvicorn
+                                        virtualenv
+                                        watchdog
+                                        wcwidth
+                                        webencodings
+                                        websocket-client
+                                        websockets
+                                        werkzeug
+                                        wheel
+                                        wrapt
+                                        xlrd
+                                        xmltodict
+                                        yarl
+                                        zipp
                                      ]
                           )
                         )
