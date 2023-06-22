@@ -14565,8 +14565,13 @@ nixpkgs#pkgsStatic.nix \
 sh
 ```
 
+
+```bash
 nix develop nixpkgs#hello --profile ./foo-bar --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild' \
 && nix develop ./foo-bar --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
+```
+Refs.: 
+- https://github.com/NixOS/nix/issues/4250#issuecomment-799264241
 
 
 ```bash
@@ -20984,3 +20989,6 @@ ls: cannot access '/nix/var/nix/profiles/per-user/pedro/channels': No such file 
  ✘ pedro@nixos  ~  ls /nix/var/nix/profiles/per-user/pedro         
 profile  profile-6-link
 ```
+
+https://github.com/NixOS/rfcs/pull/153
+
