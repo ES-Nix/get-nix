@@ -788,17 +788,21 @@ nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
 
 
 ```bash
-nix eval nix#checks --apply builtins.attrNames
-nix eval nix#checks.x86_64-linux --apply builtins.attrNames
+nix eval --apply builtins.attrNames nix#checks
+nix eval --apply builtins.attrNames nix#checks.x86_64-linux
 ```
 
 ```bash
-nix eval nixpkgs#vmTools.diskImages --apply builtins.attrNames
+nix eval --apply builtins.attrNames nixpkgs#vmTools.diskImages
 ```
 
 
 ```bash
-nix eval nixpkgs#dockerTools.pullImage --apply builtins.functionArgs
+nix eval --apply builtins.functionArgs nixpkgs#dockerTools.pullImage
+```
+
+```bash
+nix eval --apply toString nixpkgs#pkgsStatic.nix.propagatedBuildInputs | tr ' ' '\n' | sort -h
 ```
 
 
@@ -844,6 +848,7 @@ nix eval --expr '(import <nixpkgs> {}).vscode.version'
 nix eval --impure --expr '(import <nixpkgs> {}).vscode.version'
 
 nix eval --impure --raw --expr '(import <nixpkgs> {}).hello'
+nix eval --impure --raw --expr '(import <nixpkgs> {}).python3Full.postInstall'
 
 nix build --impure --expr '(import <nixpkgs> {}).vscode' 
 nix build nixpkgs#vscode
@@ -3846,10 +3851,10 @@ nix path-info -rsSh --eval-store auto --store https://cache.nixos.org/ github:Ni
 nix \
 path-info \
 --closure-size \
+--eval-store auto \
 --human-readable \
 --recursive \
 --size \
---eval-store auto \
 --store https://cache.nixos.org/ \
 github:NixOS/nix#nix-static
 ```
@@ -12856,6 +12861,12 @@ build \
 Refs.:
 - https://git.sr.ht/~jamii/focus/commit/22839da3da1851f2a61b07d48edb9d69641498a0
 
+
+TODO: what is inside this?
+```bash
+nix build --no-link --print-build-logs --print-out-paths nix#checks.x86_64-linux.binaryTarball
+```
+
 ```bash
 nix flake metadata github:NixOS/nixpkgs/release-22.05 
 # github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0
@@ -12875,9 +12886,51 @@ let
                         "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
                       ]; 
           };  
-in nixos.config.environment.etc.os-release.text
+in
+  nixos.config.environment.etc.os-release.text
 '
 ```
+
+```bash
+nix \
+eval \
+--impure \
+--raw \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-20.09");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in
+  nixos.config.environment.etc.os-release.text
+'
+
+echo '###'
+
+nix \
+eval \
+--impure \
+--raw \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.05");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in
+  nixos.config.environment.etc.os-release.text
+'
+```
+
 
 ```bash
 nix \

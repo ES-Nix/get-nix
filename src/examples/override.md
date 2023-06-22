@@ -69,7 +69,7 @@ shell \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
+  with builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c";
   with legacyPackages.${builtins.currentSystem};
     (
         let python =
@@ -116,9 +116,10 @@ shell \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
-  with legacyPackages.${builtins.currentSystem};
-    (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+    in
+      (
         let
           overlay = (self: super: rec {
             python3 = super.python3.override {
@@ -137,15 +138,20 @@ shell \
         
             python3Packages = python3.pkgs;
           });
+
+          pkgs = import nixpkgs { overlays = [ overlay ]; };
         in
-        { pkgs ? import <nixpkgs> { overlays = [ overlay ]; } }:
-        pkgs.python3
+          with pkgs; [ 
+            (python3.withPackages (ps: with ps; [ Fabric ])) 
+            cowsay
+          ]
     )
   )                                                                                                                                                              
 ' \
 --command \
-bash
+python3 -c 'from fabric.api import local; local("cowsay Hello Fabric world!")'
 ```
+
 
 ```bash
 nix \
