@@ -8320,7 +8320,7 @@ eval nixpkgs#lib.version
 ```
 Refs.:
 - https://github.com/serokell/flake-registry/tree/6fd0b94e3e40b409a7cd352c1c78f0477e4a9069#serokell-flake-registry
-
+- https://github.com/NixOS/nix/issues/6704
 
 ```bash
 # nix flake metadata github:NixOS/nixpkgs/nixpkgs-unstable
@@ -14572,7 +14572,7 @@ nix develop nixpkgs#hello --profile ./foo-bar --command sh -c 'source $stdenv/se
 ```
 Refs.: 
 - https://github.com/NixOS/nix/issues/4250#issuecomment-799264241
-
+- https://github.com/NixOS/nix/issues/4250#issuecomment-1146687856
 
 ```bash
 RUN nix flake metadata github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397
