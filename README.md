@@ -8209,10 +8209,20 @@ Eelco Dolstra explaining this:
 - [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=919&version=3), start=817&end=919
 - https://edolstra.github.io/talks/nixcon-oct-2019.pdf
 
+```bash
+nix.registry.<name>.flake
+```
+Refs.:
+- https://search.nixos.org/options?channel=unstable&from=0&size=50&sort=relevance&type=packages&query=nix.registry.%3Cname%3E.flake
 
-
+```bash
+({...}: { nix.registry.nixpkgs.flake = nixpkgs; })
+```
+https://discourse.nixos.org/t/flakes-error-error-attribute-outpath-missing/18044/2
 
 #### Investigation
+
+Take a look at: https://releases.nixos.org/?prefix=nixos/
 
 Useful to fast navigate and check something that you are interested:
 ```bash
@@ -9315,6 +9325,10 @@ python \
 Refs.:
 - https://docs.python.org/3/library/zlib.html
 
+
+```bash
+nix build --print-build-logs --no-link --print-out-paths nixpkgs#texlive.combined.scheme-full
+```
 
 
 ```bash
