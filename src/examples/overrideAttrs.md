@@ -2867,7 +2867,7 @@ shell \
         # and other modules you"d like to add
       ];      
    in
-     (import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41")
+     (import (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c")
              { overlays = [ overlay ]; }
              ).python3.withPackages myPythonPackages
     )
@@ -3572,8 +3572,8 @@ build \
 '
   ( 
     let
-      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
-      pkgs = p.legacyPackages.${builtins.currentSystem};
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
     in
       pkgs.poetry2nix.mkPoetryApplication rec {
         src = pkgs.fetchFromGitHub {

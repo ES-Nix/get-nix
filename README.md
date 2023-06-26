@@ -796,6 +796,10 @@ nix eval --apply builtins.attrNames nix#checks.x86_64-linux
 nix eval --apply builtins.attrNames nixpkgs#python3Packages | tr ' ' '\n' | wc -l
 ```
 
+```bash
+nix eval --apply "p: (p.withPackages (pp: [pp.requests])).outPath" nixpkgs#python3
+```
+https://github.com/NixOS/nix/issues/5567#issuecomment-1335434799
 
 ```bash
 nix eval --apply builtins.attrNames nixpkgs#vmTools.diskImages
@@ -8220,6 +8224,52 @@ Refs.:
 ```
 https://discourse.nixos.org/t/flakes-error-error-attribute-outpath-missing/18044/2
 
+
+```bash
+nix \
+eval \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                        ({...}: { nix.registry.nixpkgs.flake = nixpkgs; })
+                      ]; 
+          };  
+in
+  nixos.config.nix.nixPath
+'
+```
+
+
+```bash
+[ "$(nix-shell -p hello --run "which hello")" = "$(nix shell nixpkgs#hello -c which hello)" ] && echo success
+```
+https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html
+
+```bash
+nix eval --expr 'with builtins; functionArgs fetchTree'
+```
+
+```bash
+nix eval --expr 'builtins.fetchTree { type = "github"; owner = "replit"; repo = "nixpkgs-replit"; }'
+```
+
+```bash
+nix flake prefetch dwarffs
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake-prefetch.html#examples
+
+#### Other people confused
+
+- https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883
+- https://ianthehenry.com/posts/how-to-learn-nix/more-flakes/
+- https://ianthehenry.com/posts/how-to-learn-nix/chipping-away-at-flakes/
+
 #### Investigation
 
 Take a look at: https://releases.nixos.org/?prefix=nixos/
@@ -9597,6 +9647,54 @@ shell \
                                 )
   )
 '
+```
+
+
+```bash
+nix \
+shell \
+--ignore-environment \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { };    
+    in
+      with pkgs; [
+        cowsay
+      ]
+    )
+' \
+--command cowsay "Hello"
+
+nix \
+shell \
+--ignore-environment \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { };    
+    in
+      with pkgs; [
+        (
+          glibcLocales.override {
+              allLocales = false;
+              locales = [
+                          "en_US.UTF-8/UTF-8" 
+                          "pt_BR.UTF-8/UTF-8"
+                        ];
+            }
+        )
+        cowsay
+      ]
+    )
+' \
+--command cowsay "Hello"
 ```
 
 
@@ -14519,7 +14617,7 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && cd - \
  && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
  && nix flake --version \
- && nix registry pin nixpkgs github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799 \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c \
  && nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.nix
 
 # Entrypoint [ "nix" ]
@@ -14588,6 +14686,43 @@ Refs.:
 - https://github.com/NixOS/nix/issues/4250#issuecomment-799264241
 - https://github.com/NixOS/nix/issues/4250#issuecomment-1146687856
 
+
+```bash
+FROM docker.io/library/busybox as test-busybox
+
+# https://stackoverflow.com/a/45397221
+COPY --from=alpine-certs /etc/ssl/certs /etc/ssl/certs
+
+RUN mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser
+
+USER nixuser
+
+WORKDIR /home/nixuser
+
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && wget -O- https://hydra.nixos.org/build/224275015/download/1/nix > nix \
+ && chmod -v +x nix \
+ && cd - \
+ && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
+ && nix flake --version
+EOF
+
+
+```
+
 ```bash
 RUN nix flake metadata github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397
 
@@ -14622,14 +14757,16 @@ podman load < result
 
 
 cat > Containerfile << 'EOF'
-FROM alpine as certs
-RUN apk update && apk add --no-cache ca-certificates
+FROM alpine as alpine-certs
+
+RUN apk update 
+ && apk add --no-cache ca-certificates
 
 
 FROM docker.io/library/busybox as test-busybox
 
 # https://stackoverflow.com/a/45397221
-COPY --from=certs /etc/ssl/certs /etc/ssl/certs
+COPY --from=alpine-certs /etc/ssl/certs /etc/ssl/certs
 
 RUN mkdir -pv /home/nixuser \
  && addgroup nixgroup --gid 4455 \
@@ -14642,7 +14779,9 @@ RUN mkdir -pv /home/nixuser \
      nixuser
 
 USER nixuser
+
 WORKDIR /home/nixuser
+
 ENV USER="nixuser"
 ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
 ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
@@ -14808,8 +14947,7 @@ build \
 '
   (
     let
-      # nix flake metadata github:nixified-ai/flake
-      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
       pkgs = import nixpkgs {};
     in
       # pkgs.dockerTools.streamLayeredImage { 
@@ -14819,7 +14957,8 @@ build \
         # tag = "${pkgs.pkgsStatic.version}";
 
         copyToRoot = with pkgs; [
-          pkgsStatic.nix.out
+          # pkgsStatic.nixVersions.nix_2_10.out
+          nixVersions.nix_2_10.out
           pkgsStatic.coreutils.out
           bashInteractive.out
         ];
@@ -14888,7 +15027,10 @@ run \
 --rm=true \
 --tty=true \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/cache-nix:0.0.1 -c 'nix flake --version'
+localhost/cache-nix:0.0.1 \
+-c \
+'id && nix flake --version'
+
 
 nix \
 build \
@@ -14899,26 +15041,28 @@ build \
 '
   (
     let
-      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
       pkgs = import nixpkgs {};
     in
-        pkgs.dockerTools.buildImage {
-            name = "empty";
-            tag = "0.0.0";
-          }
+      pkgs.dockerTools.buildImage {
+        name = "empty";
+        tag = "0.0.0";
+      }
   )
 '
 
 podman load < result
 
+
 cat > Containerfile << 'EOF'
+FROM localhost/empty:0.0.0 as base-env-user-workdir
 
-
-FROM localhost/empty:0.0.0 as base
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 
 ENV HOME=/home/appuser
 ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
-ENV PATH=/home/appuser/.nix-profile/bin:/usr/bin:/bin
+ENV PATH=/home/appuser/.nix-profile/bin:/home/abcuser/.local/bin:/usr/bin:/bin
 ENV USER=appuser
 
 ENV GIT_SSL_CAINFO=/etc/ssl/certs/ca-bundle.crt
@@ -14930,9 +15074,7 @@ USER appuser
 WORKDIR /home/appuser
 
 
-
 FROM localhost/cache-nix:0.0.1 as cache-nix
-
 
 
 FROM localhost/empty:0.0.0 as busybox-sandbox-shell
@@ -14949,8 +15091,7 @@ USER appuser
 WORKDIR /home/appuser
 
 
-
-FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
@@ -14960,8 +15101,17 @@ COPY --from=cache-nix /tmp /tmp
 CMD [ "/bin/sh" ]
 
 
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-certs
 
-FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+
+CMD [ "/bin/sh" ]
+
+
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
@@ -14972,8 +15122,7 @@ COPY --from=cache-nix /tmp /tmp
 CMD [ "/bin/sh" ]
 
 
-
-FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-nix
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-nix
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
@@ -14985,8 +15134,7 @@ COPY --from=cache-nix /tmp /tmp
 CMD [ "/bin/sh" ]
 
 
-
-FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox
 
 COPY --from=cache-nix /home/appuser/outputs/busybox /home/abcuser/.local/bin/busybox
 COPY --from=cache-nix /home/appuser/outputs/busybox /bin/sh
@@ -14997,9 +15145,23 @@ COPY --from=cache-nix /tmp /tmp
 
 CMD [ "/bin/sh" ]
 
-FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox-nix
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox-nix
 
-COPY --from=cache-nix /home/appuser/outputs/busybox /home/abcuser/.local/bin/busybox
+COPY --from=cache-nix --chown=appuser:appgroup /home/appuser/outputs/busybox /home/abcuser/.local/bin/busybox
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+RUN /home/abcuser/.local/bin/busybox chown -Rv nixuser:nixgroup /home/abcuser
+
+CMD [ "/bin/sh" ]
+
+
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-nix-cached
+
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
@@ -15009,30 +15171,8 @@ COPY --from=cache-nix /tmp /tmp
 
 CMD [ "/bin/sh" ]
 
-#RUN nix flake --version \
-# && echo \
-# && nix flake metadata -vvvv github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89
 
-
-
-FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-nix-cached
-
-COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
-COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
-COPY --from=cache-nix /home/appuser/outputs/group /etc/group
-COPY --from=cache-nix /home/appuser/outputs/nix /bin/nix
-COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
-
-CMD [ "/bin/sh" ]
-
-#RUN /home/abcuser/.local/bin/nix flake --version \
-# && echo \
-# && /home/abcuser/.local/bin/nix flake metadata -vvvv github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89
-
-
-
-FROM localhost/base:0.0.0 as busybox-sandbox-shell-tmp-certs-slash-nix
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-slash-nix
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
@@ -15045,8 +15185,7 @@ COPY --from=cache-nix /tmp /tmp
 CMD [ "/bin/sh" ]
 
 
-
-FROM localhost/base:0.0.0 as tmp-certs-slash-nix
+FROM localhost/base-env-user-workdir:0.0.0 as tmp-certs-slash-nix
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
@@ -15057,7 +15196,6 @@ COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 COPY --from=cache-nix /tmp /tmp
 
 ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
-
 
 
 FROM localhost/empty:0.0.0 as tmp-certs-nix
@@ -15070,14 +15208,13 @@ COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 COPY --from=cache-nix /tmp /tmp
 
 ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
-
 EOF
 
 
 podman \
 build \
---tag base:0.0.0 \
---target base \
+--tag base-env-user-workdir:0.0.0 \
+--target base-env-user-workdir \
 .
 
 podman \
@@ -15140,12 +15277,12 @@ build \
 --target tmp-certs-slash-nix \
 .
 
-
 podman \
 build \
 --tag busybox-sandbox-shell-tmp-certs \
 --target busybox-sandbox-shell-tmp-certs \
 .
+
 
 
 podman \
@@ -15155,6 +15292,33 @@ run \
 --rm=true \
 --tty=true \
 localhost/busybox-sandbox-shell:latest \
+sh \
+-c \
+'cd / && echo *'
+
+
+podman \
+run \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+localhost/busybox-sandbox-shell-tmp-certs:latest \
+sh \
+-c \
+'cd / && echo *'
+
+
+podman \
+run \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--volume="$(pwd)"/nix:/bin/nix:ro \
+localhost/busybox-sandbox-shell-tmp-certs:latest \
 sh \
 -c \
 'cd / && echo *'
@@ -19173,6 +19337,189 @@ https://nixos.org/manual/nix/stable/package-management/binary-cache-substituter.
 ## mkYarnPackage
 
 
+https://youtu.be/YFXwV0ZO9NE?t=269
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { };
+      tsMWE = pkgs.writeText "mwe.ts" "console.log(123409);";
+
+      nodeModules = pkgs.mkYarnPackage {
+        name = "mkyp-modules";
+        src = tsMWE;
+      };
+    in
+      pkgs.stdenv.mkDerivation {
+        name = "frontend";
+        src = tsMWE;
+        buildInputs = [ pkgs.yarn nodeModules ];
+        buildPhase = "ln -s ${nodeModules}/libexec/yarn-nix-example/node_modules node_modules && 
+          ${pkgs.yarn}/bin/yarn build";
+        installPhase = "mkdir $out && mv -v dist $out/lib";
+      })
+'
+```
+
+```bash
+nix show-derivation gitlab:/all-dressed-programming/yarn-nix-example
+```
+
+```bash
+nix build --no-link --print-build-logs --print-out-paths gitlab:/all-dressed-programming/yarn-nix-example
+```
+
+
+```bash
+TS_HELLO=$(cat <<-'EOF'
+let message: string = 'Hello World';
+console.log(message);
+EOF
+)
+# echo $TS_HELLO
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { };
+
+      yarnNixExampleSrc = pkgs.fetchFromGitLab {
+        sha256 = "sha256-zV0RwYwQ5dghAPVfrfCYh8mKHfU9kZz5p2DwY4eiN2M=";
+        owner = "all-dressed-programming";
+        rev = "5c6d5f167776cd4ebe509041af0837177b41a3ab";
+        repo = "yarn-nix-example";
+      };
+
+      tsHello = pkgs.fetchurl {
+        url= "http://ix.io/4z1T";
+        sha256 = "sha256-wyNrUMdIBQ5cM/IA2f5VCprZhX74llWGXPB32Ao0Tlk=";
+      };
+
+      customSrc = pkgs.runCommand "yarn-nix-example-fff" {} "
+        mkdir -pv $out/src && 
+        cp ${yarnNixExampleSrc}/{package.json,yarn.lock} $out &&
+        cp ${yarnNixExampleSrc}/src/wui.ts $out/src/wui.ts &&
+        echo '"$TS_HELLO"' > $out/src/wui.ts
+      ";
+
+      nodemkYPModules = pkgs.mkYarnPackage {
+        name = "mkyp-modules";
+        src = customSrc;
+      };
+    in
+      pkgs.stdenv.mkDerivation {
+        name = "frontend";
+        src = customSrc;
+        buildInputs = [ pkgs.yarn nodemkYPModules ];
+        buildPhase = "
+          ln -s ${nodemkYPModules}/libexec/yarn-nix-example/node_modules node_modules && 
+          ${pkgs.yarn}/bin/yarn build
+        ";
+        installPhase = "mkdir $out && mv -v dist $out/lib";
+      }
+  )
+'
+```
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { };
+
+      yarnNixExampleSrc = pkgs.fetchFromGitLab {
+        sha256 = "sha256-zV0RwYwQ5dghAPVfrfCYh8mKHfU9kZz5p2DwY4eiN2M=";
+        owner = "all-dressed-programming";
+        rev = "5c6d5f167776cd4ebe509041af0837177b41a3ab";
+        repo = "yarn-nix-example";
+      };
+
+      tsHello = pkgs.fetchurl {
+        url= "http://ix.io/4z1T";
+        sha256 = "sha256-wyNrUMdIBQ5cM/IA2f5VCprZhX74llWGXPB32Ao0Tlk=";
+      };
+
+      customSrc = pkgs.runCommand "yarn-nix-example-fff" {} "
+        mkdir -pv $out/src && 
+        cp ${yarnNixExampleSrc}/{package.json,yarn.lock} $out &&
+        cp $tsHello $out/src
+      ";
+
+      nodemkYPModules = pkgs.mkYarnPackage {
+        name = "mkyp-modules";
+        src = customSrc;
+      };
+    in
+      pkgs.stdenv.mkDerivation {
+        name = "frontend";
+        src = customSrc;
+        buildInputs = [ pkgs.yarn nodemkYPModules ];
+        buildPhase = "
+          ln -s ${nodemkYPModules}/libexec/yarn-nix-example/node_modules node_modules && 
+          ${pkgs.yarn}/bin/yarn build
+        ";
+        installPhase = "mkdir $out && mv -v dist $out/lib";
+      }
+  )
+'
+```
+
+
+```bash
+nix flake clone gitlab:/all-dressed-programming/yarn-nix-example --dest ./yarn-nix-example \
+&& cd yarn-nix-example \
+&& cat << 'EOF' > src/hello.ts
+let message: string = 'Hello World';
+console.log(message);
+EOF
+
+nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)
+```
+
+
+
+```bash
+nix eval --raw --impure --expr \
+'(builtins.getFlake "gitlab:/all-dressed-programming/yarn-nix-example").packages.x86_64-linux.default' 
+```
+
+```bash
+nix eval --raw --impure --expr 
+'(builtins.getFlake "gitlab:/all-dressed-programming/yarn-nix-example").packages.x86_64-linux.default' 
+
+
+.overrideAttrs (oldAttrs: {
+          patches = [ fc-cache-fix ];
+        }
+```
+
 ### vscode
 
 ```bash
@@ -19450,7 +19797,7 @@ genericBuild
 Refs.:
 - https://nixos.wiki/wiki/Packaging/Python
 
-
+TODO: Broken
 ```bash
 nix \
 shell \
@@ -19477,9 +19824,11 @@ shell \
         # pythonImportsCheck = with python3Packages; [ pytest ];
         checkInputs = with python3Packages; [ pytest ];
         doCheck = true;
-        buildInputs = with python3Packages; [ typing-extensions redis mmh3 ];
+        buildInputs = with python3Packages; [ typing-extensions redis mmh3 uvloop ];
       }
     )
+    
+    python3
   ]
 )' \
 --command \
