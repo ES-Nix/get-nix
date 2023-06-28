@@ -14038,6 +14038,28 @@ in
 ```
 
 
+```bash
+nix \
+eval \
+--json \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in
+  nixos.config.environment.systemPackages
+' | jq | wc -l
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/97176#issuecomment-1379482726
+
+
 
 ```bash
 nix \
