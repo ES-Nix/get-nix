@@ -8258,6 +8258,9 @@ in
   nixos.config.nix.nixPath
 '
 ```
+Refs.:
+- related? https://github.com/NixOS/nix/pull/7871#issuecomment-1446418480 
+- related? https://github.com/NixOS/nix/pull/8477 
 
 
 ```bash
