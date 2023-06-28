@@ -8213,6 +8213,21 @@ Eelco Dolstra explaining this:
 - [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=919&version=3), start=817&end=919
 - https://edolstra.github.io/talks/nixcon-oct-2019.pdf
 
+
+
+TODO: how to test it?
+> This makes `nix build flake:...` etc. register the downloaded flake source trees as 
+> a GC root to ensure that they won't be garbage collected, which would be bad if you're offline. 
+> Also, `fetchGit` now works offline; if it can't fetch the latest version, it just 
+> continues with the most recently fetched version.
+> 
+> TODO: add some commands for manually adding / releasing GC roots? 
+> (E.g. `nix flake keep nixpkgs`.)
+> 
+> Fixes [#2868](https://github.com/NixOS/nix/issues/2868).
+https://github.com/NixOS/nix/pull/2890
+
+
 ```bash
 nix.registry.<name>.flake
 ```
@@ -8747,7 +8762,148 @@ NAME="$(echo "${HOME}""/nix/store/$(echo "$(readlink result)" | cut -d'/' -f4-)"
 $NAME run --extra-experimental-features 'nix-command flakes' nixpkgs#hello
 ```
 
+```bash
+EXPR_NIX='
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+        pkgs = import nixpkgs { };    
+      in
+        (pkgs.pkgsStatic.nix.override {
+                                       storeDir = "/tmp/nix/store";
+                                       stateDir = "/tmp/nix/var";
+                                       confDir = "/tmp/nix/etc";
+         })
+  )
+'
 
+OUT_PATH_STAGE_1=$(
+    nix \
+    build \
+    --impure \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --expr \
+    "$EXPR_NIX"
+)/bin/nix
+
+cp -v "$OUT_PATH_STAGE_1" nix-stage-1
+
+./nix-stage-1 \
+--extra-experimental-features 'nix-command flakes' \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+#OUT_PATH_STAGE_2=$(
+#
+#)/bin/nix
+#cp -v "$OUT_PATH_STAGE_2" nix-stage-2
+```
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine as certs
+RUN apk update && apk add --no-cache ca-certificates
+
+
+FROM docker.io/library/busybox as busybox-ca-certificates-nix
+
+# https://stackoverflow.com/a/45397221
+COPY --from=certs /etc/ssl/certs /etc/ssl/certs
+
+RUN mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser
+
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && wget -O- https://hydra.nixos.org/build/224275015/download/1/nix > nix \
+ && chmod -v +x nix \
+ && cd - \
+ && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
+ && nix flake --version \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
+EOF
+
+podman \
+build \
+--tag busybox-ca-certificates-nix \
+--target busybox-ca-certificates-nix \
+.
+
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+localhost/busybox-ca-certificates-nix:latest
+```
+
+
+```bash
+ \
+nix \
+shell \
+nixpkgs#pkgsStatic.nix \
+-c \
+sh
+```
+
+```bash
+EXPR_NIX='
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+        pkgs = import nixpkgs { };    
+      in
+        (pkgs.pkgsStatic.nix.override {
+                                       storeDir = "/home/nixuser/.local/share/nix/root/nix/store";
+                                       stateDir = "/home/nixuser/.local/share/nix/root/nix/var";
+                                       confDir = "/home/nixuser/.local/share/nix/root/nix/etc";
+         })
+  )
+'
+
+OUT_PATH_STAGE_1=$(
+    nix \
+    build \
+    --impure \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --expr \
+    "$EXPR_NIX"
+)/bin/nix
+
+cp -v "$OUT_PATH_STAGE_1" nix-stage-1
+```
 
 ```bash
 nix \
@@ -13356,7 +13512,7 @@ build \
   )
 '
 
-cat $(nix \                                                                                                     
+cat $(nix \
 build \
 --no-link \
 --print-build-logs \
@@ -13809,7 +13965,7 @@ eval \
 --expr \
 '
 let
-  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0");
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
   nixos = nixpkgs.lib.nixosSystem { 
             system = "x86_64-linux"; 
             modules = [ 
@@ -13863,12 +14019,32 @@ in
 
 
 ```bash
+nix \                                
+eval \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in
+  nixos.config.system.nixos.label
+'
+```
+
+
+
+```bash
 nix \
 eval \
 --expr \
 '
 let
-  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0");
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
   nixos = nixpkgs.lib.nixosSystem { 
             system = "x86_64-linux"; 
             modules = [ 
