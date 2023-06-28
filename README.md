@@ -2918,15 +2918,13 @@ Out:
 result/bin/hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, not stripped
 ```
 
-'
-let 
-  nixpkgs = builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3";
-in
 
-with subtest(\"Multiple hello, flags -t and -g\"):
-              assert \"hello, world\" == machine.succeed(\"hello -t\")
-              assert \"ABXZ\" == machine.succeed(\"hello -g ABXZ\")"
-assert \"Hello, world!\" == 
+```bash
+nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.boehmgc \
+&& nix build --no-link --print-build-logs --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.boehmgc
+```
+
+
 ```bash
 EXPR_NIX='
   (
