@@ -8809,7 +8809,7 @@ build \
 
 ```bash
 cat > Containerfile << 'EOF'
-FROM docker.io/library/alpine as certs
+FROM docker.io/library/alpine:3.18.2 as certs
 RUN apk update && apk add --no-cache ca-certificates
 
 
@@ -8877,6 +8877,7 @@ nixpkgs#pkgsStatic.nix \
 sh
 ```
 
+
 ```bash
 EXPR_NIX='
   (
@@ -8892,6 +8893,17 @@ EXPR_NIX='
   )
 '
 
+
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+
 OUT_PATH_STAGE_1=$(
     nix \
     build \
@@ -8905,6 +8917,20 @@ OUT_PATH_STAGE_1=$(
 
 cp -v "$OUT_PATH_STAGE_1" nix-stage-1
 ```
+
+
+
+nix \
+build \
+--impure \
+--no-link \
+--no-sandbox \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+
 
 ```bash
 nix \
@@ -15152,12 +15178,13 @@ build \
       # pkgs.dockerTools.streamLayeredImage { 
       pkgs.dockerTools.buildImage { 
         name = "cache-nix";  
-        tag = "0.0.1";
+        # tag = "0.0.1";
+        tag = "latest";
         # tag = "${pkgs.pkgsStatic.version}";
 
         copyToRoot = with pkgs; [
           # pkgsStatic.nixVersions.nix_2_10.out
-          nixVersions.nix_2_10.out
+          pkgsStatic.nixVersions.nix_2_10.out
           pkgsStatic.coreutils.out
           bashInteractive.out
         ];
@@ -15182,7 +15209,7 @@ build \
           cp -v etc/group home/appuser/outputs/group
           cp -v ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt home/appuser/outputs/ca-bundle.crt
 
-          cp -v ${pkgs.pkgsStatic.nix}/bin/nix home/appuser/outputs/nix
+          cp -v ${pkgs.pkgsStatic.nixVersions.nix_2_10}/bin/nix home/appuser/outputs/nix
 
           cp -v ${pkgs.pkgsStatic.busybox-sandbox-shell}/bin/busybox home/appuser/outputs/busybox-sandbox-shell
           cp -v ${pkgs.pkgsStatic.busybox}/bin/busybox home/appuser/outputs/busybox
@@ -15273,7 +15300,7 @@ USER appuser
 WORKDIR /home/appuser
 
 
-FROM localhost/cache-nix:0.0.1 as cache-nix
+FROM localhost/cache-nix:latest as cache-nix
 
 
 FROM localhost/empty:0.0.0 as busybox-sandbox-shell
@@ -15333,6 +15360,19 @@ COPY --from=cache-nix /tmp /tmp
 CMD [ "/bin/sh" ]
 
 
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-slash-nix
+
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+COPY --from=cache-nix /home/appuser/outputs/foo-bar/nix /nix
+
+CMD [ "/bin/sh" ]
+
+
 FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox
 
 COPY --from=cache-nix /home/appuser/outputs/busybox /home/abcuser/.local/bin/busybox
@@ -15343,6 +15383,7 @@ COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 COPY --from=cache-nix /tmp /tmp
 
 CMD [ "/bin/sh" ]
+
 
 FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox-nix
 
@@ -15369,6 +15410,7 @@ COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 COPY --from=cache-nix /tmp /tmp
 
 CMD [ "/bin/sh" ]
+# ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
 
 
 FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-slash-nix
@@ -15382,6 +15424,7 @@ COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 COPY --from=cache-nix /tmp /tmp
 
 CMD [ "/bin/sh" ]
+# ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
 
 
 FROM localhost/base-env-user-workdir:0.0.0 as tmp-certs-slash-nix
@@ -15397,7 +15440,7 @@ COPY --from=cache-nix /tmp /tmp
 ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
 
 
-FROM localhost/empty:0.0.0 as tmp-certs-nix
+FROM localhost/base-env-user-workdir:0.0.0 as tmp-certs-nix
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
@@ -15407,6 +15450,18 @@ COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 COPY --from=cache-nix /tmp /tmp
 
 ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+
+
+FROM localhost/base-env-user-workdir:0.0.0 as certs-slash-nix
+COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
+COPY --from=cache-nix /home/appuser/outputs/group /etc/group
+COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
+COPY --from=cache-nix /tmp /tmp
+
+ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+
 EOF
 
 
@@ -15460,6 +15515,12 @@ build \
 
 podman \
 build \
+--tag busybox-sandbox-shell-tmp-certs-slash-nix \
+--target busybox-sandbox-shell-tmp-certs-slash-nix \
+.
+
+podman \
+build \
 --tag busybox-sandbox-shell-tmp-certs-nix-cached \
 --target busybox-sandbox-shell-tmp-certs-nix-cached \
 .
@@ -15475,6 +15536,13 @@ build \
 --tag tmp-certs-slash-nix \
 --target tmp-certs-slash-nix \
 .
+
+podman \
+build \
+--tag certs-slash-nix \
+--target certs-slash-nix \
+.
+
 
 podman \
 build \
@@ -15565,6 +15633,36 @@ run \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/busybox-sandbox-shell-tmp-certs-nix:latest \
 nix flake --version
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/certs-slash-nix:latest \
+flake --version
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/busybox-sandbox-shell-tmp-certs-slash-nix:latest \
+flake --version
 ```
 
 
