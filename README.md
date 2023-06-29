@@ -2924,6 +2924,13 @@ nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsCross.aarch
 && nix build --no-link --print-build-logs --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.boehmgc
 ```
 
+```bash
+nix build --no-link --print-build-logs --print-out-paths \
+  nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.boehmgc \
+&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
+  nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.boehmgc
+```
+
 
 ```bash
 EXPR_NIX='
