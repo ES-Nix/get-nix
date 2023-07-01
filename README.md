@@ -14065,7 +14065,7 @@ in
 
 
 ```bash
-nix \                                
+nix \
 eval \
 --expr \
 '
@@ -15234,7 +15234,7 @@ build \
           cp -v ${pkgs.pkgsStatic.busybox}/bin/busybox home/appuser/outputs/busybox
           ## 
 
-          chown -v 1234:5678 -R home/appuser
+          chown -v 1234:5678 -R home/appuser 
           
           # 
           mkdir -pv -m1777 tmp
@@ -15272,7 +15272,7 @@ run \
 --rm=true \
 --tty=true \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/cache-nix:0.0.1 \
+localhost/cache-nix:latest \
 -c \
 'id && nix flake --version'
 
@@ -15307,7 +15307,7 @@ COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 
 ENV HOME=/home/appuser
 ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
-ENV PATH=/home/appuser/.nix-profile/bin:/home/abcuser/.local/bin:/usr/bin:/bin
+ENV PATH=/home/appuser/.nix-profile/bin:/home/appuser/.local/bin:/usr/bin:/bin
 ENV USER=appuser
 
 ENV GIT_SSL_CAINFO=/etc/ssl/certs/ca-bundle.crt
@@ -15372,7 +15372,7 @@ FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-ni
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
-COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/nix /home/appuser/.local/bin/nix
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
 COPY --from=cache-nix /tmp /tmp
 
@@ -15382,39 +15382,39 @@ CMD [ "/bin/sh" ]
 FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-slash-nix
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
+# COPY --from=cache-nix /home/appuser/outputs/busybox /bin/sh
+# COPY --from=cache-nix /home/appuser/outputs/busybox /bin/busybox
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
-COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/nix /home/appuser/.local/bin/nix
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
-COPY --from=cache-nix /home/appuser/outputs/foo-bar/nix /nix
+COPY --from=cache-nix --chown=appuser:appgroup /tmp /tmp
+COPY --from=cache-nix --chown=appuser:appgroup /home/appuser/outputs/foo-bar/nix /nix
 
 CMD [ "/bin/sh" ]
 
 
-FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox
+FROM localhost/base-env-user-workdir:0.0.0 as busybox-tmp-certs
 
-COPY --from=cache-nix /home/appuser/outputs/busybox /home/abcuser/.local/bin/busybox
+COPY --from=cache-nix /home/appuser/outputs/busybox /home/appuser/.local/bin/busybox
 COPY --from=cache-nix /home/appuser/outputs/busybox /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
+COPY --from=cache-nix --chown=appuser:appgroup /tmp /tmp
 
 CMD [ "/bin/sh" ]
 
 
 FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-busybox-nix
 
-COPY --from=cache-nix --chown=appuser:appgroup /home/appuser/outputs/busybox /home/abcuser/.local/bin/busybox
+COPY --from=cache-nix --chown=appuser:appgroup /home/appuser/outputs/busybox /home/appuser/.local/bin/busybox
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
 COPY --from=cache-nix /home/appuser/outputs/nix /bin/nix
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
-
-RUN /home/abcuser/.local/bin/busybox chown -Rv nixuser:nixgroup /home/abcuser
+COPY --from=cache-nix --chown=appuser:appgroup /tmp /tmp
 
 CMD [ "/bin/sh" ]
 
@@ -15426,37 +15426,40 @@ COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bund
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
 COPY --from=cache-nix /home/appuser/outputs/nix /bin/nix
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
+
+COPY --from=cache-nix --chown=appuser:appgroup /tmp /tmp
 
 CMD [ "/bin/sh" ]
-# ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+# ENTRYPOINT [ "/home/appuser/.local/bin/nix" ]
 
 
 FROM localhost/base-env-user-workdir:0.0.0 as busybox-sandbox-shell-tmp-certs-slash-nix
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
-COPY --from=cache-nix /home/appuser/outputs/foo-bar/nix /nix
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
-COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/nix /home/appuser/.local/bin/nix
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
+
+COPY --from=cache-nix --chown=appuser:appgroup /tmp /tmp
+COPY --from=cache-nix --chown=appuser:appgroup /home/appuser/outputs/foo-bar/nix /nix
 
 CMD [ "/bin/sh" ]
-# ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+# ENTRYPOINT [ "/home/appuser/.local/bin/nix" ]
 
 
 FROM localhost/base-env-user-workdir:0.0.0 as tmp-certs-slash-nix
 
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
-COPY --from=cache-nix /home/appuser/outputs/foo-bar/nix /nix
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
-COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/nix /home/appuser/.local/bin/nix
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
 
-ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+COPY --from=cache-nix --chown=appuser:appgroup /tmp /tmp
+COPY --from=cache-nix --chown=appuser:appgroup /home/appuser/outputs/foo-bar/nix /nix
+
+ENTRYPOINT [ "/home/appuser/.local/bin/nix" ]
 
 
 FROM localhost/base-env-user-workdir:0.0.0 as tmp-certs-nix
@@ -15464,22 +15467,23 @@ FROM localhost/base-env-user-workdir:0.0.0 as tmp-certs-nix
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
-COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/nix /home/appuser/.local/bin/nix
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
+COPY --from=cache-nix --chown=appuser:appgroup /tmp /tmp
 
-ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+ENTRYPOINT [ "/home/appuser/.local/bin/nix" ]
 
 
 FROM localhost/base-env-user-workdir:0.0.0 as certs-slash-nix
+
 COPY --from=cache-nix /home/appuser/outputs/busybox-sandbox-shell /bin/sh
 COPY --from=cache-nix /home/appuser/outputs/ca-bundle.crt /etc/ssl/certs/ca-bundle.crt
 COPY --from=cache-nix /home/appuser/outputs/group /etc/group
-COPY --from=cache-nix /home/appuser/outputs/nix /home/abcuser/.local/bin/nix
+COPY --from=cache-nix /home/appuser/outputs/nix /home/appuser/.local/bin/nix
 COPY --from=cache-nix /home/appuser/outputs/passwd /etc/passwd
-COPY --from=cache-nix /tmp /tmp
+COPY --from=cache-nix --chown=appuser:appgroup /home/appuser/outputs/foo-bar/nix /nix
 
-ENTRYPOINT [ "/home/abcuser/.local/bin/nix" ]
+ENTRYPOINT [ "/home/appuser/.local/bin/nix" ]
 
 EOF
 
@@ -15516,8 +15520,8 @@ build \
 
 podman \
 build \
---tag busybox-sandbox-shell-tmp-certs-busybox \
---target busybox-sandbox-shell-tmp-certs-busybox \
+--tag busybox-tmp-certs \
+--target busybox-tmp-certs \
 .
 
 podman \
@@ -15595,19 +15599,19 @@ sh \
 'cd / && echo *'
 
 
-podman \
-run \
---device=/dev/kvm \
---env="DISPLAY=${DISPLAY:-:0.0}" \
---interactive=true \
---privileged=true \
---rm=true \
---tty=true \
---volume="$(pwd)"/nix:/bin/nix:ro \
-localhost/busybox-sandbox-shell-tmp-certs:latest \
-sh \
--c \
-'cd / && echo *'
+#podman \
+#run \
+#--device=/dev/kvm \
+#--env="DISPLAY=${DISPLAY:-:0.0}" \
+#--interactive=true \
+#--privileged=true \
+#--rm=true \
+#--tty=true \
+#--volume="$(pwd)"/nix:/bin/nix:ro \
+#localhost/busybox-sandbox-shell-tmp-certs:latest \
+#sh \
+#-c \
+#'cd / && echo *'
 
 podman \
 run \
@@ -15620,7 +15624,7 @@ run \
 --rm=true \
 --tty=true \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/busybox-sandbox-shell-tmp-certs-busybox:latest \
+localhost/busybox-tmp-certs:latest \
 sh \
 -c \
 'ls -al'
@@ -15680,8 +15684,38 @@ run \
 --rm=true \
 --tty=true \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/certs-slash-nix:latest \
+run nixpkgs#hello
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/busybox-sandbox-shell-tmp-certs-slash-nix:latest \
-flake --version
+nix flake --version
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/busybox-sandbox-shell-tmp-certs-slash-nix:latest \
+nix run nixpkgs#hello
 ```
 
 
@@ -17303,23 +17337,24 @@ nixpkgs#hello
 
 
 ```bash
-nix \
-build \
---refresh \
---rebuild \
---expr \
-'
+EXPR_NIX='
 (
   (
     (
-      builtins.getFlake "github:NixOS/nixpkgs/4b4f4bf2845c6e2cc21cd30f2e297908c67d8611"
+      builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"
     ).lib.nixosSystem {
         system = "x86_64-linux";
         modules = [ 
-                    "${toString (builtins.getFlake "github:NixOS/nixpkgs/4b4f4bf2845c6e2cc21cd30f2e297908c67d8611")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                    "${toString (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c")}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
                     { 
                       # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD#Building_faster
-                      isoImage.squashfsCompression = "gzip -Xcompression-level 1";
+                      # isoImage.squashfsCompression = "gzip -Xcompression-level 1";
+
+                      # compress 6x faster than default
+                      # but iso is 15% bigger
+                      # tradeoff acceptable because we do not want to distribute
+                      # default is xz which is very slow
+                      isoImage.squashfsCompression = "zstd -Xcompression-level 9";
                     }
                   ];
     }
@@ -17327,11 +17362,29 @@ build \
 )
 '
 
-# EXPECTED_SHA512='c24d5b36de84ebd88df2946bd65259d81cbfcb7da30690ecaeacb86e0c1028d4601e1f6165ea0775791c18161eee241092705cd350f0e935c715f2508c915741'
-# EXPECTED_SHA512='5a761bd0f539a6ef53a002f73ee598e728565d7ac2f60a5947862d8795d233e3cf6bbf3c55f70a361f55e4b30e499238799d2ddb379e10a063d469d93276e3d8'
-EXPECTED_SHA512='b6811ca1bc46b8b8dbc7dc94b62c71a83ef1a1dae0c7586e600010d8899100d2e58fb3aa585c398036f49b5e22a6a3ce10ceb142db0f37c098bc7e5a71894515'
-ISO_PATTERN_NAME='result/iso/nixos-21.11.20210618.4b4f4bf-x86_64-linux.iso'
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+EXPECTED_SHA512='ce09cd8b0a2e0d5f9da2f921314417bf3f3904c7f11a590e7fde56c84a9ebecc78ee31faa7660efae332d4f6cc2bef129b3d214f2a53c52d7457d2869e310ebb'
+ISO_PATTERN_NAME='result/iso/nixos-22.11.20221217.0938d73-x86_64-linux.iso'
 # sha512sum "${ISO_PATTERN_NAME}"
+echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+
+
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+
+EXPECTED_SHA512='ce09cd8b0a2e0d5f9da2f921314417bf3f3904c7f11a590e7fde56c84a9ebecc78ee31faa7660efae332d4f6cc2bef129b3d214f2a53c52d7457d2869e310ebb'
+ISO_PATTERN_NAME='result/iso/nixos-22.11.20221217.0938d73-x86_64-linux.iso'
 echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 ```
 

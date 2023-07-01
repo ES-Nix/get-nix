@@ -5,21 +5,96 @@
 ! ldd $(nix build --print-out-paths nixpkgs#pkgsStatic.sqlite)/bin/sqlite3 || echo Error
 ```
 
+
 ```bash
 nix \
 build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
 --impure \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
-  with legacyPackages.${builtins.currentSystem};
-    (
-      (pkgs.python3.override { sqlite = pkgsStatic.sqlite; })
-    )
-  )
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+    pkgs = import nixpkgs {};
+  in
+    (curl.override { gnutlsSupport = true; opensslSupport = false; })
+)
 '
 ```
+
+TODO: Broken:
+```bash
+nix \             
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+    pkgs = import nixpkgs {};
+  in
+    (pkgs.pkgsStatic.curl.override { gnutlsSupport = false; opensslSupport = true; })
+)
+'
+```
+
+TODO: Broken:
+```bash
+EXPR_NIX='
+  (
+    let
+    
+      overlay = self: super:
+        let
+          coreutils = pkgs.coreutils.override {
+            selinuxSupport = false;
+          };
+        in
+            {
+              # Overrides for stuff from stdenv go here. They are applied last
+              # so we use the same stdenv for builds but a custom coreutils etc for
+              # our system. This allows use to still use cache.nixos.org.
+              stdenv = super.stdenv // {
+                overrides = self2: super2: super.stdenv.overrides self2 super2 // {
+                  inherit coreutils;
+                };
+              };
+            };
+    in 
+      let 
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+        pkgs = import nixpkgs { overlays = [ overlay ]; };
+      in
+        pkgs.stdenv
+  )
+'
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR_NIX"
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--rebuild \
+--impure \
+--expr \
+"$EXPR_NIX"
+```
+Refs.:
+- https://stackoverflow.com/a/58765599
 
 
 ```bash

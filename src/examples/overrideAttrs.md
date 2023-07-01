@@ -1291,12 +1291,7 @@ https://youtu.be/YLLsY0tovr8?t=1540
 
 
 ```bash
-nix \
-build \
---print-build-logs \
---impure \
---expr \
-'
+EXPR_NIX='
   (
     let
     
@@ -1312,12 +1307,30 @@ build \
         });
       };
 
-      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlay0 overlay1 ]; };
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { overlays = [ overlay0 overlay1 ]; };
 
     in
       pkgs.hello
   )
 '
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR_NIX"
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--rebuild \
+--impure \
+--expr \
+"$EXPR_NIX"
 ```
 
 
@@ -2091,7 +2104,11 @@ Refs.:
 
 TODO: do test all possible things overridable.
 `nix repl '<nixpkgs>' <<<'lib.attrNames (stdenv.overrides pkgs pkgs)'`
+Refs.:
+- https://stackoverflow.com/a/58765599
 
+
+TODO: Broken:
 ```bash
 nix \
 build \
