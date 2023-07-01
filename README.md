@@ -21504,6 +21504,9 @@ Refs.:
 > The `programs.sqlite` is only generated for the `nixos-` prefixed channels.
 Refs.: https://discourse.nixos.org/t/command-not-found-unable-to-open-database/3807/4
 
+> Note that you can’t use the git tree, you have to use the tarball from 
+> `https://releases.nixos.org/nixos/unstable/${channelRelease}/nixexprs.tar.xz`
+Refs.: https://discourse.nixos.org/t/some-question-about-nix-channel-git-commit-version-and-packages/2671/13
 
 ```bash
 nix \
