@@ -8290,12 +8290,13 @@ https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel
 Refs.:
 - https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html
 - https://github.com/NixOS/nixpkgs/issues/62832#issuecomment-1406628331
-
+- https://github.com/NixOS/nix/issues/3871
 
 ```bash
 nix eval --expr 'with builtins; functionArgs fetchTree'
 ```
 
+It weirdly reproduces the behaviour, it downloads a tarball:
 ```bash
 nix eval --expr 'builtins.fetchTree { type = "github"; owner = "replit"; repo = "nixpkgs-replit"; }'
 ```
@@ -8306,6 +8307,12 @@ nix flake prefetch dwarffs
 Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake-prefetch.html#examples
 
+
+#### home-manager
+
+- https://github.com/nix-community/home-manager/blob/0232fe1b75e6d7864fd82b5c72f6646f87838fc3/modules/misc/nix.nix#L79-L85
+- https://rycee.gitlab.io/home-manager/options.html#opt-nix.registry._name_.flake
+- https://dee.underscore.world/blog/home-manager-flakes/
 
 #### Must read
 
