@@ -8254,7 +8254,8 @@ Refs.:
 ```bash
 ({...}: { nix.registry.nixpkgs.flake = nixpkgs; })
 ```
-https://discourse.nixos.org/t/flakes-error-error-attribute-outpath-missing/18044/2
+Refs.:
+- https://discourse.nixos.org/t/flakes-error-error-attribute-outpath-missing/18044/2
 
 
 ```bash
@@ -8280,10 +8281,16 @@ Refs.:
 - related? https://github.com/NixOS/nix/pull/8477 
 
 
+TODO: `specialArgs` magic
+https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883/7
+
 ```bash
 [ "$(nix-shell -p hello --run "which hello")" = "$(nix shell nixpkgs#hello -c which hello)" ] && echo success
 ```
-https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html
+Refs.:
+- https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html
+- https://github.com/NixOS/nixpkgs/issues/62832#issuecomment-1406628331
+
 
 ```bash
 nix eval --expr 'with builtins; functionArgs fetchTree'
@@ -8298,6 +8305,13 @@ nix flake prefetch dwarffs
 ```
 Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake-prefetch.html#examples
+
+
+#### Must read
+
+
+- https://github.com/NixOS/nixpkgs/issues/62832#issuecomment-864176161
+- https://github.com/NixOS/nixpkgs/issues/62832#issuecomment-864237076
 
 #### Other people confused
 
