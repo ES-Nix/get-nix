@@ -2931,6 +2931,18 @@ nix build --no-link --print-build-logs --print-out-paths \
   nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.boehmgc
 ```
 
+```bash
+nix build --no-link --print-build-logs --print-out-paths \
+  nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline \
+&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
+  nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline
+```
+
+
+```bash
+nix shell nixpkgs#pandoc --command sh -c 'pandoc --list-input-formats && echo && pandoc --list-output-formats'
+```
+
 
 ```bash
 EXPR_NIX='
