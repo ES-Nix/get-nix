@@ -8311,6 +8311,7 @@ Refs.:
 #### home-manager
 
 - https://github.com/nix-community/home-manager/blob/0232fe1b75e6d7864fd82b5c72f6646f87838fc3/modules/misc/nix.nix#L79-L85
+- https://nix-community.github.io/home-manager/options.html#opt-programs.nix-index.enable
 - https://rycee.gitlab.io/home-manager/options.html#opt-nix.registry._name_.flake
 - https://dee.underscore.world/blog/home-manager-flakes/
 
@@ -8391,7 +8392,7 @@ nix run github:NixOS/nixpkgs/nixpkgs-unstable#pkgsStatic.nix -- show-config
 ```
 
 
-### Examples
+#### Examples
 
 
 ```bash
@@ -8491,9 +8492,11 @@ nix \
 run \
 --impure \
 --expr \
-'(
-  import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [(final: prev: { static = true; })]; }
-).hello'
+'
+  (
+    import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [(final: prev: { static = true; })]; }
+  ).hello
+'
 ```
 
 ```bash
@@ -8502,14 +8505,18 @@ run \
 --impure \
 --expr \
 '
-(
-  import "${ toString (builtins.getFlake "nixpkgs")}" { overlays = [(final: prev: 
-    { 
-      static = true;
-      postInstall = prev.postInstall + "${prev.hello}/bin/hello Installation complete";
-    })]; 
-    }
-).hello
+  (
+    import "${ toString (builtins.getFlake "nixpkgs")}" 
+      { overlays = [
+        (final: prev: 
+          { 
+            static = true;
+            postInstall = prev.postInstall + "${prev.hello}/bin/hello Installation complete";
+          }
+        )
+        ]; 
+      }
+  ).hello
 '
 ```
 
@@ -8847,16 +8854,46 @@ build \
 #cp -v "$OUT_PATH_STAGE_2" nix-stage-2
 ```
 
+
+
 ```bash
 cat > Containerfile << 'EOF'
-FROM docker.io/library/alpine:3.18.2 as certs
+FROM docker.io/library/alpine:3.18.2 as alpine-certs
+
 RUN apk update && apk add --no-cache ca-certificates
+
+
+FROM docker.io/library/alpine:3.18.2 as alpine-ca-certificates
+
+# https://stackoverflow.com/a/45397221
+COPY --from=alpine-certs /etc/ssl/certs /etc/ssl/certs
+
+RUN mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+
+WORKDIR /home/nixuser
+
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+RUN mkdir -pv "$HOME"/.local/bin
 
 
 FROM docker.io/library/busybox as busybox-ca-certificates-nix
 
 # https://stackoverflow.com/a/45397221
-COPY --from=certs /etc/ssl/certs /etc/ssl/certs
+COPY --from=alpine-certs /etc/ssl/certs /etc/ssl/certs
 
 RUN mkdir -pv /home/nixuser \
  && addgroup nixgroup --gid 4455 \
@@ -8885,6 +8922,13 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && nix flake --version \
  && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
 EOF
+
+
+podman \
+build \
+--tag alpine-ca-certificates \
+--target alpine-ca-certificates \
+.
 
 podman \
 build \
