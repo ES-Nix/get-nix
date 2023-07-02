@@ -8230,7 +8230,8 @@ Eelco Dolstra explaining this:
 - [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=919&version=3), start=817&end=919
 - https://edolstra.github.io/talks/nixcon-oct-2019.pdf
 
-
+> Bare `nixpkgs` corresponds to `master`, that's something to keep in mind :)
+> https://github.com/NixOS/flake-registry/issues/6#issuecomment-716115466
 
 TODO: how to test it?
 > This makes `nix build flake:...` etc. register the downloaded flake source trees as 
@@ -8326,6 +8327,10 @@ Refs.:
 - https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883
 - https://ianthehenry.com/posts/how-to-learn-nix/more-flakes/
 - https://ianthehenry.com/posts/how-to-learn-nix/chipping-away-at-flakes/
+- https://ianthehenry.com/posts/how-to-learn-nix/new-profiles/
+- https://discourse.nixos.org/t/nixos-flakes-rebuild-not-using-subsitution-despite-package-being-available-in-cache-nixos-org/23013/6
+- https://github.com/NixOS/flake-registry/issues/6#issuecomment-716115466
+- https://github.com/NixOS/flake-registry/issues/6#issuecomment-841699536
 
 #### Investigation
 
@@ -8444,6 +8449,94 @@ Refs.:
 nix registry pin nixpkgs github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799
 ```
 
+Take some reading in https://github.com/NixOS/flake-registry
+
+
+TODO: make a nix build with the json + other nix build for `/nixexprs.tar.xz`
+https://raw.githubusercontent.com/NixOS/flake-registry/master/flake-registry.json
+
+
+```bash
+nix \
+build \
+--print-out-paths \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/574100ab789d682d5ec194c819569c35ddc7a475";
+    with legacyPackages.${builtins.currentSystem};
+  
+    stdenv.mkDerivation rec {
+      name = "nixpkgs-21.03pre243353.6d4b93323e7";
+      version = "2020-09-11";
+    
+      src = fetchurl {
+        url = "https://releases.nixos.org/nixpkgs/${name}/nixexprs.tar.xz";
+        sha256 = "1ri1mqvihviz80765p3p59i2irhnbn7vbvah0aacpkks60m9m0id";
+      };
+    
+      dontBuild = true;
+      preferLocalBuild = true;
+    
+      installPhase = "cp -a . $out";
+    }
+  )
+'
+```
+Refs.:
+- https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582/srcs/2020-09-11.nix
+
+
+```bash
+nix \
+build \
+--print-out-paths \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0";
+    with legacyPackages.${builtins.currentSystem};
+  
+    stdenv.mkDerivation rec {
+      name = "nixpkgs-22.05.20230427.50fc86b";
+      version = "2022-05-11";
+    
+      src = builtins.fetchTarball {
+            name = "nixos-22.05";
+            url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.05.tar.gz";
+            sha256 = "0d643wp3l77hv2pmg2fi7vyxn4rwy0iyr8djcw1h5x72315ck9ik";
+        };
+    
+      doCheck = false;
+      dontBuild = true;
+      preferLocalBuild = true;
+    
+      installPhase = "cp -a . $out";
+      
+      phases = [ "installPhase" ];
+    }
+  )
+'
+```
+Refs.:
+- https://git.sr.ht/~jamii/focus/commit/22839da3da1851f2a61b07d48edb9d69641498a0
+
+
+TODO: what is inside this?
+```bash
+nix build --no-link --print-build-logs --print-out-paths nix#checks.x86_64-linux.binaryTarball
+```
+
+```bash
+nix flake metadata github:NixOS/nixpkgs/release-22.05 
+# github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0
+```
 
 
 
@@ -13987,87 +14080,6 @@ build \
 '{}'
 ```
 
-```bash
-nix \
-build \
---print-out-paths \
---no-link \
---print-build-logs \
---impure \
---expr \
-'
-  (
-    with builtins.getFlake "github:NixOS/nixpkgs/574100ab789d682d5ec194c819569c35ddc7a475";
-    with legacyPackages.${builtins.currentSystem};
-  
-    stdenv.mkDerivation rec {
-      name = "nixpkgs-21.03pre243353.6d4b93323e7";
-      version = "2020-09-11";
-    
-      src = fetchurl {
-        url = "https://releases.nixos.org/nixpkgs/${name}/nixexprs.tar.xz";
-        sha256 = "1ri1mqvihviz80765p3p59i2irhnbn7vbvah0aacpkks60m9m0id";
-      };
-    
-      dontBuild = true;
-      preferLocalBuild = true;
-    
-      installPhase = "cp -a . $out";
-    }
-  )
-'
-```
-Refs.:
-- https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582/srcs/2020-09-11.nix
-
-
-```bash
-nix \
-build \
---print-out-paths \
---no-link \
---print-build-logs \
---impure \
---expr \
-'
-  (
-    with builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0";
-    with legacyPackages.${builtins.currentSystem};
-  
-    stdenv.mkDerivation rec {
-      name = "nixpkgs-22.05.20230427.50fc86b";
-      version = "2022-05-11";
-    
-      src = builtins.fetchTarball {
-            name = "nixos-22.05";
-            url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.05.tar.gz";
-            sha256 = "0d643wp3l77hv2pmg2fi7vyxn4rwy0iyr8djcw1h5x72315ck9ik";
-        };
-    
-      doCheck = false;
-      dontBuild = true;
-      preferLocalBuild = true;
-    
-      installPhase = "cp -a . $out";
-      
-      phases = [ "installPhase" ];
-    }
-  )
-'
-```
-Refs.:
-- https://git.sr.ht/~jamii/focus/commit/22839da3da1851f2a61b07d48edb9d69641498a0
-
-
-TODO: what is inside this?
-```bash
-nix build --no-link --print-build-logs --print-out-paths nix#checks.x86_64-linux.binaryTarball
-```
-
-```bash
-nix flake metadata github:NixOS/nixpkgs/release-22.05 
-# github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0
-```
 
 ```bash
 nix \
@@ -14096,7 +14108,7 @@ eval \
 --expr \
 '
 let
-  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-20.09");
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-20.03");
   nixos = nixpkgs.lib.nixosSystem { 
             system = "x86_64-linux"; 
             modules = [ 

@@ -1017,9 +1017,13 @@ https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-w
 Refs.:
 - https://t.me/nixosbrasil/69554
 
-- jonringer explains the final/prev thing: https://discourse.nixos.org/t/what-are-overlays/14680/2
+- jonringer explains the `final`/`prev` thing: https://discourse.nixos.org/t/what-are-overlays/14680/2
 - really cool example for python devs: https://discourse.nixos.org/t/what-are-overlays/14680/13
 
+
+Every thing has a trade-off:
+> [...] Removing the overlay fixed it! I don’t even remember why I put it there...
+> https://discourse.nixos.org/t/nixos-flakes-rebuild-not-using-subsitution-despite-package-being-available-in-cache-nixos-org/23013/9
 
 
 Old, not complete/fully copy and paste working, example:
