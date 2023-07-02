@@ -21763,6 +21763,9 @@ Refs.: https://discourse.nixos.org/t/command-not-found-unable-to-open-database/3
 > `https://releases.nixos.org/nixos/unstable/${channelRelease}/nixexprs.tar.xz`
 Refs.: https://discourse.nixos.org/t/some-question-about-nix-channel-git-commit-version-and-packages/2671/13
 
+
+TODO: [Rebuild sqlite db from scratch? ](https://github.com/NixOS/nix/issues/3091) + https://github.com/NixOS/nix/issues/3183#issuecomment-548367347
+
 ```bash
 nix \
 build \
@@ -21994,7 +21997,9 @@ github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix
 ### nix-channel, channels
 
 [Channels and NIX_PATH](https://www.youtube.com/watch?v=yfmTgEA2_6k) by Burke Libbey
-
+https://channels.nixos.org/
+https://nix.dev/reference/pinning-nixpkgs
+https://nix.dev/recipes/faq#what-are-channels-and-different-branches-on-github
 
 ```bash
  pedro@nixos  ~  cat ~/.nix-defexpr/channels
