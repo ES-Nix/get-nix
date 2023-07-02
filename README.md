@@ -13670,6 +13670,7 @@ TODO:
 - https://github.com/NixOS/nix/issues/1559#issuecomment-1174574549
 - https://unix.stackexchange.com/a/652402
 - https://unix.stackexchange.com/a/725857
+- https://github.com/NixOS/nixpkgs/issues/37172#issuecomment-640358700
 
 Bonus:
 ```bash
@@ -21973,6 +21974,7 @@ github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix
 
 ### nix-channel, channels
 
+[Channels and NIX_PATH](https://www.youtube.com/watch?v=yfmTgEA2_6k) by Burke Libbey
 
 
 ```bash
