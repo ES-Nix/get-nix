@@ -3823,6 +3823,13 @@ TODO: [Packaging with Nix](https://www.youtube.com/embed/Ndn5xM1FgrY?start=329&e
 https://support.glitch.com/t/install-prebuilt-packages-without-root-from-nixpkgs/43775
 
 
+TODO: https://yann.hodique.info/blog/nix-in-custom-location/
+
+TODO: https://hhoeflin.github.io/nix/home_folder_nix/
+
+TODO: https://github.com/NixOS/nixpkgs/pull/144197#issuecomment-965351423
+TODO: 
+
 > Oh yeah, chroot stores won’t work on macOS. Neither will proot. Having a flat-file binary cache in the shared dir
 > and copying to/from that will be your only option there.
 [How to use a local directory as a nix binary cache?](https://discourse.nixos.org/t/how-to-use-a-local-directory-as-a-nix-binary-cache/655/14)
@@ -13659,6 +13666,10 @@ $(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.helloOnRoot
 podman load < $(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.redis)
 ```
 
+TODO: 
+- https://github.com/NixOS/nix/issues/1559#issuecomment-1174574549
+- https://unix.stackexchange.com/a/652402
+- https://unix.stackexchange.com/a/725857
 
 Bonus:
 ```bash
@@ -21759,6 +21770,8 @@ Refs.:
 - https://discourse.nixos.org/t/how-to-specify-programs-sqlite-for-command-not-found-from-flakes/22722/3
 - https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582/srcs/2020-09-11.nix
 
+
+```bash
 nix \
 eval \
 --raw \
@@ -21770,7 +21783,12 @@ let
 in 
   map (drv: [("closure-" + baseNameOf drv) drv]) [ pkgs.hello ]
 '
+```
+Refs.:
+- https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582/default.nix#L45-L46
 
+
+```bash
 nix \
 eval \
 --raw \
@@ -21782,7 +21800,7 @@ let
 in 
   [ pkgs.hello pkgs.figlet ]
 '
-
+```
 
 ##### bash, POSIX
 
