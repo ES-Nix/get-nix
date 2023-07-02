@@ -1367,6 +1367,7 @@ EXPR_NIX='
                             wget 
                             gnutar
                             # https://unix.stackexchange.com/a/191609
+                            # https://discourse.nixos.org/t/what-is-your-approach-to-packaging-wine-applications-with-nix-derivations/12799/2
                             wineWowPackages.stable
                             
                         ];
