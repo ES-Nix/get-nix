@@ -18643,6 +18643,10 @@ build \
 Refs.:
 - http://epanet.de/linux/index.html.en
 - https://github.com/NixOS/nixpkgs/issues/40182#issuecomment-387523753
+- http://ct.ufpb.br/lenhs/contents/menu/assuntos/epanet
+- https://www.youtube.com/watch?v=RU7wU0f62Vk
+- https://www.youtube.com/watch?v=yTYDrcvaLeE
+
 
 
 ```bash
