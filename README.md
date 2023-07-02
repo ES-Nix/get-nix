@@ -15741,6 +15741,143 @@ nix run nixpkgs#hello
 
 
 ```bash
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--rm=true \
+--tty=true \
+localhost/tmp-certs-slash-nix:latest \
+shell \
+--impure \
+--expr \
+'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"); 
+    pkgs = import nixpkgs {};
+
+    iso = (  
+      nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ 
+                    "${toString nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                    { 
+                      # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD#Building_faster
+                      # isoImage.squashfsCompression = "gzip -Xcompression-level 1";
+
+                      # compress 6x faster than default
+                      # but iso is 15% bigger
+                      # tradeoff acceptable because we do not want to distribute
+                      # default is xz which is very slow
+                      isoImage.squashfsCompression = "zstd -Xcompression-level 9";
+                    }
+                  ];
+      }
+    ).config.system.build.isoImage;
+  in
+    [ pkgs.coreutils iso ]
+)
+' \
+--command \
+sh \
+-c \
+'
+export ISO_PATH=/nix/store/7lcr5b4ic7fghx6arl0kb79a044r1brv-nixos-22.11.20221217.0938d73-x86_64-linux.iso/iso/nixos-22.11.20221217.0938d73-x86_64-linux.iso
+export EXPECTED_SHA512=ce09cd8b0a2e0d5f9da2f921314417bf3f3904c7f11a590e7fde56c84a9ebecc78ee31faa7660efae332d4f6cc2bef129b3d214f2a53c52d7457d2869e310ebb
+echo $EXPECTED_SHA512  $ISO_PATH | sha512sum -c
+'
+
+#nix \
+#build \
+#--impure \
+#--no-link \
+#--print-build-logs \
+#--print-out-paths \
+#--expr \
+#'
+#(
+#  let
+#    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"); 
+#    pkgs = import nixpkgs {};
+#
+#    iso = (  
+#      nixpkgs.lib.nixosSystem {
+#        system = "x86_64-linux";
+#        modules = [ 
+#                    "${toString nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+#                    { 
+#                      # https://nixos.wiki/wiki/Creating_a_NixOS_live_CD#Building_faster
+#                      # isoImage.squashfsCompression = "gzip -Xcompression-level 1";
+#
+#                      # compress 6x faster than default
+#                      # but iso is 15% bigger
+#                      # tradeoff acceptable because we do not want to distribute
+#                      # default is xz which is very slow
+#                      isoImage.squashfsCompression = "zstd -Xcompression-level 9";
+#                    }
+#                  ];
+#      }
+#    ).config.system.build.isoImage;
+#  in
+#    pkgs.runCommand "checks_the_iso_sha512sum" 
+#      { 
+#         nativeBuildInputs = [ pkgs.coreutils ];
+#      } 
+#    "
+#    export EXPECTED_SHA512=ce09cd8b0a2e0d5f9da2f921314417bf3f3904c7f11a590e7fde56c84a9ebecc78ee31faa7660efae332d4f6cc2bef129b3d214f2a53c52d7457d2869e310ebb
+#    $(echo $EXPECTED_SHA512  ${iso}/iso/nixos-22.11.20221217.0938d73-x86_64-linux.iso | sha512sum -c) \
+#    && mkdir $out
+#    "
+#)
+#'
+```
+
+
+
+
+ISO_PATTERN_NAME='result/iso/nixos-22.11.20221217.0938d73-x86_64-linux.iso'
+# sha512sum "${ISO_PATTERN_NAME}"
+echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
+
+ce09cd8b0a2e0d5f9da2f921314417bf3f3904c7f11a590e7fde56c84a9ebecc78ee31faa7660efae332d4f6cc2bef129b3d214f2a53c52d7457d2869e310ebb
+
+```bash
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume="$(pwd)":/home/appuser/data:rw,U \
+localhost/busybox-sandbox-shell-tmp-certs-busybox-nix:latest
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--store  /home/appuser/data \
+github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.hello
+```
+
+
+```bash
+nix build nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.hello
+```
+
+```bash
 nix \
 build \
 --impure \
