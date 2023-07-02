@@ -15051,7 +15051,7 @@ nixpkgs#pkgsStatic.nix \
 sh
 ```
 
-
+TODO: help https://discourse.nixos.org/t/create-an-offline-c-development-environment/11531/10
 ```bash
 nix develop nixpkgs#hello --profile ./foo-bar --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild' \
 && nix develop ./foo-bar --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
