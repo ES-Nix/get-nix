@@ -7568,6 +7568,36 @@ Tried it with `nix-instantiate . -A firefox | cut -d'.' -f1-3` and with
 `nix-instantiate ./. -A firefox.outPath | cut -d'.' -f1-3` but finally it gives
 the "outPath" hash and only the last line of the above code worked.
 
+
+```bash
+nix \
+store \
+ls \
+--store https://cache.nixos.org/ \
+--long \
+--recursive \
+/nix/store/spy13ngvs1fyj82jw2w3nwczmdgcp3ck-firefox-23.0.1
+```
+Refs.:
+- http://sandervanderburg.blogspot.com/2013/09/managing-user-environments-with-nix.html
+
+
+TODO: how to find the oldest commmit
+https://stackoverflow.com/questions/5188914/how-to-show-the-first-commit-by-git-log
+
+Watch and try to build it:
+
+> This talk is supposed to demonstrate a nice side effect of being able to build old Nix expressions and 
+> even having a binary cache with the build artefacts available: for the data migration from a legacy 
+> project, we had to debug a flash-based component. Even in 2021 where the Flash player is dead and
+> unavailable, it was trivial to revive this piece of old software with Nix (and web.archive.org).
+[Nix and legacy enterprise software development: an unlikely match made in heaven](https://www.youtube.com/watch?v=0dVxtNlD5N4)
+
+
+TODO: try it
+[Building 15-year-old software with Nix](https://blinry.org/nix-time-travel/)
+
+
 ```bash
 nix path-info --closure-size --eval-store auto 'nixpkgs#glibc^*'
 ```
