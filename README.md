@@ -8283,6 +8283,10 @@ TODO: how to test it?
 > Fixes [#2868](https://github.com/NixOS/nix/issues/2868).
 https://github.com/NixOS/nix/pull/2890
 
+TODO: help in https://github.com/NixOS/nix/issues/5700
+> By [default](https://github.com/NixOS/flake-registry/blob/846277a41f292c63d7c2a4bed07152d982829bcb/flake-registry.json) it points to the bare nixpkgs repo (master branch) and so nix 
+> downloads a new version of it most of the times.
+> https://discourse.nixos.org/t/what-is-the-best-way-to-search-for-packages-in-the-command-line/14908/2
 
 ```bash
 nix.registry.<name>.flake
@@ -8296,6 +8300,12 @@ Refs.:
 Refs.:
 - https://discourse.nixos.org/t/flakes-error-error-attribute-outpath-missing/18044/2
 
+```bash
+nix.nixPath = ["nixpkgs=flake:nixpkgs"];
+home.sessionVariables.NIX_PATH = "nixpkgs=nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NIX_PATH}";
+```
+Refs.:
+- https://ayats.org/blog/channels-to-flakes/#pinning-your-registry
 
 ```bash
 nix \
