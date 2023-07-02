@@ -20875,6 +20875,8 @@ iana-etc
 
 ##### Using the nix repl
 
+https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-repl.html
+
 TODO: make some examples
 - https://stackoverflow.com/questions/71753915/how-can-i-search-in-nixpkgs-for-a-package-expression
 - https://stackoverflow.com/questions/56118564/asking-nix-for-metadata-about-the-given-package?noredirect=1&lq=1
@@ -21578,6 +21580,9 @@ About nix language + flakes + templates:
 - https://github.com/Misterio77/nix-config/tree/81a08a927424f44a26dd7b5c8047bb7aca457264/templates
 - nix flake show templates, nix flake init -t github:serokell/templates#python-poetry2nix
 - https://github.com/Hoverbear-Consulting/flake
+- https://github.com/t184256/nix-on-droid#examples--templates
+- https://peppe.rs/posts/novice_nix:_flake_templates/ latex-report and rust-hello
+- https://zero-to-nix.com/concepts/flakes#templates
 
 TODO: https://github.com/NixOS/nixpkgs/blob/f91ee3065de91a3531329a674a45ddcb3467a650/pkgs/top-level/all-packages.nix#L14-L27
 
