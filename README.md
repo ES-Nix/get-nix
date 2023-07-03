@@ -865,6 +865,10 @@ nix build nixpkgs#vscode
 export NIXPKGS_ALLOW_UNFREE=1 \
 && nix eval --impure --file '<nixpkgs>' 'vscode.outPath'
 
+# https://github.com/NixOS/nix/issues/2259#issuecomment-1144323965
+nix-instantiate --eval -E '<nixpkgs>'
+nix eval --impure --expr '<nixpkgs>'
+
 nix path-info -r /run/current-system
 
 nix-store --query /run/current-system
@@ -1392,9 +1396,9 @@ EXPR_NIX='
 
                       virtualisation = {
                         # following configuration is added only when building VM with build-vm module
-                        memorySize = 1024 * 5; # Use MiB memory.
-                        diskSize = 1024 * 32; # Use MiB memory.
-                        cores = 8;
+                        memorySize = 1024 * 3; # Use MiB RAM memory.
+                        diskSize = 1024 * 15; # Use MiB memory.
+                        cores = 4;
                         msize = 104857600; # TODO: 
 
                         #
@@ -7605,6 +7609,17 @@ Watch and try to build it:
 TODO: try it
 [Building 15-year-old software with Nix](https://blinry.org/nix-time-travel/)
 
+```bash
+# https://channels.nixos.org/
+# nix run --file channel:nixos-13.10 hello
+# nix run --file channel:nixos-14.12 hello
+nix run --file channel:nixos-15.09 hello
+nix run --file channel:nixos-15.09 firefox -- --version
+nix run --file channel:nixos-16.03 firefox -- --version
+```
+Refs.:
+- https://github.com/NixOS/nix/commit/64e486ab63a87b18922bbdb8d2414e74afabb8db
+
 
 ```bash
 nix path-info --closure-size --eval-store auto 'nixpkgs#glibc^*'
@@ -8300,6 +8315,8 @@ Refs.:
 Refs.:
 - https://discourse.nixos.org/t/flakes-error-error-attribute-outpath-missing/18044/2
 
+
+TODO: https://discourse.nixos.org/t/do-flakes-also-set-the-system-channel/19798/12
 ```bash
 nix.nixPath = ["nixpkgs=flake:nixpkgs"];
 home.sessionVariables.NIX_PATH = "nixpkgs=nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NIX_PATH}";
@@ -14153,6 +14170,8 @@ in
 '
 ```
 
+environment.extraOutputsToInstall 
+
 ```bash
 nix \
 eval \
@@ -15060,6 +15079,8 @@ Refs.:
 - https://github.com/NixOS/nix/issues/4250#issuecomment-799264241
 - https://github.com/NixOS/nix/issues/4250#issuecomment-1146687856
 
+TODO: related `nix registry pin nixpkgs` 
+https://github.com/NixOS/nix/issues/6895
 
 ```bash
 FROM docker.io/library/busybox as test-busybox
@@ -21766,6 +21787,11 @@ Refs.: https://discourse.nixos.org/t/some-question-about-nix-channel-git-commit-
 
 TODO: [Rebuild sqlite db from scratch? ](https://github.com/NixOS/nix/issues/3091) + https://github.com/NixOS/nix/issues/3183#issuecomment-548367347
 
+The cached built thing is from 
+https://github.com/NixOS/nixpkgs/blob/17d63282b27555fada48909a471c8b000e1c8f01/pkgs/top-level/make-tarball.nix#L13 
+https://github.com/NixOS/nixpkgs/blob/17d63282b27555fada48909a471c8b000e1c8f01/nixos/lib/make-channel.nix#L7
+?
+
 ```bash
 nix \
 build \
@@ -21960,6 +21986,18 @@ nix shell nixpkgs#sqlite --command sqlite3 "$HOME"/.cache/nix/binary-cache-v6.sq
 ```
 Refs.:
 - https://stackoverflow.com/a/494643
+
+```bash
+nix shell nixpkgs#sqlite --command sh <<'COMMANDS'
+sqlite3 "$HOME"/.cache/nix/binary-cache-v6.sqlite 'select count(*) from BinaryCaches'
+sqlite3 "$HOME"/.cache/nix/binary-cache-v6.sqlite 'select count(*) from NARs'
+sqlite3 "$HOME"/.cache/nix/binary-cache-v6.sqlite 'select count(*) from Realisations'
+sqlite3 "$HOME"/.cache/nix/binary-cache-v6.sqlite 'select count(*) from LastPurge'
+COMMANDS
+```
+
+
+TODO: https://github.com/NixOS/nixos-channel-scripts/issues/45
 
 ```bash
 rm -fv ~/.cache/nix/fetcher-cache-v*.sqlite
