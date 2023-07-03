@@ -21617,6 +21617,8 @@ About nix language + flakes + templates:
 
 TODO: https://github.com/NixOS/nixpkgs/blob/f91ee3065de91a3531329a674a45ddcb3467a650/pkgs/top-level/all-packages.nix#L14-L27
 
+TODO: https://news.ycombinator.com/item?id=30924671
+
 Note: `${user.home}` and other variants
 ```nix
     machine.send_chars("${user.password}\n")
