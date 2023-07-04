@@ -912,6 +912,14 @@ Refs.:
 
 
 ```bash
+# https://github.com/NixOS/nix/issues/2259#issuecomment-1144323965
+# https://www.youtube.com/watch?v=oWJaTb5uoT0
+# https://www.youtube.com/watch?v=q8bZy9kuzEY
+nix-instantiate --eval -E '<nixpkgs>'
+nix eval --impure --expr '<nixpkgs>'
+```
+
+```bash
 nix why-depends --all --derivation nixpkgs#gcc nixpkgs#glibc | cat
 nix why-depends --all --derivation nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes | cat
 
