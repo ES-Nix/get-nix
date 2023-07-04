@@ -3800,7 +3800,8 @@ From: https://stackoverflow.com/a/37231726
 
 
 TODO: make tests for this in QEMU
-https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
+- https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
+- https://ersei.net/en/blog/its-nixin-time#home-manager-where-no-hom
 
 ```bash
 t=$(mktemp -d) \
