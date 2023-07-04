@@ -6,6 +6,43 @@
 ```
 
 
+TODO:
+
+busybox.override {
+  enableStatic = true;
+  enableMinimal = true;
+  extraConfig = ''
+    CONFIG_FEATURE_FANCY_ECHO y
+    CONFIG_FEATURE_SH_MATH y
+    CONFIG_FEATURE_SH_MATH_64 y
+    CONFIG_FEATURE_TEST_64 y
+
+    CONFIG_ASH y
+    CONFIG_ASH_OPTIMIZE_FOR_SIZE y
+
+    CONFIG_ASH_ALIAS y
+    CONFIG_ASH_BASH_COMPAT y
+    CONFIG_ASH_CMDCMD y
+    CONFIG_ASH_ECHO y
+    CONFIG_ASH_GETOPTS y
+    CONFIG_ASH_INTERNAL_GLOB y
+    CONFIG_ASH_JOB_CONTROL y
+    CONFIG_ASH_PRINTF y
+    CONFIG_ASH_TEST y
+  '';
+}
+
+https://github.com/NixOS/nixpkgs/blob/master/pkgs/os-specific/linux/busybox/sandbox-shell.nix
+https://www.reddit.com/r/NixOS/comments/mfnar8/how_do_i_overwrite_the_busybox_utilities/
+https://github.com/NixOS/nixpkgs/issues/10716
+
+Other TODO:
+pkgs.mkShell.override {stdenv = pkgs.gcc10Stdenv} {
+  inputsFrom = ...;
+  ...
+}
+https://stackoverflow.com/questions/62592923/nix-how-to-change-stdenv-in-nixpkgs-mkshell
+
 ```bash
 nix \
 build \

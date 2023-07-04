@@ -1370,10 +1370,11 @@ EXPR_NIX='
                             gcc48
                             wget 
                             gnutar
+                            vlc
+                            sqlite
                             # https://unix.stackexchange.com/a/191609
                             # https://discourse.nixos.org/t/what-is-your-approach-to-packaging-wine-applications-with-nix-derivations/12799/2
                             wineWowPackages.stable
-                            
                         ];
 
                         shell = pkgs.bashInteractive;
@@ -1444,7 +1445,11 @@ EXPR_NIX='
                               extraOptions = "experimental-features = nix-command flakes repl-flake";
                               readOnlyStore = true;
                               registry.nixpkgs.flake = nixpkgs;
+                              # https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html#_nix-shell_vs_nix_shell
+                              nixPath = [ "nixpkgs=/etc/channels/nixpkgs" "nixos-config=/etc/nixos/configuration.nix" "/nix/var/nix/profiles/per-user/root/channels" ];
                       };
+
+                      environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
 
                       boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
@@ -1581,7 +1586,8 @@ file $(readlink -f $(which nix))
 du -hs $(readlink -f $(which nix))
 ```
 
-
+TODO:
+https://git.sr.ht/~jshholland/nixos-configs/tree/master/item/flake.nix#L30
 
 ###### ARM
 
@@ -11732,7 +11738,10 @@ nix eval --system aarch64-linux --impure --raw --expr 'builtins.currentSystem'
 
 ```bash
 nix eval --raw nixpkgs#stdenv.buildPlatform.parsed.cpu.name
+nix eval --raw nixpkgs#stdenv.cc.targetPrefixy
 ```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/ee5cc38432031b66e7fe395b14235eeb4b2b0d6e/pkgs/os-specific/linux/busybox/default.nix#L128
 
 ```bash
 nix eval --raw nixpkgs#qt5.qtbase.qtPluginPrefix
@@ -14902,8 +14911,8 @@ build \
         tag = "0.0.1";
         copyToRoot = with pkgs; [
           bashInteractive
-          busybox
-          coreutils
+          busybox # adduser comes from here 
+          # coreutils
           findutils
           which
           gnugrep
@@ -15080,7 +15089,7 @@ Refs.:
 - https://github.com/NixOS/nix/issues/4250#issuecomment-1146687856
 
 TODO: related `nix registry pin nixpkgs` 
-https://github.com/NixOS/nix/issues/6895
+https://github.com/NixOS/nix/issues/6895 + https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d
 
 ```bash
 FROM docker.io/library/busybox as test-busybox
@@ -20906,6 +20915,9 @@ iana-etc
 
 ##### Using the nix repl
 
+
+[Running Nix Code: nix eval and nix repl](https://www.youtube.com/watch?v=9kXahFVnFqw)
+
 https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-repl.html
 
 TODO: make some examples
@@ -21462,6 +21474,8 @@ TODO: why `sudo`? How to do the same without `sudo`?
 
 TODO:
 https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-run.html#apps
+https://github.com/DeterminateSystems/nix-installer/tree/9c915b3f6aa7e2b0d19027052e010d4c03824102#installation-differences
+
 --bash-prompt value
 
 Set the bash-prompt setting.
@@ -21663,6 +21677,10 @@ Refs.:
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/285b3ff0660640575186a4086e1f8dc0df2874b5/pkgs/tools/cd-dvd/ventoy-bin/default.nix#L157-L159
 
+```nix
+modulesPath
+```
+https://discourse.nixos.org/t/get-qemu-guest-integration-when-running-nixos-rebuild-build-vm/22621/7
 
 TODO: change it in many ways
 ```bash
@@ -21672,18 +21690,18 @@ build \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
-    with legacyPackages.${builtins.currentSystem};
-
       let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"); 
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      
         imageEnv = pkgs.buildEnv {
           name = "k3s-pause-image-env";
-          paths = with pkgs; [ tini (hiPrio coreutils) busybox ];
+          paths = with pkgs.pkgsStatic; [ tini (hiPrio coreutils) busybox ];
         };
-        pauseImage = pkgs.dockerTools.streamLayeredImage {
-          name = "test.local/pause";
-          tag = "local";
-          contents = imageEnv;
+        pauseImage = pkgs.dockerTools.buildImage {
+          name = "k3s-pause";
+          tag = "latest";
+          copyToRoot = imageEnv;
           config.Entrypoint = [ "/bin/tini" "--" "/bin/sleep" "inf" ];
         };
       in
@@ -21693,12 +21711,12 @@ build \
 
 podman load < result
 
-#podman \
-#run \
-#--interactive=true \
-#--tty=true \
-#--rm=true \
-#localhost/hello:0.0.1
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/k3s-pause:latest
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/3928cfa27d9925f9fbd1d211cf2549f723546a81/nixos/tests/k3s/single-node.nix
@@ -21713,16 +21731,26 @@ nix registry list
 nix flake show templates
 ```
 
-
+TODO
+nix flake update --override-input nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
 ```bash
-mkdir -pv c-hello \
+nix \
+shell \
+nixpkgs#busybox \
+nixpkgs#git \
+--command \
+sh \
+-c \
+'
+busybox mkdir -pv c-hello \
 && cd c-hello \
 && nix flake init --template github:NixOS/templates#c-hello \
 && git init \
 && git add . \
 && nix flake show .# \
-&& nix build -L .# \
+&& nix build --no-link --print-out-paths --print-build-logs .# \
 && nix run .#
+'
 ```
 
 ```bash
@@ -21830,7 +21858,7 @@ eval \
 --expr \
 '
 let
-  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0").legacyPackages.${builtins.currentSystem};
+  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c").legacyPackages.${builtins.currentSystem};
 in 
   map (drv: [("closure-" + baseNameOf drv) drv]) [ pkgs.hello ]
 '
@@ -21847,7 +21875,7 @@ eval \
 --expr \
 '
 let
-  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0").legacyPackages.${builtins.currentSystem};
+  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c").legacyPackages.${builtins.currentSystem};
 in 
   [ pkgs.hello pkgs.figlet ]
 '
@@ -22022,15 +22050,15 @@ build \
 --no-link \
 --print-build-logs \
 --print-out-paths \
-github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix
+github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.nix
 
 nix \
 build \
---rebuild \
 --no-link \
 --print-build-logs \
 --print-out-paths \
-github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix
+--rebuild \
+github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.nix
 ```
 
 
