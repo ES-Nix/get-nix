@@ -912,12 +912,16 @@ Refs.:
 
 
 ```bash
-# https://github.com/NixOS/nix/issues/2259#issuecomment-1144323965
-# https://www.youtube.com/watch?v=oWJaTb5uoT0
-# https://www.youtube.com/watch?v=q8bZy9kuzEY
 nix-instantiate --eval -E '<nixpkgs>'
 nix eval --impure --expr '<nixpkgs>'
+
+nix-instantiate --eval -E '<nixpkgs/nixos>'
+nix eval --impure --expr '<nixpkgs/nixos>'
 ```
+Refs.:
+- https://github.com/NixOS/nix/issues/2259#issuecomment-1144323965
+- https://www.youtube.com/watch?v=oWJaTb5uoT0
+- https://www.youtube.com/watch?v=q8bZy9kuzEY
 
 ```bash
 nix why-depends --all --derivation nixpkgs#gcc nixpkgs#glibc | cat
