@@ -922,6 +922,8 @@ Refs.:
 - https://github.com/NixOS/nix/issues/2259#issuecomment-1144323965
 - https://www.youtube.com/watch?v=oWJaTb5uoT0
 - https://www.youtube.com/watch?v=q8bZy9kuzEY
+- https://stackoverflow.com/a/56137092
+
 
 ```bash
 nix why-depends --all --derivation nixpkgs#gcc nixpkgs#glibc | cat
