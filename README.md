@@ -4494,6 +4494,10 @@ nix build nixpkgs#pkgsCross.s390x.busybox-sandbox-shell
 nix build nixpkgs#pkgsCross.aarch64-darwin.busybox-sandbox-shell
 ```
 
+```bash
+nix build --no-link --print-out-paths nixpkgs#dpkg
+nix build --no-link --print-out-paths --rebuild nixpkgs#dpkg
+```
 
 ```bash
 nix build nixpkgs#pkgsCross.armv7l-hf-multiplatform.dockerTools.examples.redis
@@ -8426,6 +8430,26 @@ Refs.:
 - https://discourse.nixos.org/t/nixos-flakes-rebuild-not-using-subsitution-despite-package-being-available-in-cache-nixos-org/23013/6
 - https://github.com/NixOS/flake-registry/issues/6#issuecomment-716115466
 - https://github.com/NixOS/flake-registry/issues/6#issuecomment-841699536
+- https://github.com/NixOS/nix/issues/1223
+
+
+### Other things that break/weirdly behave because missing setting the registry 
+
+#### command-not-found
+
+- https://github.com/NixOS/nixos-channel-scripts/issues/9
+- https://stackoverflow.com/a/36178744
+- https://github.com/NixOS/nixpkgs/issues/12044#issuecomment-191242196
+- https://github.com/NixOS/nixpkgs/pull/187894#issuecomment-1234292290
+- https://discourse.nixos.org/t/why-isnt-there-an-official-built-in-way-to-find-what-package-provides-a-specific-executable/22937/4
+- https://github.com/nix-community/home-manager/blob/master/modules/programs/nix-index.nix#blob-path
+- https://github.com/NixOS/nixos-channel-scripts/issues/4#issuecomment-253822096
+- https://github.com/NixOS/nixpkgs/issues/39789
+- https://discourse.nixos.org/t/command-not-found-unable-to-open-database/3807/7
+- https://discourse.nixos.org/t/how-to-specify-programs-sqlite-for-command-not-found-from-flakes/22722/5
+- [NixOS: Fix `command-not-found` Database File Error](https://evanrelf.com/nixos-fix-command-not-found-database-file-error)
+- https://discourse.nixos.org/t/some-question-about-nix-channel-git-commit-version-and-packages/2671/13
+- For home-manager https://github.com/NixOS/nixpkgs/issues/39789#issuecomment-989852476
 
 #### Investigation
 
