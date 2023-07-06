@@ -3806,24 +3806,33 @@ From: https://stackoverflow.com/a/37231726
 
 
 TODO: make tests for this in QEMU
-- https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
 - https://ersei.net/en/blog/its-nixin-time#home-manager-where-no-hom
 
+#### Matthew Bauer
+
+Matthew shows how using statically linked Nix in a 5MB binary, one can use Nix without root.
+
+As of 07/2023 it is broken, at least the short version:
+> With an one-liner shell, you can use Nix to install any software on a Linux machine.
+[Static Nix: a command-line swiss army knife](https://matthewbauer.us/blog/static-nix.html)
+
+Tested it in Alpine using a virtual machine using nested virtualization, the outer VM was done with the NixOS
+module `build-vm`. It worked, but the nix version was 2.3.2, so too old.
 ```bash
 t=$(mktemp -d) \
 && curl https://matthewbauer.us/nix > $t/nix.sh \
 && (cd $t && bash nix.sh --extract) \
-&& mkdir -p $HOME/bin/ $HOME/share/nix/corepkgs/ \
-&& mv $t/dat/nix-x86_64 $HOME/bin/nix \
-&& mv $t/dat/share/nix/corepkgs/* $HOME/share/nix/corepkgs/ \
-&& echo export 'PATH=$HOME/bin:$PATH' >> $HOME/.profile \
-&& echo export 'NIX_DATA_DIR=$HOME/share' >> $HOME/.profile \
-&& source $HOME/.profile \
-&& rm -rf $t
+&& mkdir -pv "$HOME"/bin/ "$HOME"/share/nix/corepkgs/ \
+&& mv -v $t/dat/nix-x86_64 "$HOME"/bin/nix \
+&& mv -v $t/dat/share/nix/corepkgs/* "$HOME"/share/nix/corepkgs/ \
+&& echo export 'PATH="$HOME"/bin:$PATH' >> "$HOME"/.profile \
+&& echo export 'NIX_DATA_DIR="$HOME"/share' >> "$HOME"/.profile \
+&& source "$HOME"/.profile \
+&& rm -rfv $t
 ```
-
-TODO: it is probably going to be usefull
-https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-466804361
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-466804361
+- https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
 
 TODO: test it :/ 
 [Nix-anywhere: run nix-shell script in nix-user-chroot](https://discourse.nixos.org/t/nix-anywhere-run-nix-shell-script-in-nix-user-chroot/2594)
@@ -3835,10 +3844,6 @@ TODO: test it :]
 TODO: try it
 https://github.com/freuk/awesome-nix-hpc
 
-TODO:
-Matthew shows how using statically linked Nix in a 5MB binary, one can use Nix without root. 
-With an one-liner shell, you can use Nix to install any software on a Linux machine.
-[Static Nix: a command-line swiss army knife](https://matthewbauer.us/blog/static-nix.html)
 
 
 TODO: [Packaging with Nix](https://www.youtube.com/embed/Ndn5xM1FgrY?start=329&end=439&version=3), start=329&end=439
@@ -3862,6 +3867,10 @@ TODO:
 
 In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment-717568914)
 [see too](https://matthewbauer.us/blog/static-nix.html).
+
+
+
+##### Bootstrap nix
 
 ```bash
 nix build nixpkgs#nix
