@@ -8382,7 +8382,9 @@ Refs.:
 
 
 TODO: `specialArgs` magic
-https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883/7
+- https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883/7
+- https://nix-community.github.io/home-manager/options.html#opt-_module.args
+
 
 ```bash
 [ "$(nix-shell -p hello --run "which hello")" = "$(nix shell nixpkgs#hello -c which hello)" ] && echo success
@@ -8445,6 +8447,7 @@ Refs.:
 - https://github.com/nix-community/home-manager/blob/master/modules/programs/nix-index.nix#blob-path
 - https://github.com/NixOS/nixos-channel-scripts/issues/4#issuecomment-253822096
 - https://github.com/NixOS/nixpkgs/issues/39789
+- About the dbPath https://github.com/NixOS/nixpkgs/blob/d9e8d5395ed0fd93ee23114e59ba5449992829a6/nixos/modules/programs/command-not-found/command-not-found.nix#L35
 - https://discourse.nixos.org/t/command-not-found-unable-to-open-database/3807/7
 - https://discourse.nixos.org/t/how-to-specify-programs-sqlite-for-command-not-found-from-flakes/22722/5
 - [NixOS: Fix `command-not-found` Database File Error](https://evanrelf.com/nixos-fix-command-not-found-database-file-error)
@@ -21680,7 +21683,7 @@ About nix language + flakes + templates:
 - nix flake show templates, nix flake init -t github:serokell/templates#python-poetry2nix
 - https://github.com/Hoverbear-Consulting/flake
 - https://github.com/t184256/nix-on-droid#examples--templates
-- https://peppe.rs/posts/novice_nix:_flake_templates/ latex-report and rust-hello
+- https://peppe.rs/posts/novice_nix:_flake_templates/ latex-report and rust-hello + https://users.rust-lang.org/t/solved-how-do-i-build-cargo-on-nixos/7620/2
 - https://zero-to-nix.com/concepts/flakes#templates
 - [Nix Flake for Scala - a Nix Introduction, Overview and Demo](https://www.youtube.com/watch?v=HnoP7JZn2MQ)
 
