@@ -14832,6 +14832,11 @@ nix run nixpkgs#xorg.xhost -- -
 
 
 ```bash
+nix run "github:nixified-ai/flake/0c58f8cba3fb42c54f2a7bf9bd45ee4cbc9f2477#koboldai-nvidia"
+```
+
+
+```bash
 nix \
 build \
 --impure \
@@ -15111,6 +15116,7 @@ nix develop nixpkgs#hello --profile ./foo-bar --command sh -c 'source $stdenv/se
 Refs.: 
 - https://github.com/NixOS/nix/issues/4250#issuecomment-799264241
 - https://github.com/NixOS/nix/issues/4250#issuecomment-1146687856
+- https://github.com/NixOS/nix/issues/8657
 
 TODO: related `nix registry pin nixpkgs` 
 https://github.com/NixOS/nix/issues/6895 + https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d
@@ -21652,6 +21658,7 @@ About nix language + flakes + templates:
 - https://github.com/t184256/nix-on-droid#examples--templates
 - https://peppe.rs/posts/novice_nix:_flake_templates/ latex-report and rust-hello
 - https://zero-to-nix.com/concepts/flakes#templates
+- [Nix Flake for Scala - a Nix Introduction, Overview and Demo](https://www.youtube.com/watch?v=HnoP7JZn2MQ)
 
 TODO: https://github.com/NixOS/nixpkgs/blob/f91ee3065de91a3531329a674a45ddcb3467a650/pkgs/top-level/all-packages.nix#L14-L27
 
