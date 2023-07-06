@@ -17620,6 +17620,12 @@ nix flake --version
 https://stackoverflow.com/questions/3294072/get-last-dirname-filename-in-a-file-path-argument-in-bash#comment101491296_10274182
 
 
+#### In void linux,  xbps-install -Sy nix
+
+It is there, at least, since 2014: https://voidlinux.org/news/2014/01/Using-the-Nix-package-manager.html
+[First look at Nix package manager](https://www.youtube.com/watch?v=sqzOPPWUc5w)
+
+
 #### The daemon version
 
 
