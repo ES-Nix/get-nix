@@ -20078,7 +20078,7 @@ https://nixos.org/manual/nix/stable/package-management/binary-cache-substituter.
 ## mkYarnPackage
 
 
-https://youtu.be/YFXwV0ZO9NE?t=269
+[We should manage secrets the systemd way!](https://youtu.be/YFXwV0ZO9NE)
 
 
 ```bash
@@ -20115,10 +20115,15 @@ build \
 ```bash
 nix show-derivation gitlab:/all-dressed-programming/yarn-nix-example
 ```
+Refs.:
+- https://all-dressed-programming.com/posts/nix-yarn/
+
 
 ```bash
 nix build --no-link --print-build-logs --print-out-paths gitlab:/all-dressed-programming/yarn-nix-example
 ```
+Refs.:
+- https://all-dressed-programming.com/posts/nix-yarn/
 
 
 ```bash
@@ -20243,13 +20248,18 @@ EOF
 
 nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)
 ```
-
+Refs.:
+- https://all-dressed-programming.com/posts/nix-yarn/
 
 
 ```bash
 nix eval --raw --impure --expr \
 '(builtins.getFlake "gitlab:/all-dressed-programming/yarn-nix-example").packages.x86_64-linux.default' 
 ```
+Refs.:
+- https://all-dressed-programming.com/posts/nix-yarn/
+
+
 
 ```bash
 nix eval --raw --impure --expr 
@@ -20260,6 +20270,9 @@ nix eval --raw --impure --expr
           patches = [ fc-cache-fix ];
         }
 ```
+Refs.:
+- https://all-dressed-programming.com/posts/nix-yarn/
+
 
 ### vscode
 
