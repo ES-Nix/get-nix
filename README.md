@@ -11749,7 +11749,15 @@ github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello-unfree
 ```
 
 ```bash
-nix eval --impure --raw github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello-unfree
+nix eval --impure --raw github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#hello-unfree
+
+export NIXPKGS_ALLOW_UNFREE=1 \
+&& nix eval --impure --raw github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#hello-unfree
+```
+
+
+```bash
+nix eval nixpkgs#pkgsStatic.busybox-sandbox-shell.stdenv.hostPlatform.isStatic
 ```
 
 ```bash
