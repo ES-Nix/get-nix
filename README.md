@@ -2322,9 +2322,10 @@ podman run --privileged=true -it --rm localhost/unprivileged-ubuntu22:latest
 
 ```bash
 cat > Containerfile << 'EOF'
-FROM ubuntu:22.04
+FROM ubuntu:23.04
 RUN apt-get update -y \
 && apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
      ca-certificates \
      curl \
      tar \
@@ -2341,7 +2342,7 @@ RUN addgroup abcgroup --gid 4455  \
      abcuser
 
 # Uncomment that to compare
-# RUN mkdir /nix && chmod 0755 /nix && chown -v abcuser: /nix
+RUN mkdir /nix && chmod 0755 /nix && chown -v abcuser: /nix
 USER abcuser
 WORKDIR /home/abcuser
 ENV USER="abcuser"
@@ -2350,7 +2351,7 @@ EOF
 podman \
 build \
 --file=Containerfile \
---tag=unprivileged-ubuntu22 .
+--tag=unprivileged-ubuntu23 .
 
 
 podman \
@@ -2359,7 +2360,7 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \
-localhost/unprivileged-ubuntu22:latest \
+localhost/unprivileged-ubuntu23:latest \
 bash \
 -c \
 '
@@ -2375,7 +2376,7 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \
-localhost/unprivileged-ubuntu22:latest \
+localhost/unprivileged-ubuntu23:latest \
 bash \
 -c \
 '
@@ -2400,7 +2401,7 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \
-localhost/unprivileged-ubuntu22:latest
+localhost/unprivileged-ubuntu23:latest
 ```
 
 
