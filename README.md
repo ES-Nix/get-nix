@@ -14281,6 +14281,25 @@ in
 '
 ```
 
+```bash
+nix \
+eval \
+--impure \
+--raw \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.05");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in
+  nixos.config.users.users.nixos.home
+'
+```
 
 ```bash
 nix \
