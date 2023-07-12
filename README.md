@@ -2328,8 +2328,10 @@ RUN apt-get update -y \
      adduser \
      ca-certificates \
      curl \
+     sudo \
      tar \
      xz-utils \
+     wget \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
@@ -2339,10 +2341,11 @@ RUN addgroup abcgroup --gid 4455  \
      --disabled-password \
      --ingroup abcgroup \
      --uid 3322 \
-     abcuser
-
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) PASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser
 # Uncomment that to compare
-RUN mkdir /nix && chmod 0755 /nix && chown -v abcuser: /nix
+RUN mkdir /nix && chmod 0755 /nix && chown -v abcuser:abcgroup /nix
 USER abcuser
 WORKDIR /home/abcuser
 ENV USER="abcuser"
