@@ -8389,6 +8389,28 @@ TODO: `specialArgs` magic
 - https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883/7
 - https://nix-community.github.io/home-manager/options.html#opt-_module.args
 
+TODO: really important
+> As you do not know anymore how to create that store path in the future.
+https://discourse.nixos.org/t/nix-flake-update-to-system-revision/18081/6
+
+```bash
+nix-instantiate --eval --expr '<nixpkgs>'
+```
+
+TODO:
+```bash
+nix-instantiate --eval -E '(import <nixpkgs> {}).lib.version'
+```
+
+TODO:
+```bash
+nixos-version --revision
+```
+
+TODO: https://discourse.nixos.org/t/nix-channel-revision-url-meta-data/9381/12
+```bash
+nix-shell -p nix-info --run "nix-info -m"
+```
 
 ```bash
 [ "$(nix-shell -p hello --run "which hello")" = "$(nix shell nixpkgs#hello -c which hello)" ] && echo success
@@ -21914,6 +21936,11 @@ build \
 ```
 Refs.:
 - 
+
+
+TODO: 
+read this and try to test, may be the only with some hydra to build all?
+https://discourse.nixos.org/t/nix-channel-revision-url-meta-data/9381/11
 
 > The `programs.sqlite` is only generated for the `nixos-` prefixed channels.
 Refs.: https://discourse.nixos.org/t/command-not-found-unable-to-open-database/3807/4
