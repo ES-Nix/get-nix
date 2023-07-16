@@ -8413,7 +8413,17 @@ nix-shell -p nix-info --run "nix-info -m"
 ```
 
 ```bash
-[ "$(nix-shell -p hello --run "which hello")" = "$(nix shell nixpkgs#hello -c which hello)" ] && echo success
+nix eval --impure --expr '<nixpkgs>'
+
+nix eval --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c")'
+nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs")'
+nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").outPath'
+nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").rev'
+```
+
+
+```bash
+[ "$(nix-shell -p hello --run "which hello")" = "$(nix shell nixpkgs#hello -c which hello)" ] && echo -e '\n\n\e[32msuccess\e[0m\n\n'
 ```
 Refs.:
 - https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html
