@@ -2318,7 +2318,37 @@ curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
 podman run --privileged=true -it --rm localhost/unprivileged-ubuntu22:latest
 ```
 
+```bash
+wget -qO- http://ix.io/4AL6 | sh \
+&& . "$HOME"/."$(basename $SHELL)"rc \
+&& nix flake --version
+```
 
+```bash
+test -d /nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix); \
+test $(stat -c %a /nix) -eq 0755 || sudo -kv chmod -v 0755 /nix
+
+test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix \
+&& chmod -v +x nix \
+&& ./nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c \
+&& ./nix \
+profile \
+install \
+nixpkgs#busybox \
+--option experimental-features 'nix-command flakes'
+
+busybox mkdir -pv "$HOME"/.local/bin \
+&& export PATH="$HOME"/.local/bin:"$PATH" \
+&& busybox mv -v nix "$HOME"/.local/bin \
+&& busybox mkdir -pv "$HOME"/.config/nix \
+&& busybox echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
+&& nix flake --version
+
+nix \
+profile \
+remove \
+$(nix eval --raw nixpkgs#busybox)
+```
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -2345,10 +2375,29 @@ RUN addgroup abcgroup --gid 4455  \
  && echo 'abcuser:123' | chpasswd \
  && echo 'abcuser ALL=(ALL) PASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser
 # Uncomment that to compare
-RUN mkdir /nix && chmod 0755 /nix && chown -v abcuser:abcgroup /nix
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
 USER abcuser
 WORKDIR /home/abcuser
 ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+ENV NIX_PAGER="cat"
+ENV SHELL="bin/bash"
+
+# RUN wget -qO- http://ix.io/4yRA | sh -
+# RUN wget -qO- http://ix.io/4AKW | sh -
+
+# RUN test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix
+#RUN mkdir -pv "$HOME"/.local/bin \
+# && export PATH="$HOME"/.local/bin:"$PATH" \
+# && curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix \
+# && mv nix "$HOME"/.local/bin \
+# && chmod +x "$HOME"/.local/bin/nix \
+# && mkdir -p "$HOME"/.config/nix \
+# && echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
+# && nix flake --version \
+# && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
+
 EOF
 
 podman \
@@ -2654,12 +2703,12 @@ Refs.:
 
 ```bash
 # https://hydra.nixos.org/project/nix
-BUILD_ID='214630375'
+BUILD_ID='228013056'
 curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/2/nix > nix
 chmod +x nix
 
-# mkdir -pv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
-# ln -sfv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/abcuser/profile "${HOME}"/.nix-profile
+ mkdir -pv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
+ ln -sfv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/abcuser/profile "${HOME}"/.nix-profile
 
 ./nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#hello
 
@@ -2690,11 +2739,13 @@ quay.io/podman/stable
 ```bash
 mkdir -pv "$HOME"/.local/bin \
 && export PATH="$HOME"/.local/bin:"$PATH" \
-&& curl -L https://hydra.nixos.org/build/207340490/download/1/nix > nix \
+&& curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix \
 && mv nix "$HOME"/.local/bin \
 && chmod +x "$HOME"/.local/bin/nix \
-&& mkdir -p "$HOME"/.config/nix \
-&& echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+&& mkdir -pv "$HOME"/.config/nix \
+&& echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
+&& nix flake --version \
+&& 
 ```
 
 
@@ -15312,12 +15363,12 @@ ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 
 RUN mkdir -pv "$HOME"/.local/bin \
  && cd "$HOME"/.local/bin \
- && wget -O- https://hydra.nixos.org/build/224275015/download/1/nix > nix \
+ && wget -O- https://hydra.nixos.org/build/228013056/download/?/nix > nix \
  && chmod -v +x nix \
  && cd - \
  && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
  && nix flake --version \
- && nix registry pin nixpkgs github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
 
 RUN echo \
  && nix build --no-link --print-build-logs --print-out-paths \
@@ -15371,8 +15422,8 @@ localhost/test-busybox \
 sh \
 -c \
 '
-nix build github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
-&& nix run github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello
+nix build github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#hello \
+&& nix run github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#hello
 '
 ```
 
@@ -15388,7 +15439,7 @@ build \
   (
     let
       # nix flake metadata github:nixified-ai/flake
-      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89"); 
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"); 
       pkgs = import nixpkgs {};
     in
     pkgs.dockerTools.streamLayeredImage { 
