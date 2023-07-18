@@ -1059,6 +1059,14 @@ update \
 --override-input nixpkgs github:NixOS/nixpkgs/$(nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/release-22.11").rev')
 ```
 
+
+```bash
+nix \
+flake \
+update \
+--override-input nixpkgs github:NixOS/nixpkgs/$(nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/release-23.05").rev')
+```
+
 ```bash
 nix-store \
 --gc \
