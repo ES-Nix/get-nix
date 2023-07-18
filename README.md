@@ -1053,6 +1053,13 @@ update \
 ```
 
 ```bash
+nix \
+flake \
+update \
+--override-input nixpkgs github:NixOS/nixpkgs/$(nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/release-22.11").rev')
+```
+
+```bash
 nix-store \
 --gc \
 --print-dead \
@@ -8473,6 +8480,9 @@ nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").outPath'
 nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").rev'
 ```
 
+```bash
+echo $(nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/release-22.11").rev')
+```
 
 ```bash
 [ "$(nix-shell -p hello --run "which hello")" = "$(nix shell nixpkgs#hello -c which hello)" ] && echo -e '\n\n\e[32msuccess\e[0m\n\n'
