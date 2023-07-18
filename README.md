@@ -8436,7 +8436,8 @@ Refs.:
 - related? https://github.com/NixOS/nix/pull/8477 
 
 
-TODO: `specialArgs` magic
+
+TODO: `specialArgs` magic versus `extraSpecialArgs`
 - https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883/7
 - https://nix-community.github.io/home-manager/options.html#opt-_module.args
 
