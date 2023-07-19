@@ -20387,6 +20387,8 @@ build \
 
 
 ```bash
+git --version 1> /dev/null 2> /dev/null || nix profile install nixpkgs#git
+
 nix flake clone gitlab:/all-dressed-programming/yarn-nix-example --dest ./yarn-nix-example \
 && cd yarn-nix-example \
 && cat << 'EOF' > src/wui.ts
@@ -20425,6 +20427,8 @@ Refs.:
 ### yarn + .ts + lodash
 
 ```bash
+git --version 1> /dev/null 2> /dev/null || nix profile install nixpkgs#git
+
 nix flake clone gitlab:/all-dressed-programming/yarn-nix-example --dest ./yarn-nix-example \
 && cd yarn-nix-example \
 && nix develop --command yarn add lodash \
@@ -20443,6 +20447,7 @@ nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-p
 
 
 ```bash
+git --version 1> /dev/null 2> /dev/null || nix profile install nixpkgs#git
 nix flake clone github:/brenomfviana/alura-typescript --dest ./alura-typescript  \
 && cd alura-typescript \
 && nix develop -i .# --command sh \
