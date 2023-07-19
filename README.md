@@ -1091,6 +1091,26 @@ remove \
 $(nix eval --raw nixpkgs#toybox)
 ```
 
+
+```bash
+ls -Alh $(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.nix)/bin
+```
+
+
+```bash
+ln -sfv nix nix-build
+ln -sfv nix nix-channel
+ln -sfv nix nix-collect-garbage
+ln -sfv nix nix-copy-closure
+ln -sfv nix nix-daemon
+ln -sfv nix nix-env
+ln -sfv nix nix-hash
+ln -sfv nix nix-instantiate
+ln -sfv nix nix-prefetch-url
+ln -sfv nix nix-shell
+ln -sfv nix nix-store
+```
+
 ## chroot and others
 
 [Local Nix without Root (HPC)](https://www.reddit.com/r/NixOS/comments/iod7wi/local_nix_without_root_hpc/)
@@ -2390,28 +2410,28 @@ RUN addgroup abcgroup --gid 4455  \
  && echo 'abcuser:123' | chpasswd \
  && echo 'abcuser ALL=(ALL) PASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser
 # Uncomment that to compare
-# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
 USER abcuser
 WORKDIR /home/abcuser
 ENV USER="abcuser"
 ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
-ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
-ENV NIX_PAGER="cat"
+# ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+# ENV NIX_PAGER="cat"
 ENV SHELL="bin/bash"
 
 # RUN wget -qO- http://ix.io/4yRA | sh -
 # RUN wget -qO- http://ix.io/4AKW | sh -
 
 # RUN test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix
-#RUN mkdir -pv "$HOME"/.local/bin \
-# && export PATH="$HOME"/.local/bin:"$PATH" \
-# && curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix \
-# && mv nix "$HOME"/.local/bin \
-# && chmod +x "$HOME"/.local/bin/nix \
-# && mkdir -p "$HOME"/.config/nix \
-# && echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
-# && nix flake --version \
-# && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
+RUN mkdir -pv "$HOME"/.local/bin \
+ && export PATH="$HOME"/.local/bin:"$PATH" \
+ && curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix \
+ && mv nix "$HOME"/.local/bin \
+ && chmod +x "$HOME"/.local/bin/nix \
+ && mkdir -pv "$HOME"/.config/nix \
+ && echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
+ && nix flake --version \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
 
 EOF
 
@@ -2464,7 +2484,7 @@ nix --option extra-experimental-features "nix-command flakes" profile install ni
 # To play interactive
 podman \
 run \
---privileged=true \
+--privileged=false \
 --interactive=true \
 --tty=true \
 --rm=true \
@@ -14074,7 +14094,7 @@ localhost/nix \
 EXPR_NIX='
 (
   let
-    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e");
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
     pkgs = import nixpkgs { };    
   in
     pkgs.dockerTools.buildImage {
@@ -14120,12 +14140,12 @@ run \
 --rm=true \
 --mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
 --rm=true \
-localhost/nix-hello-build-inputs:latest \
+localhost/nix:0.0.0 \
     build \
     --no-link \
     --print-build-logs \
     --print-out-paths \
-    github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+    github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#hello
 
 podman \
 run \
@@ -14137,7 +14157,7 @@ run \
 --rm=true \
 localhost/nix:0.0.0 \
     develop \
-    github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello \
+    github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#hello \
     --command \
     sh \
     -c \
@@ -14152,8 +14172,8 @@ run \
 --rm=true \
 --mount=type=tmpfs,tmpfs-size=6000M,destination=/tmp \
 --rm=true \
-localhost/nix \
-run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
+localhost/nix:0.0.0 \
+run github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#hello
 ```
 
 
@@ -15277,6 +15297,8 @@ Refs.:
 - https://github.com/NixOS/nix/issues/4250#issuecomment-799264241
 - https://github.com/NixOS/nix/issues/4250#issuecomment-1146687856
 - https://github.com/NixOS/nix/issues/8657
+- https://www.tweag.io/blog/2020-05-25-flakes/
+
 
 TODO: related `nix registry pin nixpkgs` 
 https://github.com/NixOS/nix/issues/6895 + https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d
