@@ -20225,6 +20225,8 @@ https://nixos.org/manual/nix/stable/package-management/binary-cache-substituter.
 ## mkYarnPackage
 
 
+[Deploying NPM packages with the Nix package manager](https://www.youtube.com/watch?v=Rh-CSJL1Q-U)
+
 [We should manage secrets the systemd way!](https://youtu.be/YFXwV0ZO9NE)
 
 
