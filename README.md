@@ -20228,6 +20228,7 @@ https://nixos.org/manual/nix/stable/package-management/binary-cache-substituter.
 [We should manage secrets the systemd way!](https://youtu.be/YFXwV0ZO9NE)
 
 
+Broken:
 ```bash
 nix \
 build \
@@ -20388,12 +20389,12 @@ build \
 ```bash
 nix flake clone gitlab:/all-dressed-programming/yarn-nix-example --dest ./yarn-nix-example \
 && cd yarn-nix-example \
-&& cat << 'EOF' > src/hello.ts
+&& cat << 'EOF' > src/wui.ts
 let message: string = 'Hello World';
 console.log(message);
 EOF
 
-nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)
+nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)/lib/wui.js
 ```
 Refs.:
 - https://all-dressed-programming.com/posts/nix-yarn/
@@ -20420,6 +20421,39 @@ nix eval --raw --impure --expr
 Refs.:
 - https://all-dressed-programming.com/posts/nix-yarn/
 
+
+### yarn + .ts + lodash
+
+```bash
+nix flake clone gitlab:/all-dressed-programming/yarn-nix-example --dest ./yarn-nix-example \
+&& cd yarn-nix-example \
+&& nix develop --command yarn add lodash \
+&& cat << 'EOF' > src/wui.ts
+import _ from 'lodash';
+let message: string = 'Hello World';
+console.log(message + _.join([' ', 'a', 'b', 'c'], '~'));
+EOF
+
+nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)/lib/wui.js
+
+```
+
+
+### more libs
+
+
+```bash
+nix flake clone github:/brenomfviana/alura-typescript --dest ./alura-typescript  \
+&& cd alura-typescript \
+&& nix develop -i .# --command sh \
+-c \
+'
+  cd project-1 \
+  && npm i \
+  && npm run compile \
+  && npm run start
+'
+```
 
 ### vscode
 
