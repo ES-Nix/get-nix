@@ -8562,6 +8562,7 @@ Refs.:
 - https://github.com/NixOS/flake-registry/issues/6#issuecomment-716115466
 - https://github.com/NixOS/flake-registry/issues/6#issuecomment-841699536
 - https://github.com/NixOS/nix/issues/1223
+- [Matthew Croughan - Use flake.nix, not Dockerfile - MCH2022](https://www.youtube.com/embed/0uixRE8xlbY?start=988&end=999&version=3), start=988&end=999
 
 
 ### Other things that break/weirdly behave because missing setting the registry 
@@ -22096,7 +22097,10 @@ Refs.: https://discourse.nixos.org/t/command-not-found-unable-to-open-database/3
 Refs.: https://discourse.nixos.org/t/some-question-about-nix-channel-git-commit-version-and-packages/2671/13
 
 
-TODO: [Rebuild sqlite db from scratch? ](https://github.com/NixOS/nix/issues/3091) + https://github.com/NixOS/nix/issues/3183#issuecomment-548367347
+TODO: 
+- [Rebuild sqlite db from scratch? ](https://github.com/NixOS/nix/issues/3091) + https://github.com/NixOS/nix/issues/3183#issuecomment-548367347
+- It shows how to make a sqlite dump: https://github.com/NixOS/nix/issues/1353#issuecomment-441241077
+
 
 The cached built thing is from 
 https://github.com/NixOS/nixpkgs/blob/17d63282b27555fada48909a471c8b000e1c8f01/pkgs/top-level/make-tarball.nix#L13 
