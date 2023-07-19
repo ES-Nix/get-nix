@@ -2481,14 +2481,17 @@ build nixpkgs#nixosTests.kubernetes.rbac-single-node.driverInteractive
 nix --option extra-experimental-features "nix-command flakes" profile install nixpkgs#hello
 '
 
+xhost +
 # To play interactive
 podman \
 run \
+--env="DISPLAY=${DISPLAY:-:0}" \
 --privileged=false \
 --interactive=true \
 --tty=true \
 --rm=true \
 localhost/unprivileged-ubuntu23:latest
+xhost -
 ```
 
 
