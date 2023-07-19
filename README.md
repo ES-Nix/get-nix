@@ -2490,6 +2490,7 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/unprivileged-ubuntu23:latest
 xhost -
 ```
