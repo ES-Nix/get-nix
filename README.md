@@ -1098,6 +1098,29 @@ ls -Alh $(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsS
 
 
 ```bash
+test -d /nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix); \
+test $(stat -c %a /nix) -eq 0755 || sudo -k chmod -v 0755 /nix
+
+test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix && chmod -v +x nix
+
+./nix --option experimental-features 'nix-command flakes' \
+       registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c \
+&& cp -v $(
+        ./nix --option experimental-features 'nix-command flakes' \
+        build \
+        --no-link --print-build-logs --print-out-paths \
+        nixpkgs#pkgsStatic.busybox
+    )/bin/busybox . \
+&& chmod -v +x busybox \
+&& ./busybox mkdir -pv "$HOME"/.local/bin \
+&& export PATH="$HOME"/.local/bin:"$PATH" \
+&& ./busybox mv -v nix "$HOME"/.local/bin \
+&& ./busybox mkdir -pv "$HOME"/.config/nix \
+&& ./busybox echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
+&& nix flake --version
+```
+
+```bash
 ln -sfv nix nix-build
 ln -sfv nix nix-channel
 ln -sfv nix nix-collect-garbage
@@ -2385,9 +2408,10 @@ remove \
 $(nix eval --raw nixpkgs#busybox)
 ```
 
+
 ```bash
 cat > Containerfile << 'EOF'
-FROM ubuntu:23.04
+FROM ubuntu:23.04 as ubuntu-base
 RUN apt-get update -y \
 && apt-get install --no-install-recommends --no-install-suggests -y \
      adduser \
@@ -2408,7 +2432,11 @@ RUN addgroup abcgroup --gid 4455  \
      --uid 3322 \
      abcuser \
  && echo 'abcuser:123' | chpasswd \
- && echo 'abcuser ALL=(ALL) PASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+ && $(getent group kvm || groupadd kvm) \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
 # Uncomment that to compare
 RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
 USER abcuser
@@ -2419,6 +2447,8 @@ ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 # ENV NIX_PAGER="cat"
 ENV SHELL="bin/bash"
 
+
+FROM localhost/ubuntu-base as ubuntu-nix-static
 # RUN wget -qO- http://ix.io/4yRA | sh -
 # RUN wget -qO- http://ix.io/4AKW | sh -
 
@@ -2433,12 +2463,132 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && nix flake --version \
  && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
 
+
+# FROM localhost/ubuntu-base as ubuntu-nix-single
+# RUN wget -qO- http://ix.io/4yRA | bash -
+# RUN wget -qO- http://ix.io/4AKW | sh -
+
 EOF
 
 podman \
 build \
 --file=Containerfile \
---tag=unprivileged-ubuntu23 .
+--target ubuntu-base \
+--tag=ubuntu-base .
+
+
+podman \
+run \
+--hostname=container-nix-hm \
+--privileged=true \
+--interactive=true \
+--name=container-ubuntu23-nix-hm \
+--tty=true \
+--rm=false \
+localhost/ubuntu-base:latest \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4yRA | sh -
+export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"
+wget -qO- http://ix.io/4ATX | sh -
+nix store gc -v
+' \
+&& podman commit container-ubuntu23-nix-hm localhost/ubuntu-nix-hm \
+&& podman images
+
+
+podman \
+run \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--entrypoint="./.nix-profile/bin/zsh" \
+--hostname=container-nix-hm \
+--privileged=false \
+--interactive=true \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/ubuntu-nix-hm:latest \
+-c \
+'touch /dev/kvm'
+```
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:23.04 as ubuntu-base
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     sudo \
+     tar \
+     xz-utils \
+     wget \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+ && $(getent group kvm || groupadd kvm) \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+# Uncomment that to compare
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+# ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+# ENV NIX_PAGER="cat"
+ENV SHELL="bin/bash"
+
+
+FROM localhost/ubuntu-base as ubuntu-nix-static
+# RUN wget -qO- http://ix.io/4yRA | sh -
+# RUN wget -qO- http://ix.io/4AKW | sh -
+
+# RUN test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix
+RUN mkdir -pv "$HOME"/.local/bin \
+ && export PATH="$HOME"/.local/bin:"$PATH" \
+ && curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix \
+ && mv nix "$HOME"/.local/bin \
+ && chmod +x "$HOME"/.local/bin/nix \
+ && mkdir -pv "$HOME"/.config/nix \
+ && echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
+ && nix flake --version \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
+
+
+# FROM localhost/ubuntu-base as ubuntu-nix-single
+# RUN wget -qO- http://ix.io/4yRA | bash -
+# RUN wget -qO- http://ix.io/4AKW | sh -
+
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--target ubuntu-base \
+--tag=ubuntu-base .
+
+podman \
+build \
+--file=Containerfile \
+--target ubuntu-nix-static \
+--tag=ubuntu-nix-static .
+
+
 
 
 podman \
@@ -2447,7 +2597,7 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \
-localhost/unprivileged-ubuntu23:latest \
+localhost/ubuntu-base:latest \
 bash \
 -c \
 '
@@ -2456,6 +2606,48 @@ curl -L https://releases.nixos.org/nix/nix-2.10.3/install | sh -s -- --no-daemon
 && nix --option extra-experimental-features "nix-command flakes" profile install nixpkgs#hello \
 && hello
 '
+
+
+podman \
+run \
+--hostname=container-nix-hm \
+--privileged=true \
+--interactive=true \
+--name=container-ubuntu23-nix-hm \
+--tty=true \
+--rm=false \
+localhost/ubuntu-base:latest \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4yRA | sh -
+export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"
+wget -qO- http://ix.io/4ATX | sh -
+nix store gc -v
+' \
+&& podman commit container-ubuntu23-nix-hm localhost/ubuntu-nix-hm \
+&& podman images
+
+xhost +
+# To play interactive
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--entrypoint="./.nix-profile/bin/zsh" \
+--group-add=keep-groups \
+--hostname=container-nix-hm \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+--userns=keep-id \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/ubuntu-nix-hm:latest \
+ls
+xhost -
+
 
 podman \
 run \
@@ -2491,10 +2683,25 @@ run \
 --tty=true \
 --rm=true \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/unprivileged-ubuntu23:latest
+localhost/ubuntu-nix-static:latest
 xhost -
 ```
 
+
+```bash
+podman \
+run \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--entrypoint="./.nix-profile/bin/zsh" \
+--hostname=container-nix-hm \
+--privileged=false \
+--interactive=true \
+--tty=false \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/ubuntu-nix-hm:latest <<<'touch /dev/kvm'
+```
 
 ```bash
 cat > Containerfile << 'EOF'
