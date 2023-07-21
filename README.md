@@ -2502,6 +2502,7 @@ podman \
 run \
 --device=/dev/kvm \
 --env="DISPLAY=${DISPLAY:-:0}" \
+--env="SHELL=/home/abcuser/.nix-profile/bin/zsh" \
 --entrypoint="./.nix-profile/bin/zsh" \
 --hostname=container-nix-hm \
 --privileged=false \
@@ -20673,6 +20674,59 @@ nix flake clone github:/brenomfviana/alura-typescript --dest ./alura-typescript 
   && npm run start
 '
 ```
+
+
+```bash
+git --version 1> /dev/null 2> /dev/null || nix profile install nixpkgs#git
+nix flake clone github:/JRMurr/example-ts-node-nix  --dest ./example-ts-node-nix \
+&& cd example-ts-node-nix \
+&& nix build --print-build-logs --print-out-paths '.#'
+```
+
+
+```bash
+git --version 1> /dev/null 2> /dev/null || nix profile install nixpkgs#git
+
+nix flake clone gitlab:/all-dressed-programming/yarn-nix-example --dest ./yarn-nix-example \
+&& cd yarn-nix-example \
+&& nix develop --command yarn add fastify \
+&& cat << 'EOF' > src/wui.ts
+#!/usr/bin/env node
+import fastify from "fastify";
+
+const server = fastify();
+
+server.get("/ping", async (_request, _reply) => {
+  return "pong\n";
+});
+
+server.listen({ host: "0.0.0.0", port: 8080 }, (err, address) => {
+  if (err) {
+    console.error(err);
+    process.exit(1);
+  }
+  console.log(`Server listening at ${address}`);
+});
+EOF
+
+cat << 'EOF' > tsconfig.json
+{
+  "extends": "@tsconfig/node16-strictest/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+  }
+}
+EOF
+
+git add . 
+
+nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)/lib/wui.js
+```
+Refs.:
+-
+
+
+
 
 ### vscode
 
