@@ -1,5 +1,5 @@
 {
-  description = "It is a helper to test the installer's scripts";
+  description = "It is a helper to test the nix installer's scripts";
 
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
