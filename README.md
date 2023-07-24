@@ -1478,7 +1478,7 @@ EXPR_NIX='
                         docker.enable = true;
 
                         #
-                        useNixStoreImage = false;
+                        useNixStoreImage = true;
                         writableStore = true; # TODO
                         # https://github.com/Mic92/nixos-shell/issues/30#issuecomment-823333089
                         writableStoreUseTmpfs = false;                        
@@ -1657,6 +1657,103 @@ file $(readlink -f $(which hello))
 file $(readlink -f $(which nix))
 du -hs $(readlink -f $(which nix))
 ```
+
+
+```bash
+cat << 'EOF' >> Dockerfile
+FROM docker.io/library/fedora:39
+
+# RUN dnf -y install httpd; dnf clean all; systemctl enable httpd
+RUN dnf -y install hostname systemd xz
+
+RUN groupadd abcgroup \
+ && adduser \
+     --comment '"An unprivileged user with an group"' \
+     --gid abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && usermod --append --groups kvm abcuser
+
+EXPOSE 80
+
+CMD [ "/sbin/init" ]
+EOF
+
+podman build --tag fedora39-systemd .
+
+podman \
+run \
+--env="USER=abcuser" \
+--detach=true \
+--name=test-fedora39-systemd \
+--interactive=true \
+--tty=true \
+--privileged=true \
+--publish=8080:80 \
+--rm=true \
+fedora39-systemd
+
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+systemctl status swap.target \
+&& systemctl status dbus.socket \
+&& systemctl status system.slice \
+&& systemctl status user.slice
+'
+
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4Blu || curl -L http://ix.io/4Blu | sh
+'
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"
+wget -qO- http://ix.io/4ATX || curl -L http://ix.io/4ATX | sh
+'
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash
+
+```
+Refs.:
+- https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#other_cool_features_about_podman_and_systemd
+
+
+ && echo 'abcuser:123' | chpasswd \
 
 TODO:
 https://git.sr.ht/~jshholland/nixos-configs/tree/master/item/flake.nix#L30
@@ -2418,6 +2515,7 @@ RUN apt-get update -y \
      ca-certificates \
      curl \
      sudo \
+     systemd \
      tar \
      xz-utils \
      wget \
@@ -2446,6 +2544,8 @@ ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 # ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 # ENV NIX_PAGER="cat"
 ENV SHELL="bin/bash"
+
+CMD [ "/sbin/init" ]
 
 
 FROM localhost/ubuntu-base as ubuntu-nix-static
@@ -2477,6 +2577,31 @@ build \
 --tag=ubuntu-base .
 
 
+podman rm --force container-ubuntu23-nix
+podman \
+run \
+--hostname=container-nix-hm \
+--privileged=true \
+--interactive=true \
+--name=container-ubuntu23-nix \
+--tty=true \
+--rm=false \
+localhost/ubuntu-base:latest \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4yRA | sh -
+export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"
+nix --option extra-experimental-features "nix-command flakes" store gc -v
+' \
+&& podman \
+    commit \
+    --change="ENTRYPOINT bash" \
+    container-ubuntu23-nix localhost/ubuntu-nix \
+&& podman images
+
+
+podman rm --force container-ubuntu23-nix-hm
 podman \
 run \
 --hostname=container-nix-hm \
@@ -2497,6 +2622,20 @@ nix store gc -v
 && podman commit container-ubuntu23-nix-hm localhost/ubuntu-nix-hm \
 && podman images
 
+
+podman \
+run \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix \
+--privileged=true \
+--interactive=true \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/ubuntu-nix:latest \
+-c \
+'touch /dev/kvm'
 
 podman \
 run \
