@@ -13,6 +13,9 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 
 
 ```bash
+command -v curl || (command -v apt && sudo apt-get update && sudo apt-get install -y curl)
+command -v curl || (command -v apk && sudo apk add --no-cache curl)
+
 test -d /nix || (sudo mkdir -m 0755 /nix && sudo -k chown "$USER": /nix); \
 test $(stat -c %a /nix) -eq 0755 || sudo -kv chmod 0755 /nix; \
 BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
@@ -22750,10 +22753,13 @@ github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.nix
 
 ### nix-channel, channels
 
-[Channels and NIX_PATH](https://www.youtube.com/watch?v=yfmTgEA2_6k) by Burke Libbey
-https://channels.nixos.org/
-https://nix.dev/reference/pinning-nixpkgs
-https://nix.dev/recipes/faq#what-are-channels-and-different-branches-on-github
+- [Channels and NIX_PATH](https://www.youtube.com/watch?v=yfmTgEA2_6k) by Burke Libbey
+- [How does Nix finds <nixpkgs> when NIX_PATH is empty?](https://discourse.nixos.org/t/how-does-nix-finds-nixpkgs-when-nix-path-is-empty/20756)
+- [manual: update docs when NIX_PATH is empty](https://github.com/NixOS/nix/pull/6865)
+- [nixpkgs: add indirection to _module.args.pkgs](https://github.com/nix-community/home-manager/pull/993)
+- https://channels.nixos.org/
+- https://nix.dev/reference/pinning-nixpkgs
+- https://nix.dev/recipes/faq#what-are-channels-and-different-branches-on-github
 
 ```bash
  pedro@nixos  ~  cat ~/.nix-defexpr/channels
