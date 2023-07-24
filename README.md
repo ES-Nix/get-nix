@@ -28,13 +28,9 @@ BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
 && nix flake --version
 ```
 
-Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
+> Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
+> TODO: test it.
 
-You may need to install curl (sad, i know, but it might be the last time):
-```bash
-sudo apt-get update
-sudo apt-get install -y curl
-```
 
 About the 2.4 release: [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-released/15822), 
 https://github.com/NixOS/nix/pull/5247#issuecomment-920207863, https://github.com/NixOS/nix/milestone/11, 
