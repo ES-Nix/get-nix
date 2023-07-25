@@ -25,7 +25,8 @@ BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && export TMPDIR=/tmp \
-&& nix flake --version
+&& nix flake --version \
+&& nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 ```
 
 > Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
