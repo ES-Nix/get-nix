@@ -1683,6 +1683,8 @@ EOF
 
 podman build --tag fedora39-systemd .
 
+podman kill test-fedora39-systemd
+podman rm test-fedora39-systemd
 podman \
 run \
 --env="USER=abcuser" \
@@ -1712,6 +1714,20 @@ systemctl status swap.target \
 && systemctl status user.slice
 '
 
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4Bqe || curl -L http://ix.io/4Bqe | sh \
+&& . "$HOME"/."$(basename $SHELL)"rc \
+&& nix flake --version
+'
 
 podman \
 exec \
@@ -1723,7 +1739,11 @@ test-fedora39-systemd \
 bash \
 -c \
 '
-wget -qO- http://ix.io/4Blu || curl -L http://ix.io/4Blu | sh
+wget -qO- http://ix.io/4Bqe || curl -L http://ix.io/4Bqe | sh \
+&& . "$HOME"/."$(basename $SHELL)"rc
+wget -qO- http://ix.io/4Bqg || curl -L http://ix.io/4Bqg | sh
+hms
+nix store gc -v && nix store optimise -v 
 '
 
 podman \
@@ -1736,8 +1756,8 @@ test-fedora39-systemd \
 bash \
 -c \
 '
-export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"
-wget -qO- http://ix.io/4ATX || curl -L http://ix.io/4ATX | sh
+. "$HOME"/."$(basename $SHELL)"rc
+wget -qO- http://ix.io/4Bqg || curl -L http://ix.io/4Bqg | sh
 '
 
 podman \
