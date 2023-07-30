@@ -19,7 +19,7 @@ command -v curl || (command -v apk && sudo apk add --no-cache curl)
 test -d /nix || (sudo mkdir -v -m 0755 /nix && sudo -k chown -v "$USER": /nix); \
 test $(stat -c %a /nix) -eq 0755 || sudo -k chmod -v 0755 /nix; \
 BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
-&& SHA256=0f8e39bbed3656759eeabae1e8ab104d1a175fc2 \
+&& SHA256=87fa0f1dbfdd28a1f99b39d5bd4dcc39de97bc64 \
 && NIX_RELEASE_VERSION='2.10.2' \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
