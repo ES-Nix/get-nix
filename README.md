@@ -23,7 +23,7 @@ BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
 && NIX_RELEASE_VERSION='2.10.2' \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
-&& . ~/."$(ps -ocomm= -q $$)"rc \
+&& . ~/."$(ps -ocomm= -q $$ 1>/dev/null 2>/dev/null)"rc 1>/dev/null 2>/dev/null || . ~/."$(basename $SHELL)"rc \
 && export TMPDIR=/tmp \
 && nix flake --version \
 && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
