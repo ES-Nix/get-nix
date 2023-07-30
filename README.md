@@ -16,8 +16,8 @@ https://nixos.org/manual/nix/stable/#sect-single-user-installation
 command -v curl || (command -v apt && sudo apt-get update && sudo apt-get install -y curl)
 command -v curl || (command -v apk && sudo apk add --no-cache curl)
 
-test -d /nix || (sudo mkdir -m 0755 /nix && sudo -k chown "$USER": /nix); \
-test $(stat -c %a /nix) -eq 0755 || sudo -kv chmod 0755 /nix; \
+test -d /nix || (sudo mkdir -mv 0755 /nix && sudo -k chown -v "$USER": /nix); \
+test $(stat -c %a /nix) -eq 0755 || sudo -k chmod -v 0755 /nix; \
 BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
 && SHA256=8f1f3cfec7fde272dd7cebdbded20b46b87f0397 \
 && NIX_RELEASE_VERSION='2.10.2' \
