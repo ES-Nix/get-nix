@@ -333,6 +333,17 @@ build \
 --no-link \
 --print-build-logs \
 --print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+
+nix \
+build \
+--impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
 --rebuild \
 --expr \
 "$EXPR_NIX"
@@ -341,6 +352,38 @@ EXPECTED_SHA512SUM=b6621c62c76c3d09c488222a5813e2f67f4f256c66780ca0da41eb6fe71d7
 FULL_PATH=$(nix eval --impure --raw --expr $EXPR_NIX)/bin/python
 echo "$EXPECTED_SHA512SUM"'  '"$FULL_PATH" | sha512sum -c
 ```
+
+```bash
+EXPR_NIX='
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+    with legacyPackages.${builtins.currentSystem};
+    (pkgsStatic.python3Minimal.override
+      {
+        enableOptimizations = true;
+        reproducibleBuild = false;
+      }
+    )
+  )
+'
+
+nix \
+build \
+--impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+```
+
+
+python38.override {
+    enableOptimizations = true;
+    reproducibleBuild = false;
+    hardeningDisable = "all";
+  };
 
 
 ```bash

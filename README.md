@@ -18930,6 +18930,38 @@ in nixos.config.environment.etc.os-release.text
 '
 ```
 
+```bash
+nix \
+eval \
+--raw \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in nixos.config.nix.binaryCachePublicKeys
+'
+```
+
+
+```bash
+test -d profiles || mkdir -v profiles
+test -L profiles/dev \
+|| nix develop --profile profiles/dev sh echo
+test -L profiles/dev-shell-default \
+|| nix build $(nix eval --impure --raw .#devShells.x86_64-linux.default.drvPath) --out-link profiles/dev-shell-default
+```
+
+
+```bash
+nix-instantiate --eval --strict '<nixpkgs/nixos>' -A config.nix.settings
+```
+https://search.nixos.org/options?channel=23.05&show=nix.settings&from=0&size=50&sort=relevance&type=packages&query=+nix.extraOptions
 
 ```bash
 nix \
