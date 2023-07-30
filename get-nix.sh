@@ -48,7 +48,7 @@ curl -L https://releases.nixos.org/nix/nix-"${NIX_RELEASE_VERSION}"/install | sh
 nix \
 profile \
 install \
-github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#busybox \
+github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#busybox \
 --option \
 experimental-features 'nix-command flakes'
 
@@ -67,7 +67,7 @@ busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
 nix \
 profile \
 remove \
-"$(nix eval --raw github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#busybox)"
+"$(nix eval --raw github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#busybox)"
 
 
 
