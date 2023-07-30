@@ -1684,9 +1684,9 @@ EOF
 
 podman build --tag fedora39-systemd .
 
-podman kill test-fedora39-systemd
-podman rm test-fedora39-systemd
-podman \
+podman kill test-fedora39-systemd \
+&& podman rm --force test-fedora39-systemd || true \
+&& podman \
 run \
 --env="USER=abcuser" \
 --detach=true \
@@ -1696,7 +1696,8 @@ run \
 --privileged=true \
 --publish=8080:80 \
 --rm=true \
-fedora39-systemd
+fedora39-systemd \
+&& podman ps
 
 
 podman \
@@ -1774,8 +1775,6 @@ bash
 Refs.:
 - https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#other_cool_features_about_podman_and_systemd
 
-
- && echo 'abcuser:123' | chpasswd \
 
 TODO:
 https://git.sr.ht/~jshholland/nixos-configs/tree/master/item/flake.nix#L30
