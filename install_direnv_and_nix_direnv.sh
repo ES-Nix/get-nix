@@ -17,7 +17,7 @@ CLOSE_STRING_EVAL_DIRENV_HOOK=')"'
 FULL_STRING_EVAL_DIRENV_HOOK="${OPEN_STRING_EVAL_DIRENV_HOOK}""${NIX_GUESSED_USER_SHELL}""${CLOSE_STRING_EVAL_DIRENV_HOOK}"
 
 # nix flake metadata github:NixOS/nixpkgs/release-22.05
-readlink "$(which direnv)" >/dev/null || nix profile install github:NixOS/nixpkgs/60e774ff2ca18570a93a2992fd18b8f5bf3ba57b#direnv
+readlink "$(which direnv)" >/dev/null || nix profile install github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#direnv
 
 # FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC='source "${HOME}"/.nix-profile/share/nix-direnv/direnvrc'
 # test -f $(readlink -f "${FULL_STRING_NIX_PROFILE_SHARE_NIX_DIRENV_DIRENVRC}") || nix profile install nixpkgs#nix-direnv
