@@ -18841,37 +18841,37 @@ nix \
 build \
 --expr \
 '
-(
-with (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4");
-let
-  #
-  # https://hoverbear.org/blog/nix-flake-live-media/
-  # https://github.com/NixOS/nixpkgs/blob/39b851468af4156e260901c4fd88f88f29acc58e/nixos/release.nix#L147
-  image = (import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/eval-config.nix" {
-    system = "x86_64-linux";
-    modules = [
-      # expression that exposes the configuration as vm image
-      ({ config, lib, pkgs, ... }: {
-        system.build.qcow2 = import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/make-disk-image.nix" {
-          inherit lib config pkgs;
-          diskSize = 2500;
-          format = "qcow2-compressed";
-          # configFile = ./configuration.nix;
-        };
-      })
-      
-        # configure the mountpoint of the root device
-        ({
-          fileSystems."/".device = "/dev/disk/by-label/nixos";
-          boot.loader.grub.device = "/dev/sda";
-        })
-    ];
-  }).config.system.build.qcow2;
-in
-{
-  inherit image;
-}
-)
+  (
+    with (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4");
+        let
+          #
+          # https://hoverbear.org/blog/nix-flake-live-media/
+          # https://github.com/NixOS/nixpkgs/blob/39b851468af4156e260901c4fd88f88f29acc58e/nixos/release.nix#L147
+          image = (import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/eval-config.nix" {
+            system = "x86_64-linux";
+            modules = [
+              # expression that exposes the configuration as vm image
+              ({ config, lib, pkgs, ... }: {
+                system.build.qcow2 = import "${toString (builtins.getFlake "github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4")}/nixos/lib/make-disk-image.nix" {
+                  inherit lib config pkgs;
+                  diskSize = 2500;
+                  format = "qcow2-compressed";
+                  # configFile = ./configuration.nix;
+                };
+              })
+              
+                # configure the mountpoint of the root device
+                ({
+                  fileSystems."/".device = "/dev/disk/by-label/nixos";
+                  boot.loader.grub.device = "/dev/sda";
+                })
+            ];
+          }).config.system.build.qcow2;
+        in
+            {
+              inherit image;
+            }
+    )
 '
 ```
 
@@ -18886,7 +18886,8 @@ build \
 '
 let
   nixos = import <nixpkgs/nixos> { }; 
-in nixos.config.systemd.units."nix-daemon.service"
+in 
+  nixos.config.systemd.units."nix-daemon.service"
 '
 ```
 Refs.:
@@ -18906,7 +18907,8 @@ let
                         "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
                       ]; 
           };  
-in nixos.config.system.build.toplevel
+in 
+  nixos.config.system.build.toplevel
 '
 ```
 
@@ -18926,14 +18928,15 @@ let
                         "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
                       ]; 
           };  
-in nixos.config.environment.etc.os-release.text
+in 
+  nixos.config.environment.etc.os-release.text
 '
 ```
 
 ```bash
+# --raw \
 nix \
 eval \
---raw \
 --expr \
 '
 let
@@ -18943,9 +18946,14 @@ let
             modules = [ 
                         "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
                       ]; 
-          };  
-in nixos.config.nix.binaryCachePublicKeys
+          };
+
+in
+  # trace: warning: Obsolete option nix.binaryCachePublicKeys is used. It was renamed to nix.settings.trusted-public-keys. 
+  nixos.config.nix.settings.trusted-public-keys
 '
+
+# [ "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" ]
 ```
 
 
