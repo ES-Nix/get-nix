@@ -7,7 +7,11 @@
 
 
 TODO:
+```bash
+nix show-derivation nixpkgs#pkgsStatic.busybox-sandbox-shell |  jq -r '.[].env.configurePhase'
+```
 
+```bash
 busybox.override {
   enableStatic = true;
   enableMinimal = true;
@@ -31,17 +35,26 @@ busybox.override {
     CONFIG_ASH_TEST y
   '';
 }
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/master/pkgs/os-specific/linux/busybox/sandbox-shell.nix
+- https://www.reddit.com/r/NixOS/comments/mfnar8/how_do_i_overwrite_the_busybox_utilities/
+- https://github.com/NixOS/nixpkgs/issues/10716
 
-https://github.com/NixOS/nixpkgs/blob/master/pkgs/os-specific/linux/busybox/sandbox-shell.nix
-https://www.reddit.com/r/NixOS/comments/mfnar8/how_do_i_overwrite_the_busybox_utilities/
-https://github.com/NixOS/nixpkgs/issues/10716
+
+## pkgs.mkShell.override
 
 Other TODO:
+```bash
 pkgs.mkShell.override {stdenv = pkgs.gcc10Stdenv} {
   inputsFrom = ...;
   ...
 }
-https://stackoverflow.com/questions/62592923/nix-how-to-change-stdenv-in-nixpkgs-mkshell
+```
+Refs.:
+- https://stackoverflow.com/questions/62592923/nix-how-to-change-stdenv-in-nixpkgs-mkshell
+
+
 
 ```bash
 nix \
@@ -52,13 +65,13 @@ build \
 --impure \
 --expr \
 '
-(
-  let
-    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
-    pkgs = import nixpkgs {};
-  in
-    (curl.override { gnutlsSupport = true; opensslSupport = false; })
-)
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs {};
+    in
+      (curl.override { gnutlsSupport = true; opensslSupport = false; })
+  )
 '
 ```
 
@@ -72,13 +85,13 @@ build \
 --impure \
 --expr \
 '
-(
-  let
-    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
-    pkgs = import nixpkgs {};
-  in
-    (pkgs.pkgsStatic.curl.override { gnutlsSupport = false; opensslSupport = true; })
-)
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs {};
+    in
+      (pkgs.pkgsStatic.curl.override { gnutlsSupport = false; opensslSupport = true; })
+  )
 '
 ```
 
@@ -140,35 +153,33 @@ shell \
 --impure \
 --expr \
 '
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
-  with legacyPackages.${builtins.currentSystem};
-    (
-        let
-          python = pkgs.python38.override {
-            packageOverrides = self: super: {
-              pytest = super.pytest.overridePythonAttrs (old: rec {
-                doCheck = false;
-                doInstallCheck = false;
-              });
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/ef2f213d9659a274985778bff4ca322f3ef3ac68";
+    with legacyPackages.${builtins.currentSystem};
+      (
+          let
+            python = pkgs.python38.override {
+              packageOverrides = self: super: {
+                pytest = super.pytest.overridePythonAttrs (old: rec {
+                  doCheck = false;
+                  doInstallCheck = false;
+                });
+              };
             };
-          };
-          myPy = python.withPackages
-            (p: with p; [ numpy pip pytest ]);
-        in pkgs.mkShell {
-          buildInputs = with pkgs; [
-            myPy
-          ];
-        }
-    )
+            myPy = python.withPackages
+              (p: with p; [ numpy pip pytest ]);
+          in pkgs.mkShell {
+            buildInputs = with pkgs; [
+              myPy
+            ];
+          }
+      )
   )
 ' 
 
 \
 --command \
-python \
--c \
-'
+python
 ```
 Refs.:
 - https://rgoswami.me/posts/ccon-tut-nix/#non-standard-python

@@ -6,6 +6,18 @@ Is an unofficial wrapper of the nix installer, unstable for now!
 
 https://nix.dev/tutorials/install-nix
 
+
+# Contributing locally
+
+```bash
+nix flake clone 'github:ES-Nix/get-nix' --dest get-nix \
+&& cd get-nix 1>/dev/null 2>/dev/null \
+&& git checkout draft-in-wip \
+&& (direnv --version 1>/dev/null 2>/dev/null && direnv allow) \
+|| nix develop $SHELL
+```
+
+
 ## Single user
 
 
