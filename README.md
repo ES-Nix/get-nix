@@ -2,7 +2,7 @@
 
 Is an unofficial wrapper of the nix installer, unstable for now!
 
-https://nixos.org/guides/install-nix.html
+[https://nixos.org/guides/install-nix.html](https://nixos.org/download.html)
 
 https://nix.dev/tutorials/install-nix
 
