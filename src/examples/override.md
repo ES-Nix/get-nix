@@ -10,7 +10,7 @@ TODO:
 ```bash
 nix show-derivation nixpkgs#pkgsStatic.busybox-sandbox-shell |  jq -r '.[].env.configurePhase'
 ```
-
++
 ```bash
 busybox.override {
   enableStatic = true;
