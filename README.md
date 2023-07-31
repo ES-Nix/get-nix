@@ -1748,19 +1748,29 @@ hms
 nix store gc -v && nix store optimise -v 
 '
 
-podman \
-exec \
---interactive=true \
---tty=true \
---user=abcuser \
---workdir=/home/abcuser \
-test-fedora39-systemd \
-bash \
--c \
-'
-. "$HOME"/."$(basename $SHELL)"rc
-wget -qO- http://ix.io/4Bqg || curl -L http://ix.io/4Bqg | sh
-'
+#podman \
+#exec \
+#--interactive=true \
+#--tty=true \
+#--user=abcuser \
+#--workdir=/home/abcuser \
+#test-fedora39-systemd \
+#bash \
+#-c \
+#'
+#. "$HOME"/."$(basename $SHELL)"rc
+#wget -qO- http://ix.io/4Bqg || curl -L http://ix.io/4Bqg | sh
+#'
+#
+#podman \
+#exec \
+#--interactive=true \
+#--tty=true \
+#--user=abcuser \
+#--workdir=/home/abcuser \
+#test-fedora39-systemd \
+#bash
+
 
 podman \
 exec \
@@ -1769,8 +1779,7 @@ exec \
 --user=abcuser \
 --workdir=/home/abcuser \
 test-fedora39-systemd \
-bash
-
+.nix-profile/bin/zsh
 ```
 Refs.:
 - https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#other_cool_features_about_podman_and_systemd
