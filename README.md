@@ -1797,6 +1797,73 @@ Refs.:
 - https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#other_cool_features_about_podman_and_systemd
 
 
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:23.04 as ubuntu-base
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     sudo \
+     systemd \
+     tar \
+     xz-utils \
+     wget \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+ && $(getent group kvm || groupadd kvm) \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+# Uncomment that to compare
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+# ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+# ENV NIX_PAGER="cat"
+ENV SHELL="bin/bash"
+
+# https://stackoverflow.com/a/74439202/9577149
+ENTRYPOINT ["/lib/systemd/systemd"]
+
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--target ubuntu-base \
+--tag=ubuntu-base .
+
+podman \
+run \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23-nix \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=root \
+localhost/ubuntu-base:latest
+# TODO: install systemd from nix
+```
+
+
+
+
 TODO:
 https://git.sr.ht/~jshholland/nixos-configs/tree/master/item/flake.nix#L30
 
@@ -2557,7 +2624,6 @@ RUN apt-get update -y \
      ca-certificates \
      curl \
      sudo \
-     systemd \
      tar \
      xz-utils \
      wget \
@@ -2587,7 +2653,6 @@ ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 # ENV NIX_PAGER="cat"
 ENV SHELL="bin/bash"
 
-CMD [ "/sbin/init" ]
 
 
 FROM localhost/ubuntu-base as ubuntu-nix-static
@@ -2623,11 +2688,11 @@ podman rm --force container-ubuntu23-nix
 podman \
 run \
 --hostname=container-nix-hm \
---privileged=true \
 --interactive=true \
 --name=container-ubuntu23-nix \
---tty=true \
+--privileged=true \
 --rm=false \
+--tty=true \
 localhost/ubuntu-base:latest \
 bash \
 -c \
@@ -2694,6 +2759,71 @@ run \
 localhost/ubuntu-nix-hm:latest \
 -c \
 'touch /dev/kvm'
+```
+
+
+```bash
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:23.04 as ubuntu-base
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     sudo \
+     systemd \
+     tar \
+     xz-utils \
+     wget \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+ && $(getent group kvm || groupadd kvm) \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+# Uncomment that to compare
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+# ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+# ENV NIX_PAGER="cat"
+ENV SHELL="bin/bash"
+
+# https://stackoverflow.com/a/74439202/9577149
+ENTRYPOINT ["/lib/systemd/systemd"]
+
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--target ubuntu-base \
+--tag=ubuntu-base .
+
+podman \
+run \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23-nix \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=root \
+localhost/ubuntu-base:latest
+# TODO: install mult-user nix
 ```
 
 
