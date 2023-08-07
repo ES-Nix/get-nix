@@ -19134,11 +19134,16 @@ Refs.:
 - https://github.com/NixOS/nix/issues/4250#issuecomment-799264241, must check
 - https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d, must check
 - https://github.com/NixOS/nix/issues/7417, must check
+- https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/5, must check
 - https://github.com/NixOS/nix/issues/7138
 - https://github.com/NixOS/nix/issues/3995#issuecomment-1376342823
+- https://github.com/NixOS/nix/issues/2208#issuecomment-412652155
+- https://github.com/NixOS/nix/issues/2868
 - https://github.com/NixOS/nix/issues/2869
 - https://github.com/NixOS/nix/pull/2890
 - https://github.com/commercialhaskell/stack/issues/4673#issuecomment-744560055
+- https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/7
+- https://github.com/NixOS/nix/issues/3913#issuecomment-899001084, TODO: help there 
 
 
 ```bash
