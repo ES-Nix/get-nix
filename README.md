@@ -17906,7 +17906,8 @@ cat > flake.nix << 'EOF'
                       # https://unix.stackexchange.com/a/187337
                       # users.users."root".hashedPassword = "$6$gCCW9SQfMdwAmmAJ$fQDoVPYZerCi10z2wpjyk4ZxWrVrZkVcoPOTjFTZ5BJw9I9qsOAUCUPAouPsEMG.5Kk1rvFSwUB.NeUuPt/SC/";
 
-                      services.getty.autologinUser = "root";
+                      # services.getty.autologinUser = "root";
+                      services.getty.autologinUser = "nixuser";
 
                       virtualisation.podman = {
                         enable = true;
