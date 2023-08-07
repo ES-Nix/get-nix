@@ -4695,6 +4695,9 @@ TODO:
 
 ### Install direnv and nix-direnv using nix + flakes
 
+
+[wtf is direnv?](https://www.youtube.com/watch?v=1joZLTgYLxY)
+
 ```bash
 SHA256=5443257f9e3ac31c5f0da60332d7c5bebfab1cdf \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
