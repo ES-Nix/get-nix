@@ -17926,6 +17926,9 @@ cat > flake.nix << 'EOF'
                       };
                       
                       environment.systemPackages = with pkgs; [
+                        bashInteractive
+                        coreutils
+                        cacert
                         hello
                         figlet
                         podman
