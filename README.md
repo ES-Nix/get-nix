@@ -19144,6 +19144,7 @@ Refs.:
 - https://github.com/commercialhaskell/stack/issues/4673#issuecomment-744560055
 - https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/7
 - https://github.com/NixOS/nix/issues/3913#issuecomment-899001084, TODO: help there 
+- https://github.com/NixOS/nix/issues/7261#issuecomment-1448089881
 
 
 ```bash
