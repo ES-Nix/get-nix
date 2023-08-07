@@ -8943,7 +8943,7 @@ git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 1
 
 
 Eelco Dolstra explaining this:
-- [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=919&version=3), start=817&end=919
+- [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=977&version=3), start=817&end=977
 - https://edolstra.github.io/talks/nixcon-oct-2019.pdf
 
 > Bare `nixpkgs` corresponds to `master`, that's something to keep in mind :)
