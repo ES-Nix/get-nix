@@ -19130,6 +19130,15 @@ test -L profiles/dev \
 test -L profiles/dev-shell-default \
 || nix build $(nix eval --impure --raw .#devShells.x86_64-linux.default.drvPath) --out-link profiles/dev-shell-default
 ```
+Refs.:
+- https://github.com/NixOS/nix/issues/4250#issuecomment-799264241, must check
+- https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d, must check
+- https://github.com/NixOS/nix/issues/7417, must check
+- https://github.com/NixOS/nix/issues/7138
+- https://github.com/NixOS/nix/issues/3995#issuecomment-1376342823
+- https://github.com/NixOS/nix/issues/2869
+- https://github.com/NixOS/nix/pull/2890
+- https://github.com/commercialhaskell/stack/issues/4673#issuecomment-744560055
 
 
 ```bash
