@@ -17929,7 +17929,7 @@ cat > flake.nix << 'EOF'
                       };
 
                       environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
-                      
+
                       environment.systemPackages = with pkgs; [
                         bashInteractive
                         coreutils
@@ -17941,7 +17941,11 @@ cat > flake.nix << 'EOF'
                         xorg.xclock
                       ];
 
-                      # DISPLAY=:0
+                      environment.variables = {
+                        NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                        SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                        DISPLAY = ":0";
+                      };
                     })
         ];
         format = "docker";
