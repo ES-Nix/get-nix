@@ -17957,7 +17957,12 @@ git init \
 && git add . \
 && git commit -m 'First nix flake commit'
 
-nix build .#container
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+.#container
 
 
 # TODO: you need some kernel flags and may be more stuff to be able to run containers
