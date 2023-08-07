@@ -17959,7 +17959,6 @@ git init \
 
 nix \
 build \
---no-link \
 --print-build-logs \
 --print-out-paths \
 .#container
@@ -18165,12 +18164,19 @@ EOF
 nix \
 flake \
 update \
---override-input nixpkgs github:NixOS/nixpkgs/97b8d9459f7922ce0e666113a1e8e6071424ae16
+--override-input nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+git config init.defaultBranch || git config --global init.defaultBranch main
 
 git init \
-&& git add .
+&& git add . \
+&& git commit -m 'First nix flake commit'
 
-nix build .#container
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+.#container
 
 
 # TODO: you need some kernel flags and may be more stuff to be able to run containers
