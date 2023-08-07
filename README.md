@@ -17949,10 +17949,13 @@ EOF
 nix \
 flake \
 update \
---override-input nixpkgs github:NixOS/nixpkgs/2da64a81275b68fdad38af669afeda43d401e94b
+--override-input nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+git config init.defaultBranch || git config --global init.defaultBranch main
 
 git init \
-&& git add .
+&& git add . \
+&& git commit -m 'First nix flake commit'
 
 nix build .#container
 
