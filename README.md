@@ -17875,6 +17875,7 @@ cat > flake.nix << 'EOF'
                         home = "/home/nixuser";
                         createHome = true;
                         homeMode = "0700";
+                        initialPassword = "1";
 
                         # isNormalUser = true;
                         isSystemUser = true;
