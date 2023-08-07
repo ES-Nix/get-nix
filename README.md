@@ -17907,7 +17907,15 @@ cat > flake.nix << 'EOF'
                       # https://unix.stackexchange.com/a/187337
                       # users.users."root".hashedPassword = "$6$gCCW9SQfMdwAmmAJ$fQDoVPYZerCi10z2wpjyk4ZxWrVrZkVcoPOTjFTZ5BJw9I9qsOAUCUPAouPsEMG.5Kk1rvFSwUB.NeUuPt/SC/";
 
-                      services.getty.autologinUser = "root";
+                      # services.getty.autologinUser = "root";
+                      services.getty.autologinUser = "nixuser";
+                      # Enable networking
+                      networking = {
+                        hostName = "nixos";
+                        useDHCP = false;
+                        networkmanager.enable = true;
+                        nameservers = [ "1.1.1.1" "8.8.8.8" ];
+                      };
 
                       virtualisation.podman = {
                         enable = true;
@@ -17939,13 +17947,21 @@ cat > flake.nix << 'EOF'
                         podman
                         sudo
                         xorg.xclock
+                        vagrant
+                        virt-manager
                       ];
 
                       environment.variables = {
                         NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                         SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                         DISPLAY = ":0";
+
+                        VAGRANT_DEFAULT_PROVIDER = "libvirt";
                       };
+
+                        virtualisation.libvirtd.enable = true;
+                        programs.dconf.enable = true;
+                        security.polkit.enable = true;
                     })
         ];
         format = "docker";
@@ -18130,16 +18146,20 @@ cat > flake.nix << 'EOF'
                         };
                       };
 
+                      nixpkgs.config.allowUnfree = true;
                       nix = {
-                        # keep-outputs = true
-                        # keep-derivations = true
-                        # system-features = benchmark big-parallel kvm nixos-test
-                        package = pkgs.nixFlakes;
-                        extraOptions = ''
-                          experimental-features = nix-command flakes
-                        '';
-                        readOnlyStore = true;
+                              package = pkgs.nixVersions.nix_2_10;
+                              # package = pkgsStatic.nix;
+                              # package = pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix;
+
+                              extraOptions = "experimental-features = nix-command flakes repl-flake";
+                              readOnlyStore = true;
+                              registry.nixpkgs.flake = nixpkgs;
+                              # https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html#_nix-shell_vs_nix_shell
+                              nixPath = [ "nixpkgs=/etc/channels/nixpkgs" "nixos-config=/etc/nixos/configuration.nix" "/nix/var/nix/profiles/per-user/root/channels" ];
                       };
+
+                      environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
 
                       environment.systemPackages = with pkgs; [
                         cacert
