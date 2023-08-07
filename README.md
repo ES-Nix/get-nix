@@ -3578,6 +3578,22 @@ nix build --no-link --print-build-logs --print-out-paths \
 
 
 ```bash
+export NIXPKGS_ALLOW_UNFREE=1
+
+nix build --impure --no-link --print-build-logs --print-out-paths \
+  nixpkgs#rustdesk \
+&& nix build --impure --no-link --print-build-logs --print-out-paths --rebuild \
+  nixpkgs#rustdesk
+```
+
+```bash
+nix build --no-link --print-build-logs --print-out-paths \
+  nixpkgs#tts \
+&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
+  nixpkgs#tts
+```
+
+```bash
 nix shell nixpkgs#pandoc --command sh -c 'pandoc --list-input-formats && echo && pandoc --list-output-formats'
 ```
 
