@@ -17933,7 +17933,7 @@ cat > flake.nix << 'EOF'
                         xorg.xclock
                       ];
 
-                      DISPLAY=:0
+                      # DISPLAY=:0
                     })
         ];
         format = "docker";
