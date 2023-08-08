@@ -3596,6 +3596,8 @@ nix build --no-link --print-build-logs --print-out-paths \
 ```bash
 nix shell nixpkgs#pandoc --command sh -c 'pandoc --list-input-formats && echo && pandoc --list-output-formats'
 ```
+Refs.:
+- https://medium.com/isovera/devops-for-presentations-reveal-js-markdown-pandoc-gitlab-ci-34d07d2c1011
 
 
 ```bash
