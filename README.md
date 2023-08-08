@@ -3686,14 +3686,14 @@ https://discourse.nixos.org/t/cannot-access-internet-in-nix-build-even-with-no-s
 ```bash
 EXPR_NIX='
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
     with lib;
         stdenv.mkDerivation {
           name = "test-network-access";
           src = ./.;
-          buildInputs = [ pkgs.iputils ];
-          installPhase = "ping -c 3 8.8.8.8 && mkdir $out";
+          buildInputs = [ pkgs.iputils pkgs.curl ];
+          installPhase = "ping -c 3 8.8.8.8 && curl -4 icanhazip.com && mkdir $out";
         }
   )
 '
@@ -3708,15 +3708,48 @@ build \
 --impure \
 --expr \
 "$EXPR_NIX"
+
+
+nix \
+build \
+--impure \
+--no-link \
+--no-sandbox \
+--print-build-logs \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+
+nix \
+--option sandbox false \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+
+# Expected to fail
+nix \
+--option sandbox true \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--rebuild \
+--expr \
+"$EXPR_NIX"
 ```
 Refs.:
 - https://discourse.nixos.org/t/cannot-access-internet-in-nix-build-even-with-no-sandbox/25510/2
+
 
 Broken:
 ```bash
 EXPR_NIX='
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
     with lib;
       nixosTest ({
@@ -3728,9 +3761,12 @@ EXPR_NIX='
                 sandbox = false;
               };
             };
+            # environment.systemPackages = [
+            #   iputils
+            # ];
           };
         };
-  
+
         testScript = ''
           "print(machine.succeed(\"ping -c3 8.8.8.8\"))"
         '';
@@ -3765,7 +3801,7 @@ Refs.:
 ```bash
 EXPR_NIX='
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07";
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
     with lib;
       nixosTest ({
@@ -3786,7 +3822,7 @@ EXPR_NIX='
         };
   
         testScript = ''
-          "print(machine.succeed(\"curl hydra.iohk.io/nix-cache-info\"))"
+          "print(machine.succeed(\"curl -4 icanhazip.com\"))"
         '';
       })
   )
