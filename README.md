@@ -9088,6 +9088,21 @@ nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").outPath'
 nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").rev'
 ```
 
+TODO: related? 
+```bash
+nix-instantiate --eval -A 'pkgs.path' '<nixpkgs>'
+
+nix eval nixpkgs#path
+
+file ~/.nix-defexpr/channels
+file ~/.nix-defexpr/channels_root
+
+readlink -f /nix/var/nix/profiles/per-user/"$USER"/profile
+```
+Refs.:
+- https://stackoverflow.com/questions/66124085/how-to-find-the-commit-a-nix-channel-points-to#comment116991524_66124086
+
+
 ```bash
 echo $(nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/release-22.11").rev')
 ```
@@ -22165,10 +22180,11 @@ TODO: improve this
 nix \
 build \
 --impure \
+--print-build-logs \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
 
     dockerTools.streamLayeredImage {
