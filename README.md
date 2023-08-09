@@ -194,7 +194,7 @@ echo "$(dirname "$(dirname "$(readlink -f "$(which nix)")")")"
 nix shell nixpkgs#libselinux --command getenforce
 ```
 
-Remove all things in the default profile and garbage collect :
+Remove all things in the default profile and garbage collect:
 ```bash
 nix profile remove '.*' \
 && nix store gc --verbose
@@ -649,8 +649,8 @@ nix-store \
 EXPECTED_SHA256='c527370967bcd73d54d8004e53e143b3cd595a6f15c16eaec8cc9bc09c2db298'
 EXPECTED_SHA512='8810404805850f06620a9cd7274ae4b7c6c7202312401f2e9d256d2b3c2eec9695baec75e47d4046d17a9a2e54de359398ceafdc61217cb59936b3699210f7d0'
 
- sha256sum "${FILE_NAME}"
- sha512sum "${FILE_NAME}"
+sha256sum "${FILE_NAME}"
+sha512sum "${FILE_NAME}"
 
 echo "${EXPECTED_SHA256}"'  '"${FILE_NAME}" | sha256sum -c
 echo "${EXPECTED_SHA512}"'  '"${FILE_NAME}" | sha512sum -c
@@ -991,6 +991,13 @@ lscpu | grep op-mode
 
 
 ```bash
+echo "$TMP"
+echo "$TMPDIR"
+echo "$XDG_RUNTIME_DIR"
+```
+
+
+```bash
 env | grep TMP
 env | grep TMPDIR
 env | grep XDG_RUNTIME_DIR
@@ -1050,8 +1057,9 @@ Explanation: cd https://github.com/NixOS/nixpkgs/issues/34091#issuecomment-39968
 rm -rfv "$HOME"/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs,.cache/nix}
 sudo rm -fr /nix
 ```
-From: https://stackoverflow.com/questions/51929461/how-to-uninstall-nix#comment119190356_51935794, 
-[Eelco in discourse.nixos](https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/18)
+Refs.:
+- https://stackoverflow.com/questions/51929461/how-to-uninstall-nix#comment119190356_51935794, 
+- [Eelco in discourse.nixos](https://discourse.nixos.org/t/building-a-statically-linked-nix-for-hpc-environments/10865/18)
 
 
 
@@ -1134,6 +1142,8 @@ test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > 
 && nix flake --version
 ```
 
+
+TODO: maybe the problem is not using the full path
 ```bash
 ln -sfv nix nix-build
 ln -sfv nix nix-channel
@@ -1153,10 +1163,10 @@ ln -sfv nix nix-store
 [Local Nix without Root (HPC)](https://www.reddit.com/r/NixOS/comments/iod7wi/local_nix_without_root_hpc/)
 
 ```bash
+# TODO: write it in an generic way, not hardcoding the profile numbers.
 nix diff-closures /nix/var/nix/profiles/system-655-link /nix/var/nix/profiles/system-658-link
 ```
-From: [Add 'nix diff-closures' command](https://github.com/NixOS/nix/pull/3818). TODO: write it in an generic way, 
-not hardcoding the profile number.
+From: [Add 'nix diff-closures' command](https://github.com/NixOS/nix/pull/3818). 
 
 
 ### nix statically built, WIP
@@ -1870,7 +1880,7 @@ https://git.sr.ht/~jshholland/nixos-configs/tree/master/item/flake.nix#L30
 ###### ARM
 
 
-
+```bash
               # Enable the X11 windowing system.
               services.xserver = {
                 enable = true;
@@ -1897,6 +1907,9 @@ https://git.sr.ht/~jshholland/nixos-configs/tree/master/item/flake.nix#L30
 
             # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
             # boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+```
+
+
 
 ```bash
 mkdir -pv ~/sandbox/sandbox && cd $_
@@ -2412,7 +2425,7 @@ RUN apk add --no-cache \
      xz \
  && echo 'Creating user' \
  && groupadd abcgroup \
- && useradd -g abcgroup -s /bin/sh -m -c 'Eva User' abcuser \
+ && useradd -g abcgroup -s /bin/sh -m -c 'Abcuser User' abcuser \
  && echo 'abcuser:123' | chpasswd \
  && echo abcuser:10000:5000 > /etc/subuid \
  && echo abcuser:10000:5000 > /etc/subgid \
@@ -2590,7 +2603,7 @@ wget -qO- http://ix.io/4AL6 | sh \
 
 ```bash
 test -d /nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix); \
-test $(stat -c %a /nix) -eq 0755 || sudo -kv chmod -v 0755 /nix
+test $(stat -c %a /nix) -eq 0755 || sudo -k chmod -v 0755 /nix
 
 test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix \
 && chmod -v +x nix \
@@ -2625,8 +2638,8 @@ RUN apt-get update -y \
      curl \
      sudo \
      tar \
-     xz-utils \
      wget \
+     xz-utils \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
@@ -2837,8 +2850,8 @@ RUN apt-get update -y \
      curl \
      sudo \
      tar \
-     xz-utils \
      wget \
+     xz-utils \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
@@ -3077,8 +3090,10 @@ nix profile install nixpkgs#hello
 #### Testing the installer
 
 
-
+```bash
 curl -I https://playing-bucket-nix-cache-test.s3.amazonaws.com/nix
+```
+
 ```bash
 cat > Containerfile << 'EOF'
 FROM ubuntu:22.04
@@ -3212,7 +3227,7 @@ run \
 --group-add=keep-groups \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-nix \
+--name=container-unprivileged-nix \
 --privileged=true \
 --tty=true \
 --userns=keep-id \
@@ -3265,13 +3280,12 @@ BUILD_ID='228013056'
 curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/2/nix > nix
 chmod +x nix
 
- mkdir -pv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
- ln -sfv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/abcuser/profile "${HOME}"/.nix-profile
+mkdir -pv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
+ln -sfv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/abcuser/profile /home/"${USER}"/.nix-profile
 
 ./nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#hello
 
 ls -Ahl $(dirname $(readlink -f ~/.nix-profile))
-
 ```
 
 
@@ -3304,6 +3318,60 @@ mkdir -pv "$HOME"/.local/bin \
 && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
 && nix flake --version \
 && 
+```
+
+
+Bloated:
+```bash
+nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/fuse:rw \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--env='NIX_CONFIG="extra-experimental-features = nix-command flakes"' \
+--env="HOME=/home/podman" \
+--env="PATH=/bin:/home/podman/.nix-profile/bin:/home/podman/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+--env="TMPDIR=/home/podman" \
+--env="USER=podman" \
+--group-add=keep-groups \
+--hostname=container-podman-stable \
+--interactive=true \
+--name=container-podman-stable \
+--privileged=true \
+--tty=true \
+--userns=keep-id \
+--rm=true \
+--volume="$(pwd)":"/home/podman":rw \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--workdir="/home/podman" \
+quay.io/podman/stable
+nix run nixpkgs#xorg.xhost -- -
+```
+
+```bash
+mkdir -pv "$HOME"/.local/bin \
+&& cd "$HOME"/.local/bin \
+&& curl -L https://hydra.nixos.org/build/224275015/download/1/nix > nix \
+&& chmod -v +x nix
+
+nix \
+--extra-experimental-features 'nix-command flakes' \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+nixpkgs/e672d52#pkgsStatic.nixVersions.nix_2_14
+
+nix \
+--extra-experimental-features 'nix-command flakes' \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+nixpkgs/e672d52#pkgsStatic.nixVersions.nix_2_14
 ```
 
 
@@ -17894,7 +17962,7 @@ bash \
 ```
 
 
-#### Bare NixOS
+#### NixOS in OCI image by nixos-generators.nixosGenerate
 
 
 
@@ -17954,7 +18022,6 @@ cat > flake.nix << 'EOF'
                       users.users.nixuser.group = "nixgroup";
                       users.groups.nixuser = { };
 
-                      #
                       # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
                       users.users."root".initialPassword = "r00t";
                       #
@@ -17968,7 +18035,7 @@ cat > flake.nix << 'EOF'
                       # Enable networking
                       networking = {
                         hostName = "nixos";
-                        useDHCP = false;
+                        useDHCP = false; # TODO: Why?
                         networkmanager.enable = true;
                         nameservers = [ "1.1.1.1" "8.8.8.8" ];
                       };
@@ -17976,7 +18043,7 @@ cat > flake.nix << 'EOF'
                       virtualisation.podman = {
                         enable = true;
                         # Create a `docker` alias for podman, to use it as a drop-in replacement
-                        #dockerCompat = true;
+                        # dockerCompat = true;
                       };
 
                       nixpkgs.config.allowUnfree = true;
@@ -17989,7 +18056,11 @@ cat > flake.nix << 'EOF'
                               readOnlyStore = true;
                               registry.nixpkgs.flake = nixpkgs;
                               # https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html#_nix-shell_vs_nix_shell
-                              nixPath = [ "nixpkgs=/etc/channels/nixpkgs" "nixos-config=/etc/nixos/configuration.nix" "/nix/var/nix/profiles/per-user/root/channels" ];
+                              nixPath = [ 
+                                          "nixpkgs=/etc/channels/nixpkgs" 
+                                          "nixos-config=/etc/nixos/configuration.nix" 
+                                          "/nix/var/nix/profiles/per-user/root/channels" 
+                                        ];
                       };
 
                       environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
@@ -18003,21 +18074,13 @@ cat > flake.nix << 'EOF'
                         podman
                         sudo
                         xorg.xclock
-                        vagrant
-                        virt-manager
                       ];
 
                       environment.variables = {
                         NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                         SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                         DISPLAY = ":0";
-
-                        VAGRANT_DEFAULT_PROVIDER = "libvirt";
                       };
-
-                        virtualisation.libvirtd.enable = true;
-                        programs.dconf.enable = true;
-                        security.polkit.enable = true;
                     })
         ];
         format = "docker";
@@ -18056,7 +18119,9 @@ cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman impo
 
 podman \
 run \
+--hostname=container-nixos \
 --interactive=true \
+--name=container-nixos \
 --privileged=true \
 --rm=true \
 --tty=true \
