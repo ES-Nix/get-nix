@@ -18015,12 +18015,36 @@ cat > flake.nix << 'EOF'
                         ];
                         packages = with pkgs; [
                           # firefox
+                          file
+                          # findutils
                         ];
                         shell = pkgs.bashInteractive;
                         # uid = 12321;    
                       };
                       users.users.nixuser.group = "nixgroup";
                       users.groups.nixuser = { };
+
+                      users.extraUsers.nixuser.subUidRanges = [
+                          {
+                            count = 1;
+                            startUid = 1000;
+                          }
+                          {
+                            count = 65534;
+                            startUid = 1000001;
+                          }
+                        ];
+
+                      users.extraUsers.nixuser.subGidRanges = [
+                          {
+                            count = 1;
+                            startGid = 1000;
+                          }
+                          {
+                            count = 65534;
+                            startGid = 1000001;
+                          }
+                        ];
 
                       # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
                       users.users."root".initialPassword = "r00t";
@@ -18130,7 +18154,9 @@ localhost/nixos-image:latest \
 ```
 
 
-
+```bash
+podman run -it --rm docker.io/library/alpine:latest
+```
 
 
 ```bash
@@ -23159,7 +23185,7 @@ github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.nix
 ```
 
 
-### nix-channel, channels
+### nix-channel, channels, NIX_PATH
 
 - [Channels and NIX_PATH](https://www.youtube.com/watch?v=yfmTgEA2_6k) by Burke Libbey
 - [How does Nix finds <nixpkgs> when NIX_PATH is empty?](https://discourse.nixos.org/t/how-does-nix-finds-nixpkgs-when-nix-path-is-empty/20756)
