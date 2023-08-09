@@ -23168,6 +23168,8 @@ github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.nix
 - https://channels.nixos.org/
 - https://nix.dev/reference/pinning-nixpkgs
 - https://nix.dev/recipes/faq#what-are-channels-and-different-branches-on-github
+- https://stackoverflow.com/a/73830736/9577149
+- https://stackoverflow.com/a/52426587/9577149
 
 ```bash
  pedro@nixos  ~  cat ~/.nix-defexpr/channels
