@@ -17971,7 +17971,7 @@ cat > flake.nix << 'EOF'
 {
   description = "Bare NixOS";
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17984,7 +17984,7 @@ cat > flake.nix << 'EOF'
         modules = [
                     # Provide an initial copy of the NixOS channel so that the user
                     # doesn't need to run "nix-channel --update" first.
-                    "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+                    # "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
                     
                     # "${modulesPath}/installer/cd-dvd/iso-image.nix"
                     # error: derivation '/nix/store/2j6939vz4slg58a55jfvp5r3hka3h21l-closure-info.drv' requires non-existent output 'bin' from input derivation '/nix/store/zd4r1jh7nmvkhlm6z6xi0z2w0bfkzfap-libidn2-2.3.2.drv'
@@ -18010,6 +18010,7 @@ cat > flake.nix << 'EOF'
                           "wheel"
                           "nixgroup"
                           "docker"
+                          "podman"
                           "kvm"
                           "qemu-libvirtd"
                         ];
@@ -18019,32 +18020,12 @@ cat > flake.nix << 'EOF'
                           # findutils
                         ];
                         shell = pkgs.bashInteractive;
-                        # uid = 12321;    
+                        uid = 1234;
+                        autoSubUidGidRange = true;
                       };
                       users.users.nixuser.group = "nixgroup";
-                      users.groups.nixuser = { };
-
-                      users.extraUsers.nixuser.subUidRanges = [
-                          {
-                            count = 1;
-                            startUid = 1000;
-                          }
-                          {
-                            count = 65534;
-                            startUid = 1000001;
-                          }
-                        ];
-
-                      users.extraUsers.nixuser.subGidRanges = [
-                          {
-                            count = 1;
-                            startGid = 1000;
-                          }
-                          {
-                            count = 65534;
-                            startGid = 1000001;
-                          }
-                        ];
+                      users.groups.nixgroup.gid = 5678;
+                      users.groups.nixgroup = {};
 
                       # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
                       users.users."root".initialPassword = "r00t";
@@ -18064,10 +18045,14 @@ cat > flake.nix << 'EOF'
                         nameservers = [ "1.1.1.1" "8.8.8.8" ];
                       };
 
-                      virtualisation.podman = {
+                      # virtualisation.podman = {
+                      #   enable = true;
+                      #   # Create a `docker` alias for podman, to use it as a drop-in replacement
+                      #   # dockerCompat = true;
+                      # };
+
+                      virtualisation.docker = {
                         enable = true;
-                        # Create a `docker` alias for podman, to use it as a drop-in replacement
-                        # dockerCompat = true;
                       };
 
                       nixpkgs.config.allowUnfree = true;
@@ -18080,13 +18065,14 @@ cat > flake.nix << 'EOF'
                               readOnlyStore = true;
                               registry.nixpkgs.flake = nixpkgs;
                               # https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html#_nix-shell_vs_nix_shell
-                              nixPath = [ 
-                                          "nixpkgs=/etc/channels/nixpkgs" 
-                                          "nixos-config=/etc/nixos/configuration.nix" 
-                                          "/nix/var/nix/profiles/per-user/root/channels" 
-                                        ];
+                              # nixPath = [ 
+                              #             "nixpkgs=/etc/channels/nixpkgs" 
+                              #             "nixos-config=/etc/nixos/configuration.nix" 
+                              #             "/nix/var/nix/profiles/per-user/root/channels" 
+                              #           ];
                       };
 
+                      # environment.etc."channels/nixpkgs".source = self.inputs.nixpkgs.outPath;
                       environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
 
                       environment.systemPackages = with pkgs; [
@@ -18114,9 +18100,14 @@ cat > flake.nix << 'EOF'
 }
 EOF
 
+#nix \
+#flake \
+#update \
+#--override-input nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
 nix \
 flake \
-update \
+lock \
 --override-input nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 
 git config init.defaultBranch || git config --global init.defaultBranch main
@@ -18149,10 +18140,19 @@ run \
 --privileged=true \
 --rm=true \
 --tty=true \
+--volume=/dev/log:/dev/log \
+--volume=/var/run/systemd/journal/socket:/var/run/systemd/journal/socket \
 localhost/nixos-image:latest \
 /init
 ```
+Refs.:
+- https://projectatomic.io/blog/2016/10/playing-with-docker-logging/
+- https://github.com/containers/podman/issues/15295#issuecomment-1215287414
+- https://github.com/containers/podman/issues/15295#issuecomment-1215287414
 
+TODO: 
+- https://github.com/containers/buildah/issues/3834#issuecomment-1076083456
+- https://github.com/NixOS/nixpkgs/issues/138423#issuecomment-1236144461
 
 ```bash
 podman run -it --rm docker.io/library/alpine:latest

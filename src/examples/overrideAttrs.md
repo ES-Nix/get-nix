@@ -1148,7 +1148,7 @@ build \
 '
 ```
 
-Why this not work?
+Why this does not work?
 ```bash
 ...
 in {
@@ -1190,7 +1190,7 @@ build \
         pythonPackages = self.python.pkgs;
       });
 
-      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") {
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b") {
         system = "x86_64-linux";
         overlays = [ overlay ];
       };
@@ -1435,7 +1435,7 @@ shell \
         # pythonImportsCheck = with python3Packages; [ pytest ];
         checkInputs = with python3Packages; [ pytest ];
         doCheck = true;
-        buildInputs = with python3Packages; [ typing-extensions redis mmh3 ];
+        buildInputs = with python3Packages; [ typing-extensions redis mmh3 uvloop ];
       }
     )
   ]
@@ -1963,6 +1963,71 @@ build \
 ```
 Refs.:
 - https://stackoverflow.com/a/10356740
+
+
+
+mkdir -pv ~/sandbox/sandbox && cd $_
+
+export HOST_MAPPED_PORT=10022
+export REMOVE_DISK=true
+export QEMU_NET_OPTS='hostfwd=tcp::'"$HOST_MAPPED_PORT"'-:'"$HOST_MAPPED_PORT"',hostfwd=tcp::8000-:8000'
+export QEMU_OPTS='-nographic'
+export SHARED_DIR="$(pwd)"
+
+"$REMOVE_DISK" && rm -fv nixos.qcow2
+# nc 1>/dev/null 2>/dev/null || nix profile install nixpkgs#netcat
+# nc -v -4 localhost "$HOST_MAPPED_PORT" -w 1 -z && echo 'There is something already using the port:'"$HOST_MAPPED_PORT"
+
+# sudo lsof -t -i tcp:"$HOST_MAPPED_PORT" -s tcp:listen
+# sudo lsof -t -i tcp:"$HOST_MAPPED_PORT" -s tcp:listen | sudo xargs --no-run-if-empty kill
+
+cat << 'EOF' >> id_ed25519
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACCsoS8eR1Ot8ySeS8eI/jUwvzkGe1npaHPMvjp+Ou5JcgAAAIjoIwah6CMG
+oQAAAAtzc2gtZWQyNTUxOQAAACCsoS8eR1Ot8ySeS8eI/jUwvzkGe1npaHPMvjp+Ou5Jcg
+AAAEAbL0Z61S8giktfR53dZ2fztctV/0vML24doU0BMGLRZqyhLx5HU63zJJ5Lx4j+NTC/
+OQZ7Weloc8y+On467klyAAAAAAECAwQF
+-----END OPENSSH PRIVATE KEY-----
+EOF
+
+chmod -v 0600 id_ed25519
+
+
+
+ssh-keygen -R '[localhost]:10022'
+# Oh crap, it made me wast many many days
+ssh-add id_ed25519
+
+nix \
+build \
+--keep-failed \
+--no-link \
+--no-show-trace \
+--print-build-logs \
+--print-out-paths \
+github:PedroRegisPOAR/.github/5fdcccc4e3bc00d160850dfafb0bf2b22e1060dc#nixosConfigurations.x86_64-linux.nixosBuildVMX86_64LinuxPodman.config.system.build.vm
+
+nix \
+run \
+github:PedroRegisPOAR/.github/5fdcccc4e3bc00d160850dfafb0bf2b22e1060dc#nixosConfigurations.x86_64-linux.nixosBuildVMX86_64LinuxPodman.config.system.build.vm \
+< /dev/null &
+
+
+while ! ssh -T -i id_ed25519 -o ConnectTimeout=1 -o StrictHostKeyChecking=no nixuser@localhost -p "$HOST_MAPPED_PORT" <<<'systemctl is-active podman.socket'; do \
+  echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
+&& ssh-keygen -R '[localhost]:'"$HOST_MAPPED_PORT"; \
+ssh \
+-i id_ed25519 \
+-X \
+-o StrictHostKeyChecking=no \
+nixuser@localhost \
+-p "$HOST_MAPPED_PORT"
+
+#<<COMMANDS
+#id
+#COMMANDS
+#"$REMOVE_DISK" && rm -fv nixos.qcow2 id_ed25519
 
 
 ```bash
@@ -3482,8 +3547,8 @@ cat << 'EOF' > flake.nix
             self;
         
           python3Packages = final.python3.pkgs;
-        
         };
+
       pkgs = import nixpkgs {
         system = "x86_64-linux";
         overlays = [ overlay ];
