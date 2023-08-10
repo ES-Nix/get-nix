@@ -19325,7 +19325,7 @@ test -L profiles/dev-shell-default \
 ```
 Refs.:
 - https://github.com/NixOS/nix/issues/4250#issuecomment-799264241, must check
-- https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d, must check
+- https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d#file-flake-nix-L28, must check
 - https://github.com/NixOS/nix/issues/7417, must check
 - https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/5, must check
 - https://github.com/NixOS/nix/issues/7138
