@@ -2775,7 +2775,7 @@ localhost/ubuntu-nix-hm:latest \
 ```
 
 
-```bash
+
 ```bash
 cat > Containerfile << 'EOF'
 FROM ubuntu:23.04 as ubuntu-base
@@ -2839,6 +2839,147 @@ localhost/ubuntu-base:latest
 # TODO: install mult-user nix
 ```
 
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:23.04 as ubuntu-base
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     sudo \
+     systemd \
+     tar \
+     xz-utils \
+     wget \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'ubuntu:123' | chpasswd \
+ && echo 'ubuntu ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/ubuntu \
+ && echo 'Start kvm stuff...' \
+ && $(getent group kvm || groupadd kvm) \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+# Uncomment that to compare
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv ubuntu:ubuntu /nix
+USER ubuntu
+WORKDIR /home/ubuntu
+ENV USER="ubuntu"
+ENV PATH=/home/ubuntu/.nix-profile/bin:/home/ubuntu/.local/bin:"$PATH"
+# ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+# ENV NIX_PAGER="cat"
+ENV SHELL="bin/bash"
+
+# https://stackoverflow.com/a/74439202/9577149
+ENTRYPOINT ["/lib/systemd/systemd"]
+
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--target ubuntu-base \
+--tag=ubuntu-base .
+
+
+xhost +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23-nix \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=root \
+--userns=keep-id \
+--volume="$(pwd)":/home/ubuntu/code:rw \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/ubuntu-base:latest
+
+
+IMAGE_NAME='unprivileged-ubuntu22'
+CONTAINER_NAME='container'"${IMAGE_NAME}"'-test-nix'
+podman rm --force --ignore container-ubuntu23-pycharm-from-snap
+
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23-pycharm-from-snap \
+--privileged=true \
+--rm=false \
+--tty=true \
+--user=root \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume="$(pwd)":/home/abcuser/code:rw \
+localhost/ubuntu-base:latest
+bash \
+-c \
+"
+sudo apt-get update -y \
+&& sudo apt-get install -y x11-apps libxtst6 snapd || true \
+&& sudo systemctl start snapd \
+&& sudo snap install pycharm-community --classic \
+&& sudo apt-get -y autoremove \
+&& sudo apt-get -y clean \
+&& sudo rm -rf /var/lib/apt/lists/*
+" \
+podman commit -q container-ubuntu23-pycharm-from-snap ubuntu-base \
+&& podman images \
+&& podman rm --force --ignore container-ubuntu23-pycharm-from-snap
+
+xhost -
+```
+
+
+```bash
+sudo apt-get update -y \
+&& sudo apt-get install -y x11-apps libxtst6 snapd || true \
+&& sudo systemctl start snapd \
+&& sudo snap install pycharm-community --classic \
+&& sudo apt-get -y autoremove \
+&& sudo apt-get -y clean \
+&& sudo rm -rf /var/lib/apt/lists/*
+```
+cd code
+export DISPLAY=:0
+pycharm-community
+
+
+export NIX_CONFIG="extra-experimental-features = nix-command flakes"
+nix -vv registry pin nixpkgs
+nix shell nixpkgs#bashInteractive
+
+```bash
+PyCharm 2023.2 (Community Edition)
+Build #PC-232.8660.197, built on July 26, 2023
+Runtime version: 17.0.7+7-b1000.6 amd64
+VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
+Linux 5.15.119
+GC: G1 Young Generation, G1 Old Generation
+Memory: 1500M
+Cores: 4
+
+Current Desktop: Undefined
+```
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -2967,7 +3108,7 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \
---userns=keep-id \
+--userns=keep-id \--annotation=run.oci.keep_original_groups=1 \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/ubuntu-nix-hm:latest \
 ls
