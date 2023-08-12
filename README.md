@@ -2895,35 +2895,15 @@ build \
 --tag=ubuntu-base .
 
 
-xhost +
-podman \
-run \
---annotation=run.oci.keep_original_groups=1 \
---env="DISPLAY=${DISPLAY:-:0}" \
---group-add=keep-groups \
---hostname=container-nix-hm \
---interactive=true \
---name=container-ubuntu23-nix \
---privileged=true \
---rm=true \
---tty=true \
---user=root \
---userns=keep-id \
---volume="$(pwd)":/home/ubuntu/code:rw \
---volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/ubuntu-base:latest
-
-
-IMAGE_NAME='unprivileged-ubuntu22'
-CONTAINER_NAME='container'"${IMAGE_NAME}"'-test-nix'
-podman rm --force --ignore container-ubuntu23-pycharm-from-snap
+podman rm --force --ignore container-ubuntu23-pycharm-community-from-snap
 
 podman \
 run \
+--detach=true \
 --env="DISPLAY=${DISPLAY:-:0}" \
 --hostname=container-nix-hm \
 --interactive=true \
---name=container-ubuntu23-pycharm-from-snap \
+--name=container-ubuntu23-pycharm-community-from-snap \
 --privileged=true \
 --rm=false \
 --tty=true \
@@ -2931,20 +2911,83 @@ run \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 --volume="$(pwd)":/home/abcuser/code:rw \
 localhost/ubuntu-base:latest
+
+podman \
+exec \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--interactive=true \
+--tty=true \
+--user=ubuntu \
+container-ubuntu23-pycharm-community-from-snap \
 bash \
 -c \
 "
 sudo apt-get update -y \
-&& sudo apt-get install -y x11-apps libxtst6 snapd || true \
+&& (sudo apt-get install -y x11-apps libxtst6 snapd || true) \
+&& sudo systemctl enable snapd \
 && sudo systemctl start snapd \
-&& sudo snap install pycharm-community --classic \
-&& sudo apt-get -y autoremove \
-&& sudo apt-get -y clean \
-&& sudo rm -rf /var/lib/apt/lists/*
-" \
-podman commit -q container-ubuntu23-pycharm-from-snap ubuntu-base \
+&& sudo systemctl status snapd \
+&& (sudo snap install pycharm-community --classic || true) \
+&& (sudo apt-get -y autoremove || true) \
+&& (sudo apt-get -y clean || true) \
+&& (sudo rm -rf /var/lib/apt/lists/* || true) \
+&& echo 'export PATH=\$PATH:/snap/bin' >> ~/.bashrc \
+&& sudo systemctl poweroff
+" || true \
+&& podman commit container-ubuntu23-pycharm-community-from-snap localhost/ubuntu23-pycharm-community-from-snap \
 && podman images \
-&& podman rm --force --ignore container-ubuntu23-pycharm-from-snap
+&& podman rm --force --ignore container-ubuntu23-pycharm-community-from-snap
+
+
+xhost +
+
+podman rm --force --ignore container-ubuntu23-pycharm-community-from-snap
+podman \
+run \
+--detach=true \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23-pycharm-community-from-snap \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=root \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume="$(pwd)":/home/abcuser/code:rw \
+localhost/ubuntu23-pycharm-community-from-snap:latest
+
+podman \
+exec \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--interactive=true \
+--tty=true \
+--user=ubuntu \
+container-ubuntu23-pycharm-community-from-snap \
+bash \
+-c \
+'
+export DISPLAY=:0
+export PATH=$PATH:/snap/bin
+pycharm-community
+'
+
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23 \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=root \
+--userns=keep-id \
+--volume="$(pwd)":/home/ubuntu/code:rw \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/ubuntu23-pycharm-community-from-snap:latest
 
 xhost -
 ```
