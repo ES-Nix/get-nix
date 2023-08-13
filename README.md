@@ -2853,6 +2853,8 @@ RUN apt-get update -y \
      systemd \
      tar \
      xz-utils \
+     x11-apps \
+     libxtst6 \
      wget \
  && apt-get -y autoremove \
  && apt-get -y clean \
@@ -2923,7 +2925,7 @@ bash \
 -c \
 "
 sudo apt-get update -y \
-&& (sudo apt-get install -y x11-apps libxtst6 snapd || true) \
+&& (sudo apt-get install -y snapd || true) \
 && sudo systemctl enable snapd \
 && sudo systemctl start snapd \
 && sudo systemctl status snapd \
