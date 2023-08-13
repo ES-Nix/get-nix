@@ -1415,7 +1415,7 @@ shell \
 --impure \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/0e857e0089d78dee29818dc92722a72f1dea506f";
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
   with legacyPackages.x86_64-linux;
   [
     (let
@@ -3572,6 +3572,95 @@ from pycpfcnpj import cpfcnpj
 print(cpfcnpj.validate("67170904055")) 
 '
 ```
+
+
+
+```bash
+cat << 'EOF' > flake.nix
+{
+  description = "TODO";
+
+  outputs = { nixpkgs, ... }:
+    let
+      overlay = final: prev: 
+        {
+          pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+            (python-final: python-prev: {
+              numpngw = (python-final.buildPythonPackage rec {
+                          name = "numpngw";
+                          version = "0.1.2";
+                          src = prev.fetchFromGitHub {
+                            owner = "WarrenWeckesser";
+                            repo = "numpngw";
+                            rev = "bae044cf659e9cee1d395f9ca1bdc36917e75e0d";
+                            # sha256 = "${final.lib.fakeSha256}";
+                            sha256 = "sha256-TgBhinPXcT+1SMpsTNE+CqkihlxuJdGNwmcr7HTLsqo=";
+                          };
+                          # checkInputs = with prev.python3Packages; [ ];
+                          buildInputs = with prev.python3Packages; [ numpy ];
+                          nativeBuildInputs = with prev.python3Packages; [ numpy ];
+                          propagatedBuildInputs = with prev.python3Packages; [ numpy ];
+                          doCheck = true;                          
+                        });
+            })
+          ];
+        
+          python3 =
+            let
+              self = prev.python3.override {
+                inherit self;
+                packageOverrides = prev.lib.composeManyExtensions final.pythonPackagesOverlays;
+              }; in
+            self;
+        
+          python3Packages = final.python3.pkgs;
+        };
+
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in {
+      inherit overlay;
+      # defaultPackage.x86_64-linux = pkgs.python3;
+      # defaultPackage.x86_64-linux = pkgs.python3Packages.pottery;
+      defaultPackage.x86_64-linux = (pkgs.python3.withPackages (ps: with ps; [ 
+        numpngw 
+      ]));    
+    };
+}
+EOF
+
+# nix build -L .#
+# nix shell .# --command python3 -c 'import sys; print(sys.path)'
+nix shell .# --command python3 -c \
+'
+import numpy as np
+import numpngw
+
+
+img0 = np.zeros((64, 64, 3), dtype=np.uint8)
+img0[:32, :32, :] = 255
+img1 = np.zeros((64, 64, 3), dtype=np.uint8)
+img1[32:, :32, 0] = 255
+img2 = np.zeros((64, 64, 3), dtype=np.uint8)
+img2[32:, 32:, 1] = 255
+img3 = np.zeros((64, 64, 3), dtype=np.uint8)
+img3[:32, 32:, 2] = 255
+seq = [img0, img1, img2, img3]
+for img in seq:
+    img[16:-16, 16:-16] = 127
+    img[0, :] = 127
+    img[-1, :] = 127
+    img[:, 0] = 127
+    img[:, -1] = 127
+
+numpngw.write_apng("squares.png", seq, delay=250, use_palette=True)
+'
+```
+Refs.:
+- https://github.com/WarrenWeckesser/numpngw/tree/bae044cf659e9cee1d395f9ca1bdc36917e75e0d
+- https://stackoverflow.com/questions/753190/programmatically-generate-video-or-animated-gif-in-python/32978565#32978565
 
 
 ```bash
