@@ -825,6 +825,10 @@ nix eval --apply builtins.functionArgs nixpkgs#dockerTools.pullImage
 ```
 
 ```bash
+nix show-derivation nixpkgs#pkgsStatic.nix
+```
++
+```bash
 nix eval --apply toString nixpkgs#pkgsStatic.nix.propagatedBuildInputs | tr ' ' '\n' | sort -h
 ```
 
@@ -10574,7 +10578,7 @@ run \
 --device=/dev/kvm \
 --env="DISPLAY=${DISPLAY:-:0.0}" \
 --interactive=true \
---mount=type=tmpfs,tmpfs-size=2G,destination=/tmp \
+--mount=type=tmpfs,tmpfs-size=3G,destination=/tmp \
 --privileged=true \
 --publish=5000:5000 \
 --rm=true \
