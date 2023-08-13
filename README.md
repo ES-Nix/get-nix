@@ -1356,6 +1356,7 @@ rm -f nixos.qcow2
 ```
 
 
+#### Minimal
 
 
 ```bash
@@ -1393,7 +1394,297 @@ EXPR_NIX='
   (
     let
       #
-      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"); 
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+
+      nixuserKeys = pkgs.writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly";
+    in
+      nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+                    # "${toString nixpkgs}/nixos/modules/virtualisation/qemu-guest.nix"
+                    "${toString nixpkgs}/nixos/modules/virtualisation/build-vm.nix"
+                    "${toString nixpkgs}/nixos/modules/virtualisation/qemu-vm.nix"
+                    "${toString nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+
+                    ({
+                      # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+                      boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+                      
+                      boot.kernelParams = [
+                        "console=tty0"
+                        "console=ttyS0,115200n8"
+                        # Set sensible kernel parameters
+                        # https://nixos.wiki/wiki/Bootloader
+                        # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
+                        "boot.shell_on_fail"
+                        "panic=30"
+                        "boot.panic_on_fail" # reboot the machine upon fatal boot issues
+                        # TODO: test it
+                        "intel_iommu=on"
+                        "iommu=pt"
+
+                        # https://discuss.linuxcontainers.org/t/podman-wont-run-containers-in-lxd-cgroup-controller-pids-unavailable/13049/2
+                        # https://github.com/NixOS/nixpkgs/issues/73800#issuecomment-729206223
+                        # https://github.com/canonical/microk8s/issues/1691#issuecomment-977543458
+                        # https://github.com/grahamc/nixos-config/blob/35388280d3b06ada5882d37c5b4f6d3baa43da69/devices/petunia/configuration.nix#L36
+                        # cgroup_no_v1=all
+                        "swapaccount=0"
+                        "systemd.unified_cgroup_hierarchy=0"
+                        "group_enable=memory"
+                      ];
+
+                      boot.tmpOnTmpfs = false;
+                      # https://github.com/AtilaSaraiva/nix-dotfiles/blob/main/lib/modules/configHost/default.nix#L271-L273
+                      boot.tmpOnTmpfsSize = "100%";
+
+                      # https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
+                      users.extraGroups.nixgroup.gid = 999;
+
+                      users.users.nixuser = {
+                        isSystemUser = true;
+                        password = "";
+                        createHome = true;
+                        home = "/home/nixuser";
+                        homeMode = "0700";
+                        description = "The VM tester user";
+                        group = "nixgroup";
+                        extraGroups = [
+                                        "kvm"
+                                        "libvirtd"
+                                        "wheel"
+                        ];
+
+                        packages = with pkgs; [
+                            direnv
+                            git
+                            hello
+                            xorg.xclock
+                            file
+                            gnutar
+                        ];
+
+                        shell = pkgs.bashInteractive;
+                        uid = 1234;
+                        autoSubUidGidRange = true;
+
+                        openssh.authorizedKeys.keyFiles = [
+                          nixuserKeys
+                        ];
+
+                        openssh.authorizedKeys.keys = [
+                          "${nixuserKeys}"
+                        ];
+                      };
+
+                      systemd.services.adds-change-workdir = {
+                        script = "echo cd /tmp/shared >> /home/nixuser/.profile";
+                        wantedBy = [ "multi-user.target" ];
+                      };
+
+                      virtualisation = {
+                        # following configuration is added only when building VM with build-vm module
+                        memorySize = 1024 * 3; # Use MiB RAM memory.
+                        diskSize = 1024 * 15; # Use MiB memory.
+                        cores = 4;
+                        msize = 104857600; # TODO: 
+                        #
+                        useNixStoreImage = true;
+                        writableStore = true; # TODO
+                        # https://github.com/Mic92/nixos-shell/issues/30#issuecomment-823333089
+                        writableStoreUseTmpfs = false;                        
+                      };
+
+                      security.polkit.enable = true;
+
+                      # https://nixos.wiki/wiki/Libvirt
+                      boot.extraModprobeConfig = "options kvm_intel nested=1";
+                      boot.kernelModules = [
+                        "kvm-intel"
+                        "vfio-pci"
+                      ];
+
+                      nixpkgs.config.allowUnfree = true;
+                      nix = {
+                              package = pkgs.nixVersions.nix_2_10;
+                              # package = pkgsStatic.nix;
+                              # package = pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix;
+
+                              extraOptions = "experimental-features = nix-command flakes repl-flake";
+                              readOnlyStore = true;
+                              registry.nixpkgs.flake = nixpkgs;
+                              # https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html#_nix-shell_vs_nix_shell
+                              nixPath = [ "nixpkgs=/etc/channels/nixpkgs" "nixos-config=/etc/nixos/configuration.nix" "/nix/var/nix/profiles/per-user/root/channels" ];
+                      };
+                      environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
+
+
+                      # Enable the X11 windowing system.
+                      services.xserver = {
+                        enable = true;
+                        displayManager.gdm.enable = true;
+                        displayManager.startx.enable = true;
+                        logFile = "/var/log/X.0.log";
+                        desktopManager.xterm.enable = true;
+                        # displayManager.gdm.autoLogin.enable = true;
+                        # displayManager.gdm.autoLogin.user = "nixuser";
+                      };
+                      services.spice-vdagentd.enable = true;
+
+                      # https://github.com/NixOS/nixpkgs/issues/21332#issuecomment-268730694
+                      services.openssh = {
+                        allowSFTP = true;
+                        kbdInteractiveAuthentication = false;
+                        enable = true;
+                        forwardX11 = true;
+                        passwordAuthentication = false;
+                        permitRootLogin = "yes";
+                        ports = [ 10022 ];
+                        authorizedKeysFiles = [
+                          "${toString nixuserKeys}"
+                        ];
+                      };
+
+                      # https://stackoverflow.com/a/71247061
+                      # https://nixos.wiki/wiki/Firewall
+                      # networking.firewall = {
+                      #   enable = true;
+                      #   allowedTCPPorts = [ 22 80 443 10022 8000 ];
+                      # };              
+              
+                      programs.ssh.forwardX11 = true;
+                      services.qemuGuest.enable = true;
+
+                      services.sshd.enable = true;
+
+                      programs.dconf.enable = true;
+
+                      time.timeZone = "America/Recife";
+                      system.stateVersion = "23.05";
+
+                      users.users.root = {
+                        password = "root";
+                        initialPassword = "root";
+                        openssh.authorizedKeys.keyFiles = [
+                          nixuserKeys
+                        ];
+                      };
+                    })
+        ];
+    }
+  ).config.system.build.vm
+)
+'
+
+
+
+nix \
+build \
+--max-jobs auto \
+--no-link \
+--no-show-trace \
+--print-build-logs \
+--expr \
+"$EXPR_NIX"
+
+
+nix \
+run \
+--impure \
+--expr "$EXPR_NIX" \
+ < /dev/null &
+
+
+while ! ssh -T -i id_ed25519 -o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR nixuser@localhost -p 10022 <<<'nix flake --version'; do \
+  echo $(date +'%d/%m/%Y %H:%M:%S:%3N'); sleep 0.5; done \
+&& ssh-keygen -R '[localhost]:10022'; \
+ssh \
+-i id_ed25519 \
+-X \
+-Y \
+-o StrictHostKeyChecking=no \
+nixuser@localhost \
+-p 10022
+#<<COMMANDS
+#id
+#COMMANDS
+#"$REMOVE_DISK" && rm -fv nixos.qcow2 id_ed25519
+
+#nix \
+#--option eval-cache false \
+#--option extra-trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+#--option extra-trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
+#--option build-use-substitutes true \
+#--option substitute true \
+#--extra-experimental-features 'nix-command flakes' \
+#build \
+#--keep-failed \
+#--no-link \
+#--max-jobs auto \
+#--print-build-logs \
+#--print-out-paths \
+#--substituters "s3://playing-bucket-nix-cache-test" \
+#--expr \
+#"$EXPR_NIX"
+#
+#
+#nix \
+#--option eval-cache false \
+#--option trusted-public-keys binarycache-1:XiPHS/XT/ziMHu5hGoQ8Z0K88sa1Eqi5kFTYyl33FJg= \
+#--option trusted-substituters https://playing-bucket-nix-cache-test.s3.amazonaws.com \
+#--option build-use-substitutes false \
+#--option substitute false \
+#--extra-experimental-features 'nix-command flakes' \
+#build \
+#--keep-failed \
+#--no-link \
+#--max-jobs 0 \
+#--print-build-logs \
+#--print-out-paths \
+#--substituters "https://playing-bucket-nix-cache-test.s3.amazonaws.com" \
+#--expr \
+#"$EXPR_NIX"
+```
+
+###### A little bloated 
+
+
+```bash
+mkdir -pv ~/sandbox/sandbox && cd $_
+
+export HOST_MAPPED_PORT=10022
+export REMOVE_DISK=true
+export QEMU_NET_OPTS='hostfwd=tcp::10022-:10022'
+export QEMU_OPTS='-nographic'
+export SHARED_DIR="$(pwd)"
+
+"$REMOVE_DISK" && rm -fv nixos.qcow2
+nc -v -4 localhost "$HOST_MAPPED_PORT" -w 1 -z && echo 'There is something already using the port:'"$HOST_MAPPED_PORT"
+
+# sudo lsof -t -i tcp:10022 -s tcp:listen
+# sudo lsof -t -i tcp:10022 -s tcp:listen | sudo xargs --no-run-if-empty kill
+
+cat << 'EOF' >> id_ed25519
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACCsoS8eR1Ot8ySeS8eI/jUwvzkGe1npaHPMvjp+Ou5JcgAAAIjoIwah6CMG
+oQAAAAtzc2gtZWQyNTUxOQAAACCsoS8eR1Ot8ySeS8eI/jUwvzkGe1npaHPMvjp+Ou5Jcg
+AAAEAbL0Z61S8giktfR53dZ2fztctV/0vML24doU0BMGLRZqyhLx5HU63zJJ5Lx4j+NTC/
+OQZ7Weloc8y+On467klyAAAAAAECAwQF
+-----END OPENSSH PRIVATE KEY-----
+EOF
+
+chmod -v 0600 id_ed25519
+
+export NIXPKGS_ALLOW_UNFREE=1
+
+
+EXPR_NIX='
+(
+  (
+    let
+      #
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
       pkgs = import nixpkgs { system = "x86_64-linux"; };
 
       nixuserKeys = pkgs.writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyhLx5HU63zJJ5Lx4j+NTC/OQZ7Weloc8y+On467kly";
@@ -1547,7 +1838,7 @@ EXPR_NIX='
 
                       environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
 
-                      boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+                      # boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
                       # Enable the X11 windowing system.
                       services.xserver = {
@@ -2993,6 +3284,8 @@ localhost/ubuntu23-pycharm-community-from-snap:latest
 
 xhost -
 ```
+Refs.:
+- https://github.com/ES-Nix/get-nix/issues/2
 
 
 ```bash
@@ -3012,6 +3305,23 @@ pycharm-community
 export NIX_CONFIG="extra-experimental-features = nix-command flakes"
 nix -vv registry pin nixpkgs
 nix shell nixpkgs#bashInteractive
+
+```bash
+DBUS_SESSION_BUS_ADDRESS
+```
+Refs.:
+- https://unix.stackexchange.com/questions/723114/dbus-systemd-on-a-headless-server
+
+
+TODO
+```bash
+systemctl is-system-running --wait
+
+while ! systemctl is-system-running --wait; do sleep 1; done
+```
+Refs.:
+- https://github.com/systemd/systemd/pull/9796
+- https://unix.stackexchange.com/questions/460324/is-there-a-way-to-wait-for-boot-to-complete#comment1029884_460467
 
 ```bash
 PyCharm 2023.2 (Community Edition)
@@ -3664,7 +3974,120 @@ COMMANDS
 #### tests for the nix statically built
 
 
+```bash
+nix build --no-link --print-build-logs --print-out-paths \
+github:NixOS/nixpkgs/f0451844bbdf545f696f029d1448de4906c7f753#pkgsStatic.nixVersions.nix_2_17
+```
 
+```bash
+# git ls-remote https://github.com/nixos/nixpkgs-channels refs/heads/nixos-unstable
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-out-paths github:NixOS/nixpkgs/f0451844bbdf545f696f029d1448de4906c7f753#pkgsStatic.nixVersions.nix_2_17)/bin/nix"
+EXPECTED_SHA512SUM="c59a721852532a147c3ebb18ac1ff91b6519681b384ff3dfcf289016dc9a49c5c704c5b0fa30e40e22a7b165df6aa27a5bd43eab748b03390ada9f616a123093"
+
+# sha512sum "$FULL_STATIC_NIX_BIN_PATH"
+echo "$EXPECTED_SHA512SUM"  "$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+
+
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-out-paths --rebuild github:NixOS/nixpkgs/f0451844bbdf545f696f029d1448de4906c7f753#pkgsStatic.nixVersions.nix_2_17)/bin/nix"
+echo "$EXPECTED_SHA512SUM"  "$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+```
+
+```bash
+# git ls-remote https://github.com/nixos/nixpkgs-channels refs/heads/nixos-unstable
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-out-paths github:NixOS/nixpkgs/f0451844bbdf545f696f029d1448de4906c7f753#pkgsStatic.nixVersions.nix_2_17)/bin/nix"
+EXPECTED_SHA512SUM="c59a721852532a147c3ebb18ac1ff91b6519681b384ff3dfcf289016dc9a49c5c704c5b0fa30e40e22a7b165df6aa27a5bd43eab748b03390ada9f616a123093"
+
+sha512sum "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+
+
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-out-paths --rebuild github:NixOS/nixpkgs/f0451844bbdf545f696f029d1448de4906c7f753#pkgsStatic.nixVersions.nix_2_17)/bin/nix"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+```
+
+
+```bash
+# git ls-remote https://github.com/nixos/nixpkgs-channels refs/heads/nixos-unstable
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-build-logs --print-out-paths nixpkgs/4762fba469e2baa82f983b262e2c06ac2fdaae67#pkgsStatic.nix)/bin/nix"
+EXPECTED_SHA512SUM="50535869e2d87a229005498e5018c7914bb03d705ecdbc1e9686e50617ad9c59d050f9a5373a4172f3aec79a1868bd608d381fba4d102a36b78542de626cfb25"
+
+sha512sum "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+
+
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-build-logs --print-out-paths --rebuild nixpkgs/4762fba469e2baa82f983b262e2c06ac2fdaae67#pkgsStatic.nix)/bin/nix"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+```
+
+
+
+```bash
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.hello)/bin/hello"
+EXPECTED_SHA512SUM="e9432d6ec7de3c26eebfc867a704c12020b7321539ed507a53e7f8f67d5615bb15289628a5e45dc1e44f54142cccfffeead8fb3f03f4678ded9a9cdd7d5cba0e"
+
+sha512sum "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+
+
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-build-logs --print-out-paths --rebuild nixpkgs#pkgsStatic.hello)/bin/hello"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+```
+
+```bash
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.nix)/bin/nix"
+EXPECTED_SHA512SUM="569d3f2774125450582e32efda807abfe58206b4bf1e280577862c4aba3f0ce5a4cd5d6bfbf6188beae020e87859e427e9bd2382fb4a1f37301b2283e7bd549f"
+
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+
+
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-build-logs --print-out-paths --rebuild nixpkgs#pkgsStatic.nix)/bin/nix"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+```
+
+
+```bash
+nix build --no-link --print-build-logs --print-out-paths \
+  nixpkgs#pkgsStatic.nix \
+&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
+  nixpkgs#pkgsStatic.nix
+```
+
+
+```bash
+EXPR_NIX='
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+    with legacyPackages.${builtins.currentSystem};
+      let
+        expectedSha512sum = "569d3f2774125450582e32efda807abfe58206b4bf1e280577862c4aba3f0ce5a4cd5d6bfbf6188beae020e87859e427e9bd2382fb4a1f37301b2283e7bd549f";
+      in
+        runCommand "_" 
+          { 
+             nativeBuildInputs = [ coreutils file ];
+          } 
+        "echo ${expectedSha512sum}  ${pkgsStatic.nix}/bin/nix | sha512sum -c && mkdir $out"
+  )
+'
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR_NIX"
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+--impure \
+--expr \
+"$EXPR_NIX"
+```
 
 ```bash
 EXPECTED_SHA512SUM='42cf60ebf5b547df476c7b4f9807785b32540f3c6a4777a902148b2e4d09b02aa137be6c813afeab2722892444b28b88c5b4032cd82664bfc1920ccda58f1afb'
@@ -3812,22 +4235,40 @@ result/bin/hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), stat
 
 
 ```bash
-nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.boehmgc \
-&& nix build --no-link --print-build-logs --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.boehmgc
-```
-
-```bash
 nix build --no-link --print-build-logs --print-out-paths \
   nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.boehmgc \
 && nix build --no-link --print-build-logs --print-out-paths --rebuild \
   nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.boehmgc
 ```
 
+
 ```bash
 nix build --no-link --print-build-logs --print-out-paths \
   nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline \
 && nix build --no-link --print-build-logs --print-out-paths --rebuild \
   nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline
+```
+
+```bash
+nix build --no-link --print-build-logs --print-out-paths \
+  nixpkgs#tts \
+&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
+  nixpkgs#tts
+```
+
+
+
+```bash
+nix shell nixpkgs#pandoc --command sh -c 'pandoc --list-input-formats && echo && pandoc --list-output-formats'
+```
+Refs.:
+- https://medium.com/isovera/devops-for-presentations-reveal-js-markdown-pandoc-gitlab-ci-34d07d2c1011
+
+```bash
+nix build --no-link --print-build-logs --print-out-paths \
+  nixpkgs#pandoc \
+&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
+  nixpkgs#pandoc
 ```
 
 
@@ -3840,20 +4281,8 @@ nix build --impure --no-link --print-build-logs --print-out-paths \
   nixpkgs#rustdesk
 ```
 
-```bash
-nix build --no-link --print-build-logs --print-out-paths \
-  nixpkgs#tts \
-&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
-  nixpkgs#tts
-```
 
-```bash
-nix shell nixpkgs#pandoc --command sh -c 'pandoc --list-input-formats && echo && pandoc --list-output-formats'
-```
-Refs.:
-- https://medium.com/isovera/devops-for-presentations-reveal-js-markdown-pandoc-gitlab-ci-34d07d2c1011
-
-
+ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 ```bash
 EXPR_NIX='
   (
@@ -8515,13 +8944,14 @@ nix profile install /nix/store/11f84ip9jkcdsahvaqzgp43zjafzzliy-firefox-39.0.3
 ```bash
 git ls-remote https://github.com/nixos/nixpkgs-channels
 ```
-
 Refs.:
 - https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
 - https://github.com/NixOS/nix/issues/2431#issuecomment-613441385
 - https://discourse.nixos.org/t/how-to-check-hydra-build-status-of-pull-requests/8793
 
-
+```bash
+git ls-remote https://github.com/nixos/nixpkgs-channels refs/heads/nixos-unstable
+```
 
 ##### Digging in ancients nixpkgs versions, 10+ years ago
 
@@ -10049,12 +10479,12 @@ build \
 
 ```bash
 cat > Containerfile << 'EOF'
-FROM docker.io/library/alpine:3.18.2 as alpine-certs
+FROM docker.io/library/alpine:3.18.3 as alpine-certs
 
 RUN apk update && apk add --no-cache ca-certificates
 
 
-FROM docker.io/library/alpine:3.18.2 as alpine-ca-certificates
+FROM docker.io/library/alpine:3.18.3 as alpine-ca-certificates
 
 # https://stackoverflow.com/a/45397221
 COPY --from=alpine-certs /etc/ssl/certs /etc/ssl/certs
@@ -10068,7 +10498,8 @@ RUN mkdir -pv /home/nixuser \
      -G nixgroup \
      -u 3322 \
      nixuser
-RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
 
 USER nixuser
 
@@ -10106,12 +10537,21 @@ ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 
 RUN mkdir -pv "$HOME"/.local/bin \
  && cd "$HOME"/.local/bin \
- && wget -O- https://hydra.nixos.org/build/224275015/download/1/nix > nix \
+ && wget -O- https://hydra.nixos.org/build/231020695/download/2/nix > nix \
  && chmod -v +x nix \
  && cd - \
  && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
  && nix flake --version \
- && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
+ && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+# ENTRYPOINT [ "nix" ]
+# ENTRYPOINT [ "nix", "shell", "nixpkgs#busybox-sandbox-shell", "--command", "sh" ]
+
+# CMD --command sh
+# CMD shell nixpkgs#busybox-sandbox-shell --command sh
+# CMD "shell nixpkgs#busybox-sandbox-shell --command sh"
+# CMD [ "nix" "shell" "nixpkgs#busybox-sandbox-shell" "--command sh" ]
+ 
 EOF
 
 
@@ -10134,7 +10574,33 @@ run \
 --device=/dev/kvm \
 --env="DISPLAY=${DISPLAY:-:0.0}" \
 --interactive=true \
---mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--mount=type=tmpfs,tmpfs-size=2G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+localhost/busybox-ca-certificates-nix:latest \
+sh \
+-c \
+'
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-out-paths github:NixOS/nixpkgs/f0451844bbdf545f696f029d1448de4906c7f753#pkgsStatic.nixVersions.nix_2_17)/bin/nix"
+EXPECTED_SHA512SUM="c59a721852532a147c3ebb18ac1ff91b6519681b384ff3dfcf289016dc9a49c5c704c5b0fa30e40e22a7b165df6aa27a5bd43eab748b03390ada9f616a123093"
+
+sha512sum "$HOME"/.local/share/nix/root/"$FULL_STATIC_NIX_BIN_PATH"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+
+
+FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-out-paths --rebuild github:NixOS/nixpkgs/f0451844bbdf545f696f029d1448de4906c7f753#pkgsStatic.nixVersions.nix_2_17)/bin/nix"
+echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
+'
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=2G,destination=/tmp \
 --privileged=true \
 --publish=5000:5000 \
 --rm=true \
@@ -10142,6 +10608,10 @@ run \
 localhost/busybox-ca-certificates-nix:latest
 ```
 
+
+```bash
+nix run nixpkgs#nix-info -- --markdown
+```
 
 ```bash
  \
@@ -19735,12 +20205,14 @@ export NIXPKGS_ALLOW_UNFREE=1; nix run --impure github:NixOS/nixpkgs/441dc5d5121
 ```
 https://github.com/NixOS/nixpkgs/issues/69338
 
-
+```bash
 unshare -Upf --map-root-user -- sudo -u nobody echo hello
+```
 
-
-nix shell --store ./ nixpkgs#bash nixpkgs#coreutils nixpkgs#util-linux --command bash -c 'unshare --user --pid echo YES' 
-
+```bash
+nix shell --store ./ nixpkgs#bash nixpkgs#coreutils nixpkgs#util-linux \
+--command bash -c 'unshare --user --pid echo YES' 
+```
 
 ```bash
 nix \
@@ -19749,7 +20221,7 @@ build \
 --expr \
 '
   (                                                                                                     
-    with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
       runCommand "_" 
           { 
