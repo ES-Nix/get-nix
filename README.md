@@ -3301,14 +3301,25 @@ sudo apt-get update -y \
 && sudo apt-get -y clean \
 && sudo rm -rf /var/lib/apt/lists/*
 ```
+
+```bash
 cd code
 export DISPLAY=:0
 pycharm-community
+```
 
 
+```bash
 export NIX_CONFIG="extra-experimental-features = nix-command flakes"
 nix -vv registry pin nixpkgs
 nix shell nixpkgs#bashInteractive
+```
+
+TODO: [Configure a container to start automatically as a systemd service](https://www.redhat.com/sysadmin/container-systemd-persist-reboot)
+```bash
+loginctl show-user "$(id -un)" | grep ^Linger
+```
+
 
 ```bash
 DBUS_SESSION_BUS_ADDRESS
@@ -3817,7 +3828,7 @@ mkdir -pv "$HOME"/.local/bin \
 && mkdir -pv "$HOME"/.config/nix \
 && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
 && nix flake --version \
-&& 
+&& nix registry pin ??
 ```
 
 
@@ -5325,14 +5336,6 @@ install \
 nixpkgs#hello
 ```
 
-nix \
-profile \
-install \
---store "${HOME}" \
-nixpkgs#hello
-
-
-&& export PATH="$HOME":"$PATH" \
 
 ```bash
 nix \
