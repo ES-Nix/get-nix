@@ -10578,7 +10578,7 @@ run \
 --device=/dev/kvm \
 --env="DISPLAY=${DISPLAY:-:0.0}" \
 --interactive=true \
---mount=type=tmpfs,tmpfs-size=3G,destination=/tmp \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
 --privileged=true \
 --publish=5000:5000 \
 --rm=true \
@@ -23873,4 +23873,19 @@ profile  profile-6-link
 ```
 
 https://github.com/NixOS/rfcs/pull/153
+
+### AUTOMATIZAMOS A EDIÇÃO DO REELS DO INSTAGRAM [feat. Mayk Brito]
+
+
+[AUTOMATIZAMOS A EDIÇÃO DO REELS DO INSTAGRAM [feat. Mayk Brito]](https://www.youtube.com/watch?v=i6EcAV0yhqg)
+
+First I forked it.
+Then:
+```bash
+nix flake clone 'git+ssh://git@github.com/PedroRegisPOAR/video-to-reels/?ref=feature/nixfying' --dest video-to-reels \
+&& cd video-to-reels 1>/dev/null 2>/dev/null \
+&& git checkout feature/nixfying \
+&& (direnv --version 1>/dev/null 2>/dev/null && direnv allow) \
+|| nix develop --command $SHELL
+```
 
