@@ -18628,6 +18628,8 @@ bash \
 #### NixOS in OCI image by nixos-generators.nixosGenerate
 
 
+##### minimal
+
 
 ```bash
 cat > flake.nix << 'EOF'
@@ -18642,31 +18644,20 @@ cat > flake.nix << 'EOF'
   };
   outputs = {self, nixpkgs, nixos-generators, ...}: {
     packages.x86_64-linux = {
-      container = nixos-generators.nixosGenerate {
+      nixOsOCIContainer = nixos-generators.nixosGenerate {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         modules = [
-                    # Provide an initial copy of the NixOS channel so that the user
-                    # doesn't need to run "nix-channel --update" first.
-                    # "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-                    
-                    # "${modulesPath}/installer/cd-dvd/iso-image.nix"
-                    # error: derivation '/nix/store/2j6939vz4slg58a55jfvp5r3hka3h21l-closure-info.drv' requires non-existent output 'bin' from input derivation '/nix/store/zd4r1jh7nmvkhlm6z6xi0z2w0bfkzfap-libidn2-2.3.2.drv'
-                    # "${nixpkgs}/nixos/modules/profiles/all-hardware.nix"
-                    # "${nixpkgs}/nixos/modules/profiles/base.nix"
-                    # "${nixpkgs}/nixos/modules/profiles/installation-device.nix"
-                    # "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-                    # "${nixpkgs}/nixos/modules/installer/tools/tools.nix"
-
                     ({ pkgs, ... }: {
-                      users.users.nixuser = {                    
-                        home = "/home/nixuser";
+                      users.users.nixuser = {
                         createHome = true;
+                        description = "nix user";
+                        home = "/home/nixuser";
                         homeMode = "0700";
                         initialPassword = "1";
+                        isSystemUser = true; # isNormalUser = true;
+                        shell = pkgs.bashInteractive; # What other would be best? None for hardning?!
+                        uid = 1234;
 
-                        # isNormalUser = true;
-                        isSystemUser = true;
-                        description = "nix user";
                         extraGroups = [
                           "networkmanager"
                           "libvirtd"
@@ -18677,83 +18668,55 @@ cat > flake.nix << 'EOF'
                           "kvm"
                           "qemu-libvirtd"
                         ];
+
                         packages = with pkgs; [
-                          # firefox
-                          file
-                          # findutils
+                          hello
+                          xorg.xclock
                         ];
-                        shell = pkgs.bashInteractive;
-                        uid = 1234;
-                        autoSubUidGidRange = true;
                       };
+
                       users.users.nixuser.group = "nixgroup";
                       users.groups.nixgroup.gid = 5678;
                       users.groups.nixgroup = {};
 
-                      # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
-                      users.users."root".initialPassword = "r00t";
-                      #
-                      # To crete a new one:
-                      # mkpasswd -m sha-512
-                      # https://unix.stackexchange.com/a/187337
-                      # users.users."root".hashedPassword = "$6$gCCW9SQfMdwAmmAJ$fQDoVPYZerCi10z2wpjyk4ZxWrVrZkVcoPOTjFTZ5BJw9I9qsOAUCUPAouPsEMG.5Kk1rvFSwUB.NeUuPt/SC/";
+                      users.users."root".initialPassword = "r00t"; # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
 
-                      # services.getty.autologinUser = "root";
-                      services.getty.autologinUser = "nixuser";
-                      # Enable networking
+                      services.getty.autologinUser = "nixuser"; # "root";
                       networking = {
                         hostName = "nixos";
-                        useDHCP = false; # TODO: Why?
+                        nameservers = [ "1.1.1.1" "8.8.8.8" ]; # TODO: Why? Why the root user does not need it?
                         networkmanager.enable = true;
-                        nameservers = [ "1.1.1.1" "8.8.8.8" ];
-                      };
-
-                      # virtualisation.podman = {
-                      #   enable = true;
-                      #   # Create a `docker` alias for podman, to use it as a drop-in replacement
-                      #   # dockerCompat = true;
-                      # };
-
-                      virtualisation.docker = {
-                        enable = true;
+                        useDHCP = false; # TODO: Why?
                       };
 
                       nixpkgs.config.allowUnfree = true;
-                      nix = {
-                              package = pkgs.nixVersions.nix_2_10;
-                              # package = pkgsStatic.nix;
-                              # package = pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix;
 
+                      nix = {
                               extraOptions = "experimental-features = nix-command flakes repl-flake";
+                              package = pkgs.nixVersions.nix_2_10; # package = pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix;
                               readOnlyStore = true;
                               registry.nixpkgs.flake = nixpkgs;
-                              # https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html#_nix-shell_vs_nix_shell
-                              # nixPath = [ 
-                              #             "nixpkgs=/etc/channels/nixpkgs" 
-                              #             "nixos-config=/etc/nixos/configuration.nix" 
-                              #             "/nix/var/nix/profiles/per-user/root/channels" 
-                              #           ];
                       };
 
-                      # environment.etc."channels/nixpkgs".source = self.inputs.nixpkgs.outPath;
                       environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
 
                       environment.systemPackages = with pkgs; [
                         bashInteractive
-                        coreutils
                         cacert
-                        hello
+                        coreutils
                         figlet
-                        podman
+                        hello
                         sudo
                         xorg.xclock
                       ];
 
                       environment.variables = {
+                        DISPLAY = ":0";
                         NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                         SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-                        DISPLAY = ":0";
                       };
+
+                      system.stateVersion = "22.11"; # TODO: document it.
                     })
         ];
         format = "docker";
@@ -18763,10 +18726,6 @@ cat > flake.nix << 'EOF'
 }
 EOF
 
-#nix \
-#flake \
-#update \
-#--override-input nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 
 nix \
 flake \
@@ -18783,7 +18742,7 @@ nix \
 build \
 --print-build-logs \
 --print-out-paths \
-.#container
+.#nixOsOCIContainer
 
 
 # TODO: you need some kernel flags and may be more stuff to be able to run containers
