@@ -18653,20 +18653,15 @@ cat > flake.nix << 'EOF'
                         description = "nix user";
                         home = "/home/nixuser";
                         homeMode = "0700";
-                        initialPassword = "1";
+                        initialPassword = "1"; # TODO: hardening
                         isSystemUser = true; # isNormalUser = true;
-                        shell = pkgs.bashInteractive; # What other would be best? None for hardning?!
+                        shell = pkgs.bashInteractive; # What other would be best? None for hardening?!
                         uid = 1234;
 
                         extraGroups = [
-                          "networkmanager"
-                          "libvirtd"
-                          "wheel"
-                          "nixgroup"
-                          "docker"
-                          "podman"
                           "kvm"
-                          "qemu-libvirtd"
+                          "nixgroup"
+                          "wheel"
                         ];
 
                         packages = with pkgs; [
@@ -18745,6 +18740,11 @@ build \
 .#nixOsOCIContainer
 
 
+RESULT_SHA512SUM_1=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
+RESULT_SHA512SUM_2=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
+
+echo $RESULT_SHA512SUM_1
+echo $RESULT_SHA512SUM_2
 # TODO: you need some kernel flags and may be more stuff to be able to run containers
 #nix \
 #profile \
@@ -23851,3 +23851,15 @@ nix flake clone 'git+ssh://git@github.com/PedroRegisPOAR/video-to-reels/?ref=fea
 || nix develop --command $SHELL
 ```
 
+
+###
+
+
+
+```bash
+nix run nixpkgs#python3 -- -m http.server 9000
+```
+
+```bash
+test $(curl -s -w '%{http_code}\n' localhost:9000 -o /dev/null) -eq 200 || echo 'Error'
+```
