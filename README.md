@@ -23853,7 +23853,7 @@ nix flake clone 'git+ssh://git@github.com/PedroRegisPOAR/video-to-reels/?ref=fea
 ```
 
 
-###
+### python3 -m http.server
 
 
 
@@ -23864,3 +23864,63 @@ nix run nixpkgs#python3 -- -m http.server 9000
 ```bash
 test $(curl -s -w '%{http_code}\n' localhost:9000 -o /dev/null) -eq 200 || echo 'Error'
 ```
+
+
+```bash
+nix run nixpkgs#python3 -- -m http.server 9000
+
+
+podman \
+run \
+--env=PATH=/root/.nix-profile/bin:/usr/bin:/bin \
+--interactive=true \
+--network=host \
+--privileged=true \
+--tty=true \
+--rm=true \
+docker.nix-community.org/nixpkgs/nix-flakes \
+bash \
+-c \
+"test $(curl -s -w '%{http_code}\n' localhost:9000 -o /dev/null) -eq 200 || echo 'Error'"
+```
+Refs.:
+- https://linux.how2shout.com/how-to-install-podman-on-ubuntu-22-04-lts-jammy-linux/
+- https://serverfault.com/questions/1104551/podman-why-need-host-network-mode
+- https://www.tutorialworks.com/podman-host-networking/
+- https://stackoverflow.com/questions/73957145/why-is-podman-container-only-reachable-with-network-host-when-started-from-jen
+
+
+```bash
+cat > Containerfile << _EOF
+FROM ubuntu:16.04
+
+RUN apt-get update -qq \
+    && apt-get install -qq -y software-properties-common uidmap \
+    && add-apt-repository -y ppa:projectatomic/ppa \
+    && apt-get update -qq \
+    && apt-get -qq -y install podman \
+    && apt-get install -y iptables
+
+# To keep it running
+CMD tail -f /dev/null
+_EOF
+
+podman \
+build \
+--file=Containerfile \
+--tag=mypodman .
+```
+
+
+```bash
+podman \
+run \
+-ti \
+--rm=true \
+localhost/mypodman:latest \
+bash \
+-c \
+'podman --storage-driver=vfs info'
+```
+Refs.:
+- https://stackoverflow.com/a/56033450/9577149 
