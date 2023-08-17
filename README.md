@@ -16625,6 +16625,7 @@ Refs.:
 - https://github.com/NixOS/nix/issues/4250#issuecomment-1146687856
 - https://github.com/NixOS/nix/issues/8657
 - https://www.tweag.io/blog/2020-05-25-flakes/
+- https://github.com/NixOS/nix/issues/2854#issuecomment-962503940 TODO: re check all
 
 
 TODO: related `nix registry pin nixpkgs` 

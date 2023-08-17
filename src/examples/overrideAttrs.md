@@ -869,6 +869,7 @@ iana-etc
 > nixpkgs stdenv-based builds, which use bash.
 Refs.:
 - https://stackoverflow.com/a/71112117
+- https://github.com/NixOS/nix/issues/2854#issuecomment-673923349
 
 ```bash
 nix develop nixpkgs#pkgsStatic.hello -c "$SHELL" -c 'echo $mesonFlags'
