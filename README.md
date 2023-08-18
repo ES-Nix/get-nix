@@ -18782,6 +18782,12 @@ podman run -it --rm docker.io/library/alpine:latest
 ```
 
 
+#### systemd.enable = false?
+
+
+
+#### not minimal
+
 ```bash
 cat > flake.nix << 'EOF'
 {
