@@ -929,6 +929,12 @@ Refs.:
 - https://discourse.nixos.org/t/eval-nix-expression-from-the-command-line/8993/2
 
 
+
+```bash
+nix eval github:NixOS/nixpkgs/release-22.05#terraform.meta.license.free
+```
+
+
 ```bash
 nix-instantiate --eval -E '<nixpkgs>'
 nix eval --impure --expr '<nixpkgs>'
