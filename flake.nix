@@ -69,15 +69,6 @@
           ! hello 1> /dev/null 2> /dev/null || echo 'Error the program hello still installed!'
         '';
 
-        sha256sumRawEvalNixFlakes = pkgsAllowUnfree.writeShellScriptBin "sha256sum-raw-eval-nixFlakes" ''
-          # set -ex
-
-          nix_tmp="$(mktemp)"
-          echo -n "$(nix eval --raw nixpkgs/cb3a0f55e8e37c4f7db239ce27491fd66c9503cc#nixFlakes)"/bin > "$nix_tmp"
-          # sha256sum "$nix_tmp"
-          echo -n 5886497eaf6c4336e909c80b0fceaca4d58729ed0c4d9256fc4dd0f81aae6fed "$nix_tmp" | sha256sum --check
-          rm "$nix_tmp"
-        '';
 
         testNixFromOnlynixpkgs = pkgsAllowUnfree.writeShellScriptBin "test-nix-from-only-nixpkgs" ''
           set -ex
@@ -85,17 +76,17 @@
           nix \
           shell \
           nixpkgs/a3f85aedb1d66266b82d9f8c0a80457b4db5850c#{\
-          bashInteractive,\
-          gcc10,\
-          gcc6,\
-          gfortran10,\
-          gfortran6,\
-          nodejs,\
-          qemu,\
-          poetry,\
-          python39,\
-          rustc,\
-          yarn\
+              bashInteractive,\
+              gcc10,\
+              gcc6,\
+              gfortran10,\
+              gfortran6,\
+              nodejs,\
+              qemu,\
+              poetry,\
+              python39,\
+              rustc,\
+              yarn\
           } \
           --command \
           bash \
@@ -146,50 +137,6 @@
           store \
           gc \
           --verbose
-        '';
-
-        testNix = pkgsAllowUnfree.writeShellScriptBin "test-nix" ''
-          set -ex
-
-
-          nix flake show github:serokell/templates
-
-          nix \
-          flake \
-          check \
-          github:edolstra/dwarffs
-
-          nix \
-          run \
-          github:edolstra/dwarffs -- --version
-          nix store gc --verbose
-
-#          nix \
-#          flake \
-#          check \
-#          github:ES-Nix/podman-rootless/from-nixpkgs
-          nix \
-          flake \
-          show \
-          github:ES-Nix/podman-rootless/from-nixpkgs
-          nix store gc --verbose
-
-          nix \
-          build \
-          github:ES-Nix/podman-rootless/from-nixpkgs \
-          --no-link
-
-          nix \
-          build \
-          github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static-ca-bundle-etc-passwd-etc-group-tmp \
-          --no-link
-          nix store gc --verbose
-
-          nix \
-          build \
-          github:cole-h/nixos-config/6779f0c3ee6147e5dcadfbaff13ad57b1fb00dc7#iso \
-          --no-link
-          nix store gc --verbose
         '';
 
         run = pkgsAllowUnfree.writeShellScriptBin "run" ''
@@ -254,12 +201,6 @@
         isDarwin = system == "aarch64-darwin";
       in
       {
-        #        packages.image = import ./default.nix {
-        #          pkgs = nixpkgs.legacyPackages.${system};
-        #          nixos = nixos;
-        #        };
-
-        #
         inherit packages;
 
         # TODO
@@ -276,12 +217,6 @@
 
             buildOCI
             OCIUbuntu
-
-            sha256sumNixFlakeVersion
-#            sha256sumNixShowConfigJSON
-            sha256sumNixStoreQueryRequisites
-            sha256sumnixProfileInstallHello
-            sha256sumRawEvalNixFlakes
 
             run
             testNix

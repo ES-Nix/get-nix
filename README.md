@@ -717,8 +717,10 @@ nix eval --raw nixpkgs#hello.drvPath
 nix eval --raw nixpkgs#lib.version
 nix eval nixpkgs#lib.fakeSha256
 
+nix eval --json nixpkgs#lib.platforms | jq .
+
 nix eval --impure --expr '((builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}.stdenv.isDarwin)'
-nix eval --impure nixpkgs#stdenv.isDarwin
+nix eval  nixpkgs#stdenv.isDarwin
 
 nix eval --raw --impure --expr \
 '(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.hello)'
@@ -797,7 +799,7 @@ nix-store --query --graph --include-outputs $(nix-store --query --deriver $(read
 nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
  | xargs nix-store --realise \
  | xargs nix-store --query --requisites \
- | cat 
+ | cat
 ```
 
 
@@ -817,6 +819,24 @@ https://github.com/NixOS/nix/issues/5567#issuecomment-1335434799
 
 ```bash
 nix eval --apply builtins.attrNames nixpkgs#vmTools.diskImages
+```
+
+
+```bash
+nix \
+eval \
+--json \
+--expr \
+'
+  (
+    let
+      #
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+    in
+      builtins.mapAttrs (name: value: nixpkgs.lib.isDerivation value) pkgs.xorg
+  )
+' | jq .
 ```
 
 
@@ -23936,3 +23956,6 @@ bash \
 ```
 Refs.:
 - https://stackoverflow.com/a/56033450/9577149 
+
+
+
