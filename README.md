@@ -961,6 +961,9 @@ nix eval github:NixOS/nixpkgs/release-22.05#terraform.meta.license.free
 nix-instantiate --eval -E '<nixpkgs>'
 nix eval --impure --expr '<nixpkgs>'
 
+nix-instantiate --eval -E 'builtins.findFile builtins.nixPath "nixpkgs"'
+nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs"'
+
 nix-instantiate --eval -E '<nixpkgs/nixos>'
 nix eval --impure --expr '<nixpkgs/nixos>'
 ```
@@ -969,6 +972,7 @@ Refs.:
 - https://www.youtube.com/watch?v=oWJaTb5uoT0
 - https://www.youtube.com/watch?v=q8bZy9kuzEY
 - https://stackoverflow.com/a/56137092
+- https://nixos.org/manual/nix/stable/language/builtin-constants#builtins-nixPath
 
 
 ```bash
