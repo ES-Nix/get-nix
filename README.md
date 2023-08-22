@@ -813,6 +813,8 @@ nix eval --apply builtins.attrNames nixpkgs#python3Packages | tr ' ' '\n' | wc -
 ```
 
 ```bash
+# The python 2 is not working as interpreter in this example.
+# nix eval --apply "p: (p.withPackages (pp: [pp.requests])).outPath" nixpkgs#python
 nix eval --apply "p: (p.withPackages (pp: [pp.requests])).outPath" nixpkgs#python3
 ```
 https://github.com/NixOS/nix/issues/5567#issuecomment-1335434799
