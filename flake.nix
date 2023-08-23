@@ -219,7 +219,6 @@
             OCIUbuntu
 
             run
-            testNix
             testNixFromOnlynixpkgs
             testConfig1
             allTests

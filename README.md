@@ -1159,10 +1159,10 @@ ls -Alh $(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsS
 test -d /nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix); \
 test $(stat -c %a /nix) -eq 0755 || sudo -k chmod -v 0755 /nix
 
-test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > nix && chmod -v +x nix
+test -f nix || curl -L https://hydra.nixos.org/build/231020695/download/2/nix > nix && chmod -v +x nix
 
 ./nix --option experimental-features 'nix-command flakes' \
-       registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c \
+       registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
 && cp -v $(
         ./nix --option experimental-features 'nix-command flakes' \
         build \
@@ -1175,24 +1175,96 @@ test -f nix || curl -L https://hydra.nixos.org/build/228013056/download/1/nix > 
 && ./busybox mv -v nix "$HOME"/.local/bin \
 && ./busybox mkdir -pv "$HOME"/.config/nix \
 && ./busybox echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
-&& nix flake --version
+&& nix flake --version \
+&& nix flake metadata nixpkgs
 ```
 
 
-TODO: maybe the problem is not using the full path
+
 ```bash
-ln -sfv nix nix-build
-ln -sfv nix nix-channel
-ln -sfv nix nix-collect-garbage
-ln -sfv nix nix-copy-closure
-ln -sfv nix nix-daemon
-ln -sfv nix nix-env
-ln -sfv nix nix-hash
-ln -sfv nix nix-instantiate
-ln -sfv nix nix-prefetch-url
-ln -sfv nix nix-shell
-ln -sfv nix nix-store
+test -f nix || curl -L https://hydra.nixos.org/build/231020695/download/2/nix > nix && chmod -v +x nix
+
+./nix --option experimental-features 'nix-command flakes' \
+       registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+&& cp -v "$HOME"'/.local/share/nix/root'$(
+        ./nix --option experimental-features 'nix-command flakes' \
+        build \
+        --no-link --print-build-logs --print-out-paths \
+        nixpkgs#pkgsStatic.busybox
+    )/bin/busybox . \
+&& chmod -v +x busybox \
+&& ./busybox mkdir -pv "$HOME"/.local/bin \
+&& export PATH="$HOME"/.local/bin:"$PATH" \
+&& ./busybox mv -v nix "$HOME"/.local/bin \
+&& cd "$HOME"/.local/bin \
+&& ln -sfv nix nix-build \
+&& ln -sfv nix nix-channel \
+&& ln -sfv nix nix-collect-garbage \
+&& ln -sfv nix nix-copy-closure \
+&& ln -sfv nix nix-daemon \
+&& ln -sfv nix nix-env \
+&& ln -sfv nix nix-hash \
+&& ln -sfv nix nix-instantiate \
+&& ln -sfv nix nix-prefetch-url \
+&& ln -sfv nix nix-shell \
+&& ln -sfv nix nix-store \
+&& cd \
+&& ./busybox mkdir -pv "$HOME"/.config/nix \
+&& ./busybox echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
+&& nix flake --version \
+&& nix flake metadata nixpkgs
 ```
+
+
+```bash
+# mkdir -pv "${HOME}"/.nix-profile
+mkdir -pv "${HOME}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
+ln -sfv "${HOME}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"/profile "${HOME}"/.nix-profile
+```
+
+```bash
+EXPECTED_SHA512SUM=c59a721852532a147c3ebb18ac1ff91b6519681b384ff3dfcf289016dc9a49c5c704c5b0fa30e40e22a7b165df6aa27a5bd43eab748b03390ada9f616a123093
+
+# nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/nixpkgs-unstable").rev'
+FULL_PATH_1="$HOME"'/.local/share/nix/root'$(nix build --print-out-paths github:NixOS/nixpkgs/0b07d4957ee1bd7fd3bdfd12db5f361bd70175a6#pkgsStatic.nix)/bin/nix
+FULL_PATH_2="$HOME"'/.local/share/nix/root'$(nix build --print-out-paths --rebuild github:NixOS/nixpkgs/0b07d4957ee1bd7fd3bdfd12db5f361bd70175a6#pkgsStatic.nix)/bin/nix
+
+
+sha512sum "$FULL_PATH_1"
+sha512sum "$FULL_PATH_2"
+
+echo "$EXPECTED_SHA512SUM"  "$FULL_PATH_1" | sha512sum -c
+echo "$EXPECTED_SHA512SUM"  "$FULL_PATH_2" | sha512sum -c
+```
+
+```bash
+nix eval --raw --expr 'builtins.storeDir'
+```
+
+
+```bash
+EXPECTED_SHA512SUM=e609e47af2e8efe2eb8601cca8865ddcc4e78747874691001929a678f5e55553c0bda037637178d6ec83ea7b433d846501bb314d5f936f92b38aea6a0c1ad7db
+
+FULL_PATH_1="$HOME"'/.local/share/nix/root'$(nix build --print-out-paths github:NixOS/nixpkgs/9472a9232278e39e493ebae1fea772545780fa61#pkgsStatic.nix)/bin/nix
+FULL_PATH_2="$HOME"'/.local/share/nix/root'$(nix build --print-out-paths --rebuild github:NixOS/nixpkgs/9472a9232278e39e493ebae1fea772545780fa61#pkgsStatic.nix)/bin/nix
+
+echo "$EXPECTED_SHA512SUM"  "$FULL_PATH_1" | sha512sum -c
+echo "$EXPECTED_SHA512SUM"  "$FULL_PATH_2" | sha512sum -c
+
+
+
+EXPECTED_SHA512SUMpre20230810_a1fdc68=e609e47af2e8efe2eb8601cca8865ddcc4e78747874691001929a678f5e55553c0bda037637178d6ec83ea7b433d846501bb314d5f936f92b38aea6a0c1ad7db
+
+FULL_PATH_1="$HOME"'/.local/share/nix/root'$(nix build --print-out-paths github:NixOS/nixpkgs/a1fdc68#pkgsStatic.nix)/bin/nix
+FULL_PATH_2="$HOME"'/.local/share/nix/root'$(nix build --print-out-paths --rebuild github:NixOS/nixpkgs/a1fdc68#pkgsStatic.nix)/bin/nix
+
+echo "$EXPECTED_SHA512SUMpre20230810_a1fdc68"  "$FULL_PATH_1" | sha512sum -c
+echo "$EXPECTED_SHA512SUMpre20230810_a1fdc68"  "$FULL_PATH_2" | sha512sum -c
+```
+
+
+
+
 
 ## chroot and others
 
@@ -1247,9 +1319,6 @@ mkdir -pv "${HOME}"/.nix-profile
 mkdir -pv "${HOME}"/nix/var/nix/profiles/per-user/"${USER}"/profile
 ln -sfv "${HOME}"/.nix-profile "${HOME}"/nix/var/nix/profiles/per-user/"${USER}"/profile
 ```
-
-
-
 
 
 ```bash
@@ -3820,11 +3889,11 @@ Refs.:
 ```bash
 # https://hydra.nixos.org/project/nix
 BUILD_ID='228013056'
-curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/2/nix > nix
+curl -L https://hydra.nixos.org/build/"${BUILD_ID}"/download/1/nix > nix
 chmod +x nix
 
 mkdir -pv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
-ln -sfv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/abcuser/profile /home/"${USER}"/.nix-profile
+ln -sfv /home/"${USER}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"/profile /home/"${USER}"/.nix-profile
 
 ./nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#hello
 
@@ -10800,6 +10869,10 @@ nix eval --raw --expr 'builtins.storeDir'
       confDir = "/home/ubuntu";
 ```
 
+```bash
+nix-instantiate --store 'dummy://?store='"$(pwd)"'/blah' --eval --expr builtins.storeDir
+```
+
 
 ```bash
 nix \
@@ -10811,6 +10884,11 @@ build \
   with legacyPackages.${builtins.currentSystem}; 
     pkgsStatic.nix      
 )'
+```
+
+
+```bash
+nix build --print-out-paths nixpkgs#pkgsStatic.nix
 ```
 
 
@@ -17983,12 +18061,12 @@ bash \
 
 ```bash
 nix eval --expr 'builtins.storeDir'
-nix shell github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#pkgsStatic.nix --command nix eval --raw --expr 'builtins.storeDir'
+nix shell github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#pkgsStatic.nix --command nix eval --raw --expr 'builtins.storeDir'
 ```
 
 
 ```bash
-nix run github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#nix-info -- --markdown
+nix run github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#nix-info -- --markdown
 ```
 
 ```bash
@@ -18106,7 +18184,7 @@ build \
   ( 
     let
       nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
-      pkgs = p.legacyPackages.${builtins.currentSystem};
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
     in
     pkgs.dockerTools.buildImage {
       name = "alpine";
