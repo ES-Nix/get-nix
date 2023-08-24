@@ -1600,7 +1600,7 @@ EXPR_NIX='
                         writableStoreUseTmpfs = false;                        
                       };
 
-                      security.polkit.enable = true;
+                      security.polkit.enable = true; # TODO: 
 
                       # https://nixos.wiki/wiki/Libvirt
                       boot.extraModprobeConfig = "options kvm_intel nested=1";
@@ -1634,7 +1634,7 @@ EXPR_NIX='
                         # displayManager.gdm.autoLogin.enable = true;
                         # displayManager.gdm.autoLogin.user = "nixuser";
                       };
-                      services.spice-vdagentd.enable = true;
+                      services.spice-vdagentd.enable = true; # TODO: 
 
                       # https://github.com/NixOS/nixpkgs/issues/21332#issuecomment-268730694
                       services.openssh = {
@@ -1658,7 +1658,7 @@ EXPR_NIX='
                       # };              
               
                       programs.ssh.forwardX11 = true;
-                      services.qemuGuest.enable = true;
+                      services.qemuGuest.enable = false; # TODO: 
 
                       services.sshd.enable = true;
 
@@ -2256,18 +2256,23 @@ build \
 
 podman \
 run \
+--annotation=run.oci.keep_original_groups=1 \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
 --hostname=container-nix-hm \
 --interactive=true \
---name=container-ubuntu23-nix \
+--name=container-ubuntu23 \
 --privileged=true \
 --rm=true \
 --tty=true \
 --user=root \
+--userns=keep-id \
 localhost/ubuntu-base:latest
 # TODO: install systemd from nix
 ```
 
-
+sudo apt-get update \
+&& sudo apt-get install -y openssh-server
 
 
 TODO:
@@ -3077,7 +3082,7 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && mkdir -pv "$HOME"/.config/nix \
  && echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
  && nix flake --version \
- && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 
 
 # FROM localhost/ubuntu-base as ubuntu-nix-single
@@ -3130,44 +3135,79 @@ localhost/ubuntu-base:latest \
 bash \
 -c \
 '
-wget -qO- http://ix.io/4yRA | sh -
+wget -qO- http://ix.io/4Cj0 | sh -
 export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"
-wget -qO- http://ix.io/4ATX | sh -
-nix store gc -v
+# wget -qO- http://ix.io/4ATX | sh -
+nix --extra-experimental-features nix-command --extra-experimental-features flakes store gc -v
 ' \
 && podman commit container-ubuntu23-nix-hm localhost/ubuntu-nix-hm \
 && podman images
 
 
+#podman \
+#run \
+#--device=/dev/kvm \
+#--env="DISPLAY=${DISPLAY:-:0}" \
+#--hostname=container-nix \
+#--privileged=true \
+#--interactive=true \
+#--tty=true \
+#--rm=true \
+#--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+#localhost/ubuntu-nix:latest \
+#-c \
+#'touch /dev/kvm'
+#
+#podman \
+#run \
+#--device=/dev/kvm \
+#--env="DISPLAY=${DISPLAY:-:0}" \
+#--env="SHELL=/home/abcuser/.nix-profile/bin/zsh" \
+#--entrypoint="./.nix-profile/bin/zsh" \
+#--hostname=container-nix-hm \
+#--privileged=false \
+#--interactive=true \
+#--tty=true \
+#--rm=true \
+#--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+#localhost/ubuntu-nix-hm:latest \
+#-c \
+#'touch /dev/kvm'
+
+
 podman \
 run \
+--annotation=run.oci.keep_original_groups=1 \
 --device=/dev/kvm \
 --env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
+--hostname=container-nix \
+--privileged=true \
+--interactive=true \
+--tty=false \
+--rm=true \
+--userns=keep-id \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/ubuntu-nix:latest \
+<<'COMMANDS'
+touch /dev/kvm && stat /dev/kvm
+COMMANDS
+
+
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
 --hostname=container-nix \
 --privileged=true \
 --interactive=true \
 --tty=true \
 --rm=true \
+--userns=keep-id \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/ubuntu-nix:latest \
--c \
-'touch /dev/kvm'
-
-podman \
-run \
---device=/dev/kvm \
---env="DISPLAY=${DISPLAY:-:0}" \
---env="SHELL=/home/abcuser/.nix-profile/bin/zsh" \
---entrypoint="./.nix-profile/bin/zsh" \
---hostname=container-nix-hm \
---privileged=false \
---interactive=true \
---tty=true \
---rm=true \
---volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/ubuntu-nix-hm:latest \
--c \
-'touch /dev/kvm'
+localhost/ubuntu-nix:latest
 ```
 
 
@@ -17001,7 +17041,7 @@ build \
 '
   (
     let
-      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
       pkgs = import nixpkgs {};
     in
       # pkgs.dockerTools.streamLayeredImage { 
@@ -17039,6 +17079,7 @@ build \
           cp -v ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt home/appuser/outputs/ca-bundle.crt
 
           cp -v ${pkgs.pkgsStatic.nixVersions.nix_2_10}/bin/nix home/appuser/outputs/nix
+          cp -Rv ${pkgs.systemd} home/appuser/outputs/systemd
 
           cp -v ${pkgs.pkgsStatic.busybox-sandbox-shell}/bin/busybox home/appuser/outputs/busybox-sandbox-shell
           cp -v ${pkgs.pkgsStatic.busybox}/bin/busybox home/appuser/outputs/busybox
@@ -17096,11 +17137,11 @@ build \
 '
   (
     let
-      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
       pkgs = import nixpkgs {};
     in
       pkgs.dockerTools.buildImage {
-        name = "empty";
+        name = "empty"; # TODO: should it be named scratch?
         tag = "0.0.0";
       }
   )
@@ -18851,11 +18892,11 @@ build \
 .#nixOsOCIContainer
 
 
-RESULT_SHA512SUM_1=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
-RESULT_SHA512SUM_2=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
-
-echo $RESULT_SHA512SUM_1
-echo $RESULT_SHA512SUM_2
+#RESULT_SHA512SUM_1=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
+#RESULT_SHA512SUM_2=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
+#
+#echo $RESULT_SHA512SUM_1
+#echo $RESULT_SHA512SUM_2
 # TODO: you need some kernel flags and may be more stuff to be able to run containers
 #nix \
 #profile \
@@ -18894,7 +18935,7 @@ podman run -it --rm docker.io/library/alpine:latest
 
 #### systemd.enable = false?
 
-
+boot.loader.systemd-boot.enable = false;
 
 #### not minimal
 
