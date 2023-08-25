@@ -3355,7 +3355,6 @@ exec \
 --env="DISPLAY=${DISPLAY:-:0}" \
 --interactive=true \
 --tty=true \
---user=ubuntu \
 container-ubuntu23-pycharm-community-from-snap \
 bash \
 -c \
@@ -3382,8 +3381,10 @@ xhost +
 podman rm --force --ignore container-ubuntu23-pycharm-community-from-snap
 podman \
 run \
+--annotation=run.oci.keep_original_groups=1 \
 --detach=true \
 --env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
 --hostname=container-nix-hm \
 --interactive=true \
 --name=container-ubuntu23-pycharm-community-from-snap \
@@ -3391,9 +3392,11 @@ run \
 --rm=true \
 --tty=true \
 --user=root \
+--userns=keep-id \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
---volume="$(pwd)":/home/abcuser/code:rw \
+--volume="$(pwd)":/home/ubuntu/code:rw \
 localhost/ubuntu23-pycharm-community-from-snap:latest
+
 
 podman \
 exec \
@@ -3401,6 +3404,7 @@ exec \
 --interactive=true \
 --tty=true \
 --user=ubuntu \
+--workdir=/home/ubuntu \
 container-ubuntu23-pycharm-community-from-snap \
 bash \
 -c \
@@ -3468,6 +3472,10 @@ DBUS_SESSION_BUS_ADDRESS
 Refs.:
 - https://unix.stackexchange.com/questions/723114/dbus-systemd-on-a-headless-server
 
+
+```bash
+podman run --rm opensuse/leap:15.4 sh -c 'zypper --version'
+```
 
 TODO
 ```bash
