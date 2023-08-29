@@ -3319,7 +3319,7 @@ ENV USER="ubuntu"
 ENV PATH=/home/ubuntu/.nix-profile/bin:/home/ubuntu/.local/bin:"$PATH"
 # ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 # ENV NIX_PAGER="cat"
-ENV SHELL="bin/bash"
+ENV SHELL="/bin/bash"
 
 # https://stackoverflow.com/a/74439202/9577149
 ENTRYPOINT ["/lib/systemd/systemd"]
@@ -3369,6 +3369,11 @@ sudo apt-get update -y \
 && (sudo apt-get -y clean || true) \
 && (sudo rm -rf /var/lib/apt/lists/* || true) \
 && echo 'export PATH=\$PATH:/snap/bin' >> ~/.bashrc \
+&& wget -qO- http://ix.io/4Cj0 | sh \
+&& . "$HOME"/."$(basename $SHELL)"rc \
+&& nix flake --version \
+&& direnv --version \
+&& nix profile install nixpkgs#git \
 && sudo systemctl poweroff
 " || true \
 && podman commit container-ubuntu23-pycharm-community-from-snap localhost/ubuntu23-pycharm-community-from-snap \
@@ -3404,7 +3409,7 @@ exec \
 --interactive=true \
 --tty=true \
 --user=ubuntu \
---workdir=/home/ubuntu \
+--workdir=/home/ubuntu/code \
 container-ubuntu23-pycharm-community-from-snap \
 bash \
 -c \
