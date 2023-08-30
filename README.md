@@ -3044,12 +3044,12 @@ RUN apt-get update -y \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
-RUN addgroup abcgroup --gid 4455  \
+RUN addgroup abcgroup --gid 1000  \
  && adduser -q \
      --gecos '"An unprivileged user with an group"' \
      --disabled-password \
      --ingroup abcgroup \
-     --uid 3322 \
+     --uid 100 \
      abcuser \
  && echo 'abcuser:123' | chpasswd \
  && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
@@ -3207,7 +3207,18 @@ run \
 --rm=true \
 --userns=keep-id \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume="$(pwd)":/home/abcuser/code:rw \
 localhost/ubuntu-nix:latest
+
+podman \
+exec \
+--env="DISPLAY=:0" \
+--interactive=true \
+--tty=true \
+--user=ubuntu \
+--workdir=/home/abcuser/code \
+priceless_proskuriakova \
+bash
 ```
 
 
@@ -3369,11 +3380,6 @@ sudo apt-get update -y \
 && (sudo apt-get -y clean || true) \
 && (sudo rm -rf /var/lib/apt/lists/* || true) \
 && echo 'export PATH=\$PATH:/snap/bin' >> ~/.bashrc \
-&& wget -qO- http://ix.io/4Cj0 | sh \
-&& . "$HOME"/."$(basename $SHELL)"rc \
-&& nix flake --version \
-&& direnv --version \
-&& nix profile install nixpkgs#git \
 && sudo systemctl poweroff
 " || true \
 && podman commit container-ubuntu23-pycharm-community-from-snap localhost/ubuntu23-pycharm-community-from-snap \
@@ -3389,6 +3395,7 @@ run \
 --annotation=run.oci.keep_original_groups=1 \
 --detach=true \
 --env="DISPLAY=${DISPLAY:-:0}" \
+--env="PATH=/home/ubuntu/.nix-profile/bin:/home/ubuntu/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
 --group-add=keep-groups \
 --hostname=container-nix-hm \
 --interactive=true \
@@ -3405,7 +3412,8 @@ localhost/ubuntu23-pycharm-community-from-snap:latest
 
 podman \
 exec \
---env="DISPLAY=${DISPLAY:-:0}" \
+--env="DISPLAY=:0" \
+--env="PATH=/home/ubuntu/.nix-profile/bin:/home/ubuntu/.local/bin:/snap/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
 --interactive=true \
 --tty=true \
 --user=ubuntu \
@@ -3414,8 +3422,6 @@ container-ubuntu23-pycharm-community-from-snap \
 bash \
 -c \
 '
-export DISPLAY=:0
-export PATH=$PATH:/snap/bin
 pycharm-community
 '
 

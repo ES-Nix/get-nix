@@ -2064,6 +2064,122 @@ Refs.:
 - https://stackoverflow.com/a/10356740
 
 
+```bash
+readelf -sV \
+$(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --expr \
+  '
+    (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+        pkgs = import nixpkgs { 
+                                system = "x86_64-linux";
+                              };
+      in
+        pkgs.stdenv.cc.cc.lib
+    )
+  '
+)/lib/libstdc++.so.6.0.28 \
+ | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V \
+ | tail -1
+```
+
+
+```bash
+strings $(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  github:NixOS/nixpkgs/release-21.11#stdenv.cc.cc.lib \
+)/lib/libstdc++.so.6 | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V \
+ | tail -1
+```
+
+
+```bash
+strings $( cat \
+$(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  github:NixOS/nixpkgs/nixpkgs-unstable#stdenv.cc.cc.lib.out \
+)/nix-support/propagated-build-inputs)/lib/libstdc++.so.6 | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V \
+ | tail -1
+```
+
+
+```bash
+readelf -sV \
+$(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  github:NixOS/nixpkgs/release-21.11#stdenv.cc.cc.lib \
+)/lib/libstdc++.so.6 \
+ | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V \
+ | tail -1
+```
+
+
+
+```bash
+readelf -sV \
+$(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  github:NixOS/nixpkgs/nixpkgs-unstable#stdenv.cc.cc.lib \
+)/lib/libstdc++.so.6 \
+ | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V \
+ | tail -1
+```
+
+
+```bash
+readelf -sV \
+$(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --expr \
+  '
+    (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+        pkgs = import nixpkgs { 
+                                system = "x86_64-linux"; 
+                                overlays = [
+                                  (self: super: {
+                                    glibc = super.glibc.overrideAttrs (oldAttrs: {
+                                      version = "3.4.21";
+                                    });
+                                  })
+                                ];
+                              };
+      in
+        pkgs.stdenv.cc.cc.lib
+    )
+  '
+)/lib/libstdc++.so.6.0.28 \
+ | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V \
+ | tail -1
+```
+
 
 ```bash
 patchelf \

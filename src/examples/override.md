@@ -79,6 +79,64 @@ build \
 '
 ```
 
+```bash
+nix \
+profile \
+install \
+github:NixOS/nixpkgs/nixpkgs-unstable#jetbrains.pycharm-community
+```
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixpkgs-unstable");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.jetbrains.pycharm-community.overrideAttrs 
+        (oldAttrs: { extraWrapperArgs = [ pkgs.glibcLocales pkgs.stdenv.cc.cc.lib]; }) 
+      )
+  )
+'
+```
+
+
+```bash
+nix \
+profile \
+install \
+nixpkgs#jetbrains.pycharm-community
+```
+
+
+```bash
+nix \
+profile \
+install \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/a63a64b593dcf2fe05f7c5d666eb395950f36bc9");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.jetbrains.pycharm-community.overrideAttrs 
+        (oldAttrs: { extraWrapperArgs = [ pkgs.glibcLocales pkgs.stdenv.cc.cc.lib ]; }) 
+      )
+  )
+'
+```
+
+
 ## pkgs.mkShell.override
 
 Other TODO:
