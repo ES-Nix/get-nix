@@ -1949,6 +1949,9 @@ build \
 Refs.:
 - https://gurkan.in/wiki/nix.html#override-example-optional-args
 
+
+
+
 ```bash
 nix \
 build \
@@ -3348,6 +3351,122 @@ Refs.:
 - https://discourse.nixos.org/t/xorg-on-non-nixos/13455/2
 - https://stackoverflow.com/a/67972927
 
+
+
+```bash
+ldd $(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --print-build-logs \
+  github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#python3Packages.pandas
+)/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+```
+
+```bash
+EXPR=$(cat <<-'EOF'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = selfPy: superPy: {
+            pandas = superPy.pandas.overrideAttrs (oldAttrs: rec {
+              doCheck = false;
+              nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ 
+                                                                          # super.autoPatchelfHook 
+                                                                        ];
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        pandas
+        # and other python packages
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b")
+             { overlays = [ overlay ]; }
+             ).python3Packages.pandas # Could be python3.withPackages myPythonPackages
+    )
+EOF
+)
+
+
+ldd $(
+nix \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+)/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+
+
+EXPR=$(cat <<-'EOF'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = selfPy: superPy: {
+            pandas = superPy.pandas.overrideAttrs (oldAttrs: rec {
+              doCheck = false;
+              nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ 
+                                                                          super.autoPatchelfHook 
+                                                                        ];
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        pandas
+        # and other python packages
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b")
+             { overlays = [ overlay ]; }
+             ).python3Packages.pandas # Could be python3.withPackages myPythonPackages
+    )
+EOF
+)
+
+
+ldd $(
+nix \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+)/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+
+
+
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR" \
+--command \
+python \
+-c \
+'import pandas as pd; print(pd.DataFrame(data={"col1": [1, 2], "col2": [3, 4]}))'
+```
+
+
+--option enforce-determinism true
 
 
 ##### The `window/aggregations.cpython-38-x86_64-linux-gnu.so` thing:

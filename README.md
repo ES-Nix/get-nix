@@ -12757,6 +12757,139 @@ build \
 
 ```bash
 nix \
+shell \
+nixpkgs#python3Packages.wheel \
+nixpkgs#python3Packages.wheel-filename  \
+nixpkgs#python3Packages.wheel-inspect \
+nixpkgs#python3Packages.pip \
+nixpkgs#auditwheel \
+nixpkgs#twine
+```
+
+
+```bash
+wheel \
+unpack \
+$(nix build --no-link --print-out-paths --print-build-logs nixpkgs#python3Packages.mmh3.dist)/*
+
+DIRETORY_NAME=$(nix eval --raw nixpkgs#python3Packages.mmh3.pname)-$(nix eval --raw nixpkgs#python3Packages.mmh3.version)
+cd "$DIRETORY_NAME"
+
+find . -type f -iname '*.so'
+
+ldd $(find . -type f -iname '*.so')
+```
+
+
+```bash
+wheel \
+unpack \
+$(nix build --no-link --print-out-paths --print-build-logs github:NixOS/nixpkgs/nixpkgs-unstable#python3Packages.mmh3.dist)/*
+
+DIRETORY_NAME=$(nix eval --raw github:NixOS/nixpkgs/nixpkgs-unstable#python3Packages.mmh3.pname)-$(nix eval --raw github:NixOS/nixpkgs/nixpkgs-unstable#python3Packages.mmh3.version)
+cd "$DIRETORY_NAME"
+
+find . -type f -iname '*.so'
+
+ldd $(find . -type f -iname '*.so')
+```
+
+```bash
+auditwheel repair $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#python3Packages.mmh3.dist)/*
+```
+
+```bash
+auditwheel repair $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#python3Packages.pandas.dist)/*
+```
+
+
+```bash
+auditwheel repair $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#python3Packages.numpy.dist)/*
+```
+
+
+```bash
+ldd $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#glibc.out)/lib/libc.so.6
+```
+
+```bash
+ldd $(nix build --no-link --print-out-paths --print-build-logs github:NixOS/nixpkgs/nixpkgs-unstable#glibc.out)/lib/libc.so.6
+```
+
+
+```bash
+wheel \
+unpack \
+$(nix build --no-link --print-out-paths --print-build-logs nixpkgs#python3Packages.numpy.dist)/*
+
+DIRETORY_NAME=$(nix eval --raw nixpkgs#python3Packages.numpy.pname)-$(nix eval --raw nixpkgs#python3Packages.numpy.version)
+cd "$DIRETORY_NAME"
+
+find . -type f -iname '*.so' | sort -u
+find . -type f -iname '*.so' | wc -l
+```
+
+
+```bash
+nix \
+shell \
+nixpkgs#python3Packages.wheel \
+--command \
+wheel \
+unpack \
+$(nix build --no-link --print-out-paths --print-build-logs nixpkgs#python3Packages.pandas.dist)/*
+
+ldd pandas-1.4.4/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+```
+
+```bash
+nix \
+shell \
+nixpkgs#python3Packages.wheel \
+--command \
+wheel \
+unpack \
+$(nix build --no-link --print-out-paths --print-build-logs github:NixOS/nixpkgs/nixpkgs-unstable#python3Packages.pandas.dist)/* \
+&& ldd pandas-2.0.3/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+```
+
+
+```bash
+podman run -ti --rm -v "$(pwd)":/code -w /code python:3.11.5-alpine3.18 \
+sh -c 'pip download --only-binary :all: --dest . pandas'
+```
+
+
+```bash
+podman run -ti --rm -v "$(pwd)":/code -w /code python:3.11.5-slim-bookworm \
+bash \
+-c \
+'
+  pip download --only-binary :all: --dest . pandas \
+  && wheel unpack pandas-2.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl \
+  && ldd ./pandas-2.1.0/pandas/_libs/window/aggregations.cpython-311-x86_64-linux-gnu.so
+'
+```
+
+
+```bash
+nix \
+shell \
+nixpkgs#python3Packages.wheel
+```
+
+```bash
+cryptography
+scikitimage
+scikitlearn
+```
+
+```bash
+ls -alh $(nix build --no-link --print-out-paths --print-build-logs github:NixOS/nixpkgs/release-23.05#stdenv.cc.cc.lib)/lib/libstdc++.so.6.0.30
+```
+
+```bash
+nix \
 build \
 --impure \
 --no-link \
@@ -22873,6 +23006,9 @@ nix repl --expr 'import <nixpkgs> {}' <<<'lib.attrNames pkgsStatic.nix.override.
 nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames python3Packages' | tr ' ' '\n' | wc -l
 ```
 
+```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames rustPackages.packages' | tr ' ' '\n' | wc -l
+```
 
 ```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames nodePackages_latest' | tr ' ' '\n' | wc -l
