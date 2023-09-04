@@ -2258,6 +2258,33 @@ nix profile install nixpkgs#patchelf
 
 
 ```bash
+strings $(nix build --no-link --print-out-paths --print-build-logs \
+nixpkgs#glibc.out)/lib/libc.so.6 \
+ | sed -n 's/.*@@GLIBC_//p' \
+ | sort -u -V
+ 
+ 
+strings $(nix build --no-link --print-out-paths --print-build-logs \
+github:NixOS/nixpkgs/nixpkgs-unstable#glibc.out)/lib/libc.so.6 \
+ | sed -n 's/.*@@GLIBC_//p' \
+ | sort -u -V
+```
+
+
+```bash
+strings $(nix build --no-link --print-out-paths --print-build-logs \
+nixpkgs#stdenv.cc.cc.lib)/lib/libstdc++.so.6 \
+ | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V
+
+strings $(nix build --no-link --print-out-paths --print-build-logs \
+github:NixOS/nixpkgs/nixpkgs-unstable#stdenv.cc.cc.lib)/lib/libstdc++.so.6 \
+ | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V
+```
+
+
+```bash
 # nix-shell -p hello --command 'patchelf --print-rpath $(which hello)'
 
 nix \
