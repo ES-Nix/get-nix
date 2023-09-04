@@ -79,6 +79,206 @@ build \
 '
 ```
 
+Note: it looks like it is not the correct way to do it, it is not working. 
+It may only work with an overlay?
+```bash
+EXPR_NIX='
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/40c29aa84fefbb1e5978ca2c53335e61672140c4");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.jetbrains.pycharm-community.overrideAttrs (oldAttrs: rec { extraLdPath = pkgs.glibcLocales; }) )
+  )
+'
+
+echo $EXPR_NIX
+
+FULL_PYCHARM_COMMUNITY_DIRETORY=$(nix \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --impure \
+    --expr \
+    "$EXPR_NIX" \
+)
+
+echo "$FULL_PYCHARM_COMMUNITY_DIRETORY"
+
+FULL_PYCHARM_COMMUNITY_BIN_PATH=$(readlink -f "$FULL_PYCHARM_COMMUNITY_DIRETORY")/bin/pycharm-community
+
+cat $FULL_PYCHARM_COMMUNITY_BIN_PATH
+```
+
+
+```bash
+nix \
+eval \
+--raw \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.jetbrains.pycharm-community.overrideAttrs (oldAttrs: { extraWrapperArgs = pkgs.glibcLocales; }) ).extraWrapperArgs
+  )
+'
+```
+
+
+WIP: see notes
+```bash
+EXPR_NIX='
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/40c29aa84fefbb1e5978ca2c53335e61672140c4");
+      pkgs = import nixpkgs { 
+        overrideAttrs (oldAttrs: rec { extraLdPath = pkgs.glibcLocales; }) )
+      };
+    in
+      pkgs.jetbrains.pycharm-community
+  )
+'
+
+echo $EXPR_NIX
+
+FULL_PYCHARM_COMMUNITY_DIRETORY=$(nix \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --impure \
+    --expr \
+    "$EXPR_NIX" \
+)
+
+echo "$FULL_PYCHARM_COMMUNITY_DIRETORY"
+
+FULL_PYCHARM_COMMUNITY_BIN_PATH=$(readlink -f "$FULL_PYCHARM_COMMUNITY_DIRETORY")/bin/pycharm-community
+
+cat $FULL_PYCHARM_COMMUNITY_BIN_PATH
+```
+Refs.:
+- https://discourse.nixos.org/t/how-do-you-discover-the-override-attributes-for-a-derivation/5214/16
+- https://stackoverflow.com/questions/59338121/how-can-i-override-the-jetbrains-jdk-dependency-required-by-idea-ultimate-or-ide
+
+
+```bash
+EXPR_NIX=$(cat <<-'EOF'
+(  
+    let
+      overlay = (self: super: 
+                  {
+                    jetbrains = super.jetbrains 
+                    // 
+                    {
+                      pycharm-community = super.jetbrains.pycharm-community.overrideAttrs (oldAttrs: {
+                          extraLdPath  = (oldAttrs.extraLdPath or "" ) + super.pkgs.glibcLocales;
+                      });
+                    };
+                  }
+                );
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/a63a64b593dcf2fe05f7c5d666eb395950f36bc9")
+             { overlays = [ overlay ]; }
+             ).jetbrains.pycharm-community.extraLdPath
+    )
+EOF
+)
+
+echo $EXPR_NIX
+
+nix \
+eval \
+--raw \
+--impure \
+--expr \
+$EXPR_NIX
+
+```
+
+
+
+```bash
+# extraWrapperArgs = (oldAttrs.extraWrapperArgs or "") + "--set-default LOCALE_ARCHIVE ${super.glibcLocales}";
+EXPR_NIX=$(cat <<-'EOF'
+(  
+    let
+      overlay = (self: super: 
+                  {
+                    jetbrains = super.jetbrains 
+                    // 
+                    {
+                      pycharm-community = super.jetbrains.pycharm-community.overrideAttrs (oldAttrs: {
+                        extraWrapperArgs = [ "--set-default LOCALE_ARCHIVE ${super.glibcLocales}" ];
+                      });
+                    };
+                  }
+                );
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/a63a64b593dcf2fe05f7c5d666eb395950f36bc9")
+             { overlays = [ overlay ]; }
+             ).jetbrains.pycharm-community
+     )
+EOF
+)
+
+echo $EXPR_NIX
+
+nix \
+eval \
+--raw \
+--impure \
+--expr \
+$EXPR_NIX
+
+
+FULL_PYCHARM_COMMUNITY_DIRETORY=$(nix \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --impure \
+    --expr \
+    "$EXPR_NIX" \
+)
+
+cat "$FULL_PYCHARM_COMMUNITY_DIRETORY"/bin/pycharm-community
+```
+
+
+Ehh, clone the repository...
+```bash
+git clone --branch master --single-branch https://github.com/PedroRegisPOAR/nixpkgs.git \
+&& cd nixpkgs \
+&& ls -al
+```
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+.#jetbrains.pycharm-community
+```
+
+
+```bash
+# 5164a52ee9fb166b02eb6238b6d5dd13e0a5e430
+nix \
+profile \
+install \
+github:PedroRegisPOAR/nixpkgs/adds-glibclocale-to-pycharm-community#jetbrains.pycharm-community
+```
+
+
+
 ```bash
 nix \
 profile \

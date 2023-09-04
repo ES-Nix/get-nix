@@ -24002,6 +24002,9 @@ Refs
 - https://stackoverflow.com/a/63850911
 
 
+```bash
+exec -a "$0" "/nix/store/-pycharm-community-2023.2/pycharm-community/bin/.pycharm.sh-wrapped"  "$@"
+```
 
 ### Old bugs and workarounds 
 
