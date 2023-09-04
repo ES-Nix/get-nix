@@ -1,6 +1,6 @@
 
 
-https://www.youtube.com/watch?v=6VepnulTfu8
+[Overrides: In and Out (NixCon 2019)](https://www.youtube.com/watch?v=6VepnulTfu8)
 
 > I'm not convinced getting rid of `NIX_CFLAGS_COMPILE` is a good idea. 
 > `NIX_CFLAGS_COMPILE` is consistent and reliable, unlike figuring out the magic 
