@@ -258,7 +258,7 @@ git clone --branch master --single-branch https://github.com/PedroRegisPOAR/nixp
 && ls -al
 ```
 
-
+Hack, build, test!
 ```bash
 nix \
 build \
@@ -269,15 +269,20 @@ build \
 ```
 
 
+It works!
 ```bash
-# 5164a52ee9fb166b02eb6238b6d5dd13e0a5e430
+nix \
+profile \
+install \
+github:PedroRegisPOAR/nixpkgs/0e1c3223d968a54bc17df7bbc7ac3390db55d1b4#jetbrains.pycharm-community
+```
+
+```bash
 nix \
 profile \
 install \
 github:PedroRegisPOAR/nixpkgs/adds-glibclocale-to-pycharm-community#jetbrains.pycharm-community
 ```
-
-
 
 ```bash
 nix \

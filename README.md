@@ -18951,6 +18951,7 @@ cat > flake.nix << 'EOF'
       nixOsOCIContainer = nixos-generators.nixosGenerate {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         modules = [
+                    # "${path}/nixos/tests/common/x11.nix"
                     ({ pkgs, ... }: {
                       users.users.nixuser = {
                         createHome = true;
@@ -19015,6 +19016,9 @@ cat > flake.nix << 'EOF'
                         SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
                       };
 
+                      # Enable the X11 windowing system.
+                      services.xserver.enable = true;
+
                       system.stateVersion = "22.11"; # TODO: document it.
                     })
         ];
@@ -19058,8 +19062,11 @@ build \
 
 cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
 
+xhost + || nix run nixpkgs#xorg.xhost -- +
+
 podman \
 run \
+--env="DISPLAY=${DISPLAY:-:0}" \
 --hostname=container-nixos \
 --interactive=true \
 --name=container-nixos \
