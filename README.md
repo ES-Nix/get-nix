@@ -13554,6 +13554,7 @@ nix eval --system aarch64-linux --impure --raw --expr 'builtins.currentSystem'
 nix eval nixpkgs#stdenv.isLinux
 nix eval nixpkgs#stdenv.is64bit
 nix eval --raw nixpkgs#stdenv.cc.bintools.dynamicLinker
+nix eval nixpkgs#stdenv.hostPlatform.isLittleEndian
 nix eval --raw nixpkgs#stdenv.hostPlatform.libc
 nix eval --raw nixpkgs#stdenv.cc.targetPrefixy
 nix eval --raw nixpkgs#stdenv.lib.optionalString stdenv.is64bit "w"
