@@ -12887,6 +12887,28 @@ bash \
 ```
 
 ```bash
+podman run -ti --rm -v "$(pwd)":/code -w /code python:3.11.5-slim-bookworm \
+bash \
+-c \
+'
+  ldd $(readlink -f $(which python)) \
+  && cp -v $(readlink -f $(which python)) /code
+'
+```
+
+
+```bash
+podman run -ti --rm -v "$(pwd)":/code -w /code node:20.6.0-bookworm-slim \
+bash \
+-c \
+'
+ldd $(readlink -f $(which node)) \
+&& cp -v $(readlink -f $(which node)) /code
+'
+```
+https://hub.docker.com/_/node/
+
+```bash
 nix \
 shell \
 nixpkgs#python3Packages.wheel
@@ -13570,8 +13592,16 @@ nix eval nixpkgs#stdenv.is64bit
 nix eval --raw nixpkgs#stdenv.cc.bintools.dynamicLinker
 nix eval nixpkgs#stdenv.hostPlatform.isLittleEndian
 nix eval --raw nixpkgs#stdenv.hostPlatform.libc
-nix eval --raw nixpkgs#stdenv.cc.targetPrefixy
-nix eval --raw nixpkgs#stdenv.lib.optionalString stdenv.is64bit "w"
+nix eval --raw nixpkgs#stdenv.cc.targetPrefix
+# nix eval --raw nixpkgs#stdenv.lib.optionalString stdenv.is64bit "w"
+
+# https://nixos.wiki/wiki/C#Faster_GCC_compiler
+nix eval nixpkgs#fastStdenv.isLinux
+nix eval nixpkgs#fastStdenv.is64bit
+nix eval --raw nixpkgs#fastStdenv.cc.bintools.dynamicLinker
+nix eval nixpkgs#fastStdenv.hostPlatform.isLittleEndian
+nix eval --raw nixpkgs#fastStdenv.hostPlatform.libc
+nix eval --raw nixpkgs#fastStdenv.cc.targetPrefix
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/ee5cc38432031b66e7fe395b14235eeb4b2b0d6e/pkgs/os-specific/linux/busybox/default.nix#L128
@@ -21305,6 +21335,7 @@ TODO: Test this in an nixosTest and in an runInLinuxVM
 
 
 ```bash
+# TODO: https://nixos.wiki/wiki/C#Use_a_clang_compiled_from_source
 nix \
 develop \
 --ignore-environment \
@@ -21664,6 +21695,17 @@ Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-verbose
 
 
+##### debug compiled code
+
+
+```nix
+with import <nixpkgs> {};
+stdenv.mkDerivation {
+  name = "env";
+  buildInputs = [ (enableDebugging zlib) ];  
+}
+```
+https://nixos.wiki/wiki/C#Debug_symbols
 
 ## NixOS modules
 
