@@ -3485,6 +3485,8 @@ Refs.:
 
 
 ```bash
+# TODO: zypper in diffoscope
+# https://diffoscope.org/
 podman run --rm opensuse/leap:15.4 sh -c 'zypper --version'
 ```
 
@@ -12871,6 +12873,18 @@ bash \
 '
 ```
 
+```bash
+podman run -ti --rm -v "$(pwd)":/code -w /code python:3.11.5-slim-bookworm \
+bash \
+-c \
+'
+  pip download --dest . diffoscope \
+  && wheel unpack python_magic-0.4.27-py2.py3-none-any.whl \
+  && wheel unpack libarchive_c-5.0-py2.py3-none-any.whl \
+  && tar xvzf diffoscope-249.tar.gz \
+  && ls -al diffoscope-249
+'
+```
 
 ```bash
 nix \
