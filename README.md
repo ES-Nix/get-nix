@@ -13551,11 +13551,17 @@ nix eval --system aarch64-linux --impure --raw --expr 'builtins.currentSystem'
 ```
 
 ```bash
-nix eval --raw nixpkgs#stdenv.buildPlatform.parsed.cpu.name
+nix eval nixpkgs#stdenv.isLinux
+nix eval nixpkgs#stdenv.is64bit
+nix eval --raw nixpkgs#stdenv.cc.bintools.dynamicLinker
+nix eval --raw nixpkgs#stdenv.hostPlatform.libc
 nix eval --raw nixpkgs#stdenv.cc.targetPrefixy
+nix eval --raw nixpkgs#stdenv.lib.optionalString stdenv.is64bit "w"
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/ee5cc38432031b66e7fe395b14235eeb4b2b0d6e/pkgs/os-specific/linux/busybox/default.nix#L128
+- https://stackoverflow.com/questions/55993023/how-do-i-reference-import-a-derivation-from-a-file-in-nix
+
 
 ```bash
 nix eval --raw nixpkgs#qt5.qtbase.qtPluginPrefix
