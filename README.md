@@ -9163,6 +9163,8 @@ Watch and try to build it:
 [Nix and legacy enterprise software development: an unlikely match made in heaven](https://www.youtube.com/watch?v=0dVxtNlD5N4)
 
 
+[NixCon2023 Single Website Firefox VMs with NixOS](https://www.youtube.com/watch?v=Vo4LVO_L408)
+
 TODO: try it
 [Building 15-year-old software with Nix](https://blinry.org/nix-time-travel/)
 
