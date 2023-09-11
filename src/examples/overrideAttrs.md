@@ -2037,6 +2037,15 @@ nix eval github:NixOS/nixpkgs/release-22.05#glibc.version
 nix eval github:NixOS/nixpkgs/release-22.11#glibc.version
 nix eval github:NixOS/nixpkgs/release-23.05#glibc.version
 nix eval github:NixOS/nixpkgs/nixpkgs-unstable#glibc.version
+
+nix eval github:NixOS/nixpkgs/release-20.03#glibc.name
+nix eval github:NixOS/nixpkgs/release-20.09#glibc.name
+nix eval github:NixOS/nixpkgs/release-21.05#glibc.name
+nix eval github:NixOS/nixpkgs/release-21.11#glibc.name
+nix eval github:NixOS/nixpkgs/release-22.05#glibc.name
+nix eval github:NixOS/nixpkgs/release-22.11#glibc.name
+nix eval github:NixOS/nixpkgs/release-23.05#glibc.name
+nix eval github:NixOS/nixpkgs/nixpkgs-unstable#glibc.name
 ```
 
 
@@ -3228,7 +3237,7 @@ EXPR=$(cat <<-END
       myPythonPackages = ps: with ps; [
         pandas
         # and other python packages
-      ];      
+      ];
    in
      (import (builtins.getFlake "github:NixOS/nixpkgs/0ef02c4792fbde4b78957a46a8cb107b6c7aa3cc")
              { overlays = [ overlay ]; }

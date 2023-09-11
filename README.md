@@ -12888,6 +12888,52 @@ bash \
 '
 ```
 
+
+```bash
+podman run -ti --rm python:3.9-slim-bookworm bash -c \
+'
+echo 
+pip --version
+echo 
+python --version
+echo 
+pip download --only-binary :all: --dest . pandas==2.0.0 \
+&& echo 0778ab54c8f399d83d98ffb674d11ec716449956bc6f6821891ab835848687f2  pandas-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl | sha256sum -c \
+&& wheel unpack pandas-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl \
+&& ldd pandas-2.0.0/pandas/_libs/window/aggregations.cpython-39-x86_64-linux-gnu.so \
+&& echo \
+&& ldd /lib/x86_64-linux-gnu/libstdc++.so.6
+'
+```
+Refs.:
+- https://pypi.org/project/pandas/2.0.0/#copy-hash-modal-8b3276a7-fced-493e-8525-de6b7d50494f
+
+
+```bash
+podman run --rm -i --entrypoint sh docker.io/python:3.10-alpine <<EOF
+set -xe
+apk add gcc libc-dev make libffi-dev curl git
+python -m pip install -q git+https://github.com/python-poetry/poetry.git@master
+python -m pip install -q git+https://github.com/python-poetry/poetry-core.git@master
+poetry new foobar
+cd foobar
+poetry add cryptography
+EOF
+```
+Refs.:
+- https://github.com/python-poetry/poetry/issues/5225#issuecomment-1128865908
+
+
+
+```bash
+podman run --rm python:3.9-alpine python -c 'import sysconfig;print(sysconfig.get_config_var("SOABI"))'
+
+podman run --rm python:3.10-alpine python -c 'import sysconfig;print(sysconfig.get_config_var("SOABI"))'
+```
+Refs.:
+- https://gitlab.alpinelinux.org/alpine/aports/-/issues/13227#note_194071
+
+
 ```bash
 podman run -ti --rm -v "$(pwd)":/code -w /code python:3.11.5-slim-bookworm \
 bash \
@@ -13569,6 +13615,20 @@ nix eval nixpkgs#z3.outputs
 nix eval nixpkgs#shadow.out.outputs
 
 nix eval nixpkgs#glibc.out.outputs
+
+nix \
+eval \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };    
+    in
+      (builtins.parseDrvName pkgs.glibc.name).version
+  )
+'
 ```
 
 
