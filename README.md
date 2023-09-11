@@ -12889,6 +12889,24 @@ bash \
 ```
 
 
+What the "heck" is this:
+```bash
+...
+"manylinux2014_x86_64": "manylinux_2_17_x86_64",
+...
+```
+Refs.:
+- https://peps.python.org/pep-0600/#package-installers
+
+
+It is:
+```bash
+{dist}-{version}(-{build})?-{python}-{abi}-{platform}.whl
+```
+Refs.:
+- https://realpython.com/python-wheels/
+
+
 ```bash
 podman run -ti --rm python:3.9-slim-bookworm bash -c \
 '
@@ -12907,6 +12925,19 @@ pip download --only-binary :all: --dest . pandas==2.0.0 \
 ```
 Refs.:
 - https://pypi.org/project/pandas/2.0.0/#copy-hash-modal-8b3276a7-fced-493e-8525-de6b7d50494f
+
+
+```bash
+podman run -i --rm python:3.9-slim-bookworm bash <<'EOF'
+ldd --version
+EOF
+
+podman run -i --rm python:3.9-slim-bookworm bash <<'EOF'
+$(ldd $(which cat) | grep libc | cut -d '>' -f2 | cut -d ' ' -f2)
+EOF
+```
+Refs.:
+- https://stackoverflow.com/a/76481061
 
 
 ```bash
