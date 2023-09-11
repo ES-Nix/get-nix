@@ -12927,6 +12927,26 @@ Refs.:
 - https://pypi.org/project/pandas/2.0.0/#copy-hash-modal-8b3276a7-fced-493e-8525-de6b7d50494f
 
 
+TODO: __GLIBC__, __GLIBC_MINOR__ from 
+https://stackoverflow.com/a/45107992
+https://stackoverflow.com/a/37119057
+https://stackoverflow.com/questions/10354636/how-do-you-find-what-version-of-libstdc-library-is-installed-on-your-linux-mac
+https://www.linuxquestions.org/questions/linux-software-2/how-to-check-glibc-version-263103/
+https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html#abi.versioning
+https://gcc.gnu.org/develop.html#timeline
+
+
+TODO: https://stackoverflow.com/questions/4133674/glibcxx-versions?rq=3
+```bash
+readelf -a and objdump -x
+```
+
+
+TODO: https://stackoverflow.com/a/3436360
+```bash
+objdump -T 
+```
+
 ```bash
 podman run -i --rm python:3.9-slim-bookworm bash <<'EOF'
 ldd --version
