@@ -15758,7 +15758,6 @@ build \
       };
     
       pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") { overlays = [ overlayPkgsStaticRedis ]; };
-    
     in
 
       pkgs.dockerTools.buildImage {
@@ -15974,13 +15973,12 @@ run github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#hello
 nix \
 build \
 --impure \
---no-link \
 --print-build-logs \
 --print-out-paths \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
 
     dockerTools.streamLayeredImage {
@@ -16006,17 +16004,17 @@ localhost/hello:0.0.1
 ```
 
 
+
 ```bash
 nix \
 build \
 --impure \
---no-link \
 --print-build-logs \
 --print-out-paths \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/93e0ac196106dce51878469c9a763c6233af5c57";
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
 
     dockerTools.buildImage {
@@ -16042,6 +16040,254 @@ localhost/hello:0.0.1
 ```
 
 
+```bash
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.buildImage {
+      name = "python3";
+      tag = "0.0.1";
+      config = {
+        Cmd = [
+          "${pkgs.pkgsStatic.python3}/bin/python3"
+        ];
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/python3:0.0.1
+```
+
+
+```bash
+du -h $(nix build --no-link --print-out-paths nixpkgs#pkgsStatic.zsh)/bin/zsh
+ldd $(nix build --no-link --print-out-paths nixpkgs#pkgsStatic.zsh)/bin/zsh
+file $(nix build --no-link --print-out-paths nixpkgs#pkgsStatic.zsh)/bin/zsh
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.buildImage {
+      name = "zsh";
+      tag = "0.0.1";
+      config = {
+        copyToRoot = "${(lib.getBin pkgs.pkgsStatic.zsh)}";
+        Cmd = [ "zsh" ];
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/zsh:0.0.1
+```
+
+
+
+
+```bash
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.buildImage {
+      name = "hello";
+      tag = "0.0.1";
+      config = {
+        Cmd = [
+          "${pkgs.pkgsStatic.hello}/bin/hello"
+        ];
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/hello:0.0.1
+```
+
+
+Chalenge: why bash is included in the final OCI?
+```bash
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+    let
+      overlayPkgsStaticRedis = self: super: {
+        redis = super.pkgsStatic.redis.overrideAttrs (oldAttrs: {
+          doCheck = false;
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b") { overlays = [ overlayPkgsStaticRedis ]; };
+    in
+      pkgs.dockerTools.buildImage {
+        name = "redis";
+        tag = "0.0.1";
+        config = {
+          Cmd = [
+            "${pkgs.pkgsStatic.redis}/bin/redis-server"
+          ];
+        };
+      }
+  )
+'
+
+podman load < result
+
+podman images
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/redis:0.0.1
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+    let
+      overlayPkgsStaticRedis = self: super: {
+        redis = super.pkgsStatic.redis.overrideAttrs (oldAttrs: {
+          doCheck = false;
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b") { overlays = [ overlayPkgsStaticRedis ]; };
+    in
+      pkgs.dockerTools.buildImage {
+        name = "redis";
+        tag = "0.0.1";
+        config = {
+          contents = with pkgs; [
+            pkgsStatic.redis
+          ];
+          Cmd = [
+            "redis"
+          ];
+        };
+      }
+  )
+'
+
+podman load < result
+
+podman images
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/redis:0.0.1
+```
+
+
+
+
+```bash
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+    let
+      overlayPkgsStaticRedis = self: super: {
+        redis = self.pkgsStatic.redis.overrideAttrs (oldAttrs: {
+          doCheck = false;
+        });
+      };
+    
+      pkgs = import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b") { overlays = [ overlayPkgsStaticRedis ]; };
+    in
+      pkgs.dockerTools.buildImage {
+        name = "redis";
+        tag = "0.0.1";
+        config = {
+          Cmd = [
+            "${pkgs.redis}/bin/redis-server"
+          ];
+        };
+      }
+  )
+'
+
+podman load < result
+
+podman images
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/redis:0.0.1
+```
+
+
 
 ```bash
 nix \
@@ -16060,8 +16306,6 @@ build \
       
       config = {
         contents = with pkgs; [
-          # pkgsStatic.redis.inputDerivation
-          redis
           path
         ];
 
@@ -16122,8 +16366,11 @@ github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0#redis
 ```
 
 
+```bash
 --include nixpkgs=$(nix eval --raw github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0#path)
 nix eval --raw --expr '"${(builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0")}"'
+```
+
 
 ```bash
 nix \
@@ -19351,9 +19598,181 @@ podman run -it --rm docker.io/library/alpine:latest
 ```
 
 
+Broken:
+```bash
+nix build --print-build-logs --print-out-paths github:nix-community/NixOS-WSL#nixosConfigurations.mysystem.config.system.build.tarball
+cat $(readlink -f result)/tarball/nixos-wsl-x86_64-linux.tar.gz | podman import --os "NixOS" - nixos-image:latest
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nixos \
+--interactive=true \
+--name=container-nixos \
+--privileged=true \
+--rm=true \
+--tty=true \
+--volume=/dev/log:/dev/log \
+--volume=/var/run/systemd/journal/socket:/var/run/systemd/journal/socket \
+localhost/nixos-image:latest \
+/init
+```
+
+
+
 #### systemd.enable = false?
 
-boot.loader.systemd-boot.enable = false;
+
+```bash
+cat > flake.nix << 'EOF'
+{
+  description = "Bare NixOS";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+  outputs = {self, nixpkgs, nixos-generators, ...}: {
+    packages.x86_64-linux = {
+      nixOsOCIContainer = nixos-generators.nixosGenerate {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        modules = [
+                    # "${path}/nixos/tests/common/x11.nix"
+                    ({ pkgs, ... }: {
+                      users.users.nixuser = {
+                        createHome = true;
+                        description = "nix user";
+                        home = "/home/nixuser";
+                        homeMode = "0700";
+                        initialPassword = "1"; # TODO: hardening
+                        isSystemUser = true; # isNormalUser = true;
+                        shell = pkgs.bashInteractive; # What other would be best? None for hardening?!
+                        uid = 1234;
+
+                        extraGroups = [
+                          "kvm"
+                          "nixgroup"
+                          "wheel"
+                        ];
+
+                        packages = with pkgs; [
+                          hello
+                          xorg.xclock
+                        ];
+                      };
+
+                      users.users.nixuser.group = "nixgroup";
+                      users.groups.nixgroup.gid = 5678;
+                      users.groups.nixgroup = {};
+
+                      users.users."root".initialPassword = "r00t"; # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
+
+                      services.getty.autologinUser = "nixuser"; # "root";
+                      networking = {
+                        hostName = "nixos";
+                        nameservers = [ "1.1.1.1" "8.8.8.8" ]; # TODO: Why? Why the root user does not need it?
+                        networkmanager.enable = true;
+                        useDHCP = false; # TODO: Why?
+                      };
+
+                      nixpkgs.config.allowUnfree = true;
+
+                      nix = {
+                              extraOptions = "experimental-features = nix-command flakes repl-flake";
+                              package = pkgs.nixVersions.nix_2_10; # package = pkgsCross.aarch64-multiplatform-musl.pkgsStatic.nix;
+                              readOnlyStore = true;
+                              registry.nixpkgs.flake = nixpkgs;
+                      };
+
+                      environment.etc."channels/nixpkgs".source = nixpkgs.outPath;
+
+                      environment.systemPackages = with pkgs; [
+                        bashInteractive
+                        cacert
+                        coreutils
+                        figlet
+                        hello
+                        sudo
+                        xorg.xclock
+                      ];
+
+                      environment.variables = {
+                        DISPLAY = ":0";
+                        NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                        SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                      };
+
+                      boot.loader.systemd-boot.enable = false;
+
+                      # Enable the X11 windowing system.
+                      services.xserver.enable = true;
+
+                      system.stateVersion = "22.11"; # TODO: document it.
+                    })
+        ];
+        format = "docker";
+      };
+    };
+  };
+}
+EOF
+
+
+nix \
+flake \
+lock \
+--override-input nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+git config init.defaultBranch || git config --global init.defaultBranch main
+
+git init \
+&& git add . \
+&& git commit -m 'First nix flake commit'
+
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+.#nixOsOCIContainer
+
+
+#RESULT_SHA512SUM_1=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
+#RESULT_SHA512SUM_2=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
+#
+#echo $RESULT_SHA512SUM_1
+#echo $RESULT_SHA512SUM_2
+# TODO: you need some kernel flags and may be more stuff to be able to run containers
+#nix \
+#profile \
+#install \
+#--refresh \
+#github:ES-Nix/podman-rootless/from-nixpkgs#podman
+
+cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nixos \
+--interactive=true \
+--name=container-nixos \
+--privileged=true \
+--rm=true \
+--tty=true \
+--volume=/dev/log:/dev/log \
+--volume=/var/run/systemd/journal/socket:/var/run/systemd/journal/socket \
+localhost/nixos-image:latest \
+/init
+```
+
+
+
 
 #### not minimal
 

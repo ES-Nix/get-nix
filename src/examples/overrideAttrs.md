@@ -1978,6 +1978,34 @@ build \
 '
 ```
 
+
+```bash
+nix \
+build \
+--no-link \
+--print-out-paths \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+      pkgs = import nixpkgs { 
+                              system = "x86_64-linux"; 
+                              overlays = [
+                                (self: super: {
+                                  glibc = super.glibc.overrideAttrs (oldAttrs: {
+                                    version = "2.26";
+                                  });
+                                })
+                              ];  
+                            };
+    in
+      pkgs.python3Full
+  )
+'
+```
+
+
 ```bash
 nix \
 build \
@@ -2578,6 +2606,80 @@ mkdir build-dir \
 && exec bash
 '
 ```
+
+
+```bash
+du -h $( 
+nix \
+build \
+--no-link \
+--print-out-paths \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (pkgsStatic.redis.overrideAttrs (oldAttrs: { 
+                                          dontStrip = false;
+                              }
+                        )
+  )
+)
+'
+)/bin/redis-server
+
+
+du -h $( 
+nix \
+build \
+--no-link \
+--print-out-paths \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (pkgsStatic.redis.overrideAttrs (oldAttrs: { 
+                                          dontStrip = true;
+                              }
+                        )
+  )
+)
+'
+)/bin/redis-server
+
+# note: the file command is beeing tricked!
+# https://github.com/NixOS/nixpkgs/issues/21667#issuecomment-270899104
+file $( 
+nix \
+build \
+--no-link \
+--print-out-paths \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  (pkgsStatic.redis.overrideAttrs (oldAttrs: { 
+                                          dontStrip = false;
+                              }
+                        )
+  )
+)
+'
+)/bin/redis-server
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/21667#issuecomment-270899104
+
+
+
 
 ```bash
 nix \
