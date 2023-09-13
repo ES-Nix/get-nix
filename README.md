@@ -1382,6 +1382,23 @@ update \
 
 
 ```bash
+xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--interactive=true \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+python:3.9 \
+bash \
+-c \
+"id && echo \$DISPLAY && python -c 'from tkinter import Tk; Tk().mainloop()'"
+```
+
+
+
+```bash
 podman run --rm -it -u 1005 alpine
 apk add --no-cache curl tar
 
@@ -1398,7 +1415,7 @@ run \
 python:3.9 \
 bash \
 -c \
-"id && echo \$DISPLAY && python -c 'from tkinter import Tk; Tk()'"
+"id && echo \$DISPLAY && python -c 'from tkinter import Tk; Tk().mainloop()'"
 
 
 
@@ -10153,6 +10170,12 @@ Take some reading in https://github.com/NixOS/flake-registry
 
 TODO: make a nix build with the json + other nix build for `/nixexprs.tar.xz`
 https://raw.githubusercontent.com/NixOS/flake-registry/master/flake-registry.json
+
+TODO: 
+```bash
+wget -qO- https://github.com/NixOS/nixpkgs/archive/refs/heads/staging.tar.gz > staging.tar.gz
+```
+
 
 
 ```bash
