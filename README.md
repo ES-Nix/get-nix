@@ -5973,6 +5973,7 @@ nixpkgs#podman \
 --command \
 podman \
 run \
+--env=PATH=/root/.nix-profile/bin:/usr/bin:/bin \
 --privileged=true \
 --device=/dev/fuse \
 --env="DISPLAY=${DISPLAY:-:0.0}" \
@@ -12785,12 +12786,16 @@ build \
 ```bash
 nix \
 shell \
+nixpkgs#auditwheel \
+nixpkgs#binutils.out \
+nixpkgs#glibc.bin \
+nixpkgs#patchelf \
+nixpkgs#python3Packages.pip \
 nixpkgs#python3Packages.wheel \
 nixpkgs#python3Packages.wheel-filename  \
 nixpkgs#python3Packages.wheel-inspect \
-nixpkgs#python3Packages.pip \
-nixpkgs#auditwheel \
-nixpkgs#twine
+nixpkgs#readelf \
+nixpkgs#twine 
 ```
 
 
@@ -12867,9 +12872,10 @@ unpack \
 $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#python3Packages.pandas.dist)/*
 
 ldd pandas-1.4.4/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
-```
 
-```bash
+
+
+
 nix \
 shell \
 nixpkgs#python3Packages.wheel \
@@ -12912,7 +12918,7 @@ bash \
 ```
 
 
-What the "heck" is this:
+What is this?
 ```bash
 ...
 "manylinux2014_x86_64": "manylinux_2_17_x86_64",
@@ -12933,6 +12939,10 @@ Refs.:
 ```bash
 podman run -ti --rm python:3.9-slim-bookworm bash -c \
 '
+apt-get update && apt-get install -y binutils patchelf pip
+
+pip install twine
+
 echo 
 pip --version
 echo 
@@ -12943,14 +12953,104 @@ pip download --only-binary :all: --dest . pandas==2.0.0 \
 && wheel unpack pandas-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl \
 && ldd pandas-2.0.0/pandas/_libs/window/aggregations.cpython-39-x86_64-linux-gnu.so \
 && echo \
+&& patchelf --print-needed pandas-2.0.0/pandas/_libs/window/aggregations.cpython-39-x86_64-linux-gnu.so \
+&& echo \
 && ldd /lib/x86_64-linux-gnu/libstdc++.so.6
+twine check pandas-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+'
+
+
+podman run -ti --rm python:3.12-rc-bookworm bash -c \
+'
+apt-get update && apt-get install -y binutils patchelf
+
+pip install twine
+
+echo 
+pip --version
+echo 
+python --version
+echo 
+pip download --only-binary :all: --dest . pandas==2.0.0 \
+&& echo 0778ab54c8f399d83d98ffb674d11ec716449956bc6f6821891ab835848687f2  pandas-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl | sha256sum -c \
+&& wheel unpack pandas-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl \
+&& ldd pandas-2.0.0/pandas/_libs/window/aggregations.cpython-39-x86_64-linux-gnu.so \
+&& echo \
+&& patchelf --print-needed pandas-2.0.0/pandas/_libs/window/aggregations.cpython-39-x86_64-linux-gnu.so \
+&& echo \
+&& ldd /lib/x86_64-linux-gnu/libstdc++.so.6
+twine check pandas-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 '
 ```
 Refs.:
 - https://pypi.org/project/pandas/2.0.0/#copy-hash-modal-8b3276a7-fced-493e-8525-de6b7d50494f
 
 
-TODO: __GLIBC__, __GLIBC_MINOR__ from 
+```bash
+pip download pandas==2.0.0 --platform=manylinux2014_x86_64 --only-binary=:all: --python-version=3.9 --implementation=cp
+twine check pandas-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+
+pip download numpy==1.25.2 --platform=manylinux2014_x86_64 --only-binary=:all: --python-version=3.9 --implementation=cp
+twine check numpy-1.25.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+
+
+pip download numpy==1.21 --platform=manylinux2014_x86_64 --only-binary=:all: --python-version=3.9 --implementation=cp
+twine check numpy-1.21.0-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
+
+
+wheel unpack numpy-1.21.0-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
+ldd ./numpy/core/_multiarray_umath.cpython-39-x86_64-linux-gnu.so
+```
+
+```bash
+strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 | grep GLIBCXX | tail -n2 | head -n1
+
+readelf -sV /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
+ | sed -n 's/.*@@GLIBCXX_//p' \
+ | sort -u -V \
+ | tail -1
+```
+
+
+
+```bash
+podman \
+run \
+--env=PATH=/root/.nix-profile/bin:/usr/bin:/bin \
+--privileged=true \
+--device=/dev/fuse \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--network=host \
+--mount=type=tmpfs,destination=/var/lib/containers \
+--tty=true \
+--rm=true \
+--user=0 \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume=/etc/localtime:/etc/localtime:ro \
+--volume=/dev:/dev \
+docker.nix-community.org/nixpkgs/nix-flakes \
+bash \
+-c \
+'
+nix \
+shell \
+nixpkgs#auditwheel \
+nixpkgs#binutils.out \
+nixpkgs#glibc.bin \
+nixpkgs#patchelf \
+nixpkgs#python3Packages.pip \
+nixpkgs#python3Packages.wheel \
+nixpkgs#python3Packages.wheel-filename  \
+nixpkgs#python3Packages.wheel-inspect \
+nixpkgs#readelf \
+nixpkgs#twine 
+'
+```
+
+
+
+TODO: `__GLIBC__`, `__GLIBC_MINOR__` from 
 https://stackoverflow.com/a/45107992
 https://stackoverflow.com/a/37119057
 https://stackoverflow.com/questions/10354636/how-do-you-find-what-version-of-libstdc-library-is-installed-on-your-linux-mac

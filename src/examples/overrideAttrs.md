@@ -2129,6 +2129,10 @@ $(
  | tail -1
 ```
 
+```bash
+nix shell nixpkgs#binutils --command ldd --version
+nix eval nixpkgs#glibc.version
+```
 
 ```bash
 strings $(
@@ -2293,6 +2297,7 @@ build \
 nix profile install nixpkgs#patchelf
 ```
 
+##### GLIBC_ vs GLIBCXX_
 
 ```bash
 strings $(nix build --no-link --print-out-paths --print-build-logs \
@@ -2338,6 +2343,31 @@ sh \
 ```
 
 
+```bash
+nix \
+shell \
+--ignore-environment \
+nixpkgs#python3Full \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+--command \
+sh \
+-c \
+'ldd $(which python3)'
+
+nix \
+shell \
+--ignore-environment \
+nixpkgs#jre \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+--command \
+sh \
+-c \
+'ldd $(which java)'
+```
 
 ```bash
 echo \
@@ -3500,7 +3530,19 @@ ldd $(
   --print-build-logs \
   github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#python3Packages.pandas
 )/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+  
+  
+ldd $(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --print-build-logs \
+  github:NixOS/nixpkgs/nixpkgs-unstable#python3Packages.pandas
+)/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
 ```
+
+
 
 ```bash
 EXPR=$(cat <<-'EOF'

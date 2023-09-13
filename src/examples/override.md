@@ -113,6 +113,26 @@ cat $FULL_PYCHARM_COMMUNITY_BIN_PATH
 
 
 ```bash
+cat $(readlink -f $(which ldd))
+LANG=C.UTF-8; strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 | grep GLIBCXX | grep -v GLIBCXX_DEBUG_MESSAGE_LENGTH | sort -u
+```
+
+
+```bash
+strings $(nix build --no-link --print-out-paths --print-build-logs \
+nixpkgs#glibc.out)/lib/libc.so.6 \
+ | sed -n 's/.*@@GLIBC_//p' \
+ | sort -u -V
+ 
+ 
+strings $(nix build --no-link --print-out-paths --print-build-logs \
+github:NixOS/nixpkgs/nixpkgs-unstable#glibc.out)/lib/libc.so.6 \
+ | sed -n 's/.*@@GLIBC_//p' \
+ | sort -u -V
+```
+
+
+```bash
 nix \
 eval \
 --raw \
