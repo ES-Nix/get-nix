@@ -621,6 +621,29 @@ print("SQLite   : %s" % (sqlite3.sqlite_version))
 '
 ```
 
+
+
+```bash
+nix \
+run \
+github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#python39 \
+-- \
+-c \
+"import sysconfig;print('{}'.format('\n'.join(['{} = {}'.format(v, sysconfig.get_config_var(v)) for v in sorted(sysconfig.get_config_vars(), key=lambda s: s.lower())])))"
+
+
+nix \
+run \
+github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#pkgsStatic.python39 \
+-- \
+-c \
+"import sysconfig;print('{}'.format('\n'.join(['{} = {}'.format(v, sysconfig.get_config_var(v)) for v in sorted(sysconfig.get_config_vars(), key=lambda s: s.lower())])))"
+```
+Refs.:
+- https://stackoverflow.com/a/52124121/9577149
+
+
+
 [Customizing packages in Nix](https://bobvanderlinden.me/customizing-packages-in-nix/)
 
 
