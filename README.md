@@ -9199,7 +9199,12 @@ Refs.:
 
 
 ```bash
-nix path-info --closure-size --eval-store auto 'nixpkgs#glibc^*'
+nix path-info --closure-size --eval-store auto --human-readable 'nixpkgs#glibc^*'
+```
+
+
+```bash
+nix path-info --closure-size --eval-store auto --impure --human-readable 'nixpkgs#steam-run^*'
 ```
 
 ```bash
@@ -13127,8 +13132,25 @@ bash \
 ldd $(readlink -f $(which node)) \
 && cp -v $(readlink -f $(which node)) /code
 '
+
+chmod -v 0755 node
 ```
-https://hub.docker.com/_/node/
+Refs.:
+- https://hub.docker.com/_/node/
+
+
+```bash
+export NIXPKGS_ALLOW_UNFREE=1; \
+nix \
+run \
+--impure \
+github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#steam-run \
+-- \
+sh \
+-c \
+'node --version'
+```
+
 
 ```bash
 nix \
