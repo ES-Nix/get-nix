@@ -13838,11 +13838,21 @@ nix eval --raw nixpkgs#fastStdenv.cc.bintools.dynamicLinker
 nix eval nixpkgs#fastStdenv.hostPlatform.isLittleEndian
 nix eval --raw nixpkgs#fastStdenv.hostPlatform.libc
 nix eval --raw nixpkgs#fastStdenv.cc.targetPrefix
+
+
+nix eval --raw nixpkgs#rustPlatform.cargoSetupHook
+echo
+nix eval --raw nixpkgs#rustPlatform.maturinBuildHook
+echo
+
+
+nix store cat $(nix build --no-link --print-out-paths nixpkgs#rustPlatform.cargoSetupHook.out)/nix-support/setup-hook
+nix store cat $(nix build --no-link --print-out-paths nixpkgs#rustPlatform.maturinBuildHook.out)/nix-support/setup-hook
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/ee5cc38432031b66e7fe395b14235eeb4b2b0d6e/pkgs/os-specific/linux/busybox/default.nix#L128
 - https://stackoverflow.com/questions/55993023/how-do-i-reference-import-a-derivation-from-a-file-in-nix
-
+- https://github.com/NixOS/nixpkgs/blob/3a2786eea085f040a66ecde1bc3ddc7099f6dbeb/pkgs/development/python-modules/polars/default.nix#L50
 
 ```bash
 nix eval --raw nixpkgs#qt5.qtbase.qtPluginPrefix
