@@ -24826,6 +24826,15 @@ Refs
 exec -a "$0" "/nix/store/-pycharm-community-2023.2/pycharm-community/bin/.pycharm.sh-wrapped"  "$@"
 ```
 
+
+```bash
+echo 'all:;@echo $(SHELL)' | make -f-
+```
+Refs.:
+- https://stackoverflow.com/questions/50110043/force-gnu-make-to-use-a-specific-shell#comment87271405_50110280
+
+
+
 ### Old bugs and workarounds 
 
 TODO: something still missing, or not it just does not exist
