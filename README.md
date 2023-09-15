@@ -9898,13 +9898,17 @@ Refs.:
 - https://discourse.nixos.org/t/flakes-error-error-attribute-outpath-missing/18044/2
 
 
-TODO: https://discourse.nixos.org/t/do-flakes-also-set-the-system-channel/19798/12
+TODO:
+- https://stackoverflow.com/a/36472934 `nixPath = [ "nixpkgs=http://nixos.org/channels/nixos-unstable/nixexprs.tar.xz" ]; # allow users to use nix-env`
+- https://discourse.nixos.org/t/do-flakes-also-set-the-system-channel/19798/12
 ```bash
 nix.nixPath = ["nixpkgs=flake:nixpkgs"];
 home.sessionVariables.NIX_PATH = "nixpkgs=nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NIX_PATH}";
 ```
 Refs.:
 - https://ayats.org/blog/channels-to-flakes/#pinning-your-registry
+
+
 
 ```bash
 nix \
@@ -13876,11 +13880,30 @@ Refs.:
 - https://stackoverflow.com/questions/55993023/how-do-i-reference-import-a-derivation-from-a-file-in-nix
 - https://github.com/NixOS/nixpkgs/blob/3a2786eea085f040a66ecde1bc3ddc7099f6dbeb/pkgs/development/python-modules/polars/default.nix#L50
 
+
 ```bash
 nix eval --raw nixpkgs#qt5.qtbase.qtPluginPrefix
 ```
 Refs.:
 - https://github.com/Mic92/nix-ld/blob/29f15b1f7e37810689974ef169496c51f6403a1b/examples/masterpdfeditor.nix#L16
+
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799"); 
+    pkgs = import nixpkgs {};
+    nixos = import <nixpkgs/nixos> { }; 
+  in
+    (import <nixpkgs/nixos> { configuration = {lib, options, ...}: { config.programs.zsh.shellAliases = options.programs.zsh.shellAliases.default // { xclip = "xclip -selection clipboard"; paste = "xclip -out"; }; }; }
+    ).config.programs.zsh.shellAliases
+'
+```
+Refs.:
+- https://stackoverflow.com/a/48057264
 
 
 ### vmTools.runInLinuxVM

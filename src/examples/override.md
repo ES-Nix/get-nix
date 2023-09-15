@@ -643,6 +643,25 @@ Refs.:
 - https://stackoverflow.com/a/52124121/9577149
 
 
+```bash
+podman run -i --rm python:3.9.18-bookworm \
+bash \
+<<'COMMANDS'
+python3 \
+-c \
+"
+import sysconfig;print('{}'.format('\n'.join(['{} = {}'.format(v, sysconfig.get_config_var(v)) for v in sorted(sysconfig.get_config_vars(), key=lambda s: s.lower())])))
+"
+COMMANDS
+```
+
+
+TODO: try to replicate the error found in the CI
+```bash
+podman run -it --rm -v "$(pwd)":/code -w /code python:3.9.18-bookworm 
+```
+
+
 
 [Customizing packages in Nix](https://bobvanderlinden.me/customizing-packages-in-nix/)
 
