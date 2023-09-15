@@ -707,6 +707,8 @@ FULL_PATH=$(nix eval --impure --raw --expr $EXPR_NIX)/bin/python
 echo "$EXPECTED_SHA512SUM"'  '"$FULL_PATH" | sha512sum -c
 ```
 
+
+
 ```bash
 EXPR_NIX='
   (

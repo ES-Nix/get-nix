@@ -1675,7 +1675,7 @@ EXPR_NIX='
                       # };              
               
                       programs.ssh.forwardX11 = true;
-                      services.qemuGuest.enable = false; # TODO: 
+                      # services.qemuGuest.enable = false; # TODO: 
 
                       services.sshd.enable = true;
 
@@ -19722,6 +19722,7 @@ build \
 #github:ES-Nix/podman-rootless/from-nixpkgs#podman
 
 cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
+# cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | docker import
 
 xhost + || nix run nixpkgs#xorg.xhost -- +
 
@@ -24856,6 +24857,117 @@ Refs
 
 ```bash
 exec -a "$0" "/nix/store/-pycharm-community-2023.2/pycharm-community/bin/.pycharm.sh-wrapped"  "$@"
+```
+
+```bash
+env \
+A=a \
+B=b \
+sh \
+-c \
+'echo $A && echo $B'
+```
+Refs.:
+- https://stackoverflow.com/questions/10856129/setting-an-environment-variable-before-a-command-in-bash-is-not-working-for-the#comment125369132_56765113
+
+
+```bash
+EXPR_NIX=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+    pkgs = import nixpkgs { };    
+  in
+    with pkgs; [
+      (
+        glibcLocales.override {
+            allLocales = false;
+            locales = [
+                        "en_US.UTF-8/UTF-8" 
+                        "pt_BR.UTF-8/UTF-8"
+                      ];
+          }
+      )
+      python39
+    ]
+)
+EOF
+)
+
+echo "$EXPR_NIX"
+
+nix \
+shell \
+--ignore-environment \
+--impure \
+--expr \
+"$EXPR_NIX" \
+--command \
+python --version
+
+
+env \
+LANG=pt_BR.UTF-8 \
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR_NIX" \
+--command \
+python \
+-c \
+'
+import locale
+defaultlocale = locale.getdefaultlocale()
+locale.setlocale(locale.LC_ALL, defaultlocale[0] + "." + defaultlocale[1])
+print(locale.currency(12345.67, grouping=True, symbol=True))
+'
+
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR_NIX" \
+--command \
+python \
+-c \
+'
+import locale
+defaultlocale = locale.getdefaultlocale()
+locale.setlocale(locale.LC_ALL, defaultlocale[0] + "." + defaultlocale[1])
+print(locale.currency(12345.67, grouping=True, symbol=True))
+'
+```
+
+```bash
+env \
+LANG=pt_BR.UTF-8 \
+nix \
+shell \
+--ignore-environment \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { };    
+    in
+      with pkgs; [
+        (
+          glibcLocales.override {
+              allLocales = false;
+              locales = [
+                          "en_US.UTF-8/UTF-8" 
+                          "pt_BR.UTF-8/UTF-8"
+                        ];
+            }
+        )
+        cowsay
+      ]
+    )
+' \
+--command cowsay "Hello"
 ```
 
 
