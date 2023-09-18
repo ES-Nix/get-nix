@@ -11126,22 +11126,83 @@ shell \
 ```
 
 
+https://ftp.gnu.org/gnu/sed/sed-4.0.6.tar.gz
+
 ```bash
 nix \
 shell \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-(gnused.overrideDerivation (oldAttrs: {
-  name = "sed-4.2.2-pre";
-  src = fetchurl {
-    url = ftp://alpha.gnu.org/gnu/sed/sed-4.2.2-pre.tar.bz2;
-    sha256 = "11nq06d131y4wmf3drm0yk502d2xc6n5qy82cg88rb9nqd2lj41k";
-  };
-  patches = [];
-}))
-)'
+'
+  (
+    with builtins.getFlake "nixpkgs";
+    with legacyPackages.${builtins.currentSystem};
+      (gnused.overrideDerivation (oldAttrs: {
+          name = "sed-4.0.6";
+          src = fetchurl {
+            url = https://ftp.gnu.org/gnu/sed/sed-4.2.1.tar.bz2;
+            sha256 = "sha256-KsOzbKN7/rQ8TvQCV3jNZticd6u4Q9kFUqUVp8nSlI8=";
+          };
+        patches = [];
+        })
+      )
+)' \
+--command \
+bash \
+-c \
+'sed --version && which sed'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "nixpkgs";
+    with legacyPackages.${builtins.currentSystem};
+      (gnused.overrideDerivation (oldAttrs: {
+          name = "sed-4.0.6";
+          src = fetchurl {
+            url = https://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz;
+            sha256 = "sha256-KIV2jNCin/jVimKAonD/Fh9qPetWkLK+bEn0bUxnvWo=";
+          };
+        patches = [];
+        })
+      )
+)' \
+--command \
+bash \
+-c \
+'sed --version && which sed'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "nixpkgs";
+    with legacyPackages.${builtins.currentSystem};
+      (gnused.overrideDerivation (oldAttrs: {
+          name = "sed-4.2.2-pre";
+          src = fetchurl {
+            url = ftp://alpha.gnu.org/gnu/sed/sed-4.2.2-pre.tar.bz2;
+            sha256 = "11nq06d131y4wmf3drm0yk502d2xc6n5qy82cg88rb9nqd2lj41k";
+          };
+        patches = [];
+        })
+      )
+)' \
+--command \
+bash \
+-c \
+'sed --version && which sed'
 ```
 
 
@@ -13866,11 +13927,15 @@ nix eval --raw nixpkgs#fastStdenv.hostPlatform.libc
 nix eval --raw nixpkgs#fastStdenv.cc.targetPrefix
 
 
+nix eval --raw nixpkgs#stdenv.preHook
+
 nix eval --raw nixpkgs#rustPlatform.cargoSetupHook
 echo
 nix eval --raw nixpkgs#rustPlatform.maturinBuildHook
 echo
 
+# cat $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#stdenv)/setup
+nix store cat $(nix eval --raw nixpkgs#stdenv.setup)
 
 nix store cat $(nix build --no-link --print-out-paths nixpkgs#rustPlatform.cargoSetupHook.out)/nix-support/setup-hook
 nix store cat $(nix build --no-link --print-out-paths nixpkgs#rustPlatform.maturinBuildHook.out)/nix-support/setup-hook
@@ -13886,6 +13951,9 @@ nix eval --raw nixpkgs#qt5.qtbase.qtPluginPrefix
 ```
 Refs.:
 - https://github.com/Mic92/nix-ld/blob/29f15b1f7e37810689974ef169496c51f6403a1b/examples/masterpdfeditor.nix#L16
+
+
+
 
 ```bash
 nix \
@@ -22227,6 +22295,26 @@ sh \
 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
 ```
 
+```bash
+cat $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#stdenv)/setup | wc -l
+```
+
+```bash
+podman run -it --rm ubuntu bash<<'COMMANDS'
+apt-get update \
+&& apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget \
+&& cd "$(mktemp -d)" \
+&& wget https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz \
+&& tar -xf Python-3.9.18.tgz \
+&& cd Python-3.9.18 \
+&& ./configure \
+&& make install \
+&& python3 -c 'import this' \
+&& ldd $(which python3)
+COMMANDS
+```
+Refs.:
+- https://askubuntu.com/questions/1349976/after-installing-python-3-9-6-on-ubuntu-18-04-i-could-not-run-sudo-apt
 
 
 ```bash

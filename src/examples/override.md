@@ -361,6 +361,45 @@ install \
 '
 ```
 
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.python39.override { 
+          sourceVersion = { major="3"; minor="9"; patch="18"; suffix=""; }; 
+          # hash = "sha256-AVl9sBMsHPezMe/2iuCbWiNaPDyqnJRMKcrH0cTEwAo="; 
+        } 
+      )
+  )
+'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.python39.overrideAttrs 
+        (oldAttrs: sourceVersion = { major="3"; minor="9"; patch="18"; suffix=""; }; ) 
+      )
+  )
+'
+```
+
 
 ## pkgs.mkShell.override
 
