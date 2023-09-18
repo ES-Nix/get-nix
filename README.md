@@ -13877,6 +13877,11 @@ nix eval nixpkgs#shadow.out.outputs
 
 nix eval nixpkgs#glibc.out.outputs
 
+nix eval --raw nixpkgs#openssl.out
+
+# ls -al $(nix build --no-show-trace --no-link --print-build-logs --print-out-paths nixpkgs#openssl.out)/lib
+# nix build --no-show-trace --no-link --print-build-logs --print-out-paths nixpkgs#openssl
+
 nix \
 eval \
 --impure \

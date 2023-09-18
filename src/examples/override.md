@@ -534,9 +534,8 @@ shell \
           }
       )
   )
-' 
-
-\
+' \
+-c \
 --command \
 python
 ```

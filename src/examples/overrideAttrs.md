@@ -267,23 +267,23 @@ shell \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"; 
     with legacyPackages.${builtins.currentSystem};
     (openssl_1_1.overrideAttrs (oldAttrs: rec {
         src = fetchurl {
           url = https://www.openssl.org/source/old/1.1.1/openssl-1.1.1l.tar.gz;
           sha256 = "sha256-C3o+XlnDSCf+DDp0t+yLrvMCuY+oAIjX+RU6oW+na9E=";
         };
-        configureFlags = (oldAttrs.configureFlags or "") ++ [ "-smtp_tls_security_level=may" ]; 
+        configureFlags = (oldAttrs.configureFlags or "") ++ [ "smtp_tls_security_level=may" ]; 
       })
     )
   )
-'
-```
-
-```bash
+' \
+-c \
 openssl version -f | tr ' ' '\n' | sort
 ```
+
+
 
 
 
@@ -333,7 +333,7 @@ shell \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/573603b7fdb9feb0eb8efc16ee18a015c667ab1b"; 
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"; 
     with legacyPackages.${builtins.currentSystem};
     (openssl_1_1.overrideAttrs (oldAttrs: rec 
       {
