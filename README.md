@@ -19692,6 +19692,18 @@ bash \
 ##### minimal
 
 
+TODO: investigate with `nix eval`
+```nix
+  boot.loader.grub.enable = false;
+  boot.initrd.enable = false;
+  boot.isContainer = true;
+  boot.loader.initScript.enable = true;
+```
+Refs.:
+- https://github.com/Mic92/vmsh/blob/358cd4b6ec7de0dcac05a12e32486ef30658018c/nix/modules/configuration.nix#L26
+
+
+
 ```bash
 cat > flake.nix << 'EOF'
 {
