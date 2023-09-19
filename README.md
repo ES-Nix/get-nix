@@ -1025,6 +1025,55 @@ lscpu | grep op-mode
 
 ## TMP, TMPDIR, XDG_RUNTIME_DIR
 
+[XDG_DATA_DIR is the PROPER way to add Applications](https://www.youtube.com/watch?v=bZN3BZOYW_k)
+```bash
+--use-xdg-base-directories
+```
+
+https://discord.com/channels/692426888563523716/1017825280175394828/1017825282478059551
+https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-hash-to-sri?search=use-xdg-base-directories
+
+
+```bash
+if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]
+then 
+	source ~/.nix-profile/etc/profile.d/nix.sh
+fi # added by Nix installer
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/3910
+- https://github.com/NixOS/nix/pull/2443#issuecomment-423912395
+
+
+```bash
+# See the next version
+export XDG_DATA_DIRS=$HOME/.nix-profile/share:"${XDG_DATA_DIRS:-/usr/local/share/:/usr/share/}"
+```
+
+
+
+```bash
+env | grep XDG_DATA_DIRS
+
+echo $XDG_DATA_DIRS
+
+[[ ":$XDG_DATA_DIRS:" =~ ":/usr/local/share/:" ]] || XDG_DATA_DIRS="/usr/local/share/:$XDG_DATA_DIRS"
+[[ ":$XDG_DATA_DIRS:" =~ ":/usr/share/:" ]] || XDG_DATA_DIRS="/usr/share/:$XDG_DATA_DIRS"
+[[ ":$XDG_DATA_DIRS:" =~ ":$HOME/.local/share:" ]] || XDG_DATA_DIRS="$HOME/.local/share:$XDG_DATA_DIRS"
+[[ ":$XDG_DATA_DIRS:" =~ ":$HOME/.nix-profile/share:" ]] || XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"
+
+echo $XDG_DATA_DIRS
+```
+Refs.:
+- https://askubuntu.com/a/432345
+- https://unix.stackexchange.com/questions/14895/duplicate-entries-in-path-a-problem#comment847854_14895
+- https://unix.stackexchange.com/a/14896
+- https://serverfault.com/a/192517
+- https://unix.stackexchange.com/a/689813
+
+
+> Of course, depending on your use case it is better use `home-manager`.
+
 
 ```bash
 echo "$TMP"
@@ -13203,6 +13252,30 @@ chmod -v 0755 node
 Refs.:
 - https://hub.docker.com/_/node/
 
+
+
+```bash
+ldd ./node | grep -v vdso.so | cut -d' ' -f1 | tr -d '\t' | cut -d'/' -f3
+
+patchelf --print-needed ./node
+```
+Refs.:
+- https://gist.github.com/CMCDragonkai/1cac0299230f110a6f842ceb654fa0d0
+
+
+TODO: add an example like this to the Wiki
+```bash
+nix hash to-sri --type sha256 2cb75f2bc04b0a3498733fbee779b2f76fe3f655188b4ac69ef2887b6721da2d
+nix hash to-base16 sha256-B+dkCN2wMApvRvzJq8YfhBrN5JtFAg7E6Gu5sl303O0=
+```
+Refs.:
+- https://nixos.wiki/wiki/Nix_Hash
+- https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-hash-to-sri
+- https://github.com/NixOS/nix/issues/6414
+
+```bash
+nix hash to-sri --type sha256 $(echo 'abc' | sha256sum | cut -d' ' -f1)
+```
 
 ```bash
 export NIXPKGS_ALLOW_UNFREE=1; \
