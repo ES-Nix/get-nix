@@ -1072,7 +1072,261 @@ Refs.:
 - https://unix.stackexchange.com/a/689813
 
 
+```bash
+env \
+USR_LOCAL_SHARE='[[ ":$XDG_DATA_DIRS:" =~ ":/usr/local/share/:" ]] || XDG_DATA_DIRS="/usr/local/share/:$XDG_DATA_DIRS"' \
+USR_SHARE='[[ ":$XDG_DATA_DIRS:" =~ ":/usr/share/:" ]] || XDG_DATA_DIRS="/usr/share/:$XDG_DATA_DIRS"' \
+HOME_PROFILE="$HOME/.profile" \
+HOME_LOCAL_SHARE='[[ ":$XDG_DATA_DIRS:" =~ ":$HOME/.local/share:" ]] || XDG_DATA_DIRS="$HOME/.local/share:$XDG_DATA_DIRS"' \
+HOME_NIX_PROFILE_SHARE='[[ ":$XDG_DATA_DIRS:" =~ ":$HOME/.nix-profile/share:" ]] || XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"' \
+COMMAND_EXPORT_XDG_DATA_DIRS_STRING='export XDG_DATA_DIRS="$XDG_DATA_DIRS"' \
+COMMAND_EXPORT_DISPLAY_STRING='export DISPLAY="${DISPLAY:-:0}"' \
+sh \
+-c \
+'
+grep -q -F "$USR_LOCAL_SHARE" "$HOME_PROFILE" || echo "$USR_LOCAL_SHARE" >> "$HOME_PROFILE"
+grep -q -F "$USR_SHARE" "$HOME_PROFILE" || echo "$USR_SHARE" >> "$HOME_PROFILE"
+grep -q -F "$HOME_LOCAL_SHARE" "$HOME_PROFILE" || echo "$HOME_LOCAL_SHARE" >> "$HOME_PROFILE"
+grep -q -F "$HOME_NIX_PROFILE_SHARE" "$HOME_PROFILE" || echo "$HOME_NIX_PROFILE_SHARE" >> "$HOME_PROFILE"
+grep -q -F "$COMMAND_EXPORT_STRING" "$HOME_PROFILE" || echo "$COMMAND_EXPORT_STRING" >> "$HOME_PROFILE"
+grep -q -F "$COMMAND_EXPORT_STRING" "$HOME_PROFILE" || echo "$COMMAND_EXPORT_STRING" >> "$HOME_PROFILE"
+grep -q -F "$COMMAND_EXPORT_DISPLAY_STRING" "$HOME_PROFILE" || echo "$COMMAND_EXPORT_DISPLAY_STRING" >> "$HOME_PROFILE"
+'
+
+source "$HOME/.profile"
+```
+
+
 > Of course, depending on your use case it is better use `home-manager`.
+
+
+```bash
+xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
+xhost + || nix run nixpkgs#xorg.xhost -- +
+
+
+docker \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
+-ti --rm ubuntu:23.04
+
+apt-get update \
+&& apt-get install -y --no-install-recommends x11-apps \
+&& xclock
+
+apt-get update \
+&& apt-get install -y --no-install-recommends xinit xfce4 xserver-xorg-video-dummy \
+&& startx
+```
+Refs.:
+- https://askubuntu.com/questions/929200/how-to-install-a-minimal-xfce4-gui-on-ubuntu-server-16-04
+- https://command-not-found.com/xclock
+- https://serverfault.com/questions/1064759/xorg-not-starting-in-gke-with-gpu-ee-no-screens-foundee
+- https://www.linuxquestions.org/questions/linux-from-scratch-13/blfs-stuck-at-x-server-start-ee-no-screens-found-ee-4175684483/#post6182397
+- https://bbs.archlinux.org/viewtopic.php?pid=2035298#p2035298
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:23.04 as ubuntu-base
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     sudo \
+     tar \
+     xz-utils \
+     wget \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+  && getent group kvm || sudo groupadd kvm \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+
+USER abcuser
+WORKDIR /home/abcuser
+
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+
+ENV SHELL="bin/bash"
+
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--target ubuntu-base \
+--tag=ubuntu-base .
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23 \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=abcuser \
+--userns=keep-id \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
+ubuntu-base:latest
+```
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:23.04 as ubuntu-base
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     sudo \
+     tar \
+     xz-utils \
+     wget \
+     x11-apps \
+     xinit \
+     xfce4 \
+     xserver-xorg-video-dummy \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+
+# USER abcuser
+# WORKDIR /home/abcuser
+
+# ENV USER="abcuser"
+# ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+
+ENV SHELL="bin/bash"
+
+EOF
+
+docker \
+build \
+--file=Containerfile \
+--target ubuntu-base \
+--tag=ubuntu-base .
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+docker \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
+-ti --rm ubuntu-base:latest
+```
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM debian
+ENV DEBIAN_FRONTEND noninteractive
+
+
+RUN apt-get update -y \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     dbus-x11 \
+     sudo \
+     tar \
+     terminator \
+     wget \
+     x11-apps \
+     xfce4 \
+     xz-utils \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || sudo groupadd kvm \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+
+RUN echo 'export DISPLAY="${DISPLAY:-:0}"' >> "$HOME/.profile"
+
+ENV XDG_DATA_DIRS=/home/abcuser/.nix-profile/share:/home/abcuser/.local/share:/usr/share/:/usr/local/share/:
+
+CMD startxfce4
+
+EOF
+
+docker \
+build \
+--file=Containerfile \
+--tag=debian-xfce .
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+docker \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--dns=8.8.8.8 \
+--dns=1.1.1.1 \
+--name=container-debian-xfce \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
+-ti \
+--rm \
+debian-xfce:latest
+```
+Refs.:
+- https://unix.stackexchange.com/a/39417
+- 
+
+
+```bash
+docker run --rm debian:latest bash -c 'cat /etc/resolv.conf'
+docker run --dns 8.8.8.8 --dns 1.1.1.1 --rm debian:latest bash -c 'cat /etc/resolv.conf'
+```
+Refs.:
+- https://serverfault.com/a/694649
+
+
+
 
 
 ```bash
@@ -2144,13 +2398,18 @@ file $(readlink -f $(which nix))
 du -hs $(readlink -f $(which nix))
 ```
 
-
 ```bash
-cat << 'EOF' >> Dockerfile
+cat << 'EOF' > Containerfile
 FROM docker.io/library/fedora:39
 
-# RUN dnf -y install httpd; dnf clean all; systemctl enable httpd
-RUN dnf -y install hostname systemd xz
+RUN dnf -y install \
+    dbus \
+    hostname \
+    systemd \
+    sudo \
+    xz \
+    util-linux \
+ && systemctl enable dbus-broker
 
 RUN groupadd abcgroup \
  && adduser \
@@ -2158,9 +2417,118 @@ RUN groupadd abcgroup \
      --gid abcgroup \
      --uid 3322 \
      abcuser \
+ && echo 'abcuser:123' | chpasswd \
  && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
  && usermod --append --groups kvm abcuser
 
+CMD [ "/sbin/init" ]
+EOF
+
+podman build --tag fedora39-systemd .
+
+podman kill test-fedora39-systemd \
+&& podman rm --force test-fedora39-systemd || true \
+&& podman \
+run \
+--env="USER=abcuser" \
+--detach=true \
+--name=test-fedora39-systemd \
+--interactive=true \
+--tty=true \
+--privileged=true \
+--rm=true \
+fedora39-systemd \
+&& podman ps
+
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+systemctl status swap.target \
+&& systemctl status dbus.socket \
+&& systemctl status system.slice \
+&& systemctl status user.slice
+'
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4Bqe || curl -L http://ix.io/4Bqe | sh \
+&& . "$HOME"/."$(basename $SHELL)"rc \
+&& nix flake --version
+'
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4Bqe || curl -L http://ix.io/4Bqe | sh \
+&& . "$HOME"/."$(basename $SHELL)"rc
+wget -qO- http://ix.io/4Bqg || curl -L http://ix.io/4Bqg | sh
+hms
+nix store gc -v && nix store optimise -v 
+'
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+.nix-profile/bin/zsh
+```
+Refs.:
+- https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#other_cool_features_about_podman_and_systemd
+- https://fedoraproject.org/wiki/Xfce
+
+
+```bash
+cat << 'EOF' > Containerfile
+FROM docker.io/library/fedora:39
+
+# RUN dnf -y install httpd; dnf clean all; systemctl enable httpd
+RUN dnf -y install \
+    dbus \
+    hostname \
+    systemd \
+    sudo \
+    @xfce-desktop-environment \
+    xz \
+    util-linux \
+ && systemctl enable dbus-broker
+
+RUN groupadd abcgroup \
+ && adduser \
+     --comment '"An unprivileged user with an group"' \
+     --gid abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && usermod --append --groups kvm abcuser
+
+STOPSIGNAL SIGRTMIN+3
 EXPOSE 80
 
 CMD [ "/sbin/init" ]
@@ -2232,30 +2600,6 @@ hms
 nix store gc -v && nix store optimise -v 
 '
 
-#podman \
-#exec \
-#--interactive=true \
-#--tty=true \
-#--user=abcuser \
-#--workdir=/home/abcuser \
-#test-fedora39-systemd \
-#bash \
-#-c \
-#'
-#. "$HOME"/."$(basename $SHELL)"rc
-#wget -qO- http://ix.io/4Bqg || curl -L http://ix.io/4Bqg | sh
-#'
-#
-#podman \
-#exec \
-#--interactive=true \
-#--tty=true \
-#--user=abcuser \
-#--workdir=/home/abcuser \
-#test-fedora39-systemd \
-#bash
-
-
 podman \
 exec \
 --interactive=true \
@@ -2267,6 +2611,115 @@ test-fedora39-systemd \
 ```
 Refs.:
 - https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#other_cool_features_about_podman_and_systemd
+- https://fedoraproject.org/wiki/Xfce
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM docker.io/library/fedora:39
+
+# RUN dnf -y install httpd; dnf clean all; systemctl enable httpd
+RUN dnf -y install \
+    dbus \
+    hostname \
+    systemd \
+    sudo \
+    @xfce-desktop-environment \
+    xz \
+    util-linux \
+ && systemctl enable dbus-broker
+
+RUN groupadd abcgroup \
+ && adduser \
+     --comment '"An unprivileged user with an group"' \
+     --gid abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && usermod --append --groups kvm abcuser
+
+STOPSIGNAL SIGRTMIN+3
+EXPOSE 80
+
+CMD [ "/sbin/init" ]
+EOF
+
+docker build --tag fedora39-systemd .
+
+podman kill test-fedora39-systemd \
+&& podman rm --force test-fedora39-systemd || true \
+&& podman \
+run \
+--env="USER=abcuser" \
+--detach=true \
+--name=test-fedora39-systemd \
+--interactive=true \
+--tty=true \
+--privileged=true \
+--publish=8080:80 \
+--rm=true \
+fedora39-systemd \
+&& podman ps
+
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+systemctl status swap.target \
+&& systemctl status dbus.socket \
+&& systemctl status system.slice \
+&& systemctl status user.slice \
+&& systemctl status dbus-broker
+'
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4Bqe || curl -L http://ix.io/4Bqe | sh \
+&& . "$HOME"/."$(basename $SHELL)"rc \
+&& nix flake --version
+'
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+bash \
+-c \
+'
+wget -qO- http://ix.io/4Bqe || curl -L http://ix.io/4Bqe | sh \
+&& . "$HOME"/."$(basename $SHELL)"rc
+wget -qO- http://ix.io/4Bqg || curl -L http://ix.io/4Bqg | sh
+hms
+nix store gc -v && nix store optimise -v 
+'
+
+podman \
+exec \
+--interactive=true \
+--tty=true \
+--user=abcuser \
+--workdir=/home/abcuser \
+test-fedora39-systemd \
+.nix-profile/bin/zsh
+```
 
 
 
@@ -3544,7 +3997,7 @@ loginctl show-user "$(id -un)" | grep ^Linger
 
 
 ```bash
-DBUS_SESSION_BUS_ADDRESS
+echo $DBUS_SESSION_BUS_ADDRESS
 ```
 Refs.:
 - https://unix.stackexchange.com/questions/723114/dbus-systemd-on-a-headless-server
