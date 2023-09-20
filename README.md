@@ -13716,6 +13716,11 @@ Refs.:
 - https://gist.github.com/CMCDragonkai/1cac0299230f110a6f842ceb654fa0d0
 
 
+```bash
+file $(ldd $(which id) | tail -n1 | cut -d' ' -f1)
+$(ldd $(which id) | tail -n1 | cut -d' ' -f1) --version
+```
+
 TODO: add an example like this to the Wiki
 ```bash
 nix hash to-sri --type sha256 2cb75f2bc04b0a3498733fbee779b2f76fe3f655188b4ac69ef2887b6721da2d
