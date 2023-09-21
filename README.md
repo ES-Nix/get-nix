@@ -1173,7 +1173,8 @@ build \
 --tag=ubuntu-base .
 
 xhost + || nix run nixpkgs#xorg.xhost -- +
-podman \
+(podman rm --force container-ubuntu23 || true) \
+&& podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
 --env="DISPLAY=${DISPLAY:-:0}" \
@@ -1188,9 +1189,89 @@ run \
 --userns=keep-id \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
 ubuntu-base:latest
+
+
+IMAGE_NAME='nix-hm-ubuntu23'
+CONTAINER_NAME='container'"${IMAGE_NAME}"
+podman rm --force --ignore "${CONTAINER_NAME}"
+
+podman \
+run \
+--name="${CONTAINER_NAME}" \
+--detach=false \
+--hostname=container-nix-hm \
+--privileged=true \
+--rm=false \
+--interactive=true \
+--tty=FALSE \
+ubuntu-base:latest \
+bash <<'COMMANDS'
+NIX_RELEASE_VERSION=2.10.2 \
+&& time curl -L https://releases.nixos.org/nix/nix-"${NIX_RELEASE_VERSION}"/install | sh -s -- --no-daemon \
+&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh
+
+export NIX_CONFIG='extra-experimental-features = nix-command flakes'
+
+nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+time \
+nix \
+--refresh \
+run \
+github:ES-nix/es#installStartConfigTemplate
+
+nix \
+store \
+gc \
+ --verbose \
+ --option keep-derivations false \
+ --option keep-outputs false \
+&& nix-collect-garbage --delete-old \
+&& nix store optimise --verbose
+COMMANDS
+
+podman commit --change="ENTRYPOINT zsh" -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
+&& podman images \
+&& podman rm --force --ignore "${CONTAINER_NAME}"
 ```
 
 
+
+```bash
+xhost + || nix run nixpkgs#xorg.xhost -- +
+(podman rm --force container-nix-hm-ubuntu23 || true) \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
+--hostname=container-nix-hm \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
+--name=container-nix-hm-ubuntu23 \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--user=abcuser \
+--userns=keep-id \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
+localhost/nix-hm-ubuntu23:latest
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+"$HOME/.config/nixpkgs"#homeConfigurations.$(nix eval --impure --raw --expr 'builtins.currentSystem')."$(id -un)"-"$(hostname)".activationPackage
+```
 
 ```bash
 cat > Containerfile << 'EOF'
