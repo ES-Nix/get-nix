@@ -1203,7 +1203,7 @@ run \
 --privileged=true \
 --rm=false \
 --interactive=true \
---tty=FALSE \
+--tty=false \
 ubuntu-base:latest \
 bash <<'COMMANDS'
 NIX_RELEASE_VERSION=2.10.2 \
@@ -11262,6 +11262,34 @@ build \
 #cp -v "$OUT_PATH_STAGE_2" nix-stage-2
 ```
 
+```bash
+cat > Containerfile << 'EOF'
+FROM alpine:latest
+LABEL maintainer="Vivek Gite webmater@cyberciti.biz"
+RUN apk add --update --no-cache openssh 
+RUN echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
+RUN adduser -h /home/vivek -s /bin/sh -D vivek
+RUN echo -n 'vivek:some_password_here' | chpasswd
+ENTRYPOINT ["/entrypoint.sh"]
+EXPOSE 22
+COPY entrypoint.sh /
+EOF
+
+cat > entrypoint.sh << 'EOF'
+#!/bin/sh
+ssh-keygen -A
+exec /usr/sbin/sshd -D -e "$@"
+#!/bin/sh
+ssh-keygen -A
+exec /usr/sbin/sshd -D -e "$@"
+EOF
+
+chmod +x -v entrypoint.sh
+
+docker build --file Containerfile -t alpine-sshd .
+
+docker run --name sshd_app -d -p 22:22 alpine-sshd:latest
+```
 
 
 ```bash
