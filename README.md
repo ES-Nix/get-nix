@@ -1162,7 +1162,7 @@ WORKDIR /home/abcuser
 ENV USER="abcuser"
 ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 
-ENV SHELL="bin/bash"
+ENV SHELL="/bin/bash"
 
 EOF
 
@@ -1312,7 +1312,7 @@ RUN addgroup abcgroup --gid 4455  \
 # ENV USER="abcuser"
 # ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 
-ENV SHELL="bin/bash"
+ENV SHELL="/bin/bash"
 
 EOF
 
@@ -2841,7 +2841,7 @@ ENV USER="abcuser"
 ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 # ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 # ENV NIX_PAGER="cat"
-ENV SHELL="bin/bash"
+ENV SHELL="/bin/bash"
 
 # https://stackoverflow.com/a/74439202/9577149
 ENTRYPOINT ["/lib/systemd/systemd"]
@@ -3665,7 +3665,7 @@ ENV USER="abcuser"
 ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 # ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 # ENV NIX_PAGER="cat"
-ENV SHELL="bin/bash"
+ENV SHELL="/bin/bash"
 
 
 
@@ -3860,7 +3860,7 @@ ENV USER="abcuser"
 ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 # ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 # ENV NIX_PAGER="cat"
-ENV SHELL="bin/bash"
+ENV SHELL="/bin/bash"
 
 # https://stackoverflow.com/a/74439202/9577149
 ENTRYPOINT ["/lib/systemd/systemd"]
@@ -4149,7 +4149,7 @@ ENV USER="abcuser"
 ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
 # ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 # ENV NIX_PAGER="cat"
-ENV SHELL="bin/bash"
+ENV SHELL="/bin/bash"
 
 
 FROM localhost/ubuntu-base as ubuntu-nix-static
@@ -4240,7 +4240,7 @@ run \
 --interactive=true \
 --tty=true \
 --rm=true \
---userns=keep-id \--annotation=run.oci.keep_original_groups=1 \
+--userns=keep-id \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/ubuntu-nix-hm:latest \
 ls
@@ -4591,6 +4591,36 @@ mkdir -pv "$HOME"/.local/bin \
 && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
 && nix flake --version \
 && nix registry pin ??
+```
+
+```bash
+# --userns=keep-id \
+# --group-add=keep-groups \
+nix run nixpkgs#xorg.xhost -- +
+docker \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--env="SHELL=/bin/bash" \
+--env="USER=podman" \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix \
+--interactive=true \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=podman \
+--volume="$(pwd)":/home/podman/code:rw \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--workdir=/home/podman \
+quay.io/podman/stable
+```
+
+
+```bash
+dnf update -y \
+&& dnf install -y hostname xz \
+&& mkdir -m 0755 /nix && chown podman /nix
 ```
 
 
