@@ -11266,10 +11266,10 @@ build \
 cat > Containerfile << 'EOF'
 FROM alpine:latest
 LABEL maintainer="Vivek Gite webmater@cyberciti.biz"
-RUN apk add --update --no-cache openssh 
+RUN apk add --update --no-cache openssh openssh-client
 RUN echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
 RUN adduser -h /home/vivek -s /bin/sh -D vivek
-RUN echo -n 'vivek:some_password_here' | chpasswd
+RUN echo -n 'vivek:123' | chpasswd
 ENTRYPOINT ["/entrypoint.sh"]
 EXPOSE 22
 COPY entrypoint.sh /
@@ -11290,6 +11290,32 @@ docker build --file Containerfile -t alpine-sshd .
 
 docker run --name sshd_app -d -p 22:22 alpine-sshd:latest
 ```
+
+```bash
+cat > Containerfile << 'EOF'
+FROM alpine:latest
+
+RUN apk add --no-cache openssh-client
+
+EOF
+
+cat > entrypoint.sh << 'EOF'
+#!/bin/sh
+ssh-keygen -A
+exec /usr/sbin/sshd -D -e "$@"
+#!/bin/sh
+ssh-keygen -A
+exec /usr/sbin/sshd -D -e "$@"
+EOF
+
+chmod +x -v entrypoint.sh
+
+docker build --file Containerfile -t alpine-sshd .
+
+docker run --name sshd_app -d -p 22:22 alpine-sshd:latest
+```
+
+
 
 
 ```bash
@@ -11327,11 +11353,13 @@ ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
 RUN mkdir -pv "$HOME"/.local/bin
 
 
-FROM docker.io/library/busybox as busybox-ca-certificates-nix
+# FROM docker.io/library/busybox as busybox-ca-certificates-nix
+FROM docker.io/library/alpine:3.18.3 as busybox-ca-certificates-nix
 
 # https://stackoverflow.com/a/45397221
 COPY --from=alpine-certs /etc/ssl/certs /etc/ssl/certs
 
+RUN apk update && apk add --no-cache openssh-client shadow
 RUN mkdir -pv /home/nixuser \
  && addgroup nixgroup --gid 4455 \
  && adduser \
@@ -11340,9 +11368,16 @@ RUN mkdir -pv /home/nixuser \
      -h /home/nixuser \
      -G nixgroup \
      -u 3322 \
-     nixuser
+     nixuser \
+ && mkdir -pv /etc/sudoers.d \
+ && echo 'nixuser:123' | chpasswd \
+ && echo 'nixuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/nixuser \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || groupadd kvm \
+ && usermod --append --groups kvm nixuser \
+ && echo 'End kvm stuff!'
 
-# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
 
 USER nixuser
 WORKDIR /home/nixuser
@@ -11357,7 +11392,8 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && cd - \
  && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
  && nix flake --version \
- && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+ && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+ && nix profile install nixpkgs#git
 
 # ENTRYPOINT [ "nix" ]
 # ENTRYPOINT [ "nix", "shell", "nixpkgs#busybox-sandbox-shell", "--command", "sh" ]
@@ -11394,6 +11430,7 @@ run \
 --publish=5000:5000 \
 --rm=true \
 --tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/busybox-ca-certificates-nix:latest \
 sh \
 -c \
@@ -11409,18 +11446,395 @@ FULL_STATIC_NIX_BIN_PATH="$(nix build --no-link --print-out-paths --rebuild gith
 echo "$EXPECTED_SHA512SUM"  "$HOME"/.local/share/nix/root"$FULL_STATIC_NIX_BIN_PATH" | sha512sum -c
 '
 
+
+xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
+
+
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/fuse:rw \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--group-add=keep-groups \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-nix \
+--privileged=true \
+--tty=true \
+--userns=keep-id \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/busybox-ca-certificates-nix:latest
+
+
 podman \
 run \
 --device=/dev/fuse \
 --device=/dev/kvm \
 --env="DISPLAY=${DISPLAY:-:0.0}" \
 --interactive=true \
---mount=type=tmpfs,tmpfs-size=2G,destination=/tmp \
+--mount=type=tmpfs,tmpfs-size=8G,destination=/tmp \
 --privileged=true \
 --publish=5000:5000 \
 --rm=true \
 --tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/busybox-ca-certificates-nix:latest
+```
+Refs.:
+https://stackoverflow.com/a/43662019/9577149
+
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.18.3 as alpine-with-nix
+
+RUN apk update && apk add --no-cache ca-certificates openssh-client shadow
+
+RUN mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser \
+ && mkdir -pv /etc/sudoers.d \
+ && echo 'nixuser:123' | chpasswd \
+ && echo 'nixuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/nixuser \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || groupadd kvm \
+ && usermod --append --groups kvm nixuser \
+ && echo 'End kvm stuff!'
+
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && wget -O- https://hydra.nixos.org/build/231020695/download/2/nix > nix \
+ && chmod -v +x nix \
+ && cd - \
+ && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
+ && nix flake --version \
+ && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+ && nix profile install nixpkgs#git nixpkgs#nano nixpkgs#gnugrep nixpkgs#openssh \
+ && nix store gc -v
+
+EOF
+
+podman \
+build \
+--tag alpine-with-nix \
+--target alpine-with-nix \
+.
+
+
+xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
+
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/fuse:rw \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--group-add=keep-groups \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-nix \
+--privileged=true \
+--tty=true \
+--userns=keep-id \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/alpine-with-nix:latest
+
+
+podman \
+run \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--env="DISPLAY=${DISPLAY:-:0.0}" \
+--interactive=true \
+--mount=type=tmpfs,tmpfs-size=8G,destination=/tmp \
+--privileged=true \
+--publish=5000:5000 \
+--rm=true \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/alpine-with-nix:latest
+```
+Refs.:
+- https://stackoverflow.com/a/43662019/9577149
+
+
+
+```bash
+nano --version || nix profile install nixpkgs#nano
+
+test -d ~/.ssh || mkdir -pv ~/.ssh
+
+cat >> ~/.ssh/config << 'EOF'
+
+Host localhost
+    IdentityFile ~/.ssh/id_ed25519
+    StrictHostKeyChecking no
+EOF
+
+
+echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPOK55vtFrqxd5idNzCd2nhr5K3ocoyw1JKWSM1E7f9i pedroalencarregis@hotmail.com' > ~/.ssh/id_ed25519.pub \
+&& chmod -v 0644 ~/.ssh/id_ed25519.pub \
+&& nano ~/.ssh/id_ed25519 \
+&& chmod -v 0600 ~/.ssh/id_ed25519 
+
+# Not an must. any advantage in using?
+# cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys \
+# && chmod -v 0640 ~/.ssh/authorized_keys
+```
+
+
+
+```bash
+ssh-add -l 1> /dev/null 2> /dev/null || eval $(ssh-agent -s)
+# There could be an race condition in here?
+(ssh-add -l | grep -q "$(cat ~/.ssh/id_ed25519.pub)") || ssh-add ~/.ssh/id_ed25519
+```
+
+
+
+```bash
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+
+mkdir -pv foo \
+&& cd foo \
+&& git init \
+&& git add . \
+&& git commit -m "First!"
+
+cat > flake.nix << 'EOF'
+{
+  description = "VM";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
+  };
+
+  outputs = all@{ self, nixpkgs, ... }:
+    let
+      pkgsAllowUnfree = import nixpkgs {
+        system = "x86_64-linux";
+        # system = "aarch64-linux";
+        config = { allowUnfree = true; };
+      };
+    in
+    {
+      nixosConfigurations.vm = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ ./vm.nix ];
+      };
+
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
+
+      # Utilized by `nix run .#<name>`
+      apps.x86_64-linux.vm = {
+        type = "app";
+        program = "${self.nixosConfigurations.vm.config.system.build.vm}/bin/run-nixos-vm";
+      };
+
+      devShells.x86_64-linux.default = pkgsAllowUnfree.mkShell {
+        buildInputs = with pkgsAllowUnfree; [
+          bashInteractive
+          coreutils
+          file
+          nixpkgs-fmt
+          which
+
+          docker
+        ];
+
+        shellHook = ''
+          export TMPDIR=/tmp
+
+          # Too much hardcoded?
+          export DOCKER_HOST=ssh://nixuser@localhost:2200
+        '';
+      };
+    };
+}
+EOF
+
+cat > vm.nix << 'EOF'
+{ lib, config, pkgs, ... }:
+let
+  nixuserKeys = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExR+PSB/jBwJYKfpLN+MMXs3miRn70oELTV3sXdgzpr";
+in
+{
+  # Internationalisation options
+  # i18n.defaultLocale = "en_US.UTF-8";
+  i18n.defaultLocale = "pt_BR.UTF-8";
+  console.keyMap = "br-abnt2";
+
+  # Options for the screen
+  virtualisation.vmVariant = {
+
+    virtualisation.useNixStoreImage = true;
+    virtualisation.writableStore = true; # TODO
+    virtualisation.docker.enable = true;
+
+    virtualisation.memorySize = 1024 * 3; # Use MiB memory.
+    virtualisation.diskSize = 1024 * 16; # Use MiB memory.
+    virtualisation.cores = 8; # Number of cores.
+    virtualisation.graphics = true;
+
+    virtualisation.resolution = {
+      x = 1280;
+      y = 1024;
+    };
+    virtualisation.qemu.options = [
+      # Better display option
+      "-vga virtio"
+      "-display gtk,zoom-to-fit=false"
+      # Enable copy/paste
+      # https://www.kraxel.org/blog/2021/05/qemu-cut-paste/
+      "-chardev qemu-vdagent,id=ch1,name=vdagent,clipboard=on"
+      "-device virtio-serial-pci"
+      "-device virtserialport,chardev=ch1,id=ch1,name=com.redhat.spice.0"
+    ];
+  };
+
+  users.users.root = {
+    password = "root";
+    initialPassword = "root";
+    openssh.authorizedKeys.keyFiles = [
+      "${ pkgs.writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExR+PSB/jBwJYKfpLN+MMXs3miRn70oELTV3sXdgzpr" }"
+    ];
+  };
+
+  # https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
+  users.extraGroups.nixgroup.gid = 999;
+
+  security.sudo.wheelNeedsPassword = false;
+  users.users.nixuser = {
+    isSystemUser = true;
+    password = "";
+    createHome = true;
+    home = "/home/nixuser";
+    homeMode = "0700";
+    description = "The VM tester user";
+    group = "nixgroup";
+    extraGroups = [
+      "podman"
+      "kvm"
+      "libvirtd"
+      "qemu-libvirtd"
+      "wheel"
+      "docker"
+    ];
+    packages = with pkgs; [
+      direnv
+      file
+      gnumake
+      which
+      coreutils
+      openssh
+    ];
+    shell = pkgs.bashInteractive;
+    uid = 1234;
+    autoSubUidGidRange = true;
+
+    openssh.authorizedKeys.keyFiles = [
+      "${ pkgs.writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExR+PSB/jBwJYKfpLN+MMXs3miRn70oELTV3sXdgzpr" }"
+    ];
+
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExR+PSB/jBwJYKfpLN+MMXs3miRn70oELTV3sXdgzpr"
+    ];
+  };
+
+  services.nfs.server.enable = true;
+
+  # https://github.com/NixOS/nixpkgs/issues/21332#issuecomment-268730694
+  services.openssh = {
+    allowSFTP = true;
+    kbdInteractiveAuthentication = false;
+    enable = true;
+    forwardX11 = false;
+    passwordAuthentication = false;
+    permitRootLogin = "yes";
+    ports = [ 10022 ];
+    authorizedKeysFiles = [
+      "${ pkgs.writeText "nixuser-keys.pub" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExR+PSB/jBwJYKfpLN+MMXs3miRn70oELTV3sXdgzpr" }"
+    ];
+  };
+
+  # X configuration
+  services.xserver.enable = true;
+  services.xserver.layout = "br";
+
+  services.xserver.displayManager.autoLogin.user = "nixuser";
+  services.xserver.desktopManager.xfce.enable = true;
+  services.xserver.desktopManager.xfce.enableScreensaver = false;
+
+  services.xserver.videoDrivers = [ "qxl" ];
+
+  # For copy/paste to work
+  services.spice-vdagentd.enable = true;
+
+  # Enable ssh
+  services.sshd.enable = true;
+
+  # Included packages here
+  nixpkgs.config.allowUnfree = true;
+  nix = {
+    # package = nixpkgs.pkgs.nix;
+    extraOptions = "experimental-features = nix-command flakes";
+    readOnlyStore = true;
+  };
+  environment.systemPackages = with pkgs; [
+    bashInteractive
+    hello
+    openssh
+  ];
+
+  system.stateVersion = "22.11";
+}
+EOF
+
+git add . \
+&& git commit -m "Second!"
+```
+
+
+
+```bash
+# Build this VM with nix build  ./#nixosConfigurations.vm.config.system.build.vm
+# Then run is with: ./result/bin/run-nixos-vm
+# To be able to connect with ssh enable port forwarding with:
+# export QEMU_NET_OPTS="hostfwd=tcp::10022-:2200" ./result/bin/run-nixos-vm
+# export QEMU_NET_OPTS="hostfwd=tcp::10022-:2200" nix run .#vm
+# Then connect with ssh -p 2200 guest@localhost
+# ps -p $(pgrep -f qemu-kvm) -o args | tr ' ' '\n'
+# ssh-keygen -R '[localhost]:2200' 1>/dev/null 2>/dev/null; \
+# ssh -X -Y -o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null \
+# -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -p 2200 nixuser@localhost
+
+export QEMU_NET_OPTS="hostfwd=tcp::10022-:2200" \
+&& nix run .#vm
+```
+
+
+```bash
+podman exec -it conteiner-unprivileged-nix sh
 ```
 
 
@@ -11429,7 +11843,6 @@ nix run nixpkgs#nix-info -- --markdown
 ```
 
 ```bash
- \
 nix \
 shell \
 nixpkgs#pkgsStatic.nix \
@@ -11479,7 +11892,7 @@ cp -v "$OUT_PATH_STAGE_1" nix-stage-1
 ```
 
 
-
+```bash
 nix \
 build \
 --impure \
@@ -11489,7 +11902,7 @@ build \
 --print-out-paths \
 --expr \
 "$EXPR_NIX"
-
+```
 
 
 ```bash
@@ -16178,7 +16591,7 @@ Refs.:
 - https://nixos.wiki/wiki/Hydra
 - https://search.nixos.org/options?channel=22.05&show=services.hydra.enable&from=0&size=50&sort=relevance&type=packages&query=hydra
 
-
+TODO: 
 ```bash
 nix \
 run \
@@ -20282,6 +20695,7 @@ run \
 --tty=true \
 --userns=keep-id \
 --rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 --volume="$(pwd)"/"$SHARED_DIRECTORY_NAME":"$HOME":U \
 --workdir="$HOME" \
 localhost/snix:2.13.0pre20221223_14f7dae \
@@ -21885,6 +22299,33 @@ let
 in nixos.config.system.build.toplevel
 '
 ```
+
+
+TODO: how to test it?
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        # TODO: problably needs more modules to work, buit it builds. 
+                        "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix" 
+                      ]; 
+          };  
+in nixos.config.system.build.virtualBoxOVA 
+'
+```
+Refs.:
+- https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm
+
+
 
 ```bash
 nix \
@@ -25203,7 +25644,7 @@ run \
 --user='0' \
 --volume="$(pwd)":/code:rw \
 --workdir=/code \
-docker.io/library/alpine:3.14.2 \
+docker.io/library/alpine \
 sh \
 -c \
 'touch abc123.txt'
