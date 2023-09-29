@@ -18640,6 +18640,8 @@ localhost/koboldai-nvidia:0.0.1
 nix run nixpkgs#xorg.xhost -- -
 ```
 
+TODO: "trivial"
+https://github.com/apple/ml-stable-diffusion
 
 
 ```bash
@@ -18911,9 +18913,8 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
  && nix flake --version
 EOF
-
-
 ```
+
 
 ```bash
 RUN nix flake metadata github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397
