@@ -1084,12 +1084,13 @@ COMMAND_EXPORT_DISPLAY_STRING='export DISPLAY="${DISPLAY:-:0}"' \
 sh \
 -c \
 '
+test -f "$HOME_PROFILE" || touch "$HOME_PROFILE"
+
 grep -q -F "$USR_LOCAL_SHARE" "$HOME_PROFILE" || echo "$USR_LOCAL_SHARE" >> "$HOME_PROFILE"
 grep -q -F "$USR_SHARE" "$HOME_PROFILE" || echo "$USR_SHARE" >> "$HOME_PROFILE"
 grep -q -F "$HOME_LOCAL_SHARE" "$HOME_PROFILE" || echo "$HOME_LOCAL_SHARE" >> "$HOME_PROFILE"
 grep -q -F "$HOME_NIX_PROFILE_SHARE" "$HOME_PROFILE" || echo "$HOME_NIX_PROFILE_SHARE" >> "$HOME_PROFILE"
-grep -q -F "$COMMAND_EXPORT_STRING" "$HOME_PROFILE" || echo "$COMMAND_EXPORT_STRING" >> "$HOME_PROFILE"
-grep -q -F "$COMMAND_EXPORT_STRING" "$HOME_PROFILE" || echo "$COMMAND_EXPORT_STRING" >> "$HOME_PROFILE"
+grep -q -F "$COMMAND_EXPORT_XDG_DATA_DIRS_STRING" "$HOME_PROFILE" || echo "$COMMAND_EXPORT_XDG_DATA_DIRS_STRING" >> "$HOME_PROFILE"
 grep -q -F "$COMMAND_EXPORT_DISPLAY_STRING" "$HOME_PROFILE" || echo "$COMMAND_EXPORT_DISPLAY_STRING" >> "$HOME_PROFILE"
 '
 
@@ -11522,7 +11523,12 @@ https://stackoverflow.com/a/43662019/9577149
 cat > Containerfile << 'EOF'
 FROM docker.io/library/alpine:3.18.3 as alpine-with-nix
 
-RUN apk update && apk add --no-cache ca-certificates openssh-client shadow
+RUN apk update \
+ && apk add --no-cache \
+      ca-certificates \
+      openssh-client \
+      tzdata \
+      shadow
 
 RUN mkdir -pv /home/nixuser \
  && addgroup nixgroup --gid 4455 \
@@ -11539,9 +11545,13 @@ RUN mkdir -pv /home/nixuser \
  && echo 'Start kvm stuff...' \
  && getent group kvm || groupadd kvm \
  && usermod --append --groups kvm nixuser \
- && echo 'End kvm stuff!'
+ && echo 'End kvm stuff!' \
+ && test -d /etc || mkdir -pv /etc \
+ && echo 'America/Recife' > /etc/timezone
 
 RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+RUN echo nixuser:100000:65536 | tee -a /etc/subuid -a /etc/subgid
 
 USER nixuser
 WORKDIR /home/nixuser
@@ -11557,8 +11567,26 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
  && nix flake --version \
  && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
- && nix profile install nixpkgs#git nixpkgs#nano nixpkgs#gnugrep nixpkgs#openssh \
- && nix store gc -v
+ && nix flake metadata github:NixOS/nixpkgs/nixpkgs-unstable \
+ && nix profile install nixpkgs#git nixpkgs#nano nixpkgs#gnugrep nixpkgs#openssh nixpkgs#xorg.xclock \
+      github:NixOS/nixpkgs/nixpkgs-unstable#qemu_kvm \
+      github:NixOS/nixpkgs/nixpkgs-unstable#socat \
+ && nix store gc -v \
+ && nix store optimise --verbose
+
+# RUN podman --log-level=trace machine init
+#RUN podman \
+#        --log-level=trace \
+#        machine \
+#        init \
+#        --cpus=4 \
+#        --disk-size=30 \
+#        --log-level=trace \
+#        --memory=3072 \
+#        --rootful=false \
+#        --timezone=local \
+#        --volume="$HOME":"$HOME" \
+#        vm
 
 EOF
 
@@ -11569,17 +11597,19 @@ build \
 .
 
 
-xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
+xhost + || nix run nixpkgs#xorg.xhost -- +
 
 podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
 --device=/dev/fuse:rw \
 --device=/dev/kvm:rw \
---env="DISPLAY=${DISPLAY:-:0.0}" \
+--env="DISPLAY=${DISPLAY:-:0}" \
 --group-add=keep-groups \
 --hostname=container-nix \
 --interactive=true \
+--mount=type=tmpfs,tmpfs-size=3G,destination=/tmp \
+--mount=type=tmpfs,tmpfs-size=2G,destination=/var/tmp \
 --name=conteiner-unprivileged-nix \
 --privileged=true \
 --tty=true \
@@ -11588,6 +11618,8 @@ run \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 localhost/alpine-with-nix:latest
 
+# :uid=$(id -u),gid=$(id -g)
+#       github:NixOS/nixpkgs/nixpkgs-unstable#podman \
 
 podman \
 run \
@@ -11601,10 +11633,84 @@ run \
 --rm=true \
 --tty=true \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/alpine-with-nix:latest
+localhost/alpine-with-nix:latest \
+xclock
 ```
 Refs.:
 - https://stackoverflow.com/a/43662019/9577149
+
+https://github.com/containers/podman/releases/download/v4.7.0/podman-remote-static-linux_amd64.tar.gz
+
+tar -xvz -C /tmp/ \
+-f <(wget -q -O - https://github.com/containers/podman/releases/download/v4.3.1/podman-remote-static.tar.gz)
+
+tar -xvz -C /tmp/ \
+-f <(wget -q -O - https://github.com/containers/podman/releases/download/v4.7.0/podman-remote-static-linux_amd64.tar.gz) \
+&& cp -av /tmp/bin/podman-remote-static-linux_amd64 "$HOME"/.local/bin/podman-remote-static \
+&& ln -fsv "$HOME"/.local/bin/podman-remote-static "$HOME"/.local/bin/podman \
+&& podman --version
+
+
+tar -xvz -C /tmp/ \
+-f <(wget -q -O - https://github.com/containers/podman/releases/download/v4.6.2/podman-remote-static-linux_amd64.tar.gz) \
+&& cp -av /tmp/bin/podman-remote-static-linux_amd64 "$HOME"/.local/bin/podman-remote-static \
+&& ln -fsv "$HOME"/.local/bin/podman-remote-static "$HOME"/.local/bin/podman \
+&& podman --version
+
+
+mkdir -p ~/.config/containers
+cat << 'EOF' >> ~/.config/containers/containers.conf
+[CONTAINERS]
+log_driver="k8s-file"
+
+[ENGINE]
+events_logger="journald"
+helper_binaries_dir=["/home/nixuser/.nix-profile/bin"]
+EOF
+
+nix profile install nixpkgs#gvproxy
+
+
+```bash
+rm -fv "$HOME"/.local/bin/podman-remote-static "$HOME"/.local/bin/podman
+```
+
+```bash
+nix \
+build \
+--no-link \
+--print-out-paths --print-build-logs  \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.qemu.override { gtkSupport = false; })
+  )
+'
+```
+
+```bash
+nix \
+profile \
+install \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.qemu.override { gtkSupport = false; })
+  )
+'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/30889#issuecomment-340285499
 
 
 
@@ -20085,7 +20191,7 @@ bash \
 -c \
 '
   nix --option use-registries false build --no-link --print-build-logs --print-out-paths \
-  && github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
+  github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello \
   && nix --option use-registries false build --no-link --print-build-logs --print-out-paths --rebuild \
        github:NixOS/nixpkgs/af21c31b2a1ec5d361ed8050edd0303c31306397#hello
 '
@@ -26039,13 +26145,13 @@ in
 ```bash
 sh -c 'echo $0'
 ```
-
+vs
 ```bash
 sh <<-EOF
 echo $0
 EOF
 ```
-
+vs
 ```bash
 sh <<-'EOF'
 echo $0
@@ -26108,6 +26214,16 @@ sh \
 ```
 Refs.:
 - https://stackoverflow.com/questions/10856129/setting-an-environment-variable-before-a-command-in-bash-is-not-working-for-the#comment125369132_56765113
+
+```bash
+RUN echo $' \n\
+*****first row ***** \n\
+*****second row ***** \n\
+*****third row ***** ' >> /home/myfile
+```
+Refs.:
+- https://stackoverflow.com/a/54397762/9577149
+
 
 
 ```bash
