@@ -804,6 +804,11 @@ nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
 
 
 ```bash
+nix eval --apply builtins.attrNames nixpkgs#stdenv.drvAttrs
+```
+
+
+```bash
 nix eval --apply builtins.attrNames nix#checks
 nix eval --apply builtins.attrNames nix#checks.x86_64-linux
 ```
@@ -1153,7 +1158,7 @@ RUN addgroup abcgroup --gid 4455  \
  && echo 'abcuser:123' | chpasswd \
  && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
  && echo 'Start kvm stuff...' \
-  && getent group kvm || sudo groupadd kvm \
+ && (getent group kvm || sudo groupadd kvm) \
  && sudo usermod --append --groups kvm abcuser \
  && echo 'End kvm stuff!'
 
@@ -1178,6 +1183,7 @@ xhost + || nix run nixpkgs#xorg.xhost -- +
 && podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
 --env="DISPLAY=${DISPLAY:-:0}" \
 --group-add=keep-groups \
 --hostname=container-nix-hm \
@@ -1236,6 +1242,46 @@ podman commit --change="ENTRYPOINT zsh" -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
 && podman rm --force --ignore "${CONTAINER_NAME}"
 ```
 
+
+sudo apt-get update \
+&& sudo apt-get install -y \
+openssh-server qemu-user-static \
+
+"$HOME"/.config/containers
+echo '[ENGINE]' >> "$HOME"/.config/containers/containers.conf
+echo 'helper_binaries_dir=["/home/abcuser/.local/bin"]' >> "$HOME"/.config/containers/containers.conf
+
+ln -sfv /usr/bin/true /home/abcuser/.local/bin/gvproxy
+
+
+strace -v -s 4096 -f -o trace.txt podman  --log-level=trace  machine  init  --cpus=4  --disk-size=30  --log-level=trace  --memory=3072  --rootful=false  --timezone=local  --volume="$HOME":"$HOME"  vm
+
+sudo apt-get update \
+&& sudo apt-get install -y \
+openssh-server qemu-system \
+strace \
+file \
+&& mkdir -pv "$HOME"/.local/bin \
+&& tar -xvz -C /tmp/ -f <(wget -O - https://github.com/containers/podman/releases/download/v4.6.2/podman-remote-static-linux_amd64.tar.gz) \
+&& mv -v /tmp/bin/podman-remote-static-linux_amd64 "$HOME"/.local/bin/podman-remote-static \
+&& ln -fsv "$HOME"/.local/bin/podman-remote-static "$HOME"/.local/bin/podman \
+&& podman --version
+
+mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+export NIX_CONFIG="extra-experimental-features = nix-command flakes"
+mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv acbuser:abcgroup /nix
+mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && wget -O- https://hydra.nixos.org/build/231020695/download/2/nix > nix \
+ && chmod -v +x nix \
+ && cd - \
+ && export PATH="$HOME"/.local/bin:/bin:/usr/bin \
+ && nix flake --version \
+ && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57 \
+ && nix \
+        profile \
+        install \
+        github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57#git
 
 
 ```bash
@@ -1370,7 +1416,79 @@ RUN addgroup abcgroup --gid 4455  \
  && sudo usermod --append --groups kvm abcuser \
  && echo 'End kvm stuff!'
 
-RUN echo 'export DISPLAY="${DISPLAY:-:0}"' >> "$HOME/.profile"
+RUN echo 'export DISPLAY="${DISPLAY:-:0}"' >> "/home/abcuser/.profile"
+
+# ENV XDG_DATA_DIRS=/home/abcuser/.nix-profile/share:/home/abcuser/.local/share:/usr/share/:/usr/local/share/:
+
+CMD startxfce4
+
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--tag=debian-xfce .
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--dns=8.8.8.8 \
+--dns=1.1.1.1 \
+--name=container-debian-xfce \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
+--privileged=true \
+-ti \
+--rm \
+debian-xfce:latest
+```
+
+```bash
+su -l abcuser
+```
+
+
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM debian
+ENV DEBIAN_FRONTEND noninteractive
+
+
+RUN apt-get update -y \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     dbus-x11 \
+     sudo \
+     tar \
+     terminator \
+     wget \
+     x11-apps \
+     xfce4 \
+     xz-utils \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || sudo groupadd kvm \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+
+RUN echo 'export DISPLAY="${DISPLAY:-:0}"' >> "/home/abcuser/.profile"
 
 ENV XDG_DATA_DIRS=/home/abcuser/.nix-profile/share:/home/abcuser/.local/share:/usr/share/:/usr/local/share/:
 
@@ -2622,6 +2740,7 @@ podman kill test-fedora39-systemd \
 && podman rm --force test-fedora39-systemd || true \
 && podman \
 run \
+--env="DISPLAY=${DISPLAY:-:0}" \
 --env="USER=abcuser" \
 --detach=true \
 --name=test-fedora39-systemd \
@@ -2630,6 +2749,7 @@ run \
 --privileged=true \
 --publish=8080:80 \
 --rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 fedora39-systemd \
 && podman ps
 
@@ -2660,7 +2780,7 @@ test-fedora39-systemd \
 bash \
 -c \
 '
-wget -qO- http://ix.io/4Bqe || curl -L http://ix.io/4Bqe | sh \
+wget -qO- http://ix.io/4Bqe | sh || curl -L http://ix.io/4Bqe | sh \
 && . "$HOME"/."$(basename $SHELL)"rc \
 && nix flake --version
 '
@@ -9269,6 +9389,7 @@ docker run --env=SSL_CERT_FILE="$(nix eval --raw $(echo $NIX_PATH | cut -d'=' -f
 docker.io/nixpkgs/nix-flakes bash
 ```
 
+TODO: merge this flags with others
 ```bash
 podman \
 run \
@@ -11641,23 +11762,150 @@ Refs.:
 
 https://github.com/containers/podman/releases/download/v4.7.0/podman-remote-static-linux_amd64.tar.gz
 
-tar -xvz -C /tmp/ \
--f <(wget -q -O - https://github.com/containers/podman/releases/download/v4.3.1/podman-remote-static.tar.gz)
-
-tar -xvz -C /tmp/ \
--f <(wget -q -O - https://github.com/containers/podman/releases/download/v4.7.0/podman-remote-static-linux_amd64.tar.gz) \
-&& cp -av /tmp/bin/podman-remote-static-linux_amd64 "$HOME"/.local/bin/podman-remote-static \
-&& ln -fsv "$HOME"/.local/bin/podman-remote-static "$HOME"/.local/bin/podman \
-&& podman --version
 
 
-tar -xvz -C /tmp/ \
--f <(wget -q -O - https://github.com/containers/podman/releases/download/v4.6.2/podman-remote-static-linux_amd64.tar.gz) \
-&& cp -av /tmp/bin/podman-remote-static-linux_amd64 "$HOME"/.local/bin/podman-remote-static \
-&& ln -fsv "$HOME"/.local/bin/podman-remote-static "$HOME"/.local/bin/podman \
-&& podman --version
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.nix-community.org/nixpkgs/nix-flakes
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+EOF
 
 
+podman \
+build \
+--tag test-nix \
+.
+
+
+podman \
+run \
+--interactive=true \
+--network=none \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-nix \
+bash
+```
+
+ldd $(which qemu-system-x86_64)
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.18.3 as alpine-with-qemu
+
+# https://stackoverflow.com/a/69918107
+# https://wiki.alpinelinux.org/wiki/Setting_the_timezone
+ENV TZ=America/Recife
+
+RUN apk update \
+ && apk \
+          add \
+          --no-cache \
+          ca-certificates \
+          openssh \
+          qemu-img \
+          qemu-system-x86_64 \
+          podman \
+          tzdata \
+          shadow \
+ && mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser \
+ && echo \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || groupadd kvm \
+ && usermod --append --groups kvm nixuser \
+ && echo 'End kvm stuff!' \
+ && echo \
+ && (test -d /etc || mkdir -pv /etc) \
+ && cp -v /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
+ && apk del tzdata shadow
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+RUN podman \
+ --log-level=trace \
+ machine \
+ init \
+ --cpus=4 \
+ --disk-size=30 \
+ --log-level=trace \
+ --memory=3072 \
+ --rootful=false \
+ --timezone=local \
+ --volume="$HOME":"$HOME" \
+ vm
+
+EOF
+
+podman \
+build \
+--tag alpine-with-qemu \
+--target alpine-with-qemu \
+. \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-nix \
+--privileged=false \
+--tty=true \
+--rm=true \
+localhost/alpine-with-nix:latest \
+sh \
+-c \
+'
+    echo First start the podman virtual machine \
+    && podman --log-level=trace machine start vm \
+    && echo The machine must have started \
+    && podman --remote --log-level=ERROR run quay.io/podman/hello \
+    && echo \
+    && podman --remote run docker.io/tianon/toybox toybox \
+    && echo \
+    && podman --remote run docker.io/library/busybox busybox \
+    && echo \
+    && podman --remote run docker.io/library/alpine cat /etc/os*release \
+    && echo \
+    && podman --remote run --privileged quay.io/podman/stable podman --version \
+    && echo \
+    && podman --remote run --privileged quay.io/podman/stable podman run quay.io/podman/hello \
+    && echo \
+    && podman \
+        --remote \
+        run \
+        --interactive=true \
+        --memory-reservation=200m \
+        --memory=300m \
+        --memory-swap=400m \
+        --rm=true \
+        --tty=true \
+        docker.io/library/alpine cat /etc/os-release \
+    && echo \
+    && podman --remote images \
+    && echo \
+    && podman --remote info \
+    && echo \
+    && podman machine info --format json 
+'
+```
+
+```bash
 mkdir -p ~/.config/containers
 cat << 'EOF' >> ~/.config/containers/containers.conf
 [CONTAINERS]
@@ -11667,12 +11915,70 @@ log_driver="k8s-file"
 events_logger="journald"
 helper_binaries_dir=["/home/nixuser/.nix-profile/bin"]
 EOF
+```
 
+```bash
 nix profile install nixpkgs#gvproxy
-
+```
 
 ```bash
 rm -fv "$HOME"/.local/bin/podman-remote-static "$HOME"/.local/bin/podman
+```
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-out-paths --print-build-logs  \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.qemu.override { hostCpuOnly = true; })
+  )
+'
+```
+
+```bash
+nix \
+profile \
+install \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };
+    in
+      (pkgs.qemu.override { hostCpuOnly = true; })
+  )
+'
+```
+
+
+```bash
+echo 'SHA256 (fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz) = 09ab10a13330307baefb71e6fcf9f07ce93799aad9ec25185bf59deb3d6c1eb7' >fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz-CHECKSUM
+
+curl -O https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/38.20230902.3.0/x86_64/fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz.sig
+
+
+curl -O https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/38.20230902.3.0/x86_64/fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz
+
+gpgv --keyring ./fedora.gpg fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz.sig fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz
+sha256sum -c fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz-CHECKSUM
+```
+Refs.:
+- 
+
+```bash
+nix show-derivation --impure --expr '( let nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57"); pkgs = import nixpkgs { }; in (pkgs.qemu.override { hostCpuOnly = true; }))'
 ```
 
 ```bash
@@ -18866,6 +19172,12 @@ sh
 ```
 
 TODO: help https://discourse.nixos.org/t/create-an-offline-c-development-environment/11531/10
+
+
+```bash
+nix develop nixpkgs#hello --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
+```
+
 ```bash
 nix develop nixpkgs#hello --profile ./foo-bar --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild' \
 && nix develop ./foo-bar --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
@@ -18882,7 +19194,14 @@ TODO: related `nix registry pin nixpkgs`
 https://github.com/NixOS/nix/issues/6895 + https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d
 
 ```bash
-FROM docker.io/library/busybox as test-busybox
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.18.3 as alpine-certs
+
+RUN apk update \
+ && apk add --no-cache ca-certificates
+
+
+FROM docker.io/library/busybox as busybox-user-with-nix
 
 # https://stackoverflow.com/a/45397221
 COPY --from=alpine-certs /etc/ssl/certs /etc/ssl/certs
@@ -18896,6 +19215,12 @@ RUN mkdir -pv /home/nixuser \
      -G nixgroup \
      -u 3322 \
      nixuser
+
+RUN echo 'Start kvm stuff...' \
+ && (getent group kvm || sudo groupadd kvm) \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+ 
 
 USER nixuser
 
@@ -18913,6 +19238,12 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
  && nix flake --version
 EOF
+
+podman \
+build \
+--tag busybox-user-with-nix \
+--target busybox-user-with-nix \
+.
 ```
 
 
