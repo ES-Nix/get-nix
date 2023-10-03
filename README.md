@@ -11963,19 +11963,7 @@ install \
 ```
 
 
-```bash
-echo 'SHA256 (fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz) = 09ab10a13330307baefb71e6fcf9f07ce93799aad9ec25185bf59deb3d6c1eb7' >fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz-CHECKSUM
 
-curl -O https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/38.20230902.3.0/x86_64/fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz.sig
-
-
-curl -O https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/38.20230902.3.0/x86_64/fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz
-
-gpgv --keyring ./fedora.gpg fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz.sig fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz
-sha256sum -c fedora-coreos-38.20230902.3.0-qemu.x86_64.qcow2.xz-CHECKSUM
-```
-Refs.:
-- 
 
 ```bash
 nix show-derivation --impure --expr '( let nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57"); pkgs = import nixpkgs { }; in (pkgs.qemu.override { hostCpuOnly = true; }))'
