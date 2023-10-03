@@ -19180,6 +19180,7 @@ Refs.:
 
 TODO: related `nix registry pin nixpkgs` 
 https://github.com/NixOS/nix/issues/6895 + https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d
+https://discourse.nixos.org/t/how-to-fix-a-nar-hash-mismatch/16594/16
 
 ```bash
 cat > Containerfile << 'EOF'
