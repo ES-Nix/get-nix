@@ -1081,7 +1081,7 @@ Refs.:
 env \
 USR_LOCAL_SHARE='[[ ":$XDG_DATA_DIRS:" =~ ":/usr/local/share/:" ]] || XDG_DATA_DIRS="/usr/local/share/:$XDG_DATA_DIRS"' \
 USR_SHARE='[[ ":$XDG_DATA_DIRS:" =~ ":/usr/share/:" ]] || XDG_DATA_DIRS="/usr/share/:$XDG_DATA_DIRS"' \
-HOME_PROFILE="$HOME/.profile" \
+HOME_PROFILE="$HOME/.bashrc" \
 HOME_LOCAL_SHARE='[[ ":$XDG_DATA_DIRS:" =~ ":$HOME/.local/share:" ]] || XDG_DATA_DIRS="$HOME/.local/share:$XDG_DATA_DIRS"' \
 HOME_NIX_PROFILE_SHARE='[[ ":$XDG_DATA_DIRS:" =~ ":$HOME/.nix-profile/share:" ]] || XDG_DATA_DIRS="$HOME/.nix-profile/share:$XDG_DATA_DIRS"' \
 COMMAND_EXPORT_XDG_DATA_DIRS_STRING='export XDG_DATA_DIRS="$XDG_DATA_DIRS"' \
@@ -1102,6 +1102,20 @@ grep -q -F "$COMMAND_EXPORT_DISPLAY_STRING" "$HOME_PROFILE" || echo "$COMMAND_EX
 source "$HOME/.profile"
 ```
 
+```bash
+nix path-info -sSh nixpkgs#popcorntime
+nix profile install nixpkgs#popcorntime
+```
+
+```bash
+nix profile install --impure nixpkgs#obsidian
+nix profile install --impure nixpkgs#mupdf
+nix profile install nixpkgs#okular
+nix profile install nixpkgs#dropbox
+nix profile install nixpkgs#vlc
+nix profile install nixpkgs#jetbrains.pycharm-community
+nix path-info -sSh nixpkgs#jetbrains.pycharm-community
+```
 
 > Of course, depending on your use case it is better use `home-manager`.
 
@@ -1432,14 +1446,15 @@ build \
 xhost + || nix run nixpkgs#xorg.xhost -- +
 podman \
 run \
---env="DISPLAY=${DISPLAY:-:0}" \
---dns=8.8.8.8 \
 --dns=1.1.1.1 \
+--dns=8.8.8.8 \
+--env="DISPLAY=${DISPLAY:-:0}" \
 --name=container-debian-xfce \
---volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
 --privileged=true \
--ti \
---rm \
+--rm=true \
+--rm=false \
+--tty=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
 debian-xfce:latest
 ```
 
@@ -2734,25 +2749,48 @@ EXPOSE 80
 CMD [ "/sbin/init" ]
 EOF
 
-podman build --tag fedora39-systemd .
+podman build --tag fedora39-systemd-dbus-xfce .
+```
 
-podman kill test-fedora39-systemd \
-&& podman rm --force test-fedora39-systemd || true \
+```bash
+(podman kill test-fedora39-systemd-dbus-xfce || true) \
+&& (podman rm --force test-fedora39-systemd-dbus-xfce || true) \
 && podman \
 run \
 --env="DISPLAY=${DISPLAY:-:0}" \
 --env="USER=abcuser" \
---detach=true \
---name=test-fedora39-systemd \
+--detach=false \
+--name=test-fedora39-systemd-dbus-xfce \
 --interactive=true \
 --tty=true \
 --privileged=true \
 --publish=8080:80 \
 --rm=true \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-fedora39-systemd \
+fedora39-systemd-dbus-xfce startxfce4
+```
+
+
+```bash
+(podman kill test-fedora39-systemd-dbus-xfce || true) \
+&& (podman rm --force test-fedora39-systemd-dbus-xfce || true) \
+&& podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--env="USER=abcuser" \
+--detach=true \
+--name=test-fedora39-systemd-dbus-xfce \
+--interactive=true \
+--tty=true \
+--privileged=true \
+--publish=8080:80 \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+fedora39-systemd-dbus-xfce \
 && podman ps
 
+
+# startxfce4
 
 podman \
 exec \
@@ -2760,7 +2798,7 @@ exec \
 --tty=true \
 --user=abcuser \
 --workdir=/home/abcuser \
-test-fedora39-systemd \
+test-fedora39-systemd-dbus-xfce \
 bash \
 -c \
 '
@@ -2776,7 +2814,7 @@ exec \
 --tty=true \
 --user=abcuser \
 --workdir=/home/abcuser \
-test-fedora39-systemd \
+test-fedora39-systemd-dbus-xfce \
 bash \
 -c \
 '
@@ -2791,7 +2829,7 @@ exec \
 --tty=true \
 --user=abcuser \
 --workdir=/home/abcuser \
-test-fedora39-systemd \
+test-fedora39-systemd-dbus-xfce \
 bash \
 -c \
 '
@@ -2808,7 +2846,7 @@ exec \
 --tty=true \
 --user=abcuser \
 --workdir=/home/abcuser \
-test-fedora39-systemd \
+test-fedora39-systemd-dbus-xfce \
 .nix-profile/bin/zsh
 ```
 Refs.:
