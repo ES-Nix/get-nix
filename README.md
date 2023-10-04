@@ -4233,7 +4233,11 @@ nix shell nixpkgs#bashInteractive
 TODO: [Configure a container to start automatically as a systemd service](https://www.redhat.com/sysadmin/container-systemd-persist-reboot)
 ```bash
 loginctl show-user "$(id -un)" | grep ^Linger
+
+sudo -u $otherUser XDG_RUNTIME_DIR=/run/user/$(id -u $otherUser) systemctl --user
 ```
+Refs.:
+- https://superuser.com/a/1598351
 
 
 ```bash
