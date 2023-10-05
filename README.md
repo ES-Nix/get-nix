@@ -1121,6 +1121,16 @@ nix path-info -sSh nixpkgs#jetbrains.pycharm-community
 
 
 ```bash
+cat > ~/.config/systemd/user.conf << 'EOF'
+[Manager]
+ManagerEnvironment="XDG_DATA_DIRS=/home/your_user/.nix-profile/share:/usr/local/share:/usr/share"
+EOF
+```
+Refs.:
+- https://unix.stackexchange.com/a/696035
+
+
+```bash
 xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
 xhost + || nix run nixpkgs#xorg.xhost -- +
 
@@ -1129,7 +1139,9 @@ docker \
 run \
 --env="DISPLAY=${DISPLAY:-:0}" \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
--ti --rm ubuntu:23.04
+-ti \
+--rm \
+ubuntu:23.04
 
 apt-get update \
 && apt-get install -y --no-install-recommends x11-apps \
@@ -26122,6 +26134,7 @@ Refs.:
 - https://github.com/NixOS/nixpkgs/issues/70407
 - https://github.com/moby/moby/tree/e9ab1d425638af916b84d6e0f7f87ef6fa6e6ca9/contrib/init/systemd
 - https://stackoverflow.com/a/48973911
+- https://unix.stackexchange.com/a/408735
 
 
 ```bash
