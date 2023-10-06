@@ -1056,6 +1056,14 @@ export XDG_DATA_DIRS=$HOME/.nix-profile/share:"${XDG_DATA_DIRS:-/usr/local/share
 ```
 
 
+```bash
+Desktop integration
+
+For integrating Nix applications with your desktop environment, add the ~/.nix-profile/share directory to your $XDG_DATA_DIRS, for instance using export XDG_DATA_DIRS=$HOME/.nix-profile/share:$XDG_DATA_DIRS. 
+```
+Refs.:
+- https://wiki.archlinux.org/title/Nix#Desktop_integration
+
 
 ```bash
 env | grep XDG_DATA_DIRS
