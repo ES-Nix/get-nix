@@ -26284,6 +26284,14 @@ Refs.:
 - [Nix if-then-else expressions](https://ops.functionalalgebra.com/2016/06/12/if-then-else/)
 
 
+Unfortunately we can't provide useful error messages when people use sub-attributes 
+of `{host,target,build}Platform`, because it is expected that you can compare two
+`*Platform` attrsets using `==`, which will force the `throw "error message"`.
+
+We should probably move anything fallible (like `extensions.sharedLibrary`) out of these 
+`*Platform` attrsets, so we can provide useful error messages instead of just returning `null`. 
+https://github.com/NixOS/nixpkgs/issues/244045#issuecomment-1639559220
+
 
 ```nix
 stdenv.mkDerivation (finalAttrs: {
