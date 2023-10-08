@@ -26292,7 +26292,7 @@ We should probably move anything fallible (like `extensions.sharedLibrary`) out 
 `*Platform` attrsets, so we can provide useful error messages instead of just returning `null`. 
 https://github.com/NixOS/nixpkgs/issues/244045#issuecomment-1639559220
 
-
+TODO: https://github.com/NixOS/nixpkgs/issues/208242
 ```nix
 stdenv.mkDerivation (finalAttrs: {
 ```
