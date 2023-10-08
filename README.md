@@ -24206,6 +24206,37 @@ Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-verbose
 
 
+```bash
+
+
+systemd.services. = {
+  enable = true;
+  serviceConfig = {
+    Type = "oneshot";
+    StandardOutput = "tty";
+    StandardError = "tty";
+    User = "root";
+    Group = "root";
+    WorkingDirectory = "/root";
+  };
+  after = [ "network.target" "network-online.target" "local-fs.target" ];
+  wants = [ "network.target" "network-online.target" "local-fs.target" ];
+  wantedBy = [ "multi-user.target" ];
+  postStop = ''
+    echo "Bye bye"
+  '';
+  script = ''
+    echo "Hello I do work"
+
+    # Beep beep... Human... back to work
+    echo -ne '\007'
+  '';
+};
+```
+Refs.:
+- https://alberand.com/nixos-linux-kernel-vm.html
+
+
 ##### debug compiled code
 
 
