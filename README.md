@@ -1717,43 +1717,218 @@ test -f nix || curl -L https://hydra.nixos.org/build/231020695/download/2/nix > 
 && nix flake metadata nixpkgs
 ```
 
+```bash
+nix --option experimental-features 'nix-command flakes' shell -i -k HOME nixpkgs#busybox-sandbox-shell nixpkgs#toybox -c sh -c 'toybox true'
+```
+
+
+How to get latest successful hydra build:
+```bash
+URL=https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/latest
+LATEST_ID_OF_NIX_STATIC_HYDRA_SUCCESSFUL_BUILD="$(curl $URL | grep '"https://hydra.nixos.org/build/' | cut -d'/' -f5 | cut -d'"' -f1)"
+
+echo $LATEST_ID_OF_NIX_STATIC_HYDRA_SUCCESSFUL_BUILD
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
+- https://discourse.nixos.org/t/how-to-get-the-latest-unbroken-commit-for-a-broken-package-from-hydra/26354/4
 
 
 ```bash
-test -f nix || curl -L https://hydra.nixos.org/build/231020695/download/2/nix > nix && chmod -v +x nix
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.18.3 as alpine-with-ca-certificates-tzdata
 
-./nix --option experimental-features 'nix-command flakes' \
-       registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
-&& cp -v "$HOME"'/.local/share/nix/root'$(
-        ./nix --option experimental-features 'nix-command flakes' \
-        build \
-        --no-link --print-build-logs --print-out-paths \
-        nixpkgs#pkgsStatic.busybox
-    )/bin/busybox . \
-&& chmod -v +x busybox \
-&& ./busybox mkdir -pv "$HOME"/.local/bin \
-&& export PATH="$HOME"/.local/bin:"$PATH" \
-&& ./busybox mv -v nix "$HOME"/.local/bin \
+# https://stackoverflow.com/a/69918107
+# https://serverfault.com/a/1133538
+# https://wiki.alpinelinux.org/wiki/Setting_the_timezone
+# https://bobcares.com/blog/change-time-in-docker-container/
+# https://github.com/containers/podman/issues/9450#issuecomment-783597549
+# https://www.redhat.com/sysadmin/tick-tock-container-time
+ENV TZ=America/Recife
+
+RUN apk update \
+ && apk \
+          add \
+          --no-cache \
+          ca-certificates \
+          tzdata \
+          shadow \
+ && mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser \
+ && echo \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || groupadd kvm \
+ && usermod --append --groups kvm nixuser \
+ && echo 'End kvm stuff!' \
+ && echo 'Start tzdata stuff' \
+ && (test -d /etc || mkdir -pv /etc) \
+ && cp -v /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
+ && apk del tzdata shadow \
+ && echo 'End tzdata stuff!' 
+
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+
+EOF
+
+podman \
+build \
+--tag alpine-with-ca-certificates-tzdata \
+--target alpine-with-ca-certificates-tzdata \
+. \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh
+```
+
+
+```bash
+test -f nix || curl -L https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
+test -f nix || wget https://hydra.nixos.org/build/237228729/download/2/nix && chmod -v +x nix
+
+./nix \
+--option experimental-features 'nix-command flakes' \
+registry \
+pin \
+nixpkgs github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57
+
+./nix \
+--option experimental-features 'nix-command flakes' \
+shell \
+--ignore-environment \
+--keep HOME \
+--keep USER \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#toybox \
+-c \
+sh<<'COMMANDS'
+toybox echo $HOME
+toybox echo $USER
+
+type cd \
+&& type echo \
+&& type export \
+&& type type
+
+toybox mkdir -pv "$HOME"/.local/bin \
+&& toybox mv -v nix "$HOME"/.local/bin \
 && cd "$HOME"/.local/bin \
-&& ln -sfv nix nix-build \
-&& ln -sfv nix nix-channel \
-&& ln -sfv nix nix-collect-garbage \
-&& ln -sfv nix nix-copy-closure \
-&& ln -sfv nix nix-daemon \
-&& ln -sfv nix nix-env \
-&& ln -sfv nix nix-hash \
-&& ln -sfv nix nix-instantiate \
-&& ln -sfv nix nix-prefetch-url \
-&& ln -sfv nix nix-shell \
-&& ln -sfv nix nix-store \
+&& toybox ln -sfv nix nix-build \
+&& toybox ln -sfv nix nix-channel \
+&& toybox ln -sfv nix nix-collect-garbage \
+&& toybox ln -sfv nix nix-copy-closure \
+&& toybox ln -sfv nix nix-daemon \
+&& toybox ln -sfv nix nix-env \
+&& toybox ln -sfv nix nix-hash \
+&& toybox ln -sfv nix nix-instantiate \
+&& toybox ln -sfv nix nix-prefetch-url \
+&& toybox ln -sfv nix nix-shell \
+&& toybox ln -sfv nix nix-store \
 && cd \
-&& ./busybox mkdir -pv "$HOME"/.config/nix \
-&& ./busybox echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf \
+&& toybox mkdir -pv "$HOME"/.config/nix \
+&& toybox grep 'experimental-features' "$HOME"/.config/nix/nix.conf -q || (toybox echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf) \
+&& toybox grep '.local' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile)
+COMMANDS
+
+. "$HOME"/.profile \
 && nix flake --version \
 && nix flake metadata nixpkgs
 ```
 
 
+```bash
+nix \
+shell \
+--ignore-environment \
+--keep HOME \
+nixpkgs#bash \
+nixpkgs#openssh \
+nixpkgs#podman \
+nixpkgs#qemu \
+--command \
+bash \
+-c \
+'
+export PATH=/usr/bin:$PATH; 
+podman machine init \
+&& podman machine start \
+&& echo The machine must have started \
+&& podman --remote --log-level=ERROR run quay.io/podman/hello \
+&& echo \
+&& podman --remote run docker.io/tianon/toybox toybox \
+&& echo \
+&& podman --remote run docker.io/library/busybox busybox \
+&& echo \
+&& podman --remote run docker.io/library/alpine cat /etc/os*release \
+&& echo \
+&& podman --remote run --privileged quay.io/podman/stable podman --version \
+&& echo \
+&& podman --remote run --privileged quay.io/podman/stable podman run quay.io/podman/hello \
+&& echo \
+&& podman \
+    --remote \
+    run \
+    --interactive=true \
+    --memory-reservation=200m \
+    --memory=300m \
+    --memory-swap=400m \
+    --rm=true \
+    --tty=true \
+    docker.io/library/alpine cat /etc/os-release \
+&& echo \
+&& podman --remote images \
+&& echo \
+&& podman --remote info \
+&& echo \
+&& podman machine info --format json
+'
+```
+
+
+```bash
+export DOCKER_HOST='unix:///home/nixuser/.local/share/containers/podman/machine/qemu/podman.sock'
+nix \
+shell \
+--ignore-environment \
+--keep DOCKER_HOST \
+--keep HOME \
+nixpkgs#bashInteractive \
+nixpkgs#openssh \
+nixpkgs#docker \
+nixpkgs#podman \
+nixpkgs#qemu \
+--command \
+bash \
+-c \
+'
+docker images \
+&& docker run --rm quay.io/podman/stable podman --version
+'
+```
+
+
+
+TODO:
 ```bash
 # mkdir -pv "${HOME}"/.nix-profile
 mkdir -pv "${HOME}"/.local/share/nix/root/nix/var/nix/profiles/per-user/"${USER}"
@@ -3823,7 +3998,7 @@ RUN apt-get update -y \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
-RUN addgroup abcgroup --gid 1000  \
+RUN addgroup abcgroup --gid 1122  \
  && adduser -q \
      --gecos '"An unprivileged user with an group"' \
      --disabled-password \
@@ -3834,7 +4009,7 @@ RUN addgroup abcgroup --gid 1000  \
  && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
  && echo 'Start kvm stuff...' \
  && $(getent group kvm || groupadd kvm) \
- && sudo usermod --append --groups kvm abcuser \
+ && usermod --append --groups kvm abcuser \
  && echo 'End kvm stuff!'
 # Uncomment that to compare
 RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
@@ -11859,7 +12034,10 @@ cat > Containerfile << 'EOF'
 FROM docker.io/library/alpine:3.18.3 as alpine-with-qemu
 
 # https://stackoverflow.com/a/69918107
+# https://serverfault.com/a/1133538
 # https://wiki.alpinelinux.org/wiki/Setting_the_timezone
+# https://github.com/containers/podman/issues/9450#issuecomment-783597549
+# https://www.redhat.com/sysadmin/tick-tock-container-time
 ENV TZ=America/Recife
 
 RUN apk update \
@@ -11887,11 +12065,12 @@ RUN apk update \
  && getent group kvm || groupadd kvm \
  && usermod --append --groups kvm nixuser \
  && echo 'End kvm stuff!' \
- && echo \
+ && echo 'Start tzdata stuff' \
  && (test -d /etc || mkdir -pv /etc) \
  && cp -v /usr/share/zoneinfo/$TZ /etc/localtime \
  && echo $TZ > /etc/timezone \
- && apk del tzdata shadow
+ && apk del tzdata shadow \
+ && echo 'End tzdata stuff!' 
 
 USER nixuser
 WORKDIR /home/nixuser
@@ -17875,6 +18054,10 @@ localhost/python3:0.0.1
 du -h $(nix build --no-link --print-out-paths nixpkgs#pkgsStatic.zsh)/bin/zsh
 ldd $(nix build --no-link --print-out-paths nixpkgs#pkgsStatic.zsh)/bin/zsh
 file $(nix build --no-link --print-out-paths nixpkgs#pkgsStatic.zsh)/bin/zsh
+```
+
+```bash
+nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsStatic.bashInteractive
 ```
 
 
