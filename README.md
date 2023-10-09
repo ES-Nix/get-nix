@@ -19407,6 +19407,24 @@ sh
 TODO: help https://discourse.nixos.org/t/create-an-offline-c-development-environment/11531/10
 
 
+> starting `nix develop` creates a new and unique `"$TMPDIR"`
+```bash
+nix develop nixpkgs#hello --command sh -c 'echo "$TMPDIR"'
+
+nix develop nixpkgs#hello --command sh -c 'echo "$TMPDIR"'
+```
+Refs.:
+- https://stackoverflow.com/a/76714520
+
+
+```bash
+nix develop nixpkgs#hello --command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+```
+Refs.:
+- https://stackoverflow.com/a/76714520
+
+So `cd "$(mktemp -d)"` _vs_ `cd "$TMPDIR"`, use the "simpler" `cd "$TMPDIR"`.
+
 ```bash
 nix develop nixpkgs#hello --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
 ```
