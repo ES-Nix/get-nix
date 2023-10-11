@@ -19423,10 +19423,14 @@ nix develop nixpkgs#hello --command sh -c 'cd "$TMPDIR" && source $stdenv/setup 
 Refs.:
 - https://stackoverflow.com/a/76714520
 
-So `cd "$(mktemp -d)"` _vs_ `cd "$TMPDIR"`, use the "simpler" `cd "$TMPDIR"`.
-
 ```bash
 nix develop nixpkgs#hello --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
+```
+
+So `cd "$(mktemp -d)"` _vs_ `cd "$TMPDIR"`, use the "simpler" and correct `cd "$TMPDIR"`.
+
+```bash
+nix develop nixpkgs#python3Packages.flask --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
 ```
 
 ```bash
@@ -25821,6 +25825,10 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames python3Packages' | 
 
 ```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames rustPackages.packages' | tr ' ' '\n' | wc -l
+```
+
+```bash
+nix eval --json nixpkgs#rustPlatform.buildRustPackage.override.__functionArgs
 ```
 
 ```bash
