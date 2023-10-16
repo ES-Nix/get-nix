@@ -31,7 +31,7 @@ command -v curl || (command -v apk && sudo apk add --no-cache curl)
 test -d /nix || (sudo mkdir -v -m 0755 /nix && sudo -k chown -v "$USER": /nix); \
 test $(stat -c %a /nix) -eq 0755 || sudo -k chmod -v 0755 /nix; \
 BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
-&& SHA256=87fa0f1dbfdd28a1f99b39d5bd4dcc39de97bc64 \
+&& SHA256=309ca165294eab28e07a2173930e39dc2b5ee209 \
 && NIX_RELEASE_VERSION='2.10.2' \
 && curl -fsSL "${BASE_URL}""$SHA256"/get-nix.sh | sh -s -- ${NIX_RELEASE_VERSION} \
 && . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
@@ -6545,9 +6545,11 @@ TODO:
 
 
 [wtf is direnv?](https://www.youtube.com/watch?v=1joZLTgYLxY)
+[Direnv in 2 minutes](https://www.youtube.com/watch?v=lz2qbtWZu90)
+
 
 ```bash
-SHA256=5443257f9e3ac31c5f0da60332d7c5bebfab1cdf \
+SHA256=309ca165294eab28e07a2173930e39dc2b5ee209 \
 && curl -fsSL https://raw.githubusercontent.com/ES-Nix/get-nix/"$SHA256"/install_direnv_and_nix_direnv.sh | sh \
 && . ~/."$(ps -ocomm= -q $$)"rc \
 && direnv --version
