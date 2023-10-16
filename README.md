@@ -1277,46 +1277,6 @@ podman commit --change="ENTRYPOINT zsh" -q "${CONTAINER_NAME}" "${IMAGE_NAME}" \
 ```
 
 
-sudo apt-get update \
-&& sudo apt-get install -y \
-openssh-server qemu-user-static \
-
-"$HOME"/.config/containers
-echo '[ENGINE]' >> "$HOME"/.config/containers/containers.conf
-echo 'helper_binaries_dir=["/home/abcuser/.local/bin"]' >> "$HOME"/.config/containers/containers.conf
-
-ln -sfv /usr/bin/true /home/abcuser/.local/bin/gvproxy
-
-
-strace -v -s 4096 -f -o trace.txt podman  --log-level=trace  machine  init  --cpus=4  --disk-size=30  --log-level=trace  --memory=3072  --rootful=false  --timezone=local  --volume="$HOME":"$HOME"  vm
-
-sudo apt-get update \
-&& sudo apt-get install -y \
-openssh-server qemu-system \
-strace \
-file \
-&& mkdir -pv "$HOME"/.local/bin \
-&& tar -xvz -C /tmp/ -f <(wget -O - https://github.com/containers/podman/releases/download/v4.6.2/podman-remote-static-linux_amd64.tar.gz) \
-&& mv -v /tmp/bin/podman-remote-static-linux_amd64 "$HOME"/.local/bin/podman-remote-static \
-&& ln -fsv "$HOME"/.local/bin/podman-remote-static "$HOME"/.local/bin/podman \
-&& podman --version
-
-mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
-export NIX_CONFIG="extra-experimental-features = nix-command flakes"
-mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv acbuser:abcgroup /nix
-mkdir -pv "$HOME"/.local/bin \
- && cd "$HOME"/.local/bin \
- && wget -O- https://hydra.nixos.org/build/231020695/download/2/nix > nix \
- && chmod -v +x nix \
- && cd - \
- && export PATH="$HOME"/.local/bin:/bin:/usr/bin \
- && nix flake --version \
- && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57 \
- && nix \
-        profile \
-        install \
-        github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57#git
-
 
 ```bash
 xhost + || nix run nixpkgs#xorg.xhost -- +
@@ -1847,13 +1807,14 @@ toybox mkdir -pv "$HOME"/.local/bin \
 && cd \
 && toybox mkdir -pv "$HOME"/.config/nix \
 && toybox grep 'experimental-features' "$HOME"/.config/nix/nix.conf -q || (toybox echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf) \
-&& toybox grep '.local' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile)
+&& toybox grep '.local' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile)
 COMMANDS
 
 . "$HOME"/.profile \
 && nix flake --version \
 && nix flake metadata nixpkgs
 ```
+
 
 
 ```bash
@@ -1926,7 +1887,12 @@ docker images \
 '
 ```
 
-
+```bash
+podman exec -i --tty=false conteiner-unprivileged-alpine-with-ca-certificates-tzdata sh<<'EOF'
+apk add --no-cache sudo && echo 'nixuser:123' | chpasswd \
+&& echo 'nixuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/nixuser
+EOF
+```
 
 TODO:
 ```bash
@@ -5035,6 +5001,10 @@ build \
 nixpkgs/e672d52#pkgsStatic.nixVersions.nix_2_14
 ```
 
+
+```bash
+nix build --max-jobs 0 --no-link --print-out-paths --print-build-logs nixpkgs#pkgsStatic.nix
+```
 
 ```bash
 nix \
@@ -15112,6 +15082,12 @@ $(nix path-info github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#he
  | dot -Tps > glue.ps
 ```
 
+
+TODO: 
+- https://github.com/NixOS/nix/issues/1245#issuecomment-726138112
+- https://github.com/NixOS/nix/issues/1245#issuecomment-401642781
+
+
 ```bash
 nix eval nixpkgs#hello.drvPath --raw \
 | xargs nix-store -qR \
@@ -15705,6 +15681,21 @@ Refs.:
 
 ### vmTools.runInLinuxVM
 
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+  vmTools.runInLinuxVM pkgs.hello
+)
+'
+```
 
 ```bash
 nix \
@@ -19423,6 +19414,32 @@ nix develop nixpkgs#hello --command sh -c 'cd "$TMPDIR" && source $stdenv/setup 
 Refs.:
 - https://stackoverflow.com/a/76714520
 
+
+```bash
+nix develop --ignore-environment nixpkgs#hello --command sh -c 'env | grep Phase'
+```
+
+```bash
+nix develop --ignore-environment nixpkgs#ffmpeg --command sh -c 'env | grep Phase'
+```
+
+```bash
+nix develop --ignore-environment nixpkgs#hello --command sh
+```
+
+```bash
+cd "$TMPDIR" && source $stdenv/setup
+```
+
+```bash
+mkdir debug
+cp $src debug
+cd debug
+tar -xzfv whi3jprrpzlnvic9fsn5f69sddazp5sb-colorify-0.2.3.tar.gz
+```
+Refs.:
+- https://github.com/ryantm/cargo2nix/tree/0167b39f198d72acdf009265634504fd6f5ace15#declarative-build-debugging-shell
+
 ```bash
 nix develop nixpkgs#hello --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
 ```
@@ -22975,6 +22992,10 @@ in
 ```
 
 
+TODO: `nix path-info --derivation .#foo`
+- https://github.com/NixOS/nix/issues/3908#issuecomment-1186633661
+- https://github.com/NixOS/nixpkgs/issues/97176#issuecomment-1221379585
+
 ```bash
 test -d profiles || mkdir -v profiles
 test -L profiles/dev \
@@ -22997,6 +23018,7 @@ Refs.:
 - https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/7
 - https://github.com/NixOS/nix/issues/3913#issuecomment-899001084, TODO: help there 
 - https://github.com/NixOS/nix/issues/7261#issuecomment-1448089881
+- https://github.com/NixOS/nix/issues/3908#issuecomment-717723809
 
 
 ```bash
@@ -24222,6 +24244,44 @@ I am against that, unless there is not a better way known.
 > and derivations that have the `__noChroot` attribute set to
 > true do not run in sandboxes.
 https://nixos.org/manual/nix/unstable/command-ref/conf-file.html?highlight=extra-
+
+
+```bash
+cat > flake.nix << 'EOF'
+{
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-22.11";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachSystem
+      (with flake-utils.lib.system; [ x86_64-linux ])
+      (system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+          };
+        in
+        {
+          checks.test = pkgs.nixosTest {
+            name = "test";
+            nodes.n1 = { };
+            testScript = ''
+              n1.succeed("ping -c 1 8.8.8.8")  # ping google's DNS
+            '';
+          };
+
+          formatter = pkgs.nixpkgs-fmt;
+        }
+      );
+}
+EOF
+
+TODO: git init ...
+```
+Refs.:
+- https://stackoverflow.com/q/76383037
 
 TODO: examine it
 https://discourse.nixos.org/t/how-can-i-quickly-test-nixpkg-modifications-in-a-container-vm/23797/9

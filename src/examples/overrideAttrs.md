@@ -3446,7 +3446,7 @@ EXPR=$(cat <<-'EOF'
       myPythonPackages = ps: with ps; [
         pandas
         # and other python packages
-      ];      
+      ];
    in
      (import (builtins.getFlake "github:NixOS/nixpkgs/0ef02c4792fbde4b78957a46a8cb107b6c7aa3cc")
              { overlays = [ overlay ]; }
@@ -3670,6 +3670,131 @@ python \
 
 
 --option enforce-determinism true
+
+TODO: what are the minimal installation packages needed?
+- https://stackoverflow.com/a/52976331
+
+TODO: 
+it is on some link that `apt-get build-dep` does not take into acount what is already instaled.
+```bash
+podman \
+run \
+--interactive=true \
+--rm=true \
+--tty=false \
+docker.io/library/ubuntu \
+bash<<'EOF'
+# cp /etc/apt/sources.list /etc/apt/sources.list~
+sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list \
+&& apt-get update \
+&& apt-get --simulate build-dep ubuntu-desktop
+EOF
+```
+Refs.:
+- https://askubuntu.com/a/1422519
+- https://superuser.com/questions/151557/what-are-build-essential-build-dep/151558#151558
+- https://superuser.com/questions/1413089/how-can-i-determine-build-dependencies-automatically#comment2132547_1413093
+- https://askubuntu.com/questions/21379/how-do-i-find-the-build-dependencies-of-a-package#comment1804798_21388
+- https://askubuntu.com/a/1222437
+
+
+TODO: 
+- help https://superuser.com/questions/1470611/install-pycurl-on-docker-using-fedora-image 
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM fedora:39
+
+USER root
+
+RUN dnf update -y \
+ && dnf install -y \
+    curl-devel \
+    gcc \
+    openssl \
+    openssl-devel \
+    python3-devel \
+    python3-pip \
+    python36
+
+# "upgrade" pip to an pinned version
+RUN pip3 --version \
+ && pip3 install --upgrade pip \
+ && pip3 --version \
+
+# install pycurl
+RUN pip3 install --install-option="--with-openssl" pycurl
+EOF
+
+podman build --file Dockerfile --tag fedora-with-pycurl
+```
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM fedora:39
+
+USER root
+
+RUN dnf update -y \
+ && dnf install -y \
+    gcc \
+    curl-devel \
+    openssl-devel \
+    python3-devel \
+    python3-pip \
+    python36
+
+RUN pip3 --version \
+ && pip3 install --upgrade pip==23.2.1 \
+ && pip3 --version 
+
+RUN pip3 install pycurl==7.45.2 \
+ && pip3 freeze \
+ && python3 -c 'import pycurl; print(pycurl.version_info())'
+EOF
+
+podman build --file Dockerfile --tag fedora-with-pycurl
+```
+
+
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM docker.nix-community.org/nixpkgs/nix-flakes as build-from-nixos-cache-dist
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+RUN env
+
+RUN nix flake metadata nixpkgs \
+ && cp -v $(nix \
+      build \
+      --max-jobs 0 \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#python3Packages.pycurl.dist)/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl
+
+RUN ls -ahl /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl
+
+
+FROM python:3.10.13-slim-bookworm as test-pycurl
+USER root
+
+COPY --from=build-from-nixos-cache-dist /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl
+RUN pip3 install /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl
+
+
+RUN pip3 freeze
+EOF
+
+
+podman \
+build \
+--file Dockerfile \
+--target test-pycurl \
+--tag test-pycurl \
+.
+```
 
 
 ##### The `window/aggregations.cpython-38-x86_64-linux-gnu.so` thing:

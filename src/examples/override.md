@@ -676,6 +676,13 @@ github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#pkgsStatic.python3
 -- \
 -c \
 "import sysconfig;print('{}'.format('\n'.join(['{} = {}'.format(v, sysconfig.get_config_var(v)) for v in sorted(sysconfig.get_config_vars(), key=lambda s: s.lower())])))"
+
+# TODO: 
+podman run --rm python:3.10-alpine python -c \
+'import sysconfig;print(sysconfig.get_config_var("SOABI"))'
+
+podman run --rm python:3.10-alpine python -c \
+"import sysconfig;print('{}'.format('\n'.join(['{} = {}'.format(v, sysconfig.get_config_var(v)) for v in sorted(sysconfig.get_config_vars(), key=lambda s: s.lower())])))"
 ```
 Refs.:
 - https://stackoverflow.com/a/52124121/9577149
