@@ -26423,6 +26423,21 @@ Set the bash-prompt-prefix setting.
 Set the bash-prompt-suffix setting.
 
 
+```bash
+nix --bash-prompt 'in nix develop$' develop -i nixpkgs#hello
+```
+
+And what about `nix shell`? Well, it is not yet solved :/
+Maybe `devenv` fit well here?
+- [Straightforward way to determine if inside a nix shell](https://github.com/NixOS/nix/issues/6677)
+- https://github.com/NixOS/nix/issues/3862#issuecomment-918926654 by Eelco
+- https://github.com/NixOS/nix/pull/3168
+- https://github.com/NixOS/nix/pull/5543
+- https://github.com/NixOS/nix/pull/5584 TODO: recompile with it
+- https://github.com/NixOS/nix/issues/4715
+- https://github.com/NixOS/nix/issues/6782
+
+
 #### 
 
 
