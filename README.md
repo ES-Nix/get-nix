@@ -19434,13 +19434,114 @@ cd "$TMPDIR" && source $stdenv/setup
 ```
 
 ```bash
-mkdir debug
-cp $src debug
+mkdir -v debug
+cp -rv $src debug
 cd debug
 tar -xzfv whi3jprrpzlnvic9fsn5f69sddazp5sb-colorify-0.2.3.tar.gz
 ```
 Refs.:
 - https://github.com/ryantm/cargo2nix/tree/0167b39f198d72acdf009265634504fd6f5ace15#declarative-build-debugging-shell
+
+
+
+```bash
+nix develop nixpkgs#toybox --command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+```
+
+```bash
+nix develop nixpkgs#pkgsStatic.toybox --command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+```
+
+
+```bash
+EXPR_NIX='
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57");
+      pkgs = import nixpkgs { };
+    in
+      (
+        pkgs.pkgsStatic.toybox.overrideAttrs 
+          (oldAttrs: 
+            {
+              hardeningDisable = [ "fortify" ]; 
+              buildPhase = "make clean && make sh";
+              installPhase = "rm -frv $out && mkdir -pv $out/bin && cp -v sh $out/bin";
+            }
+          )
+      )
+  )
+'
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR_NIX"
+
+sha256sum $FULL_LOCAL_PATH/bin/sh
+EXPECTED_SHA256SUM=49e7a0edc0638e198d45a91b606b136f2fb0ceeb33a4751e844cc6f0128f97b0
+
+echo $EXPECTED_SHA256SUM  $FULL_LOCAL_PATH/bin/sh | sha256sum -c 
+
+FULL_LOCAL_PATH=$(nix \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --rebuild \
+    --impure \
+    --expr \
+    "$EXPR_NIX")
+
+echo $EXPECTED_SHA256SUM  $FULL_LOCAL_PATH/bin/sh | sha256sum -c 
+```
+Refs.:
+- https://nixos.org/manual/nixpkgs/stable/#sec-hardening-in-nixpkgs
+- https://github.com/NixOS/nixpkgs/issues/18995#issuecomment-249829054
+- https://github.com/NixOS/nixpkgs/issues/60919
+- https://github.com/landley/toybox/blob/master/toys/pending/sh.c
+- https://github.com/tianon/dockerfiles/blob/master/toybox/Dockerfile
+
+
+
+```bash
+nix \
+develop \
+--impure \
+--expr \
+"$EXPR_NIX"
+```
+
+```bash
+cd "$TMPDIR" \
+&& source $stdenv/setup \
+&& unpackPhase \
+&& cd source \
+&& patchPhase \
+&& configurePhase
+```
+
+```bash
+make sh 
+```
+
+```bash
+! ldd sh
+```
+
+
+TODO: do an mult-stage build? It could be useful.
+```bash
+export TOYBOX_VERSION=0.8.10
+wget -O toybox.tgz "https://landley.net/toybox/downloads/toybox-$TOYBOX_VERSION.tar.gz"; \
+tar -xf toybox.tgz --strip-components=1; \
+rm toybox.tgz
+```
+
 
 ```bash
 nix develop nixpkgs#hello --command sh -c 'source $stdenv/setup && cd "$(mktemp -d)" && genericBuild'
