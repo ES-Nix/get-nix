@@ -1700,6 +1700,7 @@ Refs.:
 - https://discourse.nixos.org/t/how-to-get-the-latest-unbroken-commit-for-a-broken-package-from-hydra/26354/4
 
 
+TODO: https://blog.vkhitrin.com/booting-arch-linux-using-apple-virtualization-framework-with-utm/
 ```bash
 cat > Containerfile << 'EOF'
 FROM docker.io/library/alpine:3.18.3 as alpine-with-ca-certificates-tzdata
