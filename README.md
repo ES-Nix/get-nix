@@ -1138,6 +1138,12 @@ Refs.:
 - https://unix.stackexchange.com/a/696035
 
 
+> NOTE: The podman-machine configuration file is managed under the `$XDG_CONFIG_HOME/containers/podman/machine/` directory. 
+> Changing the `$XDG_CONFIG_HOME` environment variable while the machines are running can lead to unexpected behavior.
+> https://docs.podman.io/en/stable/markdown/podman-machine.1.html
+
+
+
 ```bash
 xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
 xhost + || nix run nixpkgs#xorg.xhost -- +
