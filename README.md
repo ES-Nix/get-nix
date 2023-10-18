@@ -26709,13 +26709,17 @@ Refs.:
 - [Nix if-then-else expressions](https://ops.functionalalgebra.com/2016/06/12/if-then-else/)
 
 
-Unfortunately we can't provide useful error messages when people use sub-attributes 
-of `{host,target,build}Platform`, because it is expected that you can compare two
-`*Platform` attrsets using `==`, which will force the `throw "error message"`.
+The nix language fu:
+- http://www.chriswarbo.net/projects/nixos/useful_hacks.html
 
-We should probably move anything fallible (like `extensions.sharedLibrary`) out of these 
-`*Platform` attrsets, so we can provide useful error messages instead of just returning `null`. 
-https://github.com/NixOS/nixpkgs/issues/244045#issuecomment-1639559220
+
+> Unfortunately we can't provide useful error messages when people use sub-attributes 
+> of `{host,target,build}Platform`, because it is expected that you can compare two
+> `*Platform` attrsets using `==`, which will force the `throw "error message"`.
+> 
+> We should probably move anything fallible (like `extensions.sharedLibrary`) out of these 
+> `*Platform` attrsets, so we can provide useful error messages instead of just returning `null`. 
+> https://github.com/NixOS/nixpkgs/issues/244045#issuecomment-1639559220
 
 TODO: https://github.com/NixOS/nixpkgs/issues/208242
 ```nix
@@ -26760,7 +26764,7 @@ build \
       let
         nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"); 
         pkgs = import nixpkgs { system = "x86_64-linux"; };
-      
+
         imageEnv = pkgs.buildEnv {
           name = "k3s-pause-image-env";
           paths = with pkgs.pkgsStatic; [ tini (hiPrio coreutils) busybox ];
