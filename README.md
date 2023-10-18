@@ -1703,6 +1703,30 @@ Refs.:
 TODO: 
 - Archlinux https://blog.vkhitrin.com/booting-arch-linux-using-apple-virtualization-framework-with-utm/
 - Ubuntu OCI https://serverfault.com/a/949998
+- 
+
+
+Is C++ your thing? https://stackoverflow.com/a/33881726
+```bash
+cat << 'EOF' > prog.cpp
+#include <chrono>
+#include <iostream>
+
+int
+main()
+{
+    std::cout << std::chrono::current_zone()->name() << '\n';
+}
+EOF
+
+g++ prog.cpp -Wall -Wextra -std=gnu++2b 
+```
+Refs.:
+
+
+- https://unix.stackexchange.com/a/452566 FHS
+- https://unix.stackexchange.com/questions/452559/what-is-etc-timezone-used-for#comment822484_452566 FHS
+- https://wiki.archlinux.org/title/System_time
 
 ```bash
 cat > Containerfile << 'EOF'
