@@ -26832,6 +26832,19 @@ rm -frv c-hello
 nix flake check .#
 ```
 
+Other C examples inlined:
+- https://nix.dev/tutorials/cross-compilation
+- https://github.com/NixOS/nix/issues/2270#issuecomment-464817905
+- https://nixos.org/manual/nix/stable/language/builtins.html#builtins-toFile
+- https://discourse.nixos.org/t/c-headers-not-found-with-clang-13/19745/2
+
+
+
+
+nix build --no-link --print-out-paths --print-build-logs nixpkgs#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.install-force-daemon
+
+
+
 
 ```bash
 sh -c 'if [ "$(uname)" == "Darwin" ]; then echo "--daemon"; fi'
@@ -27275,6 +27288,20 @@ github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.nix
 
 
 ### nix-channel, channels, NIX_PATH
+
+
+The syntax
+```bash
+nix eval --impure --expr '<nixpkgs>'
+```
+
+is equivalent to:
+```bash
+nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs"'
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/language/builtins.html#builtins-findFile
+
 
 - [Channels and NIX_PATH](https://www.youtube.com/watch?v=yfmTgEA2_6k) by Burke Libbey
 - [How does Nix finds <nixpkgs> when NIX_PATH is empty?](https://discourse.nixos.org/t/how-does-nix-finds-nixpkgs-when-nix-path-is-empty/20756)
