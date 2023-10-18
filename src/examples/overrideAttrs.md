@@ -3796,6 +3796,15 @@ build \
 .
 ```
 
+TODO: test it using the official alpine python image
+```bash
+nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsMusl.python3Packages.numpy.dist
+```
+
+```bash
+nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsMusl.python3Packages.pandas.dist
+```
+
 
 ##### The `window/aggregations.cpython-38-x86_64-linux-gnu.so` thing:
 
