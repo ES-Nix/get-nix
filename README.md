@@ -1731,6 +1731,7 @@ Refs.:
 ```bash
 cat > Containerfile << 'EOF'
 FROM docker.io/library/alpine:3.18.3 as alpine-with-ca-certificates-tzdata
+# FROM docker.io/library/python:3.9.18-alpine3.18 as alpine-with-ca-certificates-tzdata
 
 # https://stackoverflow.com/a/69918107
 # https://serverfault.com/a/1133538
@@ -1768,7 +1769,7 @@ RUN apk update \
  && apk del tzdata shadow \
  && echo 'End tzdata stuff!' 
 
-# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
 
 USER nixuser
 WORKDIR /home/nixuser
@@ -1795,16 +1796,20 @@ localhost/alpine-with-ca-certificates-tzdata:latest \
 sh
 ```
 
+CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' || echo Neither curl nor wget are installed) \
+&& $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
 
 ```bash
 test -f nix || curl -L https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
 test -f nix || wget https://hydra.nixos.org/build/237228729/download/2/nix && chmod -v +x nix
 
+
+COMMIT_REVISON_TO_PIN_NIXPKGS
 ./nix \
 --option experimental-features 'nix-command flakes' \
 registry \
 pin \
-nixpkgs github:NixOS/nixpkgs/f3dab3509afca932f3f4fd0908957709bb1c1f57
+nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 
 ./nix \
 --option experimental-features 'nix-command flakes' \
@@ -1848,7 +1853,6 @@ COMMANDS
 && nix flake --version \
 && nix flake metadata nixpkgs
 ```
-
 
 
 ```bash
@@ -14561,12 +14565,12 @@ nixpkgs#auditwheel \
 nixpkgs#binutils.out \
 nixpkgs#glibc.bin \
 nixpkgs#patchelf \
+nixpkgs#poetry \
 nixpkgs#python3Packages.pip \
 nixpkgs#python3Packages.wheel \
 nixpkgs#python3Packages.wheel-filename  \
 nixpkgs#python3Packages.wheel-inspect \
-nixpkgs#readelf \
-nixpkgs#twine 
+nixpkgs#twine
 ```
 
 
@@ -27328,6 +27332,21 @@ nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs"'
 ```
 Refs.:
 - https://nixos.org/manual/nix/stable/language/builtins.html#builtins-findFile
+
+
+Bonus/extra:
+```bash
+nix eval --impure --expr '<nixpkgs/nixos>'
+```
+
+```bash
+nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs/nixos"'
+```
+
+
+```bash
+ls -ahl $(nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs/nixos"')
+```
 
 
 - [Channels and NIX_PATH](https://www.youtube.com/watch?v=yfmTgEA2_6k) by Burke Libbey

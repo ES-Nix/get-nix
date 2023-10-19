@@ -3801,6 +3801,59 @@ TODO: test it using the official alpine python image
 nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsMusl.python3Packages.numpy.dist
 ```
 
+
+
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM docker.nix-community.org/nixpkgs/nix-flakes as build-from-nixos-cache-dist
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+RUN env \
+ && echo \
+ && pwd
+
+RUN nix flake metadata nixpkgs \
+ && nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#pkgsMusl.python311Packages.numpy.dist
+
+RUN ls -ahl /root/
+
+
+FROM python:3.11.5-alpine3.18 as test-numpy
+
+USER root
+
+COPY --from=build-from-nixos-cache-dist /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl
+RUN pip3 install /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl
+
+
+RUN pip3 freeze
+EOF
+
+
+podman \
+build \
+--file Dockerfile \
+--target test-numpy \
+--tag test-numpy \
+.
+
+
+docker \
+build \
+--file Dockerfile \
+--target test-numpy \
+--tag test-numpy \
+.
+```
+
+
+
 ```bash
 nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsMusl.python3Packages.pandas.dist
 ```
