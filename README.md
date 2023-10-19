@@ -1703,7 +1703,7 @@ Refs.:
 TODO: 
 - Archlinux https://blog.vkhitrin.com/booting-arch-linux-using-apple-virtualization-framework-with-utm/
 - Ubuntu OCI https://serverfault.com/a/949998
-- 
+- https://stackoverflow.com/a/68996528
 
 
 Is C++ your thing? https://stackoverflow.com/a/33881726
@@ -24637,6 +24637,17 @@ Refs.:
 
 
 ```bash
+systemd.log_level=debug systemd.log_target=kmsg
+```
+
+```bash
+dmesg -T | less
+```
+Refs.:
+- https://documentation.suse.com/pt-br/sles/15-GA/html/SLES-all/cha-systemd.html
+
+
+```bash
 
 
 systemd.services. = {
@@ -26608,25 +26619,36 @@ Maybe `devenv` fit well here?
 ```bash
 echo 'Start docker instalation...' \
 && curl -fsSL https://get.docker.com | sudo sh \
-&& (getent group docker || sudo groupadd docker) \
-&& sudo usermod -aG docker "$USER" \
 && docker --version \
-&& sudo systemctl daemon-reload \
+&& (getent group docker || sudo groupadd docker) \
+&& sudo usermod -aG docker "$(id -nu)" \
+&& sudo chown -v root:"$(id -gn)" /var/run/docker.sock \
+&& docker run -it --rm docker.io/library/alpine cat /etc/os*release  \
+&& docker images \
 && echo 'End docker instalation!'
 ```
 Refs.:
-- https://unix.stackexchange.com/a/740098
+- https://unix.stackexchange.com/a/740098 it brings `sudo systemctl daemon-reload`
+- https://unix.stackexchange.com/a/517319 it brings `kill -TERM 1`
+- https://github.com/moby/moby/issues/39869#issuecomment-981563758 it brings `sudo systemctl reload docker`
+- https://superuser.com/a/609141 it brings `exec su -l $USER`
 
 
-
-TODO: test it `sudo systemctl daemon-reload`
 ```bash
-nix \
+echo 'Start docker instalation...' \
+&& nix \
 profile \
 install \
 nixpkgs#docker \
-&& sudo cp "$(nix eval --raw nixpkgs#docker)"/etc/systemd/system/{docker.service,docker.socket} /etc/systemd/system/ \
-&& sudo systemctl enable --now docker
+&& sudo cp -v "$(nix eval --raw nixpkgs#docker)"/etc/systemd/system/{docker.service,docker.socket} /etc/systemd/system/ \
+&& docker --version \
+&& (getent group docker || sudo groupadd docker) \
+&& sudo usermod -aG docker "$(id -nu)" \
+&& sudo systemctl enable --now docker \
+&& sudo chown -v root:"$(id -gn)" /var/run/docker.sock \
+&& docker run -it --rm docker.io/library/alpine cat /etc/os*release  \
+&& docker images \
+&& echo 'End docker instalation!'
 ```
 Refs.: 
 - https://github.com/NixOS/nixpkgs/issues/70407
