@@ -26603,12 +26603,22 @@ Maybe `devenv` fit well here?
 #### 
 
 
-```bash
-sudo groupadd docker; \
-sudo usermod --append --groups docker "$USER" \
-&& sudo reboot
-```
 
+```bash
+echo 'Start docker instalation...' \
+&& curl -fsSL https://get.docker.com | sudo sh \
+&& (getent group docker || sudo groupadd docker) \
+&& sudo usermod -aG docker "$USER" \
+&& docker --version \
+&& sudo systemctl daemon-reload \
+&& echo 'End docker instalation!'
+```
+Refs.:
+- https://unix.stackexchange.com/a/740098
+
+
+
+TODO: test it `sudo systemctl daemon-reload`
 ```bash
 nix \
 profile \
