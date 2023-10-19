@@ -4437,6 +4437,7 @@ sudo -u $otherUser XDG_RUNTIME_DIR=/run/user/$(id -u $otherUser) systemctl --use
 ```
 Refs.:
 - https://superuser.com/a/1598351
+- https://unix.stackexchange.com/a/673901
 
 
 ```bash
