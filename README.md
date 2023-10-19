@@ -19486,6 +19486,9 @@ Refs.:
 - https://github.com/ryantm/cargo2nix/tree/0167b39f198d72acdf009265634504fd6f5ace15#declarative-build-debugging-shell
 
 
+> In your case `eval $checkPhase` should run the checks. Just `checkPhase` only works for the default phases.
+> https://discourse.nixos.org/t/nix-develop-and-checkphase/25707/3
+
 
 ```bash
 nix develop nixpkgs#toybox --command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
