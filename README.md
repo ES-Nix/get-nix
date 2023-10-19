@@ -19543,11 +19543,13 @@ FULL_LOCAL_PATH=$(nix \
 echo $EXPECTED_SHA256SUM  $FULL_LOCAL_PATH/bin/sh | sha256sum -c 
 ```
 Refs.:
+- [Compiling toybox from source code.](https://www.youtube.com/embed/cz6iGrhnMKs?start=90&end=200&version=3), start=90&end=200
 - https://nixos.org/manual/nixpkgs/stable/#sec-hardening-in-nixpkgs
 - https://github.com/NixOS/nixpkgs/issues/18995#issuecomment-249829054
 - https://github.com/NixOS/nixpkgs/issues/60919
 - https://github.com/landley/toybox/blob/master/toys/pending/sh.c
 - https://github.com/tianon/dockerfiles/blob/master/toybox/Dockerfile
+- https://www.landley.net/toybox/
 
 
 
@@ -22298,15 +22300,29 @@ Yes, it is possible, or it should be.
 ```bash
 sudo apt-get -qq update \
 && sudo apt-get install -y nix-bin \
-&& sudo chown -R "$(id -u)":"$(id -g)" /nix
+&& sudo chown -R "$(id -u)":"$(id -g)" /nix 
+
+nix flake --version
+
+# Note: as of now it does not have an defaul/builtin already installed nixpkgs to use.
+# So while pinning it downloads one nixpkgs too.
+nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+-vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
 
 nix \
-profile \
-install \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+shell \
+--ignore-environment \
+--keep HOME \
+--keep SHELL \
+--keep USER \
 nixpkgs#busybox \
---option \
-experimental-features 'nix-command flakes'
-
+-c \
+sh<<'COMMANDS'
 
 busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
 && busybox grep 'nixos' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
@@ -22315,19 +22331,18 @@ busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
 && busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
 && busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
 
-
 echo 'PATH="$HOME"/.nix-profile/bin:"$PATH"' >> ~/."$(busybox basename $SHELL)"rc && . ~/."$( busybox basename $SHELL)"rc
+COMMANDS
 
-nix \
-profile \
-remove \
-"$(nix eval --raw nixpkgs#busybox)"
-
-nix store gc --verbose
-systemctl status nix-daemon
-nix flake --version
+# Not an must
+nix store gc --verbose \
+&& nix store optimise --verbose \
+&& systemctl status nix-daemon \
+&& nix flake --version \
+&& nix flake metadata nixpkgs
 ```
-https://stackoverflow.com/questions/3294072/get-last-dirname-filename-in-a-file-path-argument-in-bash#comment101491296_10274182
+Refs.:
+- https://stackoverflow.com/questions/3294072/get-last-dirname-filename-in-a-file-path-argument-in-bash#comment101491296_10274182
 
 
 #### In void linux, xbps-install -Sy nix
