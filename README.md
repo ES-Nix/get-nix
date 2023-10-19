@@ -27100,6 +27100,11 @@ sh \
 Refs.:
 - https://stackoverflow.com/questions/10856129/setting-an-environment-variable-before-a-command-in-bash-is-not-working-for-the#comment125369132_56765113
 
+Whats is the difference?
+```bash
+sudo dmidecode -t4 | egrep 'Status' | wc -l
+nproc
+```
 
 ```bash
 URL=https://example.com
