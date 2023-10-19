@@ -4452,6 +4452,11 @@ Refs.:
 podman run --rm opensuse/leap:15.4 sh -c 'zypper --version'
 ```
 
+
+TODO: help
+https://github.com/NixOS/nix/issues/8136#issuecomment-1493814670
+
+
 TODO
 ```bash
 systemctl is-system-running --wait
@@ -27079,6 +27084,23 @@ sh \
 ```
 Refs.:
 - https://stackoverflow.com/questions/10856129/setting-an-environment-variable-before-a-command-in-bash-is-not-working-for-the#comment125369132_56765113
+
+
+```bash
+URL=https://example.com
+curl "$URL" -s -o /dev/null -w \
+"response_code: %{http_code}\n
+dns_time: %{time_namelookup}
+connect_time: %{time_connect}
+pretransfer_time: %{time_pretransfer}
+starttransfer_time: %{time_starttransfer}
+total_time: %{time_total}
+"
+```
+Refs.:
+- https://unix.stackexchange.com/a/343264
+
+
 
 ```bash
 RUN echo $' \n\
