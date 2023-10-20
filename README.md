@@ -15775,6 +15775,9 @@ build \
 
 
 Some really more complex examples:
+- https://github.com/NixOS/nixpkgs/blob/b11ced7a9c1fc44392358e337c0d8f58efc97c89/nixos/lib/make-single-disk-zfs-image.nix#L223C9-L232
+- https://source.mcwhirter.io/craige/mobile-nixos/commit/a1813efdfb75a556ad1ec372a5181ff61f0501c1
+- https://discourse.nixos.org/t/override-qemu-options-in-runinlinuxvm/16470
 - https://github.com/NixOS/nixpkgs/issues/177908#issuecomment-1160654806
 - https://github.com/NixOS/nixpkgs/issues/190809#issuecomment-1249224694
 
@@ -26870,7 +26873,8 @@ Refs.:
 
 The nix language fu:
 - http://www.chriswarbo.net/projects/nixos/useful_hacks.html
-
+- https://teu5us.github.io/nix-lib.html
+- https://github.com/NixOS/nixpkgs/blob/b11ced7a9c1fc44392358e337c0d8f58efc97c89/nixos/lib/make-multi-disk-zfs-image.nix#L122-L123
 
 > Unfortunately we can't provide useful error messages when people use sub-attributes 
 > of `{host,target,build}Platform`, because it is expected that you can compare two
@@ -27208,7 +27212,23 @@ sh \
 Refs.:
 - https://stackoverflow.com/questions/10856129/setting-an-environment-variable-before-a-command-in-bash-is-not-working-for-the#comment125369132_56765113
 
-Whats is the difference?
+```bash
+parted --script /dev/vda -- \
+    mklabel gpt \
+    mkpart no-fs 1MiB 2MiB \
+    set 1 bios_grub on \
+    align-check optimal 1 \
+    mkpart primary fat32 2MiB ${toString bootSize}MiB \
+    align-check optimal 2 \
+    mkpart primary fat32 ${toString bootSize}MiB -1MiB \
+    align-check optimal 3 \
+    print
+```
+https://github.com/NixOS/nixpkgs/blob/b11ced7a9c1fc44392358e337c0d8f58efc97c89/nixos/lib/make-single-disk-zfs-image.nix#L260-L269
+
+
+
+What is the difference?
 ```bash
 sudo dmidecode -t4 | egrep 'Status' | wc -l
 nproc
