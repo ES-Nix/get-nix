@@ -26689,6 +26689,8 @@ Refs.:
 - https://stackoverflow.com/a/48973911
 - https://unix.stackexchange.com/a/408735
 
+
+
 ```bash
 echo 'Start docker instalation...' \
 && nix \
