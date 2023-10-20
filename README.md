@@ -1796,23 +1796,34 @@ localhost/alpine-with-ca-certificates-tzdata:latest \
 sh
 ```
 
-CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' || echo Neither curl nor wget are installed) \
-&& $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
+```bash
+test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)
+test -G /nix/var/nix || sudo -k chown -Rv "$USER": /nix 
+test $(stat -c %a /nix/var/nix) -eq 0755 || sudo -k chmod -v 0755 /nix/var/nix
+```
 
 ```bash
-test -f nix || curl -L https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
-test -f nix || wget https://hydra.nixos.org/build/237228729/download/2/nix && chmod -v +x nix
+sudo mkdir -pv -m 0666 /nix/var/nix
+```
+
+```bash
+# test -f nix || curl -L https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
+# test -f nix || wget https://hydra.nixos.org/build/237228729/download/2/nix && chmod -v +x nix
+# COMMIT_REVISON_TO_PIN_NIXPKGS
+CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo Neither curl nor wget are installed) \
+&& $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
 
 
-COMMIT_REVISON_TO_PIN_NIXPKGS
 ./nix \
---option experimental-features 'nix-command flakes' \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
 registry \
 pin \
 nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 
 ./nix \
---option experimental-features 'nix-command flakes' \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
 shell \
 --ignore-environment \
 --keep HOME \
@@ -23161,10 +23172,30 @@ TODO: `nix path-info --derivation .#foo`
 - https://github.com/NixOS/nix/issues/3908#issuecomment-1186633661
 - https://github.com/NixOS/nixpkgs/issues/97176#issuecomment-1221379585
 
+
+TODO: 
+
+> For things downloaded with the builtin fetchers (`builtins.fetchTarball` and `builtins.fetchurl` should work too) 
+> I just found this workaround: By using indirect GC roots you can gcroot the whole ~/.cache/nix/tarballs directory:
+> 
+> ```
+> find ~/.cache/nix/tarballs -type l -execdir ln -svf ~/.cache/nix/tarballs/{} /nix/var/nix/gcroots/auto/{} \;
+> ```
+> 
+> Or a bit simpler but not as clean (links everything (harmless) and fails if there's nothing to link):
+> 
+> ```
+> ln -sfv ~/.cache/nix/tarballs/* /nix/var/nix/gcroots/auto
+> ```
+https://github.com/NixOS/nix/issues/719#issuecomment-591712316
++
+https://github.com/NixOS/nix/issues/954#issuecomment-365264077
+https://github.com/NixOS/nix/issues/6507
+
 ```bash
 test -d profiles || mkdir -v profiles
 test -L profiles/dev \
-|| nix develop --profile profiles/dev sh echo
+|| nix develop --profile profiles/dev sh true
 test -L profiles/dev-shell-default \
 || nix build $(nix eval --impure --raw .#devShells.x86_64-linux.default.drvPath) --out-link profiles/dev-shell-default
 ```
@@ -24645,6 +24676,8 @@ dmesg -T | less
 ```
 Refs.:
 - https://documentation.suse.com/pt-br/sles/15-GA/html/SLES-all/cha-systemd.html
+
+TODO: where it fits? https://github.com/NixOS/nixpkgs/issues/48749#issuecomment-431700134
 
 
 ```bash
@@ -26655,6 +26688,43 @@ Refs.:
 - https://github.com/moby/moby/tree/e9ab1d425638af916b84d6e0f7f87ef6fa6e6ca9/contrib/init/systemd
 - https://stackoverflow.com/a/48973911
 - https://unix.stackexchange.com/a/408735
+
+```bash
+echo 'Start docker instalation...' \
+&& nix \
+profile \
+install \
+github:NixOS/nixpkgs/nixos-21.05#docker \
+&& sudo cp -v "$(nix eval --raw github:NixOS/nixpkgs/nixos-21.05#docker)"/etc/systemd/system/{docker.service,docker.socket} /etc/systemd/system/ \
+&& docker --version \
+&& (getent group docker || sudo groupadd docker) \
+&& sudo usermod -aG docker "$(id -nu)" \
+&& sudo systemctl enable --now docker \
+&& sudo chown -v root:"$(id -gn)" /var/run/docker.sock \
+&& docker run -it --rm docker.io/library/alpine cat /etc/os*release  \
+&& docker images \
+&& echo 'End docker instalation!'
+```
+
+
+```bash
+echo 'Start docker instalation...' \
+&& nix \
+profile \
+install \
+github:NixOS/nixpkgs/nixos-23.05#docker \
+&& sudo cp -v "$(nix eval --raw github:NixOS/nixpkgs/nixos-23.05#docker)"/etc/systemd/system/{docker.service,docker.socket} /etc/systemd/system/ \
+&& docker --version \
+&& (getent group docker || sudo groupadd docker) \
+&& sudo usermod -aG docker "$(id -nu)" \
+&& sudo systemctl enable --now docker \
+&& sudo chown -v root:"$(id -gn)" /var/run/docker.sock \
+&& docker run -it --rm docker.io/library/alpine cat /etc/os*release  \
+&& docker images \
+&& echo 'End docker instalation!'
+```
+
+
 
 
 ```bash
