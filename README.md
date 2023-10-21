@@ -26871,6 +26871,13 @@ Refs.:
 - [Nix if-then-else expressions](https://ops.functionalalgebra.com/2016/06/12/if-then-else/)
 
 
+```nix
+callPackage
+```
+[How to package {Python,Ruby,Rust,Node,Go} programs - Zimbatm (NixCon 2019)](https://www.youtube.com/embed/MrRnGPyQ_9s?start=1504&end=1571&version=3), start=1504&end=1571
+
+
+
 The nix language fu:
 - http://www.chriswarbo.net/projects/nixos/useful_hacks.html
 - https://teu5us.github.io/nix-lib.html
