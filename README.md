@@ -26962,7 +26962,60 @@ localhost/k3s-pause:latest
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/3928cfa27d9925f9fbd1d211cf2549f723546a81/nixos/tests/k3s/single-node.nix
 
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c"); 
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
 
+        imageEnv = pkgs.buildEnv {
+          name = "k3s-pause-image-env";
+          paths = with pkgs.pkgsStatic; [ tini (hiPrio coreutils) busybox ];
+        };
+        pauseImage = pkgs.dockerTools.buildImage {
+          name = "k3s-pause";
+          tag = "latest";
+          copyToRoot = imageEnv;
+          config.Entrypoint = [ "/bin/sh" ];
+        };
+      in
+        pauseImage
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/k3s-pause:latest
+```
+
+
+
+
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs"); 
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      in
+        builtins.length (builtins.filter nixpkgs.lib.isDerivation (builtins.attrValues pkgs.python311Packages))
+  )
+'
+```
 
 ```bash
 nix registry list
@@ -27115,12 +27168,12 @@ Refs.:
 ```bash
 nix \
 eval \
---raw \
+--json \
 --impure \
 --expr \
 '
 let
-  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c").legacyPackages.${builtins.currentSystem};
+  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b").legacyPackages.${builtins.currentSystem};
 in 
   map (drv: [("closure-" + baseNameOf drv) drv]) [ pkgs.hello ]
 '
