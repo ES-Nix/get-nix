@@ -5454,6 +5454,151 @@ nix shell nixpkgs#pandoc --command sh -c 'pandoc --list-input-formats && echo &&
 Refs.:
 - https://medium.com/isovera/devops-for-presentations-reveal-js-markdown-pandoc-gitlab-ci-34d07d2c1011
 
+
+
+```bash
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+alpine \
+sh \
+-c \
+'
+apk add --no-cache pandoc \
+&& pandoc --version \
+&& ldd $(which pandoc)
+'
+
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+debian \
+bash \
+-c \
+'
+apt-get update -y \
+&& apt-get install -y pandoc \
+&& pandoc --version \
+&& ldd $(which pandoc)
+'
+
+
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+almalinux \
+bash \
+-c \
+'
+yum repolist \
+&& yum -y install epel-release \
+&& yum -y install pandoc which \
+&& pandoc --version \
+&& ldd $(which pandoc)
+'
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+fedora \
+bash \
+-c \
+'
+yum -y install pandoc which \
+&& pandoc --version \
+&& ldd $(which pandoc)
+'
+```
+
+
+Broken!
+```bash
+podman \
+run \
+--interactive=true \
+--tty=false \
+--rm=true \
+centos \
+bash<<'COMMANDS'
+cd /etc/yum.repos.d/ \
+&& sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* \
+&& sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* \
+&& cd \
+&& yum repolist \
+&& yum -y install epel-release \
+&& yum -y install pandoc --enablerepo=epel \
+&& pandoc --version \
+&& ldd $(which pandoc)
+COMMANDS
+
+
+podman \
+run \
+--interactive=true \
+--tty=false \
+--rm=true \
+centos \
+bash<<'COMMANDS'
+sed -i 's/best=True/best=False/' /etc/dnf/dnf.conf \
+&& dnf \
+-y \
+--disablerepo '*' \
+--enablerepo=extras swap centos-linux-repos centos-stream-repos \
+--skip-broken \
+--nobest \
+&& yum repolist \
+&& yum -y install epel-release \
+&& yum -y install pandoc --enablerepo=epel \
+&& pandoc --version \
+&& ldd $(which pandoc)
+COMMANDS
+
+podman \
+run \
+--interactive=true \
+--tty=false \
+--rm=true \
+centos \
+bash<<'COMMANDS'
+sed -i 's/best=True/best=False/' /etc/dnf/dnf.conf \
+&& dnf \
+-y \
+--disablerepo '*' \
+--enablerepo=extras swap centos-linux-repos centos-stream-repos \
+--skip-broken \
+--nobest \
+&& dnf -y distro-sync \
+&& yum -y install epel-release \
+&& yum -y install pandoc --enablerepo=epel \
+&& pandoc --version \
+&& ldd $(which pandoc)
+COMMANDS
+
+```
+Refs.:
+- https://stackoverflow.com/a/71077606
+- https://serverfault.com/a/1105889
+- https://stackoverflow.com/a/71077606
+- https://stackoverflow.com/a/71020440
+- https://stackoverflow.com/a/71985088
+- https://stackoverflow.com/a/76958150
+- https://gist.github.com/backroot/3898b897a21987a5314051b6818411f3?permalink_comment_id=3626060#gistcomment-3626060
+- https://stackoverflow.com/a/73189725
+- https://stackoverflow.com/questions/72741508/failed-to-download-metadata-for-repo-appstream#comment128494296_72741508
+- https://cloudlinux.zendesk.com/hc/en-us/articles/4858340461980-Module-yaml-error-Unexpected-key-in-data-static-context-line-9-col-3-
+
+
+
 ```bash
 nix build --no-link --print-build-logs --print-out-paths \
   nixpkgs#pandoc \
@@ -5472,7 +5617,6 @@ nix build --impure --no-link --print-build-logs --print-out-paths \
 ```
 
 
-ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 ```bash
 EXPR_NIX='
   (
@@ -6467,13 +6611,27 @@ path-info \
 github:NixOS/nix#nix-static
 ```
 
+```bash
 nix search nixpkgs ' sed'
+```
 
-
+```bash
 nix path-info -r /nix/store/sb7nbfcc1ca6j0d0v18f7qzwlsyvi8fz-ocaml-4.10.0 --store https://cache.nixos.org/
 nix path-info -r "$(nix eval --raw nixpkgs#hello)" --store https://cache.nixos.org/
+```
 
+```bash
 nix store ls --store https://cache.nixos.org/ -lR /nix/store/0i2jd68mp5g6h2sa5k9c85rb80sn8hi9-hello-2.10
+```
+
+
+```bash
+nix store ls --store https://cache.nixos.org/ -lR "$(nix eval --raw nixpkgs#hello)"
+```
+
+```bash
+nix store ls --store http://localhost:5000 -lR $(nix eval --raw nixpkgs#hello)
+```
 
 ```bash
 nix eval --raw github:NixOS/nixpkgs/release-20.03#ocaml.version
@@ -7424,6 +7582,7 @@ run \
                 # What about github:NixOS/nix#nix-static can it be injected here? What would break?
                 # keep-outputs = true
                 # keep-derivations = true
+                # keep-env-derivations = true
                 # system-features = benchmark big-parallel kvm nixos-test
                 package = pkgs.nixFlakes;
                 extraOptions = "experimental-features = nix-command flakes ca-derivations";
@@ -8076,6 +8235,7 @@ run \
                 # What about github:NixOS/nix#nix-static can it be injected here? What would break?
                 # keep-outputs = true
                 # keep-derivations = true
+                # keep-env-derivations = true
                 # system-features = benchmark big-parallel kvm nixos-test
                 package = pkgs.nixFlakes;
                 extraOptions = "experimental-features = nix-command flakes ca-derivations";
@@ -8334,6 +8494,7 @@ run \
                 # What about github:NixOS/nix#nix-static can it be injected here? What would break?
                 # keep-outputs = true
                 # keep-derivations = true
+                # keep-env-derivations = true
                 # system-features = benchmark big-parallel kvm nixos-test
                 package = pkgs.nixFlakes;
                 extraOptions = "experimental-features = nix-command flakes ca-derivations";
@@ -9525,11 +9686,57 @@ docker run -d --name=data-nix-container --volume=/nix:/srv/nix:rw --rm busybox s
 docker run -t -i --rm --volumes-from data-nix-container:ro docker.io/nixpkgs/nix-flakes
 ```
 
+
+
 ```bash
 cat > Containerfile << 'EOF'
 FROM docker.io/nixpkgs/nix-flakes:latest
 
-RUN nix profile install nixpkgs#awscli nixpkgs#findutils
+RUN echo \
+ && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+ && nix profile install nixpkgs#nix-serve nixpkgs#findutils
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+EOF
+
+
+podman \
+build \
+--file=Containerfile \
+--tag=nix-flakes-nix-serve .
+
+
+podman kill conteiner-nix-serve \
+&& podman rm --force conteiner-nix-serve || true \
+&& podman \
+run \
+--privileged=true \
+--device=/dev/fuse \
+--device=/dev/kvm \
+--detach=true \
+--hostname=container-nix-serve \
+--name=conteiner-nix-serve \
+--mount=type=tmpfs,destination=/var/lib/containers \
+--publish=5000:5000 \
+--rm=true \
+nix-flakes-nix-serve \
+bash \
+-c \
+'
+nix-serve
+'
+
+podman exec -it conteiner-nix-serve bash -c 'nix build -L nixpkgs#hello' \
+&& nix store ls --store http://localhost:5000 -lR $(nix eval --raw nixpkgs#hello)
+```
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/nixpkgs/nix-flakes:latest
+
+RUN echo \
+ && nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+ && nix profile install nixpkgs#nix-server nixpkgs#findutils
 
 ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
 EOF
@@ -15166,6 +15373,13 @@ nix show-derivation --recursive /run/current-system | wc -l
 nix eval --raw nixpkgs#lib.version
 ```
 
+
+```bash
+nix-store --query --graph --include-outputs \
+$(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello) \
+ | dot -Tps > hello.ps
+```
+
 ```bash
 nix-store --query --graph --include-outputs \
 $(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#nixosTests.kubernetes.rbac-multi-node.driverInteractive.inputDerivation) \
@@ -19546,6 +19760,7 @@ build \
 sha256sum $FULL_LOCAL_PATH/bin/sh
 EXPECTED_SHA256SUM=49e7a0edc0638e198d45a91b606b136f2fb0ceeb33a4751e844cc6f0128f97b0
 
+du -hs $FULL_LOCAL_PATH/bin/sh
 echo $EXPECTED_SHA256SUM  $FULL_LOCAL_PATH/bin/sh | sha256sum -c 
 
 FULL_LOCAL_PATH=$(nix \
@@ -19558,6 +19773,7 @@ FULL_LOCAL_PATH=$(nix \
     --expr \
     "$EXPR_NIX")
 
+du -hs $FULL_LOCAL_PATH/bin/sh
 echo $EXPECTED_SHA256SUM  $FULL_LOCAL_PATH/bin/sh | sha256sum -c 
 ```
 Refs.:
@@ -19597,7 +19813,7 @@ make sh
 ```
 
 
-TODO: do an mult-stage build? It could be useful.
+TODO: do an mult-stage docker/podman build? It could be useful.
 ```bash
 export TOYBOX_VERSION=0.8.10
 wget -O toybox.tgz "https://landley.net/toybox/downloads/toybox-$TOYBOX_VERSION.tar.gz"; \
@@ -27196,7 +27412,7 @@ in
 '
 ```
 
-##### bash, POSIX
+##### bash, POSIX, bash-fu
 
 
 ```bash
@@ -27272,6 +27488,15 @@ sh \
 Refs.:
 - https://stackoverflow.com/questions/10856129/setting-an-environment-variable-before-a-command-in-bash-is-not-working-for-the#comment125369132_56765113
 
+
+
+> That last script is the pedantically robust way to do this in Bash if you want to be super paranoid. 
+> The above script might not work in other shells, but hopefully this post was sufficiently clear 
+> that you can adapt the script to your needs.
+> https://www.haskellforall.com/2022/10/
+
+
+
 ```bash
 parted --script /dev/vda -- \
     mklabel gpt \
@@ -27307,6 +27532,17 @@ total_time: %{time_total}
 ```
 Refs.:
 - https://unix.stackexchange.com/a/343264
+
+
+```bash
+RUN { \
+        echo '#!/bin/sh'; echo 'set -e'; echo; \
+        echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
+    } > /usr/local/bin/docker-java-home \
+    && chmod +x /usr/local/bin/docker-java-home
+```
+Refs.:
+- https://github.com/localstack/localstack/blob/61d5d074df0d02337f9ad159b5a728f8e7b13b8e/Dockerfile#L90-L94
 
 
 
