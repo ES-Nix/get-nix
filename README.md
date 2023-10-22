@@ -24921,7 +24921,7 @@ nix \
 build \
 --no-link \
 --print-build-logs \
-nixpkgs#pkgsStatic.gcc
+nixpkgs#pkgsStatic.hello
 ```
 Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-function-calls
@@ -24929,7 +24929,7 @@ Refs.:
 
 
 ```bash
-nix --option trace-verbose true build -L nixpkgs#pkgsStatic.gcc
+nix --option trace-verbose true build -L nixpkgs#pkgsStatic.hello
 ```
 Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-verbose
