@@ -7033,7 +7033,7 @@ build \
 --no-link \
 --print-build-logs \
 --expr \
-'(import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") { system = "x86_64-linux"; }).nixosTests.podman.driverInteractive'
+'(import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b") { system = "x86_64-linux"; }).nixosTests.podman.driverInteractive'
 ```
 
 
@@ -7046,7 +7046,7 @@ build \
 --expr \
 '
   let
-    nt = (import (builtins.getFlake "github:NixOS/nixpkgs/963d27a0767422be9b8686a8493dcade6acee992") {} ).nixosTests;
+    nt = (import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b") {} ).nixosTests;
     nodes = {
         machine = { config, pkgs, ... }: {
           environment.systemPackages = with pkgs; [
@@ -7063,38 +7063,51 @@ build \
 ```
 
 
-.legacyPackages."x86_64-linux".nixosTest
-
 
 
 That is insane to be possible, but it is, well hope it does not brake for you:
-
 ```bash
 nix \
 shell \
---store "$HOME" \
-nixpkgs/a3f85aedb1d66266b82d9f8c0a80457b4db5850c#{\
-gcc10,\
-gcc6,\
-gfortran10,\
-gfortran6,\
+nixpkgs#{\
+gcc,\
+gfortran,\
+gnum4,\
+gnumake,\
 julia_16-bin,\
 nodejs,\
+pandoc,\
 poetry,\
 python39,\
 rustc,\
 yarn\
-}
-
+} \
+--command \
+sh \
+-c '
 gcc --version
+echo .
 gfortran --version
+echo .
 julia --version
+echo .
+m4 --version
+echo .
 node --version
+echo .
+pandoc --version
+echo .
 poetry --version
+echo .
 python3 --version
+echo .
 rustc --version
+echo .
 yarn --version
+'
 ```
+
+
 
 ```bash
 mkdir -p ~/.config/containers
@@ -24844,8 +24857,40 @@ TODO: take a look into these `nix repl` stuff that lilyball did
 https://discourse.nixos.org/t/in-overlays-when-to-use-self-vs-super/2968/9
 
 
-#### builtins.trace 
+#### builtins.trace and lib.debug.traceVal (old stdenv.lib.traceVal)
 
+
+[How to package {Python,Ruby,Rust,Node,Go} programs - Zimbatm (NixCon 2019)](https://www.youtube.com/embed/MrRnGPyQ_9s?start=2658&end=2734&version=3), start=2658&end=2734
+
+[How to package {Python,Ruby,Rust,Node,Go} programs - Zimbatm (NixCon 2019)](https://www.youtube.com/embed/MrRnGPyQ_9s?start=2736&end=2798&version=3), start=2736&end=2798
+
+
+```bash
+nix eval --impure --expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { };
+    in 
+      nixpkgs.lib.debug.traceVal pkgs.pkgsStatic.hello.configureFlags
+)
+'
+```
+
+
+```bash
+nix eval --impure --expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+      pkgs = import nixpkgs { };
+    in 
+      nixpkgs.lib.debug.traceVal pkgs.breakpointHook
+)
+'
+```
 
 https://unix.stackexchange.com/a/721439
 
@@ -24871,8 +24916,12 @@ Refs.:
 ###### The nix.conf option trace-function-calls
 
 ```bash
-nix --option trace-function-calls true \
-build --no-link --print-build-logs nixpkgs#pkgsStatic.gcc
+nix \
+--option trace-function-calls true \
+build \
+--no-link \
+--print-build-logs \
+nixpkgs#pkgsStatic.gcc
 ```
 Refs.:
 - https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trace-function-calls
