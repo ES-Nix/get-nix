@@ -4332,10 +4332,14 @@ $EXPR | jq -r '.[].env.postFixup'
 ```
 
 
+```bash
+ldd $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#imagemagick)/bin/magick | wc -l
+```
+
 
 TODO: LD_DEBUG=statistics
 ```bash
-ldd $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#ffmpeg-full)/bin/ffmpeg
+ldd $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#ffmpeg-full)/bin/ffmpeg | wc -l
 ```
 Refs.:
 - https://softwareengineering.stackexchange.com/a/391668
