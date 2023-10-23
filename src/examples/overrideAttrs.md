@@ -3543,6 +3543,64 @@ Refs.:
 - https://stackoverflow.com/a/67972927
 
 
+```bash
+ldd $(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --print-build-logs \
+  github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#python3Packages.mmh3
+)/lib/python3.10/site-packages/mmh3.cpython-310-x86_64-linux-gnu.so 
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = selfPy: superPy: {
+            mmh3 = superPy.mmh3.overrideAttrs (oldAttrs: rec {
+              doCheck = false;
+              nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ 
+                                                                          super.autoPatchelfHook 
+                                                                        ];
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        mmh3
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b")
+             { overlays = [ overlay ]; }
+             ).python3Packages.mmh3 # Could be python3.withPackages myPythonPackages
+    )
+EOF
+)
+
+
+ldd $(
+nix \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+)/lib/python3.10/site-packages/mmh3.cpython-310-x86_64-linux-gnu.so 
+
+```
+
+
 
 ```bash
 ldd $(
@@ -3758,6 +3816,30 @@ podman build --file Dockerfile --tag fedora-with-pycurl
 
 
 
+
+```bash
+ldd $(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --print-build-logs \
+  github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#python3Packages.pycurl
+)/lib/python3.10/site-packages/pycurl.cpython-310-x86_64-linux-gnu.so
+```
+
+```bash
+ldd $(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --print-build-logs \
+  github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#pkgsMusl.python3Packages.pycurl
+)/lib/python3.10/site-packages/pycurl.cpython-310-x86_64-linux-gnu.so
+```
+
+
 ```bash
 cat << 'EOF' > Dockerfile
 FROM docker.nix-community.org/nixpkgs/nix-flakes as build-from-nixos-cache-dist
@@ -3794,13 +3876,204 @@ build \
 --target test-pycurl \
 --tag test-pycurl \
 .
+
+podman kill container-test-pycurl \
+&& podman rm --force container-test-pycurl || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-test-pycurl \
+--interactive=true \
+--name=conteiner-test-pycurl \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-pycurl:latest \
+bash \
+-c \
+"
+python3 -c '
+import pycurl
+from io import BytesIO 
+
+b_obj = BytesIO() 
+crl = pycurl.Curl() 
+
+# Set URL value
+crl.setopt(crl.URL, \"https://wiki.python.org/moin/BeginnersGuide\")
+
+# Write bytes that are utf-8 encoded
+crl.setopt(crl.WRITEDATA, b_obj)
+
+# Perform a file transfer 
+crl.perform() 
+
+# End curl session
+crl.close()
+
+# Get the content stored in the BytesIO object (in byte characters) 
+get_body = b_obj.getvalue()
+
+# Decode the bytes stored in get_body to HTML and print the result 
+print(get_body.decode(\"utf8\")) 
+'
+"
 ```
+Refs.:
+- https://stackabuse.com/using-curl-in-python-with-pycurl/
 
 TODO: test it using the official alpine python image
 ```bash
 nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsMusl.python3Packages.numpy.dist
 ```
 
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM docker.nix-community.org/nixpkgs/nix-flakes as build-from-nixos-cache-dist
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+RUN nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+RUN env \
+ && echo \
+ && pwd
+
+#RUN ls -al $(nix \
+#      build \
+#      --print-out-paths \
+#      --print-build-logs \
+#      nixpkgs#python311Packages.mmh3.dist)
+
+RUN cp -v $(nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#python311Packages.mmh3.dist)/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
+
+RUN ls -ahl /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
+
+
+FROM python:3.11.4-slim-bookworm as test-mmh3
+# FROM python:3.12.0-slim-bookworm as test-mmh3
+# FROM python:3.13.0a1-bookworm as test-mmh3
+
+USER root
+
+COPY --from=build-from-nixos-cache-dist /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
+RUN pip3 install /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
+
+
+RUN pip3 freeze
+EOF
+
+
+podman \
+build \
+--cap-add=SYS_ADMIN \
+--file Dockerfile \
+--target test-mmh3 \
+--tag test-mmh3 \
+.
+
+
+podman kill conteiner-test-mmh3 \
+&& podman rm --force conteiner-test-mmh3 || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-test-mmh3 \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-mmh3:latest \
+bash \
+-c \
+"
+python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
+python -c 'import site; print(site.getsitepackages())'
+ldd /usr/local/lib/python3.11/site-packages/mmh3.cpython-311-x86_64-linux-gnu.so
+ls -ahl /lib/x86_64-linux-gnu/libstdc++.so.6
+"
+```
+
+
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM docker.nix-community.org/nixpkgs/nix-flakes as build-from-nixos-cache-dist
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+RUN nix -vv registry pin nixpkgs github:NixOS/nixpkgs/51d906d2341c9e866e48c2efcaac0f2d70bfd43e
+
+RUN env \
+ && echo \
+ && pwd
+
+#RUN ls -al $(nix \
+#      build \
+#      --print-out-paths \
+#      --print-build-logs \
+#      nixpkgs#pkgsMusl.python311Packages.mmh3.dist)
+
+RUN cp -v $(nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#pkgsMusl.python311Packages.mmh3.dist)/mmh3.cpython-311-x86_64-linux-musl.so /root/mmh3.cpython-311-x86_64-linux-musl.so
+
+RUN ls -ahl /root/
+
+
+FROM python:3.11.5-alpine3.18 as test-mmh3-alpine
+
+USER root
+
+COPY --from=build-from-nixos-cache-dist /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl /root/mmh3.cpython-311-x86_64-linux-musl.so
+RUN pip3 install /root/mmh3.cpython-311-x86_64-linux-musl.so
+
+
+RUN pip3 freeze
+EOF
+
+
+podman \
+build \
+--cap-add=SYS_ADMIN \
+--file Dockerfile \
+--target test-mmh3-alpine \
+--tag test-mmh3-alpine \
+.
+
+
+podman kill conteiner-test-mmh3-alpine \
+&& podman rm --force conteiner-test-mmh3-alpine || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-test-mmh3 \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-mmh3-alpine:latest \
+bash \
+-c \
+"
+python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
+# python -c 'import site; print(site.getsitepackages())'
+ldd /usr/local/lib/python3.11/site-packages/mmh3.cpython-311-x86_64-linux-gnu.so
+ls -ahl /lib/x86_64-linux-gnu/libstdc++.so.6
+"
+```
 
 
 
@@ -3814,7 +4087,9 @@ RUN env \
  && echo \
  && pwd
 
-RUN nix flake metadata nixpkgs \
+RUN nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+RUN echo \
  && nix \
       build \
       --print-out-paths \
@@ -3824,7 +4099,7 @@ RUN nix flake metadata nixpkgs \
 RUN ls -ahl /root/
 
 
-FROM python:3.11.5-alpine3.18 as test-numpy
+FROM python:3.11.5-alpine3.18 as test-numpy-alpine
 
 USER root
 
@@ -3838,18 +4113,93 @@ EOF
 
 podman \
 build \
+--cap-add=SYS_ADMIN \
 --file Dockerfile \
---target test-numpy \
---tag test-numpy \
+--target test-numpy-alpine \
+--tag test-numpy-alpine \
 .
 
 
-docker \
+podman kill conteiner-test-mmh3 \
+&& podman rm --force conteiner-test-mmh3 || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-test-mmh3 \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-mmh3:latest \
+bash \
+-c \
+"
+python3 -c 'import pycurl; print(dir(pycurl))'
+"
+
+```
+
+
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM docker.nix-community.org/nixpkgs/nix-flakes as build-from-nixos-cache-dist
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+RUN nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+RUN ls -al $(nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#pkgsMusl.python311Packages.numpy.dist)
+
+RUN ls -ahl /root/
+
+
+FROM python:3.11.5-alpine3.18 as test-numpy-alpine
+
+USER root
+
+COPY --from=build-from-nixos-cache-dist /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl
+RUN pip3 install /root/pycurl-7.45.1-cp310-cp310-linux_x86_64.whl
+
+
+RUN pip3 freeze
+EOF
+
+
+podman \
 build \
+--cap-add=SYS_ADMIN \
 --file Dockerfile \
---target test-numpy \
---tag test-numpy \
+--target test-numpy-alpine \
+--tag test-numpy-alpine \
 .
+
+
+podman kill conteiner-test-numpy-alpine \
+&& podman rm --force conteiner-test-numpy-alpine || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=conteiner-test-numpy-alpine \
+--interactive=true \
+--name=conteiner-test-numpy-alpine \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-numpy-alpine:latest \
+bash \
+-c \
+"
+python3 -c 'import numpy as np; print(np.dot([2j, 3j], [2j, 3j]))'
+"
+
 ```
 
 
@@ -3859,7 +4209,172 @@ nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsMusl.python
 ```
 
 
+
+##### The mmh3
+
+
+```bash
+nix build --no-link --max-jobs 0 --print-out-paths --print-build-logs nixpkgs#python3Packages.mmh3.dist
+```
+
+
+```bash
+ldd \
+"$(
+nix build --no-link --max-jobs 0 --print-out-paths --print-build-logs nixpkgs#python3Packages.mmh3
+)"/lib/python3.10/site-packages/mmh3.cpython-310-x86_64-linux-gnu.so
+```
+
+```bash
+nix \
+shell \
+--max-jobs 0 \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#binutils \
+-c \
+sh<<COMMANDS
+ldd \
+"$(
+     nix build --no-link --max-jobs 0 --print-out-paths --print-build-logs nixpkgs#python3Packages.mmh3
+)"/lib/python3.10/site-packages/mmh3.cpython-310-x86_64-linux-gnu.so
+COMMANDS
+```
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { };    
+    in
+      pkgs.python3.withPackages (pypkgs: with pypkgs; [
+                                       mmh3
+                                     ]
+                                )
+  )
+' \
+--command \
+python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = selfPy: superPy: {
+            mmh3 = superPy.mmh3.overrideAttrs (oldAttrs: rec{
+              nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ super.patchelf super.autoPatchelfHook ];
+              postFixup = let rpath = super.lib.makeLibraryPath [ 
+                                        super.python3Full
+                                        super.boost
+                                        super.stdenv.cc.cc.lib 
+                                        super.pythonManylinuxPackages.manylinux2010Package 
+                                        super.pythonManylinuxPackages.manylinux2014Package 
+                                      ]; in (oldAttrs.postFixup or "") + ''
+                find $out/${python3.sitePackages} -type f \( -name '*.so' -or -name '*.so.*' \) | while read lib; do
+                  echo "setting rpath for $lib..."
+                  patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}" "$lib"
+                done
+              '';
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        mmh3
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/0ef02c4792fbde4b78957a46a8cb107b6c7aa3cc")
+             { overlays = [ overlay ]; }
+             ).python3Packages.mmh3
+    )
+EOF
+)
+
+nix \
+shell \
+--max-jobs 0 \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#binutils \
+-c \
+sh<<COMMANDS
+ldd \
+"$(
+    nix \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --impure \
+    --expr \
+    "$EXPR"
+)"/lib/python3.10/site-packages/mmh3.cpython-310-x86_64-linux-gnu.so
+COMMANDS
+
+nix \
+show-derivation \
+--impure \
+--expr \
+$EXPR | jq -r '.[].env.postFixup'
+```
+
+
+
+TODO: LD_DEBUG=statistics
+```bash
+ldd $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#ffmpeg-full)/bin/ffmpeg
+```
+Refs.:
+- https://softwareengineering.stackexchange.com/a/391668
+
+
+
+
 ##### The `window/aggregations.cpython-38-x86_64-linux-gnu.so` thing:
+
+
+
+
+```bash
+nix build --no-link --max-jobs 0 --print-out-paths --print-build-logs nixpkgs#python3Packages.pandas
+```
+
+
+```bash
+ldd \ 
+"$(
+     nix build --no-link --max-jobs 0 --print-out-paths --print-build-logs nixpkgs#python3Packages.pandas
+)"/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+```
+
+
+```bash
+nix \
+shell \
+--max-jobs 0 \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#binutils \
+-c \
+sh<<COMMANDS
+ldd \
+"$(
+     nix build --no-link --max-jobs 0 --print-out-paths --print-build-logs nixpkgs#python3Packages.pandas
+)"/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+COMMANDS
+```
 
 
 ```bash
@@ -3884,6 +4399,11 @@ shell \
 python3_site_packages
 ```
 
+
+
+
+
+
 ```bash
 EXPR=$(cat <<-'EOF'
 (  
@@ -3893,7 +4413,11 @@ EXPR=$(cat <<-'EOF'
           packageOverrides = selfPy: superPy: {
             pandas = superPy.pandas.overrideAttrs (oldAttrs: rec{
               nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ super.patchelf ];
-              postFixup = let rpath = super.lib.makeLibraryPath [ super.stdenv.cc.cc.lib ]; in (oldAttrs.postFixup or "") + ''
+              postFixup = let rpath = super.lib.makeLibraryPath [ 
+                                        super.stdenv.cc.cc.lib 
+                                        super.pythonManylinuxPackages.manylinux2010Package 
+                                        super.pythonManylinuxPackages.manylinux2014Package               
+              ]; in (oldAttrs.postFixup or "") + ''
                 find $out/${python3.sitePackages}/pandas/_libs -type f \( -name '*.so' -or -name '*.so.*' \) | while read lib; do
                   echo "setting rpath for $lib..."
                   patchelf --set-rpath "${rpath}:$out/${python3.sitePackages}/pandas/_libs" "$lib"
@@ -3920,14 +4444,17 @@ EOF
 )
 
 
-nix \
-build \
---no-link \
---print-build-logs \
---print-out-paths \
---impure \
---expr \
-"$EXPR"
+ldd \ 
+"$(
+  nix \
+  build \
+  --no-link \
+  --print-build-logs \
+  --print-out-paths \
+  --impure \
+  --expr \
+  "$EXPR"
+)"/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
 
 
 nix \
@@ -3939,6 +4466,86 @@ $EXPR | jq -r '.[].env.postFixup'
 Refs.:
 - https://discourse.nixos.org/t/xorg-on-non-nixos/13455/2
 - https://stackoverflow.com/a/67972927
+
+
+
+##### The python311Packages.ffmpeg-python
+
+
+
+
+```bash
+nix build --no-link --print-out-paths --print-build-logs nixpkgs#python311Packages.ffmpeg-python.dist
+```
+
+
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM docker.nix-community.org/nixpkgs/nix-flakes as build-from-nixos-cache-dist
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+RUN nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+RUN  ls -al $(nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#python311Packages.ffmpeg-python.dist)
+
+RUN cp -v $(nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#python311Packages.ffmpeg-python.dist)/ffmpeg_python-0.2.0-py3-none-any.whl /root/ffmpeg_python-0.2.0-py3-none-any.whl
+      
+
+RUN ls -ahl /root/ffmpeg_python-0.2.0-py3-none-any.whl
+
+
+FROM docker.io/library/python:3.11.4-slim-bookworm as test-ffmpeg-python
+
+USER root
+
+COPY --from=build-from-nixos-cache-dist /root/ffmpeg_python-0.2.0-py3-none-any.whl /root/ffmpeg_python-0.2.0-py3-none-any.whl
+RUN pip3 install /root/ffmpeg_python-0.2.0-py3-none-any.whl
+
+
+RUN pip3 freeze
+EOF
+
+sudo \
+podman \
+build \
+--cap-add=SYS_ADMIN \
+--file Dockerfile \
+--target test-ffmpeg-python \
+--tag test-ffmpeg-python \
+.
+
+
+sudo podman kill conteiner-test-ffmpeg-python \
+&& sudo podman rm --force conteiner-test-ffmpeg-python || true \
+&& sudo podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-test-ffmpeg-python \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-ffmpeg-python:latest \
+bash \
+-c \
+"
+python3 -c 'import ffmpeg; print(dir(ffmpeg))'
+python -c 'import site; print(site.getsitepackages())'
+"
+```
+
 
 
 ##### Emacs

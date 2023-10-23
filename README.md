@@ -1782,6 +1782,8 @@ build \
 --tag alpine-with-ca-certificates-tzdata \
 --target alpine-with-ca-certificates-tzdata \
 . \
+&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+&& podman rm --force conteiner-unprivileged-alpine-with-ca-certificates-tzdata || true \
 && podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
@@ -1795,6 +1797,7 @@ run \
 localhost/alpine-with-ca-certificates-tzdata:latest \
 sh
 ```
+
 
 ```bash
 test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)
@@ -1810,24 +1813,24 @@ sudo mkdir -pv -m 0666 /nix/var/nix
 # test -f nix || curl -L https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
 # test -f nix || wget https://hydra.nixos.org/build/237228729/download/2/nix && chmod -v +x nix
 # COMMIT_REVISON_TO_PIN_NIXPKGS
-CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo Neither curl nor wget are installed) \
-&& $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
-
-
-./nix \
+CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo no-curl-or-wget) \
+&& $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix \
+&& chmod -v +x nix \
+&& echo \
+&& ./nix \
 --extra-experimental-features nix-command \
 --extra-experimental-features flakes \
 registry \
 pin \
-nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
-
-./nix \
+nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+&& { ./nix \
 --extra-experimental-features nix-command \
 --extra-experimental-features flakes \
 shell \
 --ignore-environment \
 --keep HOME \
 --keep USER \
+--max-jobs 0 \
 nixpkgs#busybox-sandbox-shell \
 nixpkgs#toybox \
 -c \
@@ -1859,8 +1862,8 @@ toybox mkdir -pv "$HOME"/.local/bin \
 && toybox grep 'experimental-features' "$HOME"/.config/nix/nix.conf -q || (toybox echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf) \
 && toybox grep '.local' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile)
 COMMANDS
-
-. "$HOME"/.profile \
+} \
+&& . "$HOME"/.profile \
 && nix flake --version \
 && nix flake metadata nixpkgs
 ```
@@ -26365,6 +26368,11 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames rustPackages.packag
 ```
 
 ```bash
+nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames rPackages' | tr ' ' '\n' | wc -l
+```
+
+
+```bash
 nix eval --json nixpkgs#rustPlatform.buildRustPackage.override.__functionArgs
 ```
 
@@ -27713,6 +27721,66 @@ Refs.:
 - https://stackoverflow.com/questions/50110043/force-gnu-make-to-use-a-specific-shell#comment87271405_50110280
 
 
+##### Network-fu
+
+
+```bash
+nix \
+shell \
+nixpkgs#dig \
+nixpkgs#dnsutils \
+nixpkgs#host \
+nixpkgs#iproute2 \
+nixpkgs#nettools \
+nixpkgs#nmap \
+nixpkgs#traceroute
+```
+Refs.:
+- https://docs.microsoft.com/en-us/windows/wsl/networking#ipv6-access
+- https://nmap.org/book/port-scanning-ipv6.html
+- https://security.stackexchange.com/a/51524
+- https://www.redhat.com/sysadmin/DNS-name-resolution-troubleshooting-tools
+- https://unix.stackexchange.com/a/20793
+- https://unix.stackexchange.com/questions/496137/does-80-in-netstat-output-means-only-ipv6-or-ipv6ipv4
+- https://serverfault.com/a/243400
+- https://unix.stackexchange.com/questions/457670/netcat-how-to-listen-on-a-tcp-port-using-ipv6-address 
+
+
+
+
+```bash
+host google.com
+host google.de
+```
+
+```bash
+dig google.com
+dig google.de
+```
+
+```bash
+dig google.com
+dig google.de
+```
+
+```bash
+nmap -Pn -p 443 google.com
+nmap -Pn -p 443 google.de
+```
+
+```bash
+nix run nixpkgs#nmap -- -6 -sV www.eurov6.org
+```
+
+```bash
+nmap -6 -sV google.com
+nmap -6 -sV google.de
+```
+
+
+```bash
+ss -6 --cgroup -s
+```
 
 ### Old bugs and workarounds 
 
