@@ -27782,6 +27782,13 @@ nmap -6 -sV google.de
 ss -6 --cgroup -s
 ```
 
+
+```bash
+netstat -tulpn
+```
+
+
+
 ### Old bugs and workarounds 
 
 TODO: something still missing, or not it just does not exist
