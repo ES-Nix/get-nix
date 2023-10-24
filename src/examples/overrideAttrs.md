@@ -1567,6 +1567,30 @@ run \
 ```
 
 
+TODO:
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b")
+  { overlays = [(final: prev: { 
+                  python3 = prev.python3.override {
+                    packageOverrides = final: prev: {
+                      isort = prev.isort.overrideAttrs (oldAttrs: {
+                          postFixup = "cp -v ${final.hello}/bin/hello $out/bin/";
+                        });
+                      };
+                    };
+                  })
+               ];
+    
+  }
+).python3Packages.isort
+'
+```
 
 ```bash
 nix \
@@ -2390,7 +2414,33 @@ nixpkgs#bash \
 sh \
 -c \
 'ldd $(which java)'
+
+nix \
+shell \
+--ignore-environment \
+nixpkgs#imagemagick \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+--command \
+sh \
+-c \
+'ldd $(which magick)'
+
+nix \
+shell \
+--ignore-environment \
+nixpkgs#ffmpeg-full \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+--command \
+sh \
+-c \
+'ldd $(which ffmpeg)'
 ```
+
+
 
 ```bash
 echo \
@@ -4550,6 +4600,33 @@ python -c 'import site; print(site.getsitepackages())'
 "
 ```
 
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ numpy matplotlib ]));
+    in
+      with pkgs; [ bashInteractive coreutils ffmpeg-full customPython3 ]
+)' \
+--command \
+python3 -c 'import matplotlib.pyplot as plt'
+```
+
+
+```bash
+ffmpeg -r 30 -i {1,2,3}.jpg -vcodec mpeg4 -y movie.mp4 -vcodec mpeg4 -y -vb 40M
+```
+Refs.:
+- https://stackoverflow.com/a/44951066
 
 
 ##### Emacs

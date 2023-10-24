@@ -1798,7 +1798,21 @@ RUN CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 
  && grep '.local' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile) \
  && . "$HOME"/.profile \
  && nix flake --version \
- && nix flake metadata nixpkgs
+ && nix flake metadata nixpkgs \
+ && nix \
+    --refresh \
+    run \
+    github:ES-nix/es#installStartConfigTemplate
+ && nix \
+   store \
+   gc \
+     --verbose \
+     --option keep-derivations false \
+     --option keep-env-derivations false \
+     --option keep-outputs false \
+   && nix-collect-garbage --delete-old \
+   && nix store optimise --verbose
+
 EOF
 
 podman \
@@ -1823,7 +1837,153 @@ sh
 ```
 
 
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.18.3 as alpine-with-ca-certificates-tzdata
+# FROM docker.io/library/python:3.9.18-alpine3.18 as alpine-with-ca-certificates-tzdata
 
+# https://stackoverflow.com/a/69918107
+# https://serverfault.com/a/1133538
+# https://wiki.alpinelinux.org/wiki/Setting_the_timezone
+# https://bobcares.com/blog/change-time-in-docker-container/
+# https://github.com/containers/podman/issues/9450#issuecomment-783597549
+# https://www.redhat.com/sysadmin/tick-tock-container-time
+ENV TZ=America/Recife
+
+RUN apk update \
+ && apk \
+          add \
+          --no-cache \
+          ca-certificates \
+          tzdata \
+          shadow \
+ && mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser \
+ && echo \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || groupadd kvm \
+ && usermod --append --groups kvm nixuser \
+ && echo 'End kvm stuff!' \
+ && echo 'Start tzdata stuff' \
+ && (test -d /etc || mkdir -pv /etc) \
+ && cp -v /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
+ && apk del tzdata shadow \
+ && echo 'End tzdata stuff!' 
+
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+
+# https://hydra.nixos.org/job/nix/master/buildStatic.x86_64-linux/all?page=8
+# 237228729
+RUN CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo no-curl-or-wget) \
+ && $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/200933277/download/1/nix > nix \
+ && chmod -v +x nix \
+ && echo \
+ && env \
+        PATH=/home/nixuser:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+        NIX_CONFIG="extra-experimental-features = nix-command flakes" \
+        nix \
+        flake \
+        --version \
+ && ./nix \
+        --extra-experimental-features nix-command \
+        --extra-experimental-features flakes \
+        registry \
+        pin \
+        nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+RUN env \
+        PATH=/home/nixuser:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+        NIX_CONFIG="extra-experimental-features = nix-command flakes" \
+        nix \
+        --extra-experimental-features nix-command \
+        --extra-experimental-features flakes \
+        build \
+        github:ES-nix/es#installStartConfigTemplate \
+ && env \
+        PATH=/home/nixuser:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+        NIX_CONFIG="extra-experimental-features = nix-command flakes" \
+        nix \
+        --extra-experimental-features nix-command \
+        --extra-experimental-features flakes \
+        --refresh \
+        run \
+        github:ES-nix/es#installStartConfigTemplate \
+ && ./nix \
+        --extra-experimental-features nix-command \
+        --extra-experimental-features flakes \
+        store \
+        gc \
+        --verbose \
+        --option keep-derivations false \
+        --option keep-env-derivations false \
+        --option keep-outputs false \
+   && nix \
+        --extra-experimental-features nix-command \
+        --extra-experimental-features flakes \
+        store \
+        optimise \
+        --verbose \
+   && rm -v ./nix
+EOF
+
+podman \
+build \
+--cap-add=SYS_ADMIN \
+--tag alpine-with-ca-certificates-tzdata \
+--target alpine-with-ca-certificates-tzdata \
+. \
+&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+&& podman rm --force conteiner-unprivileged-alpine-with-ca-certificates-tzdata || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+zsh
+```
+
+RUN env \
+        PATH=/home/nixuser:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+        NIX_CONFIG="extra-experimental-features = nix-command flakes" \
+        nix \
+        --extra-experimental-features nix-command \
+        --extra-experimental-features flakes \
+        shell \
+        github:ES-nix/es#installStartConfigTemplate \
+        nixpkgs#pkgsStatic.nix \
+        nixpkgs#bashInteractive \
+        --command bash -c 'nix --version && env'        
+RUN env \
+        PATH=/home/nixuser:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+        NIX_CONFIG="extra-experimental-features = nix-command flakes" \
+        nix \
+        --extra-experimental-features nix-command \
+        --extra-experimental-features flakes \
+        shell \
+        github:ES-nix/es#installStartConfigTemplate \
+        nixpkgs#pkgsStatic.nix \
+        nixpkgs#bashInteractive \
+        --command bash -c 'nix --version && install-start-config-template' \
+
+xauth
+https://stackoverflow.com/a/47014623
 
 ```bash
 test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)
@@ -13688,7 +13848,7 @@ nix \
 shell \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
   with legacyPackages.x86_64-linux;
   python3.withPackages (p: with p; [ mmh3 ])
 )' \
@@ -13699,9 +13859,27 @@ python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
 ```bash
 nix \
 shell \
+--impure \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e"; 
+    let
+      p = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = p.legacyPackages.${builtins.currentSystem};
+      customPython3 = (pkgs.python3.withPackages (p: with p; [ mmh3 ]));
+    in
+      customPython3
+)' \
+--command \
+python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
+```
+
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"; 
   with legacyPackages.x86_64-linux;
   python3.withPackages (p: with p; [ geopandas ])
 )' \
@@ -13712,13 +13890,40 @@ python3 -c 'import geopandas as gpd; print(gpd.__version__)'
 ```bash
 nix \
 shell \
+--impure \
 --expr \
 '(
-  with builtins.getFlake "github:NixOS/nixpkgs/d2cfe468f81b5380a24a4de4f66c57d94ee9ca0e";
-  with legacyPackages.x86_64-linux;
-  python3.withPackages (p: with p; [ tensorflow ])
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ geopandas ]));
+    in
+      customPython3
 )' \
 --command \
+python3 \
+-c \
+'import geopandas as gpd; print(gpd.__version__)'
+```
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ tensorflow ]));
+    in
+      customPython3
+)' \
+--command \
+python3 \
+-c \
 python3 -c 'import tensorflow as tf; print(tf.Variable(tf.zeros([4, 3]))); print(tf.__version__)'
 ```
 
@@ -26118,7 +26323,7 @@ shell \
     in
       (
         import 
-        (builtins.getFlake "github:NixOS/nixpkgs/09e8ac77744dd036e58ab2284e6f5c03a6d6ed41") 
+        (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b") 
         { overlays = [ overlay ]; }
       ).python3.withPackages myPythonPackages
   )
