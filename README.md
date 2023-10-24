@@ -23693,6 +23693,7 @@ Refs.:
 - https://github.com/NixOS/nix/issues/3913#issuecomment-899001084, TODO: help there 
 - https://github.com/NixOS/nix/issues/7261#issuecomment-1448089881
 - https://github.com/NixOS/nix/issues/3908#issuecomment-717723809
+- https://github.com/NixOS/nix/issues/7299 nix-build -E 'with import <nixpkgs> {}; closureInfo { rootPaths = [ (builtins.unsafeDiscardOutputDependency hello.drvPath) ]; }'
 
 
 ```bash
