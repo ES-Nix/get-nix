@@ -1083,6 +1083,7 @@ Refs.:
 - https://unix.stackexchange.com/a/14896
 - https://serverfault.com/a/192517
 - https://unix.stackexchange.com/a/689813
+- https://wiki.alpinelinux.org/wiki/Wayland#Configuring_XDG_RUNTIME_DIR_manually
 
 
 ```bash
@@ -1775,6 +1776,29 @@ USER nixuser
 WORKDIR /home/nixuser
 ENV USER="nixuser"
 
+RUN CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo no-curl-or-wget) \
+ && $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix \
+ && chmod -v +x nix \
+ && echo \
+ && ./nix \
+         --extra-experimental-features nix-command \
+         --extra-experimental-features flakes \
+         registry \
+         pin \
+         nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+ && ./nix \
+         --extra-experimental-features nix-command \
+         --extra-experimental-features flakes \
+         profile \
+         install \
+         nixpkgs#pkgsStatic.nix \
+ && rm -v ./nix \
+ && mkdir -pv "$HOME"/.config/nix \
+ && grep 'experimental-features' "$HOME"/.config/nix/nix.conf -q || (echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf) \
+ && grep '.local' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile) \
+ && . "$HOME"/.profile \
+ && nix flake --version \
+ && nix flake metadata nixpkgs
 EOF
 
 podman \
@@ -1797,6 +1821,8 @@ run \
 localhost/alpine-with-ca-certificates-tzdata:latest \
 sh
 ```
+
+
 
 
 ```bash
@@ -1867,6 +1893,7 @@ COMMANDS
 && nix flake --version \
 && nix flake metadata nixpkgs
 ```
+
 
 
 ```bash
@@ -6576,6 +6603,17 @@ nix build --no-link --print-build-logs github:NixOS/nixpkgs/3364b5b117f65fe1ce65
 nix build nixpkgs#pkgsStatic.hello
 nix path-info -rsSh nixpkgs#pkgsStatic.hello
 ```
+
+```bash
+nix build nixpkgs#bashInteractive
+nix path-info -rsSh nixpkgs#bashInteractive
+```
+
+```bash
+nix build nixpkgs#stdenv.shellPackage
+nix path-info -rsSh nixpkgs#stdenv.shellPackage
+```
+
 
 ```bash
 nix build nixpkgs#pkgsStatic.toybox
