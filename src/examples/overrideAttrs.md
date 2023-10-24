@@ -4621,12 +4621,40 @@ shell \
 python3 -c 'import matplotlib.pyplot as plt'
 ```
 
+    plt.axes()
+    # Radius: 1, face-color: red, edge-color: blue
+    circle = plt.Circle((1,1),0.5, fc='red',ec="blue")
+    plt.gca().add_patch(circle)
+    plt.axis('scaled')
+    plt.show()
+
 
 ```bash
 ffmpeg -r 30 -i {1,2,3}.jpg -vcodec mpeg4 -y movie.mp4 -vcodec mpeg4 -y -vb 40M
 ```
 Refs.:
 - https://stackoverflow.com/a/44951066
+- https://stackoverflow.com/questions/50643085/generate-a-2-fps-mp4-from-images-using-ffmpeg#comment88299429_50643272
+
+
+```python
+video_format = "flv"
+server_url = "http://127.0.0.1:8080"
+
+process = (
+    ffmpeg
+    .input("input.mp4")
+    .output(
+        server_url, 
+        codec = "copy", # use same codecs of the original video
+        listen=1, # enables HTTP server
+        f=video_format)
+    .global_args("-re") # argument to act as a live stream
+    .run()
+)
+```
+https://github.com/kkroening/ffmpeg-python/tree/master/examples#stream-from-a-local-video-to-http-server
+
 
 
 ##### Emacs
