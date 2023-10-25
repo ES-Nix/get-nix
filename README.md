@@ -233,9 +233,7 @@ nix flake metadata github:NixOS/nixpkgs/nixos-21.11
 ```
 
 ```bash
-nix \
-run \
-nixpkgs#nix-info -- --markdown
+nix run nixpkgs#nix-info -- --markdown
 nix shell nixpkgs#nix-info --command nix-info --markdown
 nix show-config
 jq --version || nix profile install nixpkgs#jq
@@ -1325,10 +1323,11 @@ build \
 cat > Containerfile << 'EOF'
 FROM ubuntu:23.04 as ubuntu-base
 RUN apt-get update -y \
-&& apt-get install --no-install-recommends --no-install-suggests -y \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
      adduser \
      ca-certificates \
      curl \
+     dbus-broker \
      sudo \
      tar \
      xz-utils \
@@ -1339,7 +1338,8 @@ RUN apt-get update -y \
      xserver-xorg-video-dummy \
  && apt-get -y autoremove \
  && apt-get -y clean \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* \
+ && systemctl enable dbus-broker
 
 RUN addgroup abcgroup --gid 4455  \
  && adduser -q \
@@ -3366,8 +3366,9 @@ test-fedora39-systemd \
 ```bash
 cat > Containerfile << 'EOF'
 FROM ubuntu:23.04 as ubuntu-base
+
 RUN apt-get update -y \
-&& apt-get install --no-install-recommends --no-install-suggests -y \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
      adduser \
      ca-certificates \
      curl \
@@ -3379,6 +3380,7 @@ RUN apt-get update -y \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
+
 RUN addgroup abcgroup --gid 4455  \
  && adduser -q \
      --gecos '"An unprivileged user with an group"' \
@@ -3392,8 +3394,10 @@ RUN addgroup abcgroup --gid 4455  \
  && $(getent group kvm || groupadd kvm) \
  && sudo usermod --append --groups kvm abcuser \
  && echo 'End kvm stuff!'
+ 
 # Uncomment that to compare
 RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+
 USER abcuser
 WORKDIR /home/abcuser
 ENV USER="abcuser"
@@ -3430,8 +3434,91 @@ localhost/ubuntu-base:latest
 # TODO: install systemd from nix
 ```
 
+
+```bash
 sudo apt-get update \
 && sudo apt-get install -y openssh-server
+```
+
+
+```bash
+systemctl list-unit-files --type=service
+```
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM ubuntu:23.04 as ubuntu-base
+
+RUN apt-get update -y \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     dbus-broker \
+     sudo \
+     systemd \
+     tar \
+     wget \
+     xz-utils \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/* \
+ && systemctl enable dbus-broker
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) PASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo 'Start kvm stuff...' \
+ && $(getent group kvm || groupadd kvm) \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+ 
+# Uncomment that to compare
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+# ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+# ENV NIX_PAGER="cat"
+ENV SHELL="/bin/bash"
+
+# https://stackoverflow.com/a/74439202/9577149
+ENTRYPOINT ["/lib/systemd/systemd"]
+
+EOF
+
+podman \
+build \
+--file=Containerfile \
+--target ubuntu-base \
+--tag=ubuntu-base .
+
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--group-add=keep-groups \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23 \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=root \
+--userns=keep-id \
+localhost/ubuntu-base:latest
+# TODO: install systemd from nix
+```
+
 
 
 TODO:
@@ -7363,6 +7450,8 @@ bash \
 ```
 
 ```bash
+nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.stdenv
 
 RESULT_PATH='result/bin/busybox'

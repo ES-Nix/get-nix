@@ -2296,6 +2296,36 @@ build \
 
 
 ```bash
+ldd \
+$(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --expr \
+  '
+    (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+        pkgs = import nixpkgs { 
+                                system = "x86_64-linux"; 
+                                overlays = [
+                                  (self: super: {
+                                    glibc = super.glibc.overrideAttrs (oldAttrs: {
+                                      version = "3.4.21";
+                                    });
+                                  })
+                                ];
+                              };
+      in
+        pkgs.hello
+    )
+  '
+)/bin/hello
+```
+
+
+```bash
 patchelf \
 --print-rpath \
 $(nix \
@@ -3987,16 +4017,6 @@ ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
 
 RUN nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
 
-RUN env \
- && echo \
- && pwd
-
-#RUN ls -al $(nix \
-#      build \
-#      --print-out-paths \
-#      --print-build-logs \
-#      nixpkgs#python311Packages.mmh3.dist)
-
 RUN cp -v $(nix \
       build \
       --print-out-paths \
@@ -4007,14 +4027,11 @@ RUN ls -ahl /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
 
 
 FROM python:3.11.4-slim-bookworm as test-mmh3
-# FROM python:3.12.0-slim-bookworm as test-mmh3
-# FROM python:3.13.0a1-bookworm as test-mmh3
 
 USER root
 
 COPY --from=build-from-nixos-cache-dist /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
 RUN pip3 install /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
-
 
 RUN pip3 freeze
 EOF
@@ -4052,6 +4069,67 @@ ls -ahl /lib/x86_64-linux-gnu/libstdc++.so.6
 "
 ```
 
+
+
+```bash
+cat << 'EOF' > Dockerfile
+FROM docker.nix-community.org/nixpkgs/nix-flakes as build-from-nixos-cache-dist
+
+ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
+
+RUN nix -vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+RUN cp -v $(nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#python311Packages.mmh3.dist)/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
+
+RUN ls -ahl /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
+
+
+FROM python:3.11.4-slim-bookworm as test-mmh3
+
+USER root
+
+COPY --from=build-from-nixos-cache-dist /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
+RUN pip3 install /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl
+
+RUN pip3 freeze
+EOF
+
+
+podman \
+build \
+--cap-add=SYS_ADMIN \
+--file Dockerfile \
+--target test-mmh3 \
+--tag test-mmh3 \
+.
+
+
+podman kill conteiner-test-mmh3 \
+&& podman rm --force conteiner-test-mmh3 || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-test-mmh3 \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/test-mmh3:latest \
+bash \
+-c \
+"
+python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
+python -c 'import site; print(site.getsitepackages())'
+ldd /usr/local/lib/python3.11/site-packages/mmh3.cpython-311-x86_64-linux-gnu.so
+ls -ahl /lib/x86_64-linux-gnu/libstdc++.so.6
+"
+```
 
 
 ```bash
