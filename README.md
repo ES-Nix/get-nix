@@ -1770,6 +1770,7 @@ RUN apk update \
  && apk del tzdata shadow \
  && echo 'End tzdata stuff!' 
 
+# sudo sh -c 'mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv '"$(id -nu)":"$(id -gn)"' /nix'
 RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
 
 USER nixuser
@@ -1783,35 +1784,38 @@ RUN CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 
  && ./nix \
          --extra-experimental-features nix-command \
          --extra-experimental-features flakes \
+         --extra-experimental-features auto-allocate-uids \
          registry \
          pin \
-         nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+         nixpkgs github:NixOS/nixpkgs/98e7aaa5cfad782b8effe134bff3717280ec41ca \
  && ./nix \
          --extra-experimental-features nix-command \
          --extra-experimental-features flakes \
+         --extra-experimental-features auto-allocate-uids \
          profile \
          install \
          nixpkgs#pkgsStatic.nix \
  && rm -v ./nix \
  && mkdir -pv "$HOME"/.config/nix \
  && grep 'experimental-features' "$HOME"/.config/nix/nix.conf -q || (echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf) \
- && grep '.local' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile) \
+ && grep 'nix-profile' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile) \
  && . "$HOME"/.profile \
  && nix flake --version \
- && nix flake metadata nixpkgs \
- && nix \
-    --refresh \
-    run \
-    github:ES-nix/es#installStartConfigTemplate
- && nix \
-   store \
-   gc \
-     --verbose \
-     --option keep-derivations false \
-     --option keep-env-derivations false \
-     --option keep-outputs false \
-   && nix-collect-garbage --delete-old \
-   && nix store optimise --verbose
+ && nix flake metadata nixpkgs
+
+#RUN nix \
+#    --refresh \
+#    run \
+#    github:ES-nix/es#installStartConfigTemplate
+# && nix \
+#   store \
+#   gc \
+#     --verbose \
+#     --option keep-derivations false \
+#     --option keep-env-derivations false \
+#     --option keep-outputs false \
+#   && nix-collect-garbage --delete-old \
+#   && nix store optimise --verbose
 
 EOF
 
@@ -1836,6 +1840,7 @@ localhost/alpine-with-ca-certificates-tzdata:latest \
 sh
 ```
 
+nixVersions.nix_2_10
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -1959,28 +1964,7 @@ localhost/alpine-with-ca-certificates-tzdata:latest \
 zsh
 ```
 
-RUN env \
-        PATH=/home/nixuser:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-        NIX_CONFIG="extra-experimental-features = nix-command flakes" \
-        nix \
-        --extra-experimental-features nix-command \
-        --extra-experimental-features flakes \
-        shell \
-        github:ES-nix/es#installStartConfigTemplate \
-        nixpkgs#pkgsStatic.nix \
-        nixpkgs#bashInteractive \
-        --command bash -c 'nix --version && env'        
-RUN env \
-        PATH=/home/nixuser:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-        NIX_CONFIG="extra-experimental-features = nix-command flakes" \
-        nix \
-        --extra-experimental-features nix-command \
-        --extra-experimental-features flakes \
-        shell \
-        github:ES-nix/es#installStartConfigTemplate \
-        nixpkgs#pkgsStatic.nix \
-        nixpkgs#bashInteractive \
-        --command bash -c 'nix --version && install-start-config-template' \
+
 
 xauth
 https://stackoverflow.com/a/47014623

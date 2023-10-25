@@ -74,7 +74,7 @@ build \
       nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/40c29aa84fefbb1e5978ca2c53335e61672140c4");
       pkgs = import nixpkgs { };
     in
-      (pkgs.jetbrains.pycharm-community.overrideAttrs (oldAttrs: { extraWrapperArgs = pkgs.glibcLocales; }) )
+      (pkgs.jetbrains.pycharm-community.overrideAttrs (oldAttrs: { extraWrapperArgs = pkgs.asciinema; }) )
   )
 '
 ```
