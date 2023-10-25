@@ -22880,7 +22880,7 @@ Yes, it is possible, or it should be.
 > 2.6 while the latest as of today is 2.13.3.
 
 ```bash
-sudo apt-get -qq update \
+sudo apt-get -q update \
 && sudo apt-get install -y nix-bin \
 && sudo chown -R "$(id -u)":"$(id -g)" /nix 
 
@@ -22919,6 +22919,7 @@ COMMANDS
 # Not an must
 nix store gc --verbose \
 && nix store optimise --verbose \
+&& sudo systemctl restart nix-daemon \
 && systemctl status nix-daemon \
 && nix flake --version \
 && nix flake metadata nixpkgs
@@ -25053,6 +25054,25 @@ https://discourse.nixos.org/t/how-can-i-quickly-test-nixpkg-modifications-in-a-c
 ##### breakpointHook
 
 
+Long, but with infos: 
+[How to package {Python,Ruby,Rust,Node,Go} programs - Zimbatm (NixCon 2019)](https://www.youtube.com/embed/MrRnGPyQ_9s?start=1780&end=2095&version=3), start=1780&end=2095
+
+```bash
+sudo \
+$(which cntr) \
+attach \
+-t \
+command \
+cntr-/nix/store/f33nrsw93gwpw2yw238qdb8isrdaa8qs-demo \
+<<'COMMANDS'
+source $stdenv/setup \
+&& phases="buildPhase" genericBuild
+COMMANDS
+```
+https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-cntr/8669/4
+
+
+
 Remember, the `-vvvvvvvvv` ( 9 `v`s) exists!
 ```bash
 nix \
@@ -25110,19 +25130,6 @@ source $stdenv/setup \
 && phases="buildPhase" genericBuild
 ```
 
-```bash
-sudo \
-$(which cntr) \
-attach \
--t \
-command \
-cntr-/nix/store/f33nrsw93gwpw2yw238qdb8isrdaa8qs-demo \
-<<'COMMANDS'
-source $stdenv/setup \
-&& phases="buildPhase" genericBuild
-COMMANDS
-```
-https://discourse.nixos.org/t/debug-a-failed-derivation-with-breakpointhook-and-cntr/8669/4
 
 
 
@@ -27481,6 +27488,13 @@ Refs.:
 callPackage
 ```
 [How to package {Python,Ruby,Rust,Node,Go} programs - Zimbatm (NixCon 2019)](https://www.youtube.com/embed/MrRnGPyQ_9s?start=1504&end=1571&version=3), start=1504&end=1571
+
+
+```nix
+add1 = { a, b }: a + b
+add2 = { a, b, ... }: a + b
+```
+[How to package {Python,Ruby,Rust,Node,Go} programs - Zimbatm (NixCon 2019)](https://www.youtube.com/embed/MrRnGPyQ_9s?start=1689&end=1737&version=3), start=1689&end=1737
 
 
 
