@@ -2436,6 +2436,30 @@ sh \
 nix \
 shell \
 --ignore-environment \
+nixpkgs#bash \
+nixpkgs#glibc.bin \
+nixpkgs#pandoc \
+nixpkgs#which \
+--command \
+sh \
+-c \
+'ldd $(which pandoc)'
+
+nix \
+shell \
+--ignore-environment \
+nixpkgs#python3Full \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+--command \
+sh \
+-c \
+'ldd $(which node)'
+
+nix \
+shell \
+--ignore-environment \
 nixpkgs#jre \
 nixpkgs#which \
 nixpkgs#glibc.bin \

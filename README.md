@@ -5694,17 +5694,43 @@ nix build --no-link --print-build-logs --print-out-paths \
 
 
 ```bash
-nix build --no-link --print-build-logs --print-out-paths \
-  nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline \
-&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
-  nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline
+sha256sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsStatic.readline.out
+  )/lib/libreadline.a \
+&& sha256sum $(
+  nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.readline.out
+)/lib/libreadline.a
+```
+
+
+```bash
+sha256sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsStatic.nix.out
+  )/bin/nix \
+&& sha256sum $(
+  nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.nix.out
+)/bin/nix
 ```
 
 ```bash
-nix build --no-link --print-build-logs --print-out-paths \
-  nixpkgs#tts \
-&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
-  nixpkgs#tts
+sha256sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+  )/lib/libreadline.a \
+&& sha256sum $(
+  nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+)/lib/libreadline.a
+```
+
+
+
+
+```bash
+sha256sum $(
+nix build --no-link --print-out-paths nixpkgs#tts
+  )/lib/libreadline.a \
+&& sha256sum $(
+  nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+)/lib/libreadline.a
 ```
 
 
@@ -7716,7 +7742,8 @@ build \
 ```
 
 If you try to execute that command with `nix run` rather then `nix build` it is going to need the `$DISPLAY` to be set and 
-as is it is configured you does not have a way to login (for example, a user with a password).
+as is it is configured you does not have a way to login (for example, a user with a password, spoiler more nixos 
+modules are neede).
 
 
 ##### Custom build-vm
@@ -23042,6 +23069,11 @@ echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 
 
 ```bash
+ISO_PATTERN_NAME='result/iso/nixos-22.05.20221016.bf82ac1-x86_64-linux.iso'
+
+rm -v result || true
+nix store gc -v
+
 # nix flake metadata github:NixOS/nixpkgs/release-22.05
 nix \
 build \
@@ -23080,9 +23112,8 @@ build \
 )
 '
 
-EXPECTED_SHA512='d3a2162159fe326f602d91a134db36a744b1fc605bfc44c1300a1af39a7a0753beda9a00ddad7b8ab623fe5269e95f0643990258ec1d5a125fc402a53524a9c2'
-ISO_PATTERN_NAME='result/iso/nixos-22.05.20221016.bf82ac1-x86_64-linux.iso'
-# sha512sum "${ISO_PATTERN_NAME}"
+EXPECTED_SHA512='2f6ac2ab33fbf6b01f8bd9bf200cf804c86c8ffa1a032b392251cb0280f850ff5a5cc4640ff26dd963fd3d792a304c4dc6573116f4a5f4ed5cb73381ebe1db86'
+sha512sum "${ISO_PATTERN_NAME}"
 echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 ```
 
