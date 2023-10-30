@@ -24209,6 +24209,43 @@ Refs.:
 
 
 
+
+#### pkgs.stdenv.mkDerivation cli examples
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+      pkgs = import nixpkgs {};
+    in
+      pkgs.stdenv.mkDerivation {
+        name = "demo";
+        dontUnpack = true;
+        buildPhase = "echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd  /bin/sh | sha256sum -c && ls -ahl /bin/sh && mkdir -v $out";
+        dontInstall = true;
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+# nix show-config | grep sandbox-paths
+
+FULL_BIN_SH_PATH=$(nix build --no-link --print-build-logs --print-out-paths github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#busybox-sandbox-shell)/bin/sh
+echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd  "$FULL_BIN_SH_PATH" | sha256sum -c
+```
+
+
 ```bash
 nix \
 build \
