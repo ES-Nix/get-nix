@@ -3860,6 +3860,51 @@ Refs.:
 - https://askubuntu.com/a/1222437
 
 
+```bash
+cat << 'EOF' > Dockerfile
+FROM ubuntu
+
+RUN export DEBIAN_FRONTEND=noninteractive ; \
+ sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list \
+ && apt-get -y update \
+ && apt-get -y install git \
+ && apt-get -y build-dep qemu
+
+RUN git clone git://git.qemu.org/qemu.git \
+ && cd qemu \
+ && git submodule update --init --recursive
+
+EOF
+
+podman build --file Dockerfile --tag ubuntu-qemu
+
+podman \
+run \
+--interactive=true \
+--rm=true \
+--tty=false \
+docker.io/library/ubuntu \
+bash<<'EOF'
+export DEBIAN_FRONTEND=noninteractive
+sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list \
+&& apt-get -y update \
+&& apt-get -y install git \
+&& apt-get -y build-dep qemu \
+&& git clone git://git.qemu.org/qemu.git \
+&& cd qemu \
+&& git submodule update --init --recursive \
+&& ./configure \
+    --prefix=$(cd ..; pwd)/qemu-user-static \
+    --static \
+    --disable-system \
+    --enable-linux-user
+EOF
+```
+Refs.:
+- http://logan.tw/posts/2018/02/18/build-qemu-user-static-from-source-code/
+
+
+
 TODO: 
 - help https://superuser.com/questions/1470611/install-pycurl-on-docker-using-fedora-image 
 

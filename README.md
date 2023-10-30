@@ -805,6 +805,26 @@ nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
 nix eval --apply builtins.attrNames nixpkgs#stdenv.drvAttrs
 ```
 
+```bash
+nix eval --json nixpkgs#pkgsStatic.nix.override.__functionArgs
+```
+
+```bash
+nix \
+eval \
+--json \
+--expr \
+'
+  (
+    let
+      #
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+    in
+      pkgs.pkgsStatic.nix.override.__functionArgs
+  )
+' | jq .
+```
 
 ```bash
 nix eval --apply builtins.attrNames nix#checks
@@ -13627,8 +13647,9 @@ nix \
 shell \
 --impure \
 --expr \
-'(
-with builtins.getFlake "nixpkgs"; 
+'
+(
+with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"; 
 with legacyPackages.${builtins.currentSystem}; 
   [ 
     (python3.overrideAttrs 
@@ -13643,12 +13664,15 @@ with legacyPackages.${builtins.currentSystem};
     glibc.bin 
     which
   ]
-)' \
+)
+' \
 --command \
 bash \
 -c \
-'file $(readlink -f $(which python3)) \
-&& ldd $(readlink -f $(which python3))'
+'
+file $(readlink -f $(which python3)) \
+&& ldd $(readlink -f $(which python3))
+'
 ```
 
 ```bash
@@ -27913,6 +27937,36 @@ Refs.:
 > The above script might not work in other shells, but hopefully this post was sufficiently clear 
 > that you can adapt the script to your needs.
 > https://www.haskellforall.com/2022/10/
+
+
+
+```bash
+getent group docker || sudo groupadd docker
+getent group docker && sudo usermod -aG docker "$(id -nu)"
+id -nGz $(id -nu) | tr '\0' '\n'
+```
+
+```bash
+GROUP_VAR=docker
+
+getent group "$GROUP_VAR" || sudo usermod -aG "$GROUP_VAR" "$(id -nu)"
+(id -nGz $(id -nu) | tr '\0' '\n' | grep -q '^'"$GROUP_VAR"'$') || echo fff
+```
+Refs.:
+- https://stackoverflow.com/questions/18431285/check-if-a-user-is-in-a-group#comment117794141_53433755
+
+
+
+```bash
+for group in adm cdrom dip lpadmin plugdev sambashare sudo; do
+
+    getent group "$group" &>/dev/null || sudo groupadd "$group"
+    getent group "$group" &>/dev/null && sudo usermod -aG "$group" "$(id -nu)"
+    id -nGz $(id -nu) | tr '\0' '\n'
+    echo
+
+done
+```
 
 
 
