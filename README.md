@@ -22430,9 +22430,9 @@ cat > flake.nix << 'EOF'
 {
   description = "NixOS OCI home-manager";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
+    nixpkgs.url = "nixpkgs";
 
-    home-manager.url = "github:nix-community/home-manager";
+    home-manager.url = "home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
         
     nixos-generators.url = "github:nix-community/nixos-generators";
@@ -22458,7 +22458,7 @@ cat > flake.nix << 'EOF'
                               hello
                             ];
                         
-                            home.stateVersion = "22.11";
+                            home.stateVersion = "23.05";
                           };
                       }
 
@@ -22479,7 +22479,7 @@ cat > flake.nix << 'EOF'
                       # Enable the X11 windowing system.
                       services.xserver.enable = true;
 
-                      system.stateVersion = "22.11"; # TODO: document it.
+                      system.stateVersion = "23.05"; # TODO: document it.
                     })
         ];
         format = "docker";
@@ -22493,7 +22493,12 @@ EOF
 nix \
 flake \
 lock \
---override-input nixpkgs github:NixOS/nixpkgs/90e85bc7c1a6fc0760a94ace129d3a1c61c3d035
+--override-input nixpkgs github:NixOS/nixpkgs/017ef2132a5bda50bd713aeabce8f918502d4ec1
+
+nix \
+flake \
+lock \
+--override-input home-manager github:nix-community/home-manager/07682fff75d41f18327a871088d20af2710d4744
 
 git config init.defaultBranch || git config --global init.defaultBranch main
 
