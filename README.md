@@ -22493,7 +22493,7 @@ EOF
 nix \
 flake \
 lock \
---override-input nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+--override-input nixpkgs github:NixOS/nixpkgs/90e85bc7c1a6fc0760a94ace129d3a1c61c3d035
 
 git config init.defaultBranch || git config --global init.defaultBranch main
 
