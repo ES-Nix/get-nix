@@ -1291,6 +1291,7 @@ store \
 gc \
  --verbose \
  --option keep-derivations false \
+ --option keep-env-derivations false \
  --option keep-outputs false \
 && nix-collect-garbage --delete-old \
 && nix store optimise --verbose
@@ -24413,7 +24414,8 @@ log \
 ' | cat
 ```
 
-
+TODO: https://abseil.io/docs/cpp/quickstart-cmake
+https://github.com/NixOS/nixpkgs/blob/04ba740f89b23001077df136c216a885371533ad/pkgs/development/libraries/zlib-ng/default.nix#L29
 ```bash
 EXPR=$(cat <<-'EOF'
 (
@@ -24477,12 +24479,16 @@ FULL_BIN_SH_PATH=$(nix build --no-link --print-build-logs --print-out-paths gith
 echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd  "$FULL_BIN_SH_PATH" | sha256sum -c
 ```
 Refs.:
+- https://github.com/google/cpu-check
 - https://ryantm.github.io/nixpkgs/builders/fetchers/#fetchfromgithub
 - https://discourse.nixos.org/t/build-a-derivation-with-cmake/20874/2
 - https://users.rust-lang.org/t/solved-how-do-i-build-cargo-on-nixos/7620
 - https://stackoverflow.com/a/71183644
 - https://stackoverflow.com/a/46549009
-
+- https://stackoverflow.com/a/62509354
+- https://stackoverflow.com/a/67711030
+- https://github.com/NixOS/nixpkgs/tree/master/pkgs/development/libraries/abseil-cpp
+- https://stackoverflow.com/a/25681179
 
 ```bash
 sudo apt-get update -y \
@@ -24492,6 +24498,8 @@ sudo apt-get update -y \
         g++ \
         libabsl-dev
 ```
+Refs.:
+- https://github.com/google/cpu-check/issues/7
 
 
 https://discourse.nixos.org/t/nixpkgs-that-need-no-sandbox/19173/8
@@ -27788,6 +27796,10 @@ The nix language fu:
 - http://www.chriswarbo.net/projects/nixos/useful_hacks.html
 - https://teu5us.github.io/nix-lib.html
 - https://github.com/NixOS/nixpkgs/blob/b11ced7a9c1fc44392358e337c0d8f58efc97c89/nixos/lib/make-multi-disk-zfs-image.nix#L122-L123
+- https://github.com/NixOS/nixpkgs/blob/04ba740f89b23001077df136c216a885371533ad/pkgs/development/tools/build-managers/cmake/default.nix#L132-L136
+- https://nixos.wiki/wiki/C
+
+
 
 > Unfortunately we can't provide useful error messages when people use sub-attributes 
 > of `{host,target,build}Platform`, because it is expected that you can compare two
