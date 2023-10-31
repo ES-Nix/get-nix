@@ -4782,7 +4782,7 @@ ffmpeg -r 30 -i {1,2,3}.jpg -vcodec mpeg4 -y movie.mp4 -vcodec mpeg4 -y -vb 40M
 Refs.:
 - https://stackoverflow.com/a/44951066
 - https://stackoverflow.com/questions/50643085/generate-a-2-fps-mp4-from-images-using-ffmpeg#comment88299429_50643272
-
+- https://stackoverflow.com/a/37478183
 
 ```python
 video_format = "flv"
