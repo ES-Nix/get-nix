@@ -24413,6 +24413,81 @@ log \
 ' | cat
 ```
 
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+      pkgs = import nixpkgs {};
+    in
+      pkgs.stdenv.mkDerivation {
+        name = "cpu-check";
+        dontUnpack = true;
+        src = pkgs.fetchFromGitHub {
+          hash = "sha256-CRFvrU9fTMrF9TFbC/jeWpYY2JZxFuAB/e7KAEhm+bg=";
+          fetchSubmodules = true;
+          rev = "eab78120395ac7e5d112d2a9e2e87296d964becb";
+          owner = "google";
+          repo = "cpu-check";
+          name = "cpu-check";
+        };
+        buildPhase = ''
+          mkdir -v cpu-check && cp -r $src/* cpu-check/ && cd cpu-check && mkdir build && cd build && cmake .. && mkdir -v $out
+        '';
+        dontInstall = true;
+        buildInputs = with pkgs; [ pkg-config openssl cmake extra-cmake-modules abseil-cpp zlib zlib.dev zlib-ng zlib-ng.dev ];
+        nativeBuildInputs = with pkgs; [ pkg-config openssl cmake extra-cmake-modules abseil-cpp zlib zlib.dev zlib-ng zlib-ng.dev ];
+        dontUseCmakeConfigure=true;
+        preFixup = ''
+          export ZLIB_INCLUDE_DIRS=${pkgs.zlib.dev}/include
+          export ZLIB_LIBRARIES=${pkgs.zlib.out}/lib
+          export ZLIB_ROOT=${pkgs.zlib.out}/lib:${pkgs.zlib.dev}/include
+        '';
+        cmakeFlags = [
+          "-DZLIB_INCLUDE_DIR=${pkgs.zlib.dev}/include"
+          "-DZLIB_LIBRARY=${pkgs.zlib.out}/lib/libz.so"
+        ];
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+develop \
+--impure \
+--expr \
+"$EXPR"
+
+cd "$TMPDIR" && source $stdenv/setup && genericBuild
+
+cmake .. -B .
+# nix show-config | grep sandbox-paths
+
+FULL_BIN_SH_PATH=$(nix build --no-link --print-build-logs --print-out-paths github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#busybox-sandbox-shell)/bin/sh
+echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd  "$FULL_BIN_SH_PATH" | sha256sum -c
+```
+Refs.:
+- https://ryantm.github.io/nixpkgs/builders/fetchers/#fetchfromgithub
+- https://discourse.nixos.org/t/build-a-derivation-with-cmake/20874/2
+- https://users.rust-lang.org/t/solved-how-do-i-build-cargo-on-nixos/7620
+- https://stackoverflow.com/a/71183644
+
+sudo apt-get update -y \
+&& sudo apt-get install --no-install-recommends --no-install-suggests -y \
+        cmake git g++ libabsl-dev
+
+
+
 https://discourse.nixos.org/t/nixpkgs-that-need-no-sandbox/19173/8
 
 ```bash
