@@ -24481,11 +24481,17 @@ Refs.:
 - https://discourse.nixos.org/t/build-a-derivation-with-cmake/20874/2
 - https://users.rust-lang.org/t/solved-how-do-i-build-cargo-on-nixos/7620
 - https://stackoverflow.com/a/71183644
+- https://stackoverflow.com/a/46549009
 
+
+```bash
 sudo apt-get update -y \
 && sudo apt-get install --no-install-recommends --no-install-suggests -y \
-        cmake git g++ libabsl-dev
-
+        cmake \
+        git \
+        g++ \
+        libabsl-dev
+```
 
 
 https://discourse.nixos.org/t/nixpkgs-that-need-no-sandbox/19173/8
