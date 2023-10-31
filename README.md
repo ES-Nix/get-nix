@@ -22422,7 +22422,131 @@ podman run -it --rm docker.io/library/alpine:latest
 ```
 
 
-Broken:
+
+##### 
+
+```bash
+cat > flake.nix << 'EOF'
+{
+  description = "NixOS OCI home-manager";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
+
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+        
+    nixos-generators.url = "github:nix-community/nixos-generators";
+    nixos-generators.inputs.nixpkgs.follows = "nixpkgs";
+  };
+  outputs = {self, nixpkgs, nixos-generators, home-manager, ...}: {
+    packages.x86_64-linux = {
+      nixOsOCIContainer = nixos-generators.nixosGenerate {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        modules = [
+
+                      home-manager.nixosModules.home-manager
+                      {
+                        home-manager.useGlobalPkgs = true;
+                        home-manager.useUserPackages = true;
+                        home-manager.users.nixuser = { pkgs, ... }: {
+                            home.username = "nixuser";
+                            home.homeDirectory = pkgs.lib.mkDefault "/home/nixuser";
+                        
+                            programs.home-manager.enable = true;
+                        
+                            home.packages = with pkgs; [
+                              hello
+                            ];
+                        
+                            home.stateVersion = "22.11";
+                          };
+                      }
+
+                    ({ pkgs, ... }: {
+                      users.users."root".initialPassword = "r00t"; # https://discourse.nixos.org/t/how-to-disable-root-user-account-in-configuration-nix/13235/7
+                      users.users.nixuser.group = "nixuser";
+                      users.groups.nixuser = {};
+                      users.users.nixuser.isSystemUser = true;
+
+                      services.getty.autologinUser = "nixuser"; # "root";
+                      networking = {
+                        hostName = "nixos";
+                        nameservers = [ "1.1.1.1" "8.8.8.8" ]; # TODO: Why? Why the root user does not need it?
+                        networkmanager.enable = true;
+                        useDHCP = false; # TODO: Why?
+                      };
+
+                      # Enable the X11 windowing system.
+                      services.xserver.enable = true;
+
+                      system.stateVersion = "22.11"; # TODO: document it.
+                    })
+        ];
+        format = "docker";
+      };
+    };
+  };
+}
+EOF
+
+
+nix \
+flake \
+lock \
+--override-input nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
+
+git config init.defaultBranch || git config --global init.defaultBranch main
+
+git init \
+&& git add . \
+&& git commit -m 'First nix flake commit'
+
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+.#nixOsOCIContainer
+
+
+#RESULT_SHA512SUM_1=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
+#RESULT_SHA512SUM_2=$(sha512sum $(nix build --print-out-paths --rebuild .#nixOsOCIContainer)/tarball/nixos-system-x86_64-linux.tar.xz)
+#
+#echo $RESULT_SHA512SUM_1
+#echo $RESULT_SHA512SUM_2
+# TODO: you need some kernel flags and may be more stuff to be able to run containers
+#nix \
+#profile \
+#install \
+#--refresh \
+#github:ES-Nix/podman-rootless/from-nixpkgs#podman
+
+cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | podman import --os "NixOS" - nixos-image:latest
+# cat $(readlink -f result)/tarball/nixos-system-x86_64-linux.tar.xz | docker import
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+
+podman \
+run \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nixos \
+--interactive=true \
+--name=container-nixos \
+--privileged=true \
+--rm=true \
+--tty=true \
+--volume=/dev/log:/dev/log \
+--volume=/var/run/systemd/journal/socket:/var/run/systemd/journal/socket \
+localhost/nixos-image:latest \
+/init
+```
+Refs.:
+- https://projectatomic.io/blog/2016/10/playing-with-docker-logging/
+- https://github.com/containers/podman/issues/15295#issuecomment-1215287414
+- https://github.com/containers/podman/issues/15295#issuecomment-1215287414
+
+
+
+##### Broken:
 ```bash
 nix build --print-build-logs --print-out-paths github:nix-community/NixOS-WSL#nixosConfigurations.mysystem.config.system.build.tarball
 cat $(readlink -f result)/tarball/nixos-wsl-x86_64-linux.tar.gz | podman import --os "NixOS" - nixos-image:latest
