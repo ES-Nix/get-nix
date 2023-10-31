@@ -8942,6 +8942,13 @@ nixuser@localhost \
 > Broken: I just give-up for now and used ssh -X
 
 
+TODO:
+> Please do NOT try to set $DISPLAY manually when connecting over SSH.
+> If you connect via SSH -X and $DISPLAY stays empty, this usually means 
+> that no encrypted channel could be established.
+> https://stackoverflow.com/a/47014623
+
+
 On the host:
 ```bash
 xauth extract - $DISPLAY > xauth_extract
