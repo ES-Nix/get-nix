@@ -22424,7 +22424,7 @@ podman run -it --rm docker.io/library/alpine:latest
 
 
 
-##### 
+##### NixOS OCI home-manager
 
 ```bash
 cat > flake.nix << 'EOF'
@@ -22549,6 +22549,9 @@ Refs.:
 - https://projectatomic.io/blog/2016/10/playing-with-docker-logging/
 - https://github.com/containers/podman/issues/15295#issuecomment-1215287414
 - https://github.com/containers/podman/issues/15295#issuecomment-1215287414
+- https://drakerossman.com/blog/how-to-add-home-manager-to-nixos
+- https://www.chrisportela.com/posts/home-manager-flake/
+- https://nix-community.github.io/home-manager/index.html#sec-install-standalone
 
 
 
