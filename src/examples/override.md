@@ -736,7 +736,8 @@ EXPR_NIX='
   (
     with builtins.getFlake "github:NixOS/nixpkgs/3364b5b117f65fe1ce65a3cdd5612a078a3b31e3";
     with legacyPackages.${builtins.currentSystem};
-    (pkgsStatic.python3Minimal.override
+    (
+      pkgsStatic.python3Minimal.override
       {
         reproducibleBuild = true;
       }
@@ -772,16 +773,15 @@ echo "$EXPECTED_SHA512SUM"'  '"$FULL_PATH" | sha512sum -c
 ```
 
 
-
 ```bash
 EXPR_NIX='
   (
     with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
-    (pkgsStatic.python3Minimal.override
+    (
+      pkgsStatic.python3Minimal.override
       {
-        enableOptimizations = true;
-        reproducibleBuild = false;
+        reproducibleBuild = true;
       }
     )
   )
@@ -796,14 +796,102 @@ build \
 --print-out-paths \
 --expr \
 "$EXPR_NIX"
+
+
+nix \
+build \
+--impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+
+EXPECTED_SHA512SUM=d7182f752faa78cfd700893c736d00fdb6d2f4f82b81f85e04638d35e3cae45badd9d221a58adfafc2dd46a25006d71b38a0086d800be5a11ca548f52e6ff1de
+FULL_PATH=$(nix eval --impure --raw --expr $EXPR_NIX)/bin/python
+echo "$EXPECTED_SHA512SUM"'  '"$FULL_PATH" | sha512sum -c
 ```
 
 
-python38.override {
-    enableOptimizations = true;
-    reproducibleBuild = false;
-    hardeningDisable = "all";
-  };
+```bash
+EXPR_NIX=$(cat <<-'EOF'
+  (
+    let
+       nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+       pkgs = import nixpkgs {};
+    in
+        (pkgs.pkgsStatic.python3Minimal.override
+          {
+            enableOptimizations = true;
+            reproducibleBuild = false;
+          }
+        )
+  )
+EOF
+)
+
+nix \
+build \
+--impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR_NIX" \
+--command \
+python3 \
+-c \
+"import timeit; print(timeit.Timer('for i in range(100): oct(i)', 'gc.enable()').repeat(5))"
+```
+
+
+```bash
+EXPR_NIX=$(cat <<-'EOF'
+  (
+    let
+       nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+       pkgs = import nixpkgs {};
+    in
+        (pkgs.python39.override
+          {
+            enableOptimizations = true;
+            reproducibleBuild = false;
+          }
+        )
+  )
+EOF
+)
+
+nix \
+build \
+--impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR_NIX" \
+--command \
+python3 \
+-c \
+"import timeit; print(timeit.Timer('for i in range(100): oct(i)', 'gc.enable()').repeat(5))"
+```
+
 
 
 ```bash
@@ -836,7 +924,7 @@ shell \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/f0fa012b649a47e408291e96a15672a4fe925d65";
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
   with legacyPackages.${builtins.currentSystem};
       (python3.buildEnv.override
         {
@@ -850,6 +938,88 @@ python \
 -c \
 'import numpy as np; np.show_config(); print(np.__version__)'
 ```
+
+
+```bash
+nix \
+shell \
+--refresh \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+  with legacyPackages.${builtins.currentSystem};
+      (python3.buildEnv.override
+        {
+          extraLibs = with python3Packages; [ numpy ];
+
+          packageOverrides = self: super: {
+            # We need toPythonModule for the package set to evaluate this
+            blas = super.toPythonModule(super.pkgs.blas.override {
+              blasProvider = super.pkgs.mkl;
+            });
+            lapack = super.toPythonModule(super.pkgs.lapack.override {
+              lapackProvider = super.pkgs.mkl;
+            });
+          };
+        }
+      )
+)
+' \
+--command \
+python \
+-c \
+'import numpy as np; np.show_config(); print(np.__version__)'
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(  
+   let
+      overlay = (self: super: rec {
+        python3 = super.python3.override {
+          packageOverrides = selfPy: superPy: {
+            blas = superPy.toPythonModule(superPy.pkgs.blas.override {
+              blasProvider = superPy.pkgs.mkl;
+            });
+            lapack = superPy.toPythonModule(superPy.pkgs.lapack.override {
+              lapackProvider = superPy.pkgs.mkl;
+            });
+          };
+        };
+
+        python3Packages = python3.pkgs;
+      });
+      
+      # Puts together a package set to use later
+      myPythonPackages = ps: with ps; [
+        numpy
+      ];      
+   in
+     (import (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b")
+             { overlays = [ overlay ]; }
+             ).python3.withPackages myPythonPackages
+    )
+EOF
+)
+
+export NIXPKGS_ALLOW_UNFREE=1
+
+nix \
+shell \
+--refresh \
+--impure \
+--expr \
+"$EXPR" \
+--command \
+python \
+-c \
+'import numpy as np; np.show_config(); print(np.__version__)'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/python.section.md#missing-tkinter-module-standard-library-missing-tkinter-module-standard-library
 
 
 ```bash
@@ -1108,3 +1278,41 @@ cd "$(mktemp -d)" \
     in
 (wine.override { wineBuild = "wine64"; })
 https://nixos.wiki/wiki/Wine
+
+
+
+```bash
+nix eval --json nixpkgs#pkgsStatic.nix.override.__functionArgs
+```
+
+
+
+```bash
+EXPR_NIX=$(cat <<-'EOF'
+  (
+    let
+       nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+       pkgs = import nixpkgs {};
+    in
+      (
+        pkgs.pkgsStatic.nix.override { 
+          withAWS = false;
+          withLibseccomp = false;
+        }
+      )
+  )
+EOF
+)
+
+du -hs $(nix \
+build \
+--impure \
+--keep-failed \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX")/bin/nix
+
+du -hs $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsStatic.nix)/bin/nix
+```

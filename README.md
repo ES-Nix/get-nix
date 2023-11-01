@@ -6284,6 +6284,47 @@ nix build --rebuild nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.pyth
 
 ```bash
 nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+nixpkgs#python310Packages.flask
+
+
+nix \
+--option enforce-determinism true \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+nixpkgs#python310Packages.flask
+```
+
+
+Broken: --option enforce-determinism false
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+nixpkgs#python310Packages.numpy
+
+
+nix \
+--option enforce-determinism false \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+nixpkgs#python310Packages.numpy
+```
+
+
+```bash
+nix \
     --option build-use-substitutes false \
     --option substitute false \
     --extra-experimental-features 'nix-command flakes' \
@@ -11973,15 +12014,19 @@ nix \
 build \
 --impure \
 --expr \
-'(
+'
+(
   with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
   with legacyPackages.${builtins.currentSystem};
-  (pkgsStatic.nix.override { 
-    storeDir = "/home/ubuntu";
-    stateDir = "/home/ubuntu";
-    confDir = "/home/ubuntu";
-  })
-)' \
+  (
+    pkgsStatic.nix.override { 
+      storeDir = "/home/ubuntu";
+      stateDir = "/home/ubuntu";
+      confDir = "/home/ubuntu";
+    }
+  )
+)
+' \
 && result/bin/nix \
 run \
 --extra-experimental-features 'nix-command flakes' \
@@ -25624,6 +25669,29 @@ systemd.services. = {
 Refs.:
 - https://alberand.com/nixos-linux-kernel-vm.html
 
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+      pkgs = import nixpkgs {};
+    in
+      pkgs.pkgsLLVM.stdenv.mkDerivation { name = "foo"; unpackPhase = "echo $CC; $CC -v; exit 1"; }
+  )
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://trofi.github.io/posts/240-nixpkgs-bootstrap-intro.html
 
 ##### debug compiled code
 
@@ -28423,8 +28491,10 @@ build \
 --expr \
 '
   let
-    pkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0").legacyPackages.${builtins.currentSystem};
-  in pkgs.releaseTools.channel { name = "nixpkgs-unstable"; src = pkgs.path; }
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/50fc86b75d2744e1ab3837ef74b53f103a9b55a0"); 
+    pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+  in 
+    pkgs.releaseTools.channel { name = "nixpkgs-unstable"; src = pkgs.path; }
 '
 ```
 Refs.:
