@@ -1728,7 +1728,7 @@ TODO:
 - https://stackoverflow.com/a/68996528
 
 
-Is C++ your thing? https://stackoverflow.com/a/33881726
+Is C++ your thing? 
 ```bash
 cat << 'EOF' > prog.cpp
 #include <chrono>
@@ -1744,7 +1744,7 @@ EOF
 g++ prog.cpp -Wall -Wextra -std=gnu++2b 
 ```
 Refs.:
-
+- https://stackoverflow.com/a/33881726
 
 - https://unix.stackexchange.com/a/452566 FHS
 - https://unix.stackexchange.com/questions/452559/what-is-etc-timezone-used-for#comment822484_452566 FHS
@@ -1861,7 +1861,6 @@ localhost/alpine-with-ca-certificates-tzdata:latest \
 sh
 ```
 
-nixVersions.nix_2_10
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -23323,7 +23322,7 @@ build \
                       boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
                       boot.kernelParams = [
                         "console=tty0"
-                        "console=ttyAMA0,115200n8" # https://nixos.wiki/wiki/NixOS_on_ARM
+                        "console=ttyAMA0,115200n8" # https://nixos.wiki/wiki/NixOS_on_ARM#Enable_UART
                         # Set sensible kernel parameters
                         # https://nixos.wiki/wiki/Bootloader
                         # https://git.redbrick.dcu.ie/m1cr0man/nix-configs-rb/commit/ddb4d96dacc52357e5eaec5870d9733a1ea63a5a?lang=pt-PT
@@ -27983,17 +27982,406 @@ rm -frv c-hello
 nix flake check .#
 ```
 
-Other C examples inlined:
+Other C examples inlined in nix expression:
 - https://nix.dev/tutorials/cross-compilation
 - https://github.com/NixOS/nix/issues/2270#issuecomment-464817905
 - https://nixos.org/manual/nix/stable/language/builtins.html#builtins-toFile
 - https://discourse.nixos.org/t/c-headers-not-found-with-clang-13/19745/2
+- [Arguing with Linus Torvalds - Steven Rostedt](https://www.youtube.com/embed/0pHImHVrI2I?start=645&end=800&version=3), start=645&end=800
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C program that prints Hello World
+  helloWorld = pkgs.writeText "hello.c" ''
+    #include <stdio.h>
+
+    int main (void)
+    {
+      printf ("Hello, world!\n");
+      return 0;
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "hello-world-c-inline";
+        src = helloWorld;
+        buildPhase = ''
+          $CC ${helloWorld} -o hello-world-c-inline
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp hello-world-c-inline  $out/bin/hello-world-c-inline
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
 
 
 
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
 
-nix build --no-link --print-out-paths --print-build-logs nixpkgs#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.install-force-daemon
 
+ldd $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/bin/hello-world-c-inline
+
+
+#nix \
+#develop \
+#--impure \
+#--expr \
+#"$EXPR" \
+#--command \
+#sh \
+#'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://book.divnix.com/ch06-01-simple-c-program.html#nix-install
+- https://nix.dev/tutorials/learning-journey/packaging-existing-software#phases-and-hooks
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C++ program that prints Hello World
+  helloWorld = pkgs.writeText "hello.cpp" ''
+    #include <iostream>
+    int main() { std::cout<<"Hello World!"; std::cout<<std::endl; return 0; }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "hello-world-cpp-inline";
+        src = helloWorld;
+        buildPhase = ''
+          $CXX ${helloWorld} -o hello-world-cpp-inline
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp hello-world-cpp-inline  $out/bin/hello-world-cpp-inline
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+ldd $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/bin/hello-world-cpp-inline
+
+
+#nix \
+#develop \
+#--impure \
+#--expr \
+#"$EXPR" \
+#--command \
+#sh \
+#'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Creates a Rust program that prints Hello World
+  helloWorld = pkgs.writeText "hello.rs" ''
+    fn main() { println!("Hello World!"); }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "hello-world-rust-inline";
+        src = helloWorld;
+        nativeBuildInput = [ pkgs.rustc ];
+        buildPhase = ''
+          ${pkgs.rustc}/bin/rustc ${helloWorld} -o hello-world-rust-inline
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp hello-world-rust-inline  $out/bin/hello-world-rust-inline
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+ldd $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/bin/hello-world-rust-inline
+
+
+#nix \
+#develop \
+#--impure \
+#--expr \
+#"$EXPR" \
+#--command \
+#sh \
+#'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://doc.rust-lang.org/rust-by-example/hello.html#hello-world
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/90e85bc7c1a6fc0760a94ace129d3a1c61c3d035"); 
+   pkgs = import nixpkgs {};
+
+  # Creates a Rust program that prints Hello World
+  exampleItertools = pkgs.writeText "example-itertools.rs" ''
+    extern crate rand;
+    use itertools::Itertools;
+
+    fn main() {
+      let it = (1..7).interleave(vec![-1, -2]);
+      itertools::assert_equal(it, vec![1, -1, 2, -2, 3, 4, 5, 6]);
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "example-itertools";
+        src = exampleItertools;
+        nativeBuildInput = [ pkgs.rustc ];
+        buildPhase = ''
+          ${pkgs.rustc}/bin/rustc ${exampleItertools} -o example-itertools
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp example-itertools  $out/bin/example-itertools
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+ldd $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/bin/example-itertools
+
+
+#nix \
+#develop \
+#--impure \
+#--expr \
+#"$EXPR" \
+#--command \
+#sh \
+#'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://docs.rs/itertools/latest/itertools/trait.Itertools.html#provided-methods
+- https://doc.rust-lang.org/rust-by-example/hello.html#hello-world
+- https://stackoverflow.com/a/29202217
+- https://stackoverflow.com/a/53985748
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C program that prints Hello World
+  goldieLocks = pkgs.writeText "goldie_locks.c" ''
+    #include <stdio.h>
+    int goldie_locks(void (*bed)(int)) { (*bed)(23); }
+    
+    void minus3(int x) {
+      printf("-3 is %d\n", x - 3);
+    }
+
+    void plus4(int x) {
+      printf("+4 is %d\n", x + 4);
+    }
+
+    void just_right(int x) {
+      printf("%d is just right!\n", x);
+    }
+    
+    int main (int argc, char **argv) {
+      goldie_locks(minus3);
+      goldie_locks(plus4);
+      goldie_locks(just_right);
+      return 0;
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "goldie_locks";
+        src = goldieLocks;
+        buildPhase = ''
+          $CC ${goldieLocks} -o goldie_locks
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp goldie_locks  $out/bin/goldie_locks
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- [Arguing with Linus Torvalds - Steven Rostedt](https://www.youtube.com/embed/0pHImHVrI2I?start=645&end=800&version=3), start=645&end=800
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+nix#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.install-force-daemon
+```
 
 
 

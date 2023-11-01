@@ -3835,6 +3835,8 @@ python \
 
 TODO: what are the minimal installation packages needed?
 - https://stackoverflow.com/a/52976331
+- https://codepyre.com/2019/12/arming-yourself/#required-packages-ubuntu-1804
+
 
 TODO: 
 it is on some link that `apt-get build-dep` does not take into acount what is already instaled.
