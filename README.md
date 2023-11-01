@@ -16329,6 +16329,9 @@ nix eval --raw nixpkgs#stdenv.hostPlatform.libc
 nix eval --raw nixpkgs#stdenv.cc.targetPrefix
 # nix eval --raw nixpkgs#stdenv.lib.optionalString stdenv.is64bit "w"
 
+nix --system aarch64-linux eval --json nixpkgs#stdenv.isx86_64
+nix --system aarch64-linux eval --json nixpkgs#stdenv.cc.cc.stdenv.isx86_64
+
 # https://nixos.wiki/wiki/C#Faster_GCC_compiler
 nix eval nixpkgs#fastStdenv.isLinux
 nix eval nixpkgs#fastStdenv.is64bit
