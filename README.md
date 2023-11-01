@@ -16305,6 +16305,23 @@ eval \
 
 
 ```bash
+nix \
+eval \
+--expr \
+'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+    in
+      pkgs.stdenv.isx86_64
+  )
+'
+```
+
+
+
+```bash
 nix eval nixpkgs#qemu.meta.mainProgram
 
 nix eval nixpkgs#qemu.pname
