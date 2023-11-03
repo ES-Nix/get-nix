@@ -28078,6 +28078,43 @@ Other C examples inlined in nix expression:
 - [Arguing with Linus Torvalds - Steven Rostedt](https://www.youtube.com/embed/0pHImHVrI2I?start=645&end=800&version=3), start=645&end=800
 
 
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "python3-inline-timeit";
+        src = null;
+        buildPhase = ''
+          ${pkgs.python3}/bin/python3 \
+          -c \
+          "import timeit; print(timeit.Timer('for i in range(100): oct(i)', 'gc.enable()').repeat(5))"
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          runHook postInstall
+        '';         
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
 ```bash
 EXPR=$(cat <<-'EOF'
 (
@@ -28091,7 +28128,7 @@ let
 
     int main (void)
     {
-      printf ("Hello, world!\n");
+      printf ("Hello, world from C!\n");
       return 0;
     }
   '';
@@ -28169,7 +28206,7 @@ let
   # Create a C++ program that prints Hello World
   helloWorld = pkgs.writeText "hello.cpp" ''
     #include <iostream>
-    int main() { std::cout<<"Hello World!"; std::cout<<std::endl; return 0; }
+    int main() { std::cout<<"Hello World from C++!"; std::cout<<std::endl; return 0; }
   '';
 
 in 
@@ -28240,7 +28277,7 @@ let
 
   # Creates a Rust program that prints Hello World
   helloWorld = pkgs.writeText "hello.rs" ''
-    fn main() { println!("Hello World!"); }
+    fn main() { println!("Hello World from Rust!"); }
   '';
 
 in 
@@ -28305,7 +28342,7 @@ Refs.:
 - https://doc.rust-lang.org/rust-by-example/hello.html#hello-world
 
 
-
+Broken:
 ```bash
 EXPR=$(cat <<-'EOF'
 (
