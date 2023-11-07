@@ -370,7 +370,7 @@ nix-store --query --graph --include-outputs $(nix path-info nixpkgs#awscli) | do
 
 
 ```bash
-command -v jq || nix profile install nixpkgs/18de53ca965bd0678aaf09e5ce0daae05c58355a#jq
+command -v jq || nix profile install nixpkgs#jq
 command -v dot || nix profile install nixpkgs/18de53ca965bd0678aaf09e5ce0daae05c58355a#graphviz
 
 nix build github:NixOS/nixpkgs/8c7576622aeb4707351a17e83429667f42e7d910#pkgsStatic.hello --no-link
@@ -1351,12 +1351,12 @@ RUN apt-get update -y \
      dbus-broker \
      sudo \
      tar \
-     xz-utils \
      wget \
      x11-apps \
-     xinit \
      xfce4 \
+     xinit \
      xserver-xorg-video-dummy \
+     xz-utils \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/* \
@@ -1986,8 +1986,11 @@ zsh
 
 
 
+```bash
 xauth
-https://stackoverflow.com/a/47014623
+```
+Refs.:
+- https://stackoverflow.com/a/47014623
 
 ```bash
 test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)
@@ -2196,7 +2199,8 @@ echo "$EXPECTED_SHA512SUMpre20230810_a1fdc68"  "$FULL_PATH_2" | sha512sum -c
 # TODO: write it in an generic way, not hardcoding the profile numbers.
 nix diff-closures /nix/var/nix/profiles/system-655-link /nix/var/nix/profiles/system-658-link
 ```
-From: [Add 'nix diff-closures' command](https://github.com/NixOS/nix/pull/3818). 
+Refs.:
+- [Add 'nix diff-closures' command](https://github.com/NixOS/nix/pull/3818). 
 
 
 ### nix statically built, WIP
@@ -3257,6 +3261,8 @@ Refs.:
 - https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#other_cool_features_about_podman_and_systemd
 - https://fedoraproject.org/wiki/Xfce
 
+
+
 ```bash
 cat << 'EOF' > Dockerfile
 FROM docker.io/library/fedora:39
@@ -3379,8 +3385,8 @@ RUN apt-get update -y \
      sudo \
      systemd \
      tar \
-     xz-utils \
      wget \
+     xz-utils \
  && apt-get -y autoremove \
  && apt-get -y clean \
  && rm -rf /var/lib/apt/lists/*
