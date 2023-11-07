@@ -2424,50 +2424,113 @@ sh \
 nix \
 shell \
 --ignore-environment \
+nixpkgs#hello \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+nixpkgs#coreutils \
+--command \
+sh \
+-c \
+'ldd $(which hello) | wc -l'
+
+
+nix \
+shell \
+--ignore-environment \
+nixpkgs#python3Minimal \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bashInteractive \
+nixpkgs#coreutils \
+--command \
+sh \
+-c \
+'ldd $(which bash) | wc -l'
+
+nix \
+shell \
+--ignore-environment \
+nixpkgs#python3Minimal \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+nixpkgs#coreutils \
+--command \
+sh \
+-c \
+'ldd $(which python3) | wc -l'
+
+
+nix \
+shell \
+--ignore-environment \
+nixpkgs#git \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+nixpkgs#coreutils \
+--command \
+sh \
+-c \
+'ldd $(which git) | wc -l'
+
+
+nix \
+shell \
+--ignore-environment \
 nixpkgs#python3Full \
 nixpkgs#which \
 nixpkgs#glibc.bin \
 nixpkgs#bash \
+nixpkgs#coreutils \
 --command \
 sh \
 -c \
-'ldd $(which python3)'
+'ldd $(which python3) | wc -l'
+
 
 nix \
 shell \
 --ignore-environment \
 nixpkgs#bash \
+nixpkgs#coreutils \
 nixpkgs#glibc.bin \
 nixpkgs#pandoc \
 nixpkgs#which \
 --command \
 sh \
 -c \
-'ldd $(which pandoc)'
+'ldd $(which pandoc) | wc -l'
+
 
 nix \
 shell \
 --ignore-environment \
-nixpkgs#python3Full \
+nixpkgs#nodejs \
 nixpkgs#which \
 nixpkgs#glibc.bin \
 nixpkgs#bash \
+nixpkgs#coreutils \
 --command \
 sh \
 -c \
-'ldd $(which node)'
+'ldd $(which node) | wc -l'
+
 
 nix \
 shell \
 --ignore-environment \
-nixpkgs#jre \
+nixpkgs#nix \
 nixpkgs#which \
 nixpkgs#glibc.bin \
 nixpkgs#bash \
+nixpkgs#coreutils \
 --command \
 sh \
 -c \
-'ldd $(which java)'
+'ldd $(which nix) | wc -l'
+
 
 nix \
 shell \
@@ -2476,10 +2539,26 @@ nixpkgs#imagemagick \
 nixpkgs#which \
 nixpkgs#glibc.bin \
 nixpkgs#bash \
+nixpkgs#coreutils \
 --command \
 sh \
 -c \
-'ldd $(which magick)'
+'ldd $(which magick) | wc -l'
+
+
+nix \
+shell \
+--ignore-environment \
+nixpkgs#jre \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+nixpkgs#coreutils \
+--command \
+sh \
+-c \
+'ldd $(which java) | wc -l'
+
 
 nix \
 shell \
@@ -2488,10 +2567,23 @@ nixpkgs#ffmpeg-full \
 nixpkgs#which \
 nixpkgs#glibc.bin \
 nixpkgs#bash \
+nixpkgs#coreutils \
 --command \
 sh \
 -c \
-'ldd $(which ffmpeg)'
+'ldd $(which ffmpeg) | wc -l'
+```
+
+
+
+```bash
+objdump -x $(which ffmpeg) \ 
+| grep 'R.*PATH' \
+| cut -d'H' -f2 \
+| tr -d ' ' \
+| tr ':' '\n' \
+| cut -d '-' -f2 \
+| sort
 ```
 
 

@@ -15782,6 +15782,63 @@ $(nix path-info github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#he
 ```
 
 
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix eval --raw nixpkgs#hello) \
+ | dot -Tps > hello.ps
+```
+
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix eval --raw nixpkgs#readline) \
+ | dot -Tps > readline.ps
+```
+
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix eval --raw nixpkgs#bash) \
+ | dot -Tps > bash.ps
+```
+
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix eval --raw nixpkgs#bashInteractive) \
+ | dot -Tps > bashInteractive.ps
+```
+
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix eval --raw nixpkgs#git) \
+ | dot -Tps > git.ps
+```
+
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix eval --raw nixpkgs#python3Full) \
+ | dot -Tps > python3Full.ps
+```
+
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix eval --raw nixpkgs#nodejs) \
+ | dot -Tps > nodejs.ps
+```
+
+
+```bash
+nix-store --query --graph --include-outputs --force-realise \
+$(nix eval --raw nixpkgs#ffmpeg-full) \
+ | dot -Tps > ffmpeg-full.ps
+```
+
+
+
 TODO: 
 - https://github.com/NixOS/nix/issues/1245#issuecomment-726138112
 - https://github.com/NixOS/nix/issues/1245#issuecomment-401642781
