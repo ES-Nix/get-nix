@@ -24491,7 +24491,18 @@ EXPR=$(cat <<-'EOF'
       pkgs.stdenv.mkDerivation {
         name = "demo";
         dontUnpack = true;
-        buildPhase = "echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd  /bin/sh | sha256sum -c && ls -ahl /bin/sh && mkdir -v $out";
+        buildPhase = ''
+          AUX=3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd
+          echo $AUX  /bin/sh | sha256sum -c \
+          && echo \
+          && ls -ahl /bin/sh \
+          && echo \
+          && file /bin/sh \
+          && echo \
+          && du -hs /bin/sh \
+          && echo \
+          && mkdir -v $out
+        '';
         dontInstall = true;
       }
 )
@@ -24506,9 +24517,18 @@ build \
 --expr \
 "$EXPR"
 
-# nix show-config | grep sandbox-paths
+nix \
+build \
+--no-link \
+--print-build-logs \
+--rebuild \
+--impure \
+--expr \
+"$EXPR"
 
-FULL_BIN_SH_PATH=$(nix build --no-link --print-build-logs --print-out-paths github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#busybox-sandbox-shell)/bin/sh
+# Broken!
+# nix show-config | grep sandbox-paths
+FULL_BIN_SH_PATH=$(nix build --no-link --print-build-logs --print-out-paths github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#pkgsStatic.busybox)/bin/sh
 echo 3b73f7c47af2e34b84d6063aa2b212eecff1fbfbf12bd5caae8031d0d63512fd  "$FULL_BIN_SH_PATH" | sha256sum -c
 ```
 
@@ -28177,6 +28197,7 @@ build \
 --expr \
 "$EXPR"
 ```
+
 
 ```bash
 EXPR=$(cat <<-'EOF'

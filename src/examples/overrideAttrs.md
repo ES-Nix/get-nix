@@ -2073,6 +2073,128 @@ build \
 '
 ```
 
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C program that prints Hello World
+  glibcAndLibcVersion = pkgs.writeText "glibc-and-libc-version.c" ''
+    #include <stdio.h>
+    #include <features.h>
+    #include <unistd.h>
+    #ifdef __GLIBC__
+    #include <gnu/libc-version.h>
+    #endif
+
+    int
+    main(void)
+    {
+    #ifdef __GLIBC__
+      printf("GNU libc compile-time version: %u.%u\n", __GLIBC__, __GLIBC_MINOR__);
+      printf("GNU libc runtime version:      %s\n", gnu_get_libc_version());
+
+      printf("%s %s\n", gnu_get_libc_version(), gnu_get_libc_release());
+      printf("glibc v%i %i.%i\n", __GNU_LIBRARY__, __GLIBC__, __GLIBC_MINOR__);
+
+      printf( "Testing on %ld.%ld \n", __GLIBC__, __GLIBC_MINOR__);
+
+      // method 3, use confstr function
+      char version[30] = {0};
+      confstr(_CS_GNU_LIBC_VERSION, version, 30);
+      puts(version);
+
+      return 0;
+    #else
+      puts("Not the GNU C Library");
+      return 1;
+    #endif
+    }
+  '';
+
+in
+  pkgs.stdenv.mkDerivation {
+        name = "glibc-and-libc-version";
+        src = glibcAndLibcVersion;
+        buildPhase = ''
+          $CC ${glibcAndLibcVersion} -o glibc-and-libc-version
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp glibc-and-libc-version  $out/bin/glibc-and-libc-version
+          runHook postInstall
+        '';
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+
+ldd $(
+  nix \
+  build \
+  --no-link \
+  --print-build-logs \
+  --print-out-paths \
+  --impure \
+  --expr \
+  "$EXPR"
+)/bin/glibc-and-libc-version \
+| sed -n 's/.*@GLIBC_2/2/p' \
+| sort -u -V \
+| tail -1
+```
+Refs.:
+- https://dev.to/0xbf/how-to-get-glibc-version-c-lang-26he
+- https://stackoverflow.com/a/72480538
+- https://stackoverflow.com/a/50558104
+- https://unix.stackexchange.com/a/120498
+- https://gcc.gnu.org/onlinedocs/gcc-4.6.2/libstdc++/api/a00783_source.html
+- https://stackoverflow.com/a/10988540
+- https://stackoverflow.com/q/75157669
+- https://stackoverflow.com/a/50471325
+- https://stackoverflow.com/a/14902711 TODO: read
+- https://stackoverflow.com/a/53412829 TODO: read
+- https://github.com/lattera/glibc/blob/895ef79e04a953cac1493863bcae29ad85657ee1/include/features.h#L420
+
+
+
+```bash
+strings /nix/store/vnwdak3n1w2jjil119j65k8mw1z23p84-glibc-2.35-224/lib/libc.so.6 \
+| grep GLIBC \
+| sed -n 's/.*@GLIBC_2/2/p' \
+| sort -u -V \
+| tail -1
+
+
+nm -D -C /nix/store/vnwdak3n1w2jjil119j65k8mw1z23p84-glibc-2.35-224/lib/libc.so.6 | sed -n 's/.*@GLIBC_2/2/p' \
+| sort -u -V \
+| tail -n -2 \
+| tail -n +2
+```
+
+
 ```bash
 nix build --no-link --print-out-paths github:NixOS/nixpkgs/release-20.03#stdenv.cc.cc.lib
 nix build --no-link --print-out-paths github:NixOS/nixpkgs/release-20.09#stdenv.cc.cc.lib
@@ -2574,6 +2696,17 @@ sh \
 'ldd $(which ffmpeg) | wc -l'
 ```
 
+
+TODO: how to find the n biggest ones?
+```bash
+ldd {} | wc -l
+find . -perm /555 | sort -u
+
+find . -perm /555 -exec echo -n -- {} +
+find . -perm /555 -exec ldd {} +
+```
+Refs.:
+- https://unix.stackexchange.com/a/164777
 
 
 ```bash
