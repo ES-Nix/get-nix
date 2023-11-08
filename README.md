@@ -1845,7 +1845,7 @@ build \
 --tag alpine-with-ca-certificates-tzdata \
 --target alpine-with-ca-certificates-tzdata \
 . \
-&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata &> /dev/null \
 && podman rm --force conteiner-unprivileged-alpine-with-ca-certificates-tzdata || true \
 && podman \
 run \
@@ -20201,7 +20201,14 @@ Refs.:
 
 
 ```bash
-nix develop nixpkgs#hello --command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+nix develop nixpkgs#hello \
+--command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+
+# More "complex". It worked in an Ubuntu 22.04 with the nix single user
+nix develop nixpkgs#pkgsCross.aarch64-android.pkgsStatic.hello \
+--command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild' \
+&& EXPECTED=28e61e9395b22c7636c1e5ed5b78e02d449fb1c426a80577628a69f61a0e5d1d \
+&& echo $EXPECTED  outputs/out/bin/hello | sha256sum -c
 ```
 Refs.:
 - https://stackoverflow.com/a/76714520
@@ -28170,12 +28177,18 @@ let
    pkgs = import nixpkgs {};
 in 
   pkgs.stdenv.mkDerivation {
-        name = "python3-inline-timeit";
+        name = "python3-inline-timeit-and-ram";
         src = null;
         buildPhase = ''
           ${pkgs.python3}/bin/python3 \
           -c \
           "import timeit; print(timeit.Timer('for i in range(100): oct(i)', 'gc.enable()').repeat(5))"
+
+          # https://stackoverflow.com/a/64034929/9577149 
+          ${pkgs.python3}/bin/python3 \
+          -c \
+          "_ = bytearray(1*1024*1024*1000)"
+
         '';
         installPhase = ''
           runHook preInstall
@@ -29337,4 +29350,30 @@ Refs.:
 - https://stackoverflow.com/a/56033450/9577149 
 
 
+
+```bash
+wget https://sourceforge.net/projects/android-x86/files/Release%209.0/android-x86_64-9.0-r2.iso/download
+```
+
+
+```bash
+qemu-img create -f qcow2 androidx86_hda.img 10G
+
+
+qemu-system-x86_64 \
+-enable-kvm \
+-m 2048 \
+-smp 2 \
+-cpu host \
+-device virtio-mouse-pci -device virtio-keyboard-pci \
+-serial mon:stdio \
+-boot menu=on \
+-net nic \
+-net user,hostfwd=tcp::5555-:22 \
+-display gtk,gl=on \
+-hda androidx86_hda.img \
+-cdrom android-x86_64-9.0-r2.iso
+
+-device virtio-vga,virgl=on \
+```
 
