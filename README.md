@@ -5712,6 +5712,107 @@ result/bin/hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), stat
 
 
 ```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+in 
+  pkgs.pkgsCross.aarch64-multiplatform.pkgsStatic.chrpath
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
+
+
+```bash
+grep -ci processor /proc/cpuinfo
+```
+
+```bash
+nix run nixpkgs#python3 -- -c 'import os; print(int(os.cpu_count() - 1))'
+```
+
+```bash
+nproc --all
+```
+
+
+```bash
+nproc --ignore=2
+```
+
+
+Makes one CPU go to 100%
+```bash
+cat /dev/zero > /dev/null
+```
+Refs.:
+- https://superuser.com/a/443500
+
+Other
+```bash
+sha256sum /dev/zero
+```
+
+
+```bash
+stress-ng --cpu $(nproc --all) --vm 2 --fork 8 --switch 4 --timeout 1m
+```
+
+```bash
+openssl speed -multi $(nproc --all)
+
+openssl speed -multi $(nproc --ignore=2)
+```
+Refs.:
+- https://superuser.com/a/1122250
+
+
+Exercise:
+
+In one terminal:
+```bash
+sha256sum /dev/zero
+```
+
+In an second terminal:
+```bash
+openssl speed -multi $(nproc --ignore=2)
+```
+
+And maybe in another use `btop`. 
+
+
+```bash
+nix \
+--cores $(nproc --ignore=2) \
+build \
+nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python3
+
+
+nix \
+--cores $(nproc --ignore=2) \
+build \
+--rebuild \
+nixpkgs#pkgsCross.aarch64-multiplatform-musl.pkgsStatic.python3
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/advanced-topics/cores-vs-jobs
+
+
+```bash
 nix build --no-link --print-build-logs --print-out-paths \
   nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.boehmgc \
 && nix build --no-link --print-build-logs --print-out-paths --rebuild \
@@ -7252,12 +7353,6 @@ nix-store \
 --print-dead \
 --option keep-derivations false \
 --option keep-outputs true
-
-
-nix store gc \
---verbose \
---option keep-derivations false \
---option keep-outputs false
 ```
 
 TODO:
@@ -7272,7 +7367,8 @@ gc \
 --option keep-failed false \
 --option keep-going false \
 --option keep-outputs false \
-&& nix-collect-garbage --delete-old
+&& nix-collect-garbage --delete-old \
+&& nix store optimise --verbose
 ```
 
 
@@ -11590,6 +11686,8 @@ Refs.:
 - https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html
 - https://github.com/NixOS/nixpkgs/issues/62832#issuecomment-1406628331
 - https://github.com/NixOS/nix/issues/3871
+
+Related: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-run#opt-extra-nix-path
 
 ```bash
 nix eval --expr 'with builtins; functionArgs fetchTree'
@@ -20205,7 +20303,7 @@ nix develop nixpkgs#hello \
 --command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
 
 # More "complex". It worked in an Ubuntu 22.04 with the nix single user
-nix develop nixpkgs#pkgsCross.aarch64-android.pkgsStatic.hello \
+nix --develop nixpkgs#pkgsCross.aarch64-android.pkgsStatic.hello \
 --command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild' \
 && EXPECTED=28e61e9395b22c7636c1e5ed5b78e02d449fb1c426a80577628a69f61a0e5d1d \
 && echo $EXPECTED  outputs/out/bin/hello | sha256sum -c
@@ -21231,6 +21329,11 @@ export ISO_PATH=/nix/store/7lcr5b4ic7fghx6arl0kb79a044r1brv-nixos-22.11.20221217
 export EXPECTED_SHA512=ce09cd8b0a2e0d5f9da2f921314417bf3f3904c7f11a590e7fde56c84a9ebecc78ee31faa7660efae332d4f6cc2bef129b3d214f2a53c52d7457d2869e310ebb
 echo $EXPECTED_SHA512  $ISO_PATH | sha512sum -c
 '
+```
+
+```bash
+
+
 
 #nix \
 #build \
@@ -21276,7 +21379,6 @@ echo $EXPECTED_SHA512  $ISO_PATH | sha512sum -c
 #)
 #'
 ```
-
 
 
 
@@ -28866,6 +28968,23 @@ parted --script /dev/vda -- \
 https://github.com/NixOS/nixpkgs/blob/b11ced7a9c1fc44392358e337c0d8f58efc97c89/nixos/lib/make-single-disk-zfs-image.nix#L260-L269
 
 
+```bash
+find ./\
+ -iname "some_arg" -type f\ # File(s) that you want to find at any hierarchical level.
+ ! -iname "some_arg" -type f\ # File(s) NOT to be found on any hirearchic level (exclude).
+ ! -path "./file_name"\ # File(s) NOT to be found at this hirearchic level (exclude).
+ ! -path "./folder_name/*"\ # Folder(s) NOT to be found on this Hirearchic level (exclude).
+ -exec grep -IiFl 'text_content' -- {} \; # Text search in the content of the found file(s) being case insensitive ("-i") and excluding binaries ("-I").
+```
+Refs.:
+- https://stackoverflow.com/a/70726712
+
+
+```bash
+# cat /proc/cpuinfo
+grep -ci processor /proc/cpuinfo
+nproc --all
+```
 
 What is the difference?
 ```bash
@@ -29376,4 +29495,12 @@ qemu-system-x86_64 \
 
 -device virtio-vga,virgl=on \
 ```
+Refs.:
+- https://linuxhint.com/android_qemu_play_3d_games_linux/
+
+
+https://help.clouding.io/hc/en-us/articles/4405454393756-How-to-virtualize-Android-with-QEMU-KVM
+https://stackoverflow.com/a/66006154
+https://wiki.lineageos.org/devices/
+https://www.android-x86.org/download.html
 

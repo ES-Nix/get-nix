@@ -4440,11 +4440,17 @@ RUN env \
  && echo \
  && pwd
 
-#RUN ls -al $(nix \
-#      build \
-#      --print-out-paths \
-#      --print-build-logs \
-#      nixpkgs#pkgsMusl.python311Packages.mmh3.dist)
+RUN nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#pkgsMusl.python311Packages.mmh3.dist
+
+RUN ls -alh $(nix \
+      build \
+      --print-out-paths \
+      --print-build-logs \
+      nixpkgs#pkgsMusl.python311Packages.mmh3.dist)
 
 RUN cp -v $(nix \
       build \

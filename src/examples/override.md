@@ -1008,6 +1008,7 @@ EOF
 export NIXPKGS_ALLOW_UNFREE=1
 
 nix \
+--cores $(nproc --ignore=2) \
 shell \
 --refresh \
 --impure \
@@ -1016,10 +1017,39 @@ shell \
 --command \
 python \
 -c \
-'import numpy as np; np.show_config(); print(np.__version__)'
+'
+import numpy as np; 
+np.show_config(); 
+
+print(numpy.__config__.show()); 
+print(np.__version__)
+'
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/python.section.md#missing-tkinter-module-standard-library-missing-tkinter-module-standard-library
+- https://stackoverflow.com/a/48665619
+
+TODO: compare and prove that it is working.
+env OPENBLAS_NUM_THREADS=1 python -c ...
+env MKL_NUM_THREADS=1 python -c ...
+
+os.environ['OPENBLAS_NUM_THREADS'] = '1' 
+os.environ['MKL_NUM_THREADS'] = '1'
+
+import mkl
+mkl.set_num_threads(2)
+https://stackoverflow.com/a/40255969
+
+```bash
+find ~ -path "$HOME/.local/share/containers/storage/*" -prune \
+\( -name '*.iso' -o -name '*.qcow2*' -o -name '*.img' -o -name 'result*' \) \
+-exec echo -n -- {} + | tr ' ' '\n'
+```
+Refs.:
+- https://stackoverflow.com/a/63523300
+- https://stackoverflow.com/a/47666562
+- https://stackoverflow.com/a/70726712
+
 
 
 ```bash
