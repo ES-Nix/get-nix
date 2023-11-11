@@ -24353,6 +24353,7 @@ Refs.:
 - https://github.com/NixOS/nix/issues/2869
 - https://github.com/NixOS/nix/pull/2890
 - https://github.com/NixOS/nixpkgs/pull/153194
+- https://github.com/NixOS/nixpkgs/pull/95536#issuecomment-685949757
 - https://github.com/NixOS/nix/issues/7417#issuecomment-1353781018
 - https://github.com/commercialhaskell/stack/issues/4673#issuecomment-744560055
 - https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/7
