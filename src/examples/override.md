@@ -1326,6 +1326,7 @@ EXPR_NIX=$(cat <<-'EOF'
     in
       (
         pkgs.pkgsStatic.nix.override { 
+          enableDocumentation = false;
           withAWS = false;
           withLibseccomp = false;
         }
@@ -1344,5 +1345,6 @@ build \
 --expr \
 "$EXPR_NIX")/bin/nix
 
-du -hs $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsStatic.nix)/bin/nix
+du -hs $(nix build --no-link --print-out-paths \
+--print-build-logs nixpkgs#pkgsStatic.nix)/bin/nix
 ```

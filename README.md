@@ -18494,34 +18494,152 @@ machine.succeed(\"systemctl is-active kubernetes.target\")
 
 
 ```bash
-# nix flake metadata nixpkgs --json | jq --join-output '.url'
-# github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07
-nix \
-build \
---impure \
---expr \
-'
+EXPR=$(cat <<-'EOF'
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/65c15b0a26593a77e65e4212d8d9f58d83844f07"; 
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"; 
   with legacyPackages.${builtins.currentSystem}; 
   with lib;
     nixosTest ({
-      name = "nixos-test-kubernetes";
+      name = "nixos-test-hello";
       nodes = {
         machine = { config, pkgs, ... }: {
-          boot.binfmt.emulatedSystems = [ "aarch64-android" ];
           environment.systemPackages = [
-            pkgsCross.aarch64-android.pkgsStatic.hello
+            hello
+          ];
+        };
+      };
+
+      testScript = ''
+        machine.succeed("hello")
+      '';
+    })
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-hello-cross";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          # boot.binfmt.emulatedSystems = ["aarch64-linux"];
+          environment.systemPackages = [
+            pkgsCross.aarch64-multiplatform.pkgsStatic.hello
           ];
         };
       };
     
       testScript = ''
-        "machine.succeed(\"hello | grep Hello\")"
+        machine.succeed("! hello")
       '';
     })
 )
-'
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-hello-cross";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = ["aarch64-linux"];
+          environment.systemPackages = [
+            pkgsCross.aarch64-multiplatform.pkgsStatic.hello
+          ];
+        };
+      };
+
+      testScript = ''
+        machine.succeed("hello")
+      '';
+    })
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+  with legacyPackages.${builtins.currentSystem}; 
+  with lib;
+    nixosTest ({
+      name = "nixos-test-dmidecode";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+        };
+      };
+
+      testScript = ''
+        machine.succeed("dmesg")
+      '';
+    })
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
+```bash
+dmidecode -t4 | egrep 'Status'
 ```
 
 
@@ -18941,6 +19059,42 @@ file $(nix build --no-link --print-out-paths nixpkgs#pkgsStatic.zsh)/bin/zsh
 nix build --no-link --print-out-paths --print-build-logs nixpkgs#pkgsStatic.bashInteractive
 ```
 
+```bash
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
+    with legacyPackages.${builtins.currentSystem};
+
+    dockerTools.buildImage {
+      name = "zsh";
+      tag = "0.0.1";
+      config = {
+        Entrypoint = let builtStaticExecutable = pkgs.runCommand
+            "test-static-zsh"
+            {}
+            "mkdir -pv $out/bin && cp -v ${pkgs.pkgsStatic.zsh}/bin/zsh $out/bin";
+            in
+             [ "${builtStaticExecutable}/bin/zsh" ];
+      };
+    }
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/zsh:0.0.1
+```
 
 ```bash
 nix \
@@ -18958,8 +19112,8 @@ build \
       name = "zsh";
       tag = "0.0.1";
       config = {
-        copyToRoot = "${(lib.getBin pkgs.pkgsStatic.zsh)}";
-        Cmd = [ "zsh" ];
+        # Entrypoint = [ "${(lib.getExe pkgs.pkgsStatic.zsh)}" ];
+        Cmd = [ "${(lib.getExe pkgs.pkgsStatic.zsh)}" ];
       };
     }
   )
@@ -19287,6 +19441,7 @@ in
 ```bash
 nix \
 eval \
+--json \
 --expr \
 '
 let
@@ -19299,7 +19454,7 @@ let
           };
 in
   nixos.config.environment.variables 
-'
+' | jq .
 ```
 
 
@@ -20299,11 +20454,12 @@ Refs.:
 
 
 ```bash
-nix develop nixpkgs#hello \
---command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+nix develop --pure-eval --ignore-environment nixpkgs#hello \
+--command sh -c \
+'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
 
 # More "complex". It worked in an Ubuntu 22.04 with the nix single user
-nix --develop nixpkgs#pkgsCross.aarch64-android.pkgsStatic.hello \
+nix develop nixpkgs#pkgsCross.aarch64-android.pkgsStatic.hello \
 --command sh -c 'cd "$TMPDIR" && source $stdenv/setup && genericBuild' \
 && EXPECTED=28e61e9395b22c7636c1e5ed5b78e02d449fb1c426a80577628a69f61a0e5d1d \
 && echo $EXPECTED  outputs/out/bin/hello | sha256sum -c
@@ -24188,11 +24344,14 @@ Refs.:
 - https://github.com/NixOS/nix/issues/7417, must check
 - https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/5, must check
 - https://github.com/NixOS/nix/issues/7138
+- https://github.com/NixOS/nix/issues/7138#issuecomment-1324505151
 - https://github.com/NixOS/nix/issues/3995#issuecomment-1376342823
 - https://github.com/NixOS/nix/issues/2208#issuecomment-412652155
 - https://github.com/NixOS/nix/issues/2868
 - https://github.com/NixOS/nix/issues/2869
 - https://github.com/NixOS/nix/pull/2890
+- https://github.com/NixOS/nixpkgs/pull/153194
+- https://github.com/NixOS/nix/issues/7417#issuecomment-1353781018
 - https://github.com/commercialhaskell/stack/issues/4673#issuecomment-744560055
 - https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/7
 - https://github.com/NixOS/nix/issues/3913#issuecomment-899001084, TODO: help there 
@@ -24305,7 +24464,7 @@ let
   nixpkgs = builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3";
 in
   with nixpkgs; 
-  with legacyPackages.${builtins.currentSystem}; 
+  with legacyPackages.${builtins.currentSystem};
     let
       nixos = (nixpkgs).lib.nixosSystem { 
                 system = "x86_64-linux"; 
@@ -24361,7 +24520,7 @@ shell \
 '
   (
     with builtins.getFlake "nixpkgs"; 
-    with legacyPackages.${builtins.currentSystem}; 
+    with legacyPackages.${builtins.currentSystem};
       (steam.override { extraPkgs = pkgs: [pkgs.fuse];}).run
   )
 '
@@ -28467,6 +28626,7 @@ run \
 ```
 
 
+ 
 ```bash
 EXPR=$(cat <<-'EOF'
 (
@@ -29352,6 +29512,16 @@ nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs/nixos"'
 
 ```bash
 ls -ahl $(nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs/nixos"')
+```
+
+```bash
+nix eval --impure --expr \
+'(import (builtins.getFlake "github:NixOS/nixpkgs") {}).lib.version'
+```
+
+```bash
+nix eval --impure --expr \
+'(import (builtins.getFlake "github:NixOS/nixpkgs") {}).path'
 ```
 
 

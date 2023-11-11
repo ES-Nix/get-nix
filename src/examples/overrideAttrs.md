@@ -4444,29 +4444,29 @@ RUN nix \
       build \
       --print-out-paths \
       --print-build-logs \
-      nixpkgs#pkgsMusl.python311Packages.mmh3.dist
+      nixpkgs#pkgsMusl.python310Packages.mmh3.dist
 
 RUN ls -alh $(nix \
       build \
       --print-out-paths \
       --print-build-logs \
-      nixpkgs#pkgsMusl.python311Packages.mmh3.dist)
+      nixpkgs#pkgsMusl.python310Packages.mmh3.dist)
 
 RUN cp -v $(nix \
       build \
       --print-out-paths \
       --print-build-logs \
-      nixpkgs#pkgsMusl.python311Packages.mmh3.dist)/mmh3.cpython-311-x86_64-linux-musl.so /root/mmh3.cpython-311-x86_64-linux-musl.so
+      nixpkgs#pkgsMusl.python310Packages.mmh3.dist)/mmh3-4.0.1-cp310-cp310-linux_x86_64.whl /root/mmh3-4.0.1-cp310-cp310-linux_x86_64.whl
 
 RUN ls -ahl /root/
 
 
-FROM python:3.11.5-alpine3.18 as test-mmh3-alpine
+FROM python:3.10.13-alpine3.18 as test-mmh3-alpine
 
 USER root
 
-COPY --from=build-from-nixos-cache-dist /root/mmh3-3.0.0-cp311-cp311-linux_x86_64.whl /root/mmh3.cpython-311-x86_64-linux-musl.so
-RUN pip3 install /root/mmh3.cpython-311-x86_64-linux-musl.so
+COPY --from=build-from-nixos-cache-dist /root/mmh3-4.0.1-cp310-cp310-linux_x86_64.whl /root/mmh3-4.0.1-cp310-cp310-linux_x86_64.whl
+RUN pip3 install /root/mmh3-4.0.1-cp310-cp310-linux_x86_64.whl
 
 
 RUN pip3 freeze
@@ -4482,8 +4482,8 @@ build \
 .
 
 
-podman kill conteiner-test-mmh3-alpine \
-&& podman rm --force conteiner-test-mmh3-alpine || true \
+podman kill conteiner-test-mmh3-alpine &> /dev/null || true \
+&& podman rm --force conteiner-test-mmh3-alpine &> /dev/null || true \
 && podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
@@ -4495,13 +4495,13 @@ run \
 --tty=true \
 --rm=true \
 localhost/test-mmh3-alpine:latest \
-bash \
+sh \
 -c \
 "
 python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
-# python -c 'import site; print(site.getsitepackages())'
-ldd /usr/local/lib/python3.11/site-packages/mmh3.cpython-311-x86_64-linux-gnu.so
-ls -ahl /lib/x86_64-linux-gnu/libstdc++.so.6
+python -c 'import site; print(site.getsitepackages())'
+#ldd /usr/local/lib/python3.10/site-packages/mmh3.cpython-310-x86_64-linux-gnu.so
+#ls -ahl /lib/ld-musl-x86_64.so.1
 "
 ```
 
