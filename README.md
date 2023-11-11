@@ -7385,7 +7385,7 @@ nix build --refresh github:ES-Nix/nix-qemu-kvm/dev#qemu.vm \
 
 ### Tests
 
-stdenvNoCC
+pkgs.stdenvNoCC.mkDerivation
 https://wellquite.org/posts/latex_fonts_and_nixos/
 
 #### Minimal build
@@ -24312,7 +24312,7 @@ TODO: `nix path-info --derivation .#foo`
 - https://github.com/NixOS/nixpkgs/issues/97176#issuecomment-1221379585
 
 
-TODO: 
+TODO: plan, user `pkgs.stdenvNoCC.mkDerivation for copy
 
 > For things downloaded with the builtin fetchers (`builtins.fetchTarball` and `builtins.fetchurl` should work too) 
 > I just found this workaround: By using indirect GC roots you can gcroot the whole ~/.cache/nix/tarballs directory:
@@ -24330,6 +24330,8 @@ https://github.com/NixOS/nix/issues/719#issuecomment-591712316
 +
 https://github.com/NixOS/nix/issues/954#issuecomment-365264077
 https://github.com/NixOS/nix/issues/6507
+
+
 
 ```bash
 test -d profiles || mkdir -v profiles
@@ -24360,6 +24362,33 @@ Refs.:
 - https://github.com/NixOS/nix/issues/7299 nix-build -E 'with import <nixpkgs> {}; closureInfo { rootPaths = [ (builtins.unsafeDiscardOutputDependency hello.drvPath) ]; }'
 
 
+Why it build evan before this merge?
+https://github.com/NixOS/nixpkgs/pull/153194
+```bash
+EXPR_NIX=$(cat <<-'EOF'
+  (
+    let
+       nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+       pkgs = import nixpkgs {};
+    in
+      pkgs.mkShell {
+        inputsFrom = [ pkgs.hello ];
+      }
+  )
+EOF
+)
+
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+```
+
+Only if on NixOS or setting some thing 
 ```bash
 nix-instantiate --eval --strict '<nixpkgs/nixos>' -A config.nix.settings
 ```
