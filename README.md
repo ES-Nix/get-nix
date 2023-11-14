@@ -16503,6 +16503,7 @@ nix eval nixpkgs#stdenv.isLinux
 nix eval nixpkgs#stdenv.is64bit
 nix eval --raw nixpkgs#stdenv.cc.bintools.dynamicLinker
 nix eval nixpkgs#stdenv.hostPlatform.isLittleEndian
+nix eval nixpkgs#stdenv.hostPlatform.parsed.cpu.significantByte.name
 nix eval --raw nixpkgs#stdenv.hostPlatform.libc
 nix eval --raw nixpkgs#stdenv.cc.targetPrefix
 # nix eval --raw nixpkgs#stdenv.lib.optionalString stdenv.is64bit "w"
@@ -27938,9 +27939,14 @@ python3 \
 ```
 
 
-Broken:
+
 ```bash
-nix build --no-link -L nixpkgs#pythonManylinuxPackages.manylinux1Package
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+github:NixOS/nixpkgs/release-22.11#pythonManylinuxPackages.manylinux1Package
 ```
 
 ```bash

@@ -2177,8 +2177,8 @@ Refs.:
 - https://stackoverflow.com/a/14902711 TODO: read
 - https://stackoverflow.com/a/53412829 TODO: read
 - https://github.com/lattera/glibc/blob/895ef79e04a953cac1493863bcae29ad85657ee1/include/features.h#L420
-
-
+- https://gcc.gnu.org/pipermail/gcc-patches/1999-October/021179.html
+- https://gcc.gnu.org/pipermail/gcc-patches/2012-November/353923.html
 
 ```bash
 strings /nix/store/vnwdak3n1w2jjil119j65k8mw1z23p84-glibc-2.35-224/lib/libc.so.6 \
@@ -2193,6 +2193,66 @@ nm -D -C /nix/store/vnwdak3n1w2jjil119j65k8mw1z23p84-glibc-2.35-224/lib/libc.so.
 | tail -n -2 \
 | tail -n +2
 ```
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C++ program that prints ???
+  gccVersion = pkgs.writeText "gcc-version.cpp" ''
+    #include <iostream>
+
+    #define STR_EXPAND(tok) #tok
+    #define STR(tok) STR_EXPAND(tok)
+    #define GCC_VERSION STR(__GNUC__) "." STR(__GNUC_MINOR__) "." STR(__GNUC_PATCHLEVEL__)
+    
+    int main()
+    {
+        std::cout << GCC_VERSION << std::endl;
+    }
+  '';
+in
+  pkgs.stdenv.mkDerivation {
+        name = "gcc-version";
+        src = gccVersion;
+        buildPhase = ''
+          g++ ${gccVersion} -o gcc-version
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp gcc-version  $out/bin/gcc-version
+          runHook postInstall
+        '';
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://cplusplus.com/forum/general/62328/
 
 
 ```bash
