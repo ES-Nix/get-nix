@@ -2205,20 +2205,100 @@ Refs.:
 
 ### nix statically built, WIP
 
-It should be working, specially after nix 2.10.0+.
-Take a look in:
-- https://discourse.nixos.org/t/nix-2-10-0-released/20291
-
-- See:
-> `~/.local/share/nix/root`
-
-May be?
-> `~/.local/share/nix/someuser`
 
 
-Things that may be automagically solved by not using the store in `/nix/store`:
+Things that may be "automagically" solved by not using the 
+store in `/nix/store` but in some other custom place 
+and defaulting to something in Mac like in GNU/Linux there is 
+`~/.local/share/nix/root` that must just work:
 - https://discourse.nixos.org/t/nix-var-nix-opt-nix-usr-local-nix/7101/66
+- https://discourse.nixos.org/t/change-my-mind-i-still-want-single-user-on-macos/16278
 
+
+```bash
+test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)
+test -G /nix/var/nix || sudo -k chown -Rv "$USER": /nix 
+test $(stat -c %a /nix/var/nix) -eq 0755 || sudo -k chmod -v 0755 /nix/var/nix
+```
+
+```bash
+sudo mkdir -pv -m 0666 /nix/var/nix
+```
+
+
+```bash
+test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)
+test -G /nix/var/nix || sudo -k chown -Rv "$USER": /nix 
+test $(stat -c %a /nix/var/nix) -eq 0755 || sudo -k chmod -v 0755 /nix/var/nix
+
+# COMMIT_REVISON_TO_PIN_NIXPKGS
+CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo no-curl-or-wget) \
+&& $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix \
+&& chmod -v +x nix \
+&& echo \
+&& ./nix \
+    --extra-experimental-features nix-command \
+    --extra-experimental-features flakes \
+    registry \
+    pin \
+    nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
+&& { ./nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+shell \
+--ignore-environment \
+--keep HOME \
+--keep USER \
+--max-jobs 0 \
+nixpkgs#busybox-sandbox-shell \
+nixpkgs#toybox \
+-c \
+sh<<'COMMANDS'
+echo $HOME
+echo $USER
+echo $PATH
+
+type cd \
+&& type echo \
+&& type export \
+&& type grep \
+&& type mkdir \
+&& type test
+
+mkdir -pv "$HOME"/.local/bin \
+&& mv -v nix "$HOME"/.local/bin \
+&& cd "$HOME"/.local/bin \
+&& echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile \
+&& echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.bashrc \
+&& test -d ~/.config/nix || mkdir -pv ~/.config/nix \
+&& echo 'experimental-features = nix-command flakes' | tee -a ~/.config/nix/nix.conf \
+&& ls
+
+
+COMMANDS
+} \
+&& . "$HOME"/.profile \
+&& nix flake metadata nixpkgs \
+&& nix \
+    --extra-experimental-features nix-command \
+    --extra-experimental-features flakes \
+    profile \
+    install \
+    -vv \
+    nixpkgs#nix \
+&& nix flake --version
+```
+
+
+```bash
+--profile "$HOME"/.nix-profile
+```
+
+```bash
+nix run nixpkgs#nix-info -- --markdown
+```
+
+TODO: and the `nix store --store some-dir-name`
 
 #### Install nix statically built
 
@@ -12997,7 +13077,40 @@ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPOK55vtFrqxd5idNzCd2nhr5K3ocoyw1JKWSM
 ```
 
 
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+  in
+    pkgs.python3.withPackages (p: with p; [ sympy ])
+)
+EOF
+)
 
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR" \
+--command \
+python3 \
+-c \
+'
+from sympy import roots
+from sympy.abc import x, a, b, c, d, e
+
+print(roots(a*x + b, x))
+print(roots(a*x**2 + b*x + c, x))
+# print(roots(a*x**3 + b*x**2 + c*x + d, x))
+# print(roots(a*x**4 + b*x**3 + c*x**2 + d*x + e, x))
+'
+```
+
+```
+
+TODO: why ssh ?
 ```bash
 ssh-add -l 1> /dev/null 2> /dev/null || eval $(ssh-agent -s)
 # There could be an race condition in here?
@@ -14133,7 +14246,7 @@ shell \
   python3.withPackages (p: with p; [ mmh3 ])
 )' \
 --command \
-python3 -c 'import mmh3; print(mmh3.hash128(bytes(123)))'
+python3 -c 'import mmh3; assert mmh3.hash128(bytes(123)) == 126000048256919600573431412872524959502'
 ```
 
 ```bash
@@ -14168,6 +14281,31 @@ python3 -c 'import geopandas as gpd; print(gpd.__version__)'
 ```
 
 ```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+  in
+    pkgs.python3.withPackages (p: with p; [ geopandas ])
+)
+EOF
+)
+
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR" \
+--command \
+python3 \
+-c \
+'import geopandas as gpd; print(gpd.__version__)'
+```
+
+
+
+```bash
 nix \
 shell \
 --impure \
@@ -14186,6 +14324,9 @@ python3 \
 -c \
 'import geopandas as gpd; print(gpd.__version__)'
 ```
+
+
+
 
 ```bash
 nix \
@@ -25750,6 +25891,14 @@ https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582
 
 I am against that, unless there is not a better way known.
 
+> [...] The workaround there tells to disable sandbox in nix config 
+> file, this is a important thing? Should that be disabled?
+> 
+> [...] extremely, its akin to disabling sandboxing in docker, a 
+> malicious build script could read all your files send them 
+> off to a server and you'd never notice
+> https://github.com/NixOS/nix/issues/3000#issuecomment-1002537498
+
 - https://github.com/NixOS/nixpkgs/blob/3fe1cbb848ea90827158bbd814c2189ff8043539/pkgs/development/tools/purescript/spago/default.nix#L39
 - https://zimbatm.com/notes/nix-packaging-the-heretic-way
 - https://discourse.nixos.org/t/is-there-a-way-to-mark-a-package-as-un-sandboxable/4174/2
@@ -29422,6 +29571,16 @@ run \
 nixpkgs#hello
 ```
 
+TODO: how to set it in a way that it never tries to update
+nix registry --help
+> The global registry, which is a file downloaded from the URL
+> specified by the setting flake-registry. It is cached locally and
+> updated automatically when it's older than tarball-ttl seconds. The
+> default global registry is kept in a GitHub repository 
+> https://github.com/NixOS/flake-registry.
+
+
+
 ```bash
 nix \
 --option eval-cache false \
@@ -29709,4 +29868,317 @@ https://help.clouding.io/hc/en-us/articles/4405454393756-How-to-virtualize-Andro
 https://stackoverflow.com/a/66006154
 https://wiki.lineageos.org/devices/
 https://www.android-x86.org/download.html
+
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+in
+  pkgs.stdenvNoCC.mkDerivation {
+        name = "moody";
+        src = pkgs.fetchFromGitHub {
+          hash = "sha256-duHgk7n7cUStZ+p5dzfKD/96RGKbKkKBnWlZh9Wfe7c=";
+          fetchSubmodules = true;
+          rev = "03ff45e8413969aaf12fd290030c14d8c05c07c1";
+          owner = "jturner314";
+          repo = "engineering-equations";
+          name = "jturner314";
+        };
+        buildPhase = ''
+          ls -alh
+        '';
+        installPhase = ''
+          runHook preInstall
+          #mkdir -p $out/bin
+          
+          runHook postInstall
+        '';
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+
+```
+
+
+```bash
+nix develop --pure-eval --ignore-environment nixpkgs#hello \
+--command sh -c \
+'cd "$TMPDIR" && source $stdenv/setup
+```
+
+#### nix from pacman
+
+
+
+```bash
+curl -L https://releases.nixos.org/nix/nix-2.18.1/install | sh -s -- --no-daemon
+```
+
+```bash
+curl -L https://releases.nixos.org/nix/nix-2.18.1/install | sh -s -- --daemon
+```
+
+
+
+#### with flakes and registry pin
+
+TODO: LC_ALL=en_US.UTF-8
+
+```bash
+yes | sudo pacman -S nix \
+&& sudo systemctl enable nix-daemon \
+&& sudo systemctl start nix-daemon \
+&& sudo systemctl status nix-daemon \
+&& sudo chown -v "$(id -nu)":"$(id -ng)" /nix/var/nix/daemon-socket/socket \
+&& sudo usermod -aG nix-users "$(id -nu)" \
+&& sudo systemctl status nix-daemon \
+&& test -d /etc/nix || sudo mkdir -pv /etc/nix \
+&& echo 'experimental-features = nix-command flakes' | sudo tee -a /etc/nix/nix.conf \
+&& sudo -i nix registry list \
+&& sudo -i nix -vv registry pin nixpkgs github:NixOS/nixpkgs/911ad1e67f458b6bcf0278fa85e33bb9924fed7e \
+&& sudo -i nix flake metadata nixpkgs \
+&& test -d ~/.config/nix || mkdir -pv ~/.config/nix \
+&& echo 'experimental-features = nix-command flakes' | tee -a ~/.config/nix/nix.conf \
+&& sudo su -l $(id -un) -c sh -c \
+      '
+      nix \
+      --extra-experimental-features nix-command \
+      --extra-experimental-features flakes \
+      -vv registry pin nixpkgs github:NixOS/nixpkgs/911ad1e67f458b6bcf0278fa85e33bb9924fed7e
+      ' \
+&& sudo su -l $(id -un) -c 'nix flake metadata nixpkgs'
+```
+Refs.:
+- https://wiki.archlinux.org/title/Nix
+- https://unix.stackexchange.com/questions/52277/pacman-option-to-assume-yes-to-every-question#comment830985_293537
+- https://github.com/NixOS/nix/issues/9203
+- https://github.com/NixOS/nix/issues/879#issuecomment-410904367
+- https://unix.stackexchange.com/a/274965
+- https://github.com/NixOS/nix/issues/5909#issuecomment-1248849316
+
+
+
+
+#### with channels
+
+Helpers to collect metadata:
+```bash
+yes | sudo pacman -S neofetch which 
+```
+
+```bash
+yes | sudo pacman -S nix \
+&& sudo systemctl enable nix-daemon \
+&& sudo systemctl start nix-daemon \
+&& sudo systemctl status nix-daemon \
+&& sudo usermod -aG nix-users "$(id -nu)" \
+&& sudo -k reboot
+```
+Refs.:
+- 
+
+
+
+```bash
+nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs \
+&& nix-channel --update \
+&& nix-env -iA nixpkgs.hello \
+&& hello \
+&& ldd $(readlink -f $(which hello)) \
+&& nix-env --uninstall hello \
+&& nix-channel --remove nixpkgs
+```
+
+
+```bash
+nix-channel --add https://nixos.org/channels/nixos-23.05 nixos \
+&& nix-channel --update \
+&& nix-env -iA nixos.hello \
+&& hello \
+&& ldd $(readlink -f $(which hello)) \
+&& nix-env --uninstall hello \
+&& nix-channel --remove nixos
+```
+
+
+#### extra 
+
+
+```bash
+pacman -Qikk nix
+```
+Refs.:
+- https://bbs.archlinux.org/viewtopic.php?pid=2127490#p2127490
+
+
+```bash
+Name            : nix
+Version         : 2.18.1-5
+Description     : A purely functional package manager
+Architecture    : x86_64
+URL             : https://nixos.org/nix
+Licenses        : LGPL
+Groups          : None
+Provides        : None
+Depends On      : glibc  gcc-libs  aws-sdk-cpp  aws-crt-cpp  boost-libs
+                  libboost_context.so=1.83.0-64  brotli  libbrotlienc.so=1-64
+                  libbrotlidec.so=1-64  curl  libcurl.so=4-64  editline
+                  libeditline.so=1-64  gc  libarchive  libarchive.so=13-64  libcpuid
+                  libcpuid.so=16-64  lowdown  liblowdown.so=3-64  libseccomp
+                  libseccomp.so=2-64  libsodium  libsodium.so=26-64  nix-busybox  openssl
+                  libcrypto.so=3-64  sqlite  libsqlite3.so=0-64
+Optional Deps   : None
+Required By     : None
+Optional For    : None
+Conflicts With  : None
+Replaces        : None
+Installed Size  : 10.41 MiB
+Packager        : Caleb Maclennan <alerque@archlinux.org>
+Build Date      : Thu Oct 12 09:49:53 2023
+Install Date    : Wed Nov 15 18:53:31 2023
+Install Reason  : Explicitly installed
+Install Script  : Yes
+Validated By    : Signature
+
+nix: 356 total files, 0 altered files
+```
+
+```bash
+nix run nixpkgs#nix-info -- --markdown
+```
+
+```bash
+
+```
+
+```bash
+pacman -Qikk glibc
+```
+Refs.:
+- https://bbs.archlinux.org/viewtopic.php?pid=2127490#p2127490
+
+
+```bash
+Name            : glibc
+Version         : 2.38-7
+Description     : GNU C Library
+Architecture    : x86_64
+URL             : https://www.gnu.org/software/libc
+Licenses        : GPL  LGPL
+Groups          : None
+Provides        : None
+Depends On      : linux-api-headers>=4.10  tzdata  filesystem
+Optional Deps   : gd: for memusagestat
+                  perl: for mtrace
+Required By     : alsa-lib  argon2  attr  audit  aws-c-common  base  bash  binutils  brotli
+                  btrfs-progs  bzip2  coreutils  device-mapper  diffutils  dosfstools  editline
+                  efibootmgr  efivar  expat  file  findutils  gawk  gcc-libs  gdbm  gnupg  gnutls
+                  grep  gzip  icu  iproute2  jansson  json-c  kbd  keyutils  kmod  krb5  libassuan
+                  libasyncns  libbpf  libcap  libcap-ng  libcpuid  libedit  libelf  libffi
+                  libgpg-error  libksba  libmd  libmnl  libnfnetlink  libnghttp2  libnl  libogg
+                  libp11-kit  libpcap  libsasl  libseccomp  libsndfile  libsodium  libtasn1
+                  libtirpc  libunistring  libusb  libutempter  libverto  libxau  libxcb  libxcrypt
+                  libxdmcp  lowdown  lz4  lzo  mkinitcpio-busybox  mpfr  ncurses  nettle  nix  npth
+                  openssh  openssl  opus  pacman  pam  pciutils  pinentry  popt  procps-ng
+                  readline  sed  shadow  sqlite  sudo  systemd-libs  tar  util-linux-libs  xxhash
+                  zlib  zstd
+Optional For    : tzdata
+Conflicts With  : None
+Replaces        : None
+Installed Size  : 47.33 MiB
+Packager        : Frederik Schwan <freswa@archlinux.org>
+Build Date      : Tue Oct 3 20:20:10 2023
+Install Date    : Sun Oct 15 12:04:02 2023
+Install Reason  : Installed as a dependency for another package
+Install Script  : Yes
+Validated By    : Signature
+
+glibc: 1602 total files, 0 altered files
+```
+
+
+
+```bash
+neofetch --json
+```
+
+
+
+```bash
+{
+    "OS": "Arch Linux x86_64",
+    "Host": "KVM/QEMU (Standard PC (i440FX + PIIX, 1996) pc-i440fx-7.1)",
+    "Kernel": "6.5.7-arch1-1",
+    "Uptime": "22 mins",
+    "Packages": "175 (pacman), 2 (nix-user)",
+    "Shell": "bash 5.1.16",
+    "Resolution": "1024x768",
+    "Terminal": "/dev/pts/0",
+    "CPU": "Intel (Skylake, IBRS) (8) @ 2.400GHz",
+    "GPU": "00:02.0 Cirrus Logic GD 5446",
+    "Memory": "214MiB / 2975MiB",
+    "Version": "7.1.0"
+}
+```
+
+
+
+```bash
+ldd $(readlink -f $(which nix))
+ldd $(readlink -f $(which hello))
+ldd $(readlink -f $(which pgadmin4))
+```
+
+
+```bash
+patchelf --print-needed $(readlink -f $(which nix))
+patchelf --print-needed $(readlink -f $(which hello))
+patchelf --print-needed $(readlink -f $(which pgadmin4))
+```
+
+
+```bash
+# nix profile install github:NixOS/nixpkgs/release-23.05#hello
+
+nix profile install \
+github:NixOS/nixpkgs/48f92ae9de20777628d2a92d9d50fb4e2ab3d0f1#hello
+
+nix profile install \
+github:NixOS/nixpkgs/48f92ae9de20777628d2a92d9d50fb4e2ab3d0f1#pgadmin4
+```
+Refs.:
+- 
+
+
+
+```bash
+sudo su -l vagrant -c id
+sudo su -l $(id -un) -c sh -c 'id'
+```
+
+
+
 

@@ -2756,6 +2756,35 @@ sh \
 'ldd $(which ffmpeg) | wc -l'
 ```
 
+```bash
+podman run --rm alpine sh -c \
+'apk add ffmpeg && ldd $(which ffmpeg) && ldd $(which ffmpeg) | wc -l'
+
+podman run --rm ubuntu bash -c \
+'
+apt-get update -y \
+&& apt-get install -y ffmpeg \
+&& ldd $(which ffmpeg) \
+&& ldd $(which ffmpeg) | wc -l
+'
+
+podman run --rm ubuntu bash -c \
+'
+apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y ffmpeg \
+&& ldd $(which ffmpeg) \
+&& ldd $(which ffmpeg) | wc -l
+'
+
+podman run --rm fedora bash -c \
+'
+dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+&& dnf install -y https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm \
+&& yum -y install ffmpeg which \
+&& ldd $(which ffmpeg) \
+&& ldd $(which ffmpeg) | wc -l
+'
+```
 
 TODO: how to find the n biggest ones?
 ```bash
