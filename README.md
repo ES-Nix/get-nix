@@ -12346,26 +12346,7 @@ ln -sfv "${HOME}"/.local/share/nix/root"$(readlink result)"/bin "${HOME}"/.nix-p
 
 https://github.com/YorikSar/nixos-vm-on-macos/tree/24025c73634e580045744c169be1be167b12fe50#broken-sudo
 
-```bash
-# WIP
-nix \
-build \
---impure \
---expr \
-'(
-  with builtins.getFlake "github:NixOS/nixpkgs/9a17f325397d137ac4d219ecbd5c7f15154422f4";
-  with legacyPackages.${builtins.currentSystem};
-  (pkgsStatic.nix.overrideAttrs
-    (old:
-      {
-        stateDir = "/home/abcuser/.local/share/nix/root/nix/var";
-        storeDir = "/home/abcuser/.local/share/nix/root/nix/store";
-        makeFlags = (old.makeFlags or []) ++ ["USE_SYSTEMD=no"];
-      }
-    )
-  )
-)'
-```
+
 
 
 ```bash
@@ -12412,19 +12393,33 @@ $NAME run --extra-experimental-features 'nix-command flakes' nixpkgs#hello
 ```
 
 ```bash
-EXPR_NIX='
-  (
-      let
-        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
-        pkgs = import nixpkgs { };    
-      in
-        (pkgs.pkgsStatic.nix.override {
-                                       storeDir = "/tmp/nix/store";
-                                       stateDir = "/tmp/nix/var";
-                                       confDir = "/tmp/nix/etc";
-         })
-  )
-'
+EXPR=$(cat <<-EOF
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+    pkgs = import nixpkgs { };    
+  in
+    (pkgs.pkgsStatic.nix.override {
+                                   storeDir = "/tmp/nix/store";
+                                   stateDir = "/tmp/nix/var";
+                                   confDir = "/tmp/nix/etc";
+     })
+)
+EOF
+)
+
+
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+
+
+# nix show-derivation --impure --expr "$EXPR_NIX" | jq -r '.[].env.configureFlags' | tr ' ' '\n'
 
 OUT_PATH_STAGE_1=$(
     nix \
@@ -12434,8 +12429,18 @@ OUT_PATH_STAGE_1=$(
     --print-build-logs \
     --print-out-paths \
     --expr \
-    "$EXPR_NIX"
+    "$EXPR"
 )/bin/nix
+
+
+readelf -p .rodata "$OUT_PATH_STAGE_1" | grep -F '/tmp/nix/store'
+"$OUT_PATH_STAGE_1" eval --expr 'builtins.storeDir'
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR_NIX"
 
 cp -v "$OUT_PATH_STAGE_1" nix-stage-1
 
@@ -12454,62 +12459,10 @@ build \
 #)/bin/nix
 #cp -v "$OUT_PATH_STAGE_2" nix-stage-2
 ```
-
-```bash
-cat > Containerfile << 'EOF'
-FROM alpine:latest
-LABEL maintainer="Vivek Gite webmater@cyberciti.biz"
-RUN apk add --update --no-cache openssh openssh-client
-RUN echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
-RUN adduser -h /home/vivek -s /bin/sh -D vivek
-RUN echo -n 'vivek:123' | chpasswd
-ENTRYPOINT ["/entrypoint.sh"]
-EXPOSE 22
-COPY entrypoint.sh /
-EOF
-
-cat > entrypoint.sh << 'EOF'
-#!/bin/sh
-ssh-keygen -A
-exec /usr/sbin/sshd -D -e "$@"
-#!/bin/sh
-ssh-keygen -A
-exec /usr/sbin/sshd -D -e "$@"
-EOF
-
-chmod +x -v entrypoint.sh
-
-docker build --file Containerfile -t alpine-sshd .
-
-docker run --name sshd_app -d -p 22:22 alpine-sshd:latest
-```
-
-```bash
-cat > Containerfile << 'EOF'
-FROM alpine:latest
-
-RUN apk add --no-cache openssh-client
-
-EOF
-
-cat > entrypoint.sh << 'EOF'
-#!/bin/sh
-ssh-keygen -A
-exec /usr/sbin/sshd -D -e "$@"
-#!/bin/sh
-ssh-keygen -A
-exec /usr/sbin/sshd -D -e "$@"
-EOF
-
-chmod +x -v entrypoint.sh
-
-docker build --file Containerfile -t alpine-sshd .
-
-docker run --name sshd_app -d -p 22:22 alpine-sshd:latest
-```
-
-
-
+Refs.:
+- 
+./nix --option nix-path nixpkgs=flake:nixpkgs eval --impure --expr 'builtins.nixPath'
+nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs"'
 
 ```bash
 cat > Containerfile << 'EOF'
