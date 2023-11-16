@@ -30191,7 +30191,7 @@ Refs.:
 
 
 
-
+latexmk, and Python 3 with the numpy, scipy, and matplotlib:
 ```bash
 EXPR=$(cat <<-'EOF'
 (
