@@ -5874,6 +5874,107 @@ openssl speed -multi $(nproc --ignore=2)
 
 And maybe in another use `btop`. 
 
+#### pkgsCross + pkgsStatic
+
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsStatic.hello.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.hello.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.bashInteractive.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.bashInteractive.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.zsh.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.zsh.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix --cores $(nproc --ignore=2) build --no-link --print-out-paths nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.python3.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix --cores $(nproc --ignore=2) build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.python3.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix --cores $(nproc --ignore=2) build --no-link --print-out-paths nixpkgs#pkgsCross.raspberryPi.pkgsStatic.python3.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix --cores $(nproc --ignore=2) build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.raspberryPi.pkgsStatic.python3.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+```bash
+EXPECTED_SHA512SUM=$(sha512sum $(
+nix --cores $(nproc --ignore=3) build --no-link --print-out-paths nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.python3.out
+  )/bin/hello | cut -d' ' -f1)
+echo "$EXPECTED_SHA512SUM" $(
+nix --cores $(nproc --ignore=2) build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.python3.out
+  )/bin/hello | sha512sum --check --quiet
+```
+
+
 
 ```bash
 nix \
@@ -5909,36 +6010,6 @@ nix build --no-link --print-out-paths nixpkgs#pkgsStatic.readline.out
 )/lib/libreadline.a
 ```
 
-
-```bash
-sha256sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsStatic.nix.out
-  )/bin/nix \
-&& sha256sum $(
-  nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.nix.out
-)/bin/nix
-```
-
-```bash
-sha256sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
-  )/lib/libreadline.a \
-&& sha256sum $(
-  nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
-)/lib/libreadline.a
-```
-
-
-
-
-```bash
-sha256sum $(
-nix build --no-link --print-out-paths nixpkgs#tts
-  )/lib/libreadline.a \
-&& sha256sum $(
-  nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
-)/lib/libreadline.a
-```
 
 
 
@@ -28383,6 +28454,7 @@ The nix language fu:
 - https://teu5us.github.io/nix-lib.html
 - https://github.com/NixOS/nixpkgs/blob/b11ced7a9c1fc44392358e337c0d8f58efc97c89/nixos/lib/make-multi-disk-zfs-image.nix#L122-L123
 - https://github.com/NixOS/nixpkgs/blob/04ba740f89b23001077df136c216a885371533ad/pkgs/development/tools/build-managers/cmake/default.nix#L132-L136
+- https://nixos.wiki/wiki/Nix_Language_Quirks
 - https://nixos.wiki/wiki/C
 
 
@@ -29787,16 +29859,36 @@ Refs.:
 - https://stackoverflow.com/a/56033450/9577149 
 
 
+### What about Android?
 
+
+Part 1
 ```bash
 wget https://sourceforge.net/projects/android-x86/files/Release%209.0/android-x86_64-9.0-r2.iso/download
+```
+Refs.:
+- https://www.android-x86.org/source.html
+- https://www.android-x86.org/documentation/qemu.html
+- https://github.com/termux/termux-packages/releases
+
+Part 2
+```bash
+qemu-img create -f qcow2 androidx86_hda.img 10G
+```
+
+
+Part 3
+```bash
+qemu-kvm \
+-net nic \
+-net user \
+-cdrom android-x86_64-9.0-r2.iso \
+-hda androidx86_hda.img \
+-boot d
 ```
 
 
 ```bash
-qemu-img create -f qcow2 androidx86_hda.img 10G
-
-
 qemu-system-x86_64 \
 -enable-kvm \
 -m 2048 \
@@ -29815,12 +29907,10 @@ qemu-system-x86_64 \
 ```
 Refs.:
 - https://linuxhint.com/android_qemu_play_3d_games_linux/
-
-
-https://help.clouding.io/hc/en-us/articles/4405454393756-How-to-virtualize-Android-with-QEMU-KVM
-https://stackoverflow.com/a/66006154
-https://wiki.lineageos.org/devices/
-https://www.android-x86.org/download.html
+- https://help.clouding.io/hc/en-us/articles/4405454393756-How-to-virtualize-Android-with-QEMU-KVM
+- https://stackoverflow.com/a/66006154
+- https://wiki.lineageos.org/devices/
+- https://www.android-x86.org/download.html
 
 
 
@@ -29883,16 +29973,6 @@ nix develop --pure-eval --ignore-environment nixpkgs#hello \
 ```
 
 #### nix from pacman
-
-
-
-```bash
-curl -L https://releases.nixos.org/nix/nix-2.18.1/install | sh -s -- --no-daemon
-```
-
-```bash
-curl -L https://releases.nixos.org/nix/nix-2.18.1/install | sh -s -- --daemon
-```
 
 
 
@@ -30133,5 +30213,29 @@ sudo su -l $(id -un) -c sh -c 'id'
 ```
 
 
+```bash
+test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)
+test -G /nix/var/nix || sudo -k chown -Rv "$USER": /nix 
+test $(stat -c %a /nix/var/nix) -eq 0755 || sudo -k chmod -v 0755 /nix/var/nix
+
+curl \
+--proto '=https' \
+--tlsv1.2 \
+-sSf \
+-L \
+https://install.determinate.systems/nix | sh -s -- install --no-confirm --diagnostic-endpoint="" \
+&& . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+```
+Refs.:
+- https://crates.io/crates/nix-installer/0.15.1
 
 
+```bash
+bash-prompt-prefix = (nix:$name)\040
+experimental-features = flakes nix-command repl-flake
+nix-path = nixpkgs=flake:nixpkgs
+keep-outputs = true
+keep-build-log = true
+keep-derivations = true
+keep-env-derivations = true
+```
