@@ -30262,6 +30262,8 @@ TODO: factorial and gamma in Rust
 https://stackoverflow.com/questions/59206653/how-to-calculate-21-factorial-in-rust/69534350#69534350
 https://codereview.stackexchange.com/questions/116850/gamma-function-in-rust
 
+TODO: Someone improved my code by 40,832,277,770%
+
 
 Symbolic:
 - https://github.com/iurisegtovich/PyTherm-applied-thermodynamics/blob/master/contents/main-lectures/4-sympy-vdWEoS-analytical-solutions.ipynb
