@@ -12531,9 +12531,13 @@ build \
 #cp -v "$OUT_PATH_STAGE_2" nix-stage-2
 ```
 Refs.:
-- 
+- https://github.com/NixOS/nix/pull/7588/files#diff-206b9ce276ab5971a2489d75eb1b12999d4bf3843b7988cbe8d687cfde61dea0R329-R336
+
+```bash
 ./nix --option nix-path nixpkgs=flake:nixpkgs eval --impure --expr 'builtins.nixPath'
 nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs"'
+```
+
 
 ```bash
 cat > Containerfile << 'EOF'
