@@ -26165,6 +26165,11 @@ https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582
 
 I am against that, unless there is not a better way known.
 
+
+[Jörg 'Mic92' Thalheim - About Nix sandboxes and breakpoints (NixCon 2018)](https://www.youtube.com/embed/ULqoCjANK-I?start=853&end=963&version=3), start=853&end=963
+We have that, lets use it!
+
+
 > [...] The workaround there tells to disable sandbox in nix config 
 > file, this is a important thing? Should that be disabled?
 > 
@@ -27128,6 +27133,20 @@ Refs.:
 -
 
 
+
+```bash
+npm list --prod --depth=0
+```
+
+```bash
+npm list --prod --all
+```
+
+```bash
+yarn info @angular/router@4.4.7 dependencies
+```
+
+http://npm.anvaka.com/#/view/2d/tailwindcss
 
 
 ### vscode
@@ -29959,6 +29978,8 @@ github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.nix
 
 [Nix Multi-User Installation Without Default Channel](https://dev.to/drsensor/nix-multi-user-installation-without-default-channel-45nd)
 
+https://stackoverflow.com/a/57013777
+
 
 The syntax
 ```bash
@@ -30270,6 +30291,9 @@ Symbolic:
 - https://thermo.readthedocs.io/thermo.eos_volume.html
 
 
+Even deeper: Automatic Code Generation with SymPy
+https://www.sympy.org/scipy-2017-codegen-tutorial/
+https://www.youtube.com/watch?v=5jzIVp6bTy0
 
 #### determinate systems nix installer
 
