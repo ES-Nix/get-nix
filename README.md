@@ -6,6 +6,7 @@ Is an unofficial wrapper of the nix installer, unstable for now!
 
 https://nix.dev/tutorials/install-nix
 https://docs.staging.mozilla-releng.net/develop/install-nix.html
+https://github.com/DeterminateSystems/nix-installer
 
 # Contributing locally
 
@@ -26169,6 +26170,9 @@ I am against that, unless there is not a better way known.
 [Jörg 'Mic92' Thalheim - About Nix sandboxes and breakpoints (NixCon 2018)](https://www.youtube.com/embed/ULqoCjANK-I?start=853&end=963&version=3), start=853&end=963
 We have that, lets use it!
 
+versus
+
+[NixCon Paris 2022 - Day 2](https://www.youtube.com/embed/-hsxXBabdX0?start=20509&end=20546&version=3), start=20509&end=20546
 
 > [...] The workaround there tells to disable sandbox in nix config 
 > file, this is a important thing? Should that be disabled?
@@ -30019,6 +30023,7 @@ nix eval --impure --expr \
 ```
 
 TODO: it is open now 16/11/2023 13:40:51:849
+[Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=190&end=275&version=3), start=190&end=275
 https://github.com/NixOS/nix/pull/7871#issuecomment-1675973522
 https://github.com/NixOS/nix/pull/7871#issuecomment-1446418480
 
