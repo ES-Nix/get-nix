@@ -1628,6 +1628,18 @@ Refs.:
 
 ## The new CLI commands
 
+
+Not recommended commands:
+> Nothing that can be done here. This is nix-env behavior and the advice 
+> is to never use `nix-env -i`.
+> https://github.com/NixOS/nixpkgs/issues/126036#issuecomment-856998973
+> https://github.com/NixOS/nixpkgs/pull/126038#issuecomment-856999919
+
+
+> The only alternative as far as I know is the experimental `nix profile` command.
+> https://github.com/NixOS/nixpkgs/issues/126036#issuecomment-860447915
+
+
 [Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
 
 ```bash
@@ -5889,9 +5901,13 @@ nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.hello.out
 
 
 ```bash
+# EXPECTED_SHA512SUM_OLD=
 EXPECTED_SHA512SUM=$(sha512sum $(
 nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
   )/bin/hello | cut -d' ' -f1)
+
+echo "$EXPECTED_SHA512SUM"
+
 echo "$EXPECTED_SHA512SUM" $(
 nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
   )/bin/hello | sha512sum --check --quiet
@@ -11738,6 +11754,13 @@ Refs.:
 ```
 Refs.:
 - https://discourse.nixos.org/t/flakes-error-error-attribute-outpath-missing/18044/2
+
+
+```bash
+nix registry list | grep flake:nixpkgs
+```
+Refs.:
+- https://discourse.nixos.org/t/could-we-robustly-protect-against-errors-version-glibc-2-33/18343/13
 
 
 TODO:
@@ -22996,7 +23019,7 @@ podman run -it --rm docker.io/library/alpine:latest
 
 
 
-##### NixOS OCI home-manager
+##### NixOS OCI with home-manager
 
 ```bash
 cat > flake.nix << 'EOF'
@@ -23128,6 +23151,7 @@ Refs.:
 
 
 ##### Broken:
+
 ```bash
 nix build --print-build-logs --print-out-paths github:nix-community/NixOS-WSL#nixosConfigurations.mysystem.config.system.build.tarball
 cat $(readlink -f result)/tarball/nixos-wsl-x86_64-linux.tar.gz | podman import --os "NixOS" - nixos-image:latest
@@ -23345,13 +23369,13 @@ cat > flake.nix << 'EOF'
                         isSystemUser = true;
                         description = "nix user";
                         extraGroups = [
-                          "networkmanager"
-                          "libvirtd"
-                          "wheel"
-                          "nixgroup"
                           "docker"
                           "kvm"
+                          "libvirtd"
+                          "networkmanager"
+                          "nixgroup"
                           "qemu-libvirtd"
+                          "wheel"
                         ];
                         packages = with pkgs; [
                           # firefox
@@ -23456,8 +23480,8 @@ cat > flake.nix << 'EOF'
 
                       environment.systemPackages = with pkgs; [
                         cacert
-                        #hello
-                        pkgsCross.aarch64-multiplatform.pkgsStatic.hello
+                        # hello
+                        # pkgsCross.aarch64-multiplatform.pkgsStatic.hello
                         figlet
                         podman
                         sudo
@@ -24758,7 +24782,7 @@ test -L profiles/dev-shell-default \
 || nix build $(nix eval --impure --raw .#devShells.x86_64-linux.default.drvPath) --out-link profiles/dev-shell-default
 ```
 Refs.:
-- https://github.com/NixOS/nix/issues/4250#issuecomment-799264241, must check
+- https://github.com/NixOS/nix/issues/4250#issuecomment-799264241, must check by Eelco
 - https://gist.github.com/tpwrules/34db43e0e2e9d0b72d30534ad2cda66d#file-flake-nix-L28, must check
 - https://github.com/NixOS/nix/issues/7417, must check
 - https://discourse.nixos.org/t/how-are-you-keeping-devshell-dependencies-live-in-store/16730/5, must check
@@ -29595,6 +29619,11 @@ done
 ```
 
 
+```bash
+ps axo pid,args,pmem,rss,vsz --sort -pmem,-rss,-vsz | head -2
+```
+
+
 
 ```bash
 parted --script /dev/vda -- \
@@ -30330,3 +30359,10 @@ keep-build-log = true
 keep-derivations = true
 keep-env-derivations = true
 ```
+
+
+TODO: test it!
+```bash
+rm -frv ~/.nix-profile ~/.nix-defexpr ~/.zshenv ~/.z
+```
+

@@ -907,11 +907,7 @@ develop \
 '(
   with builtins.getFlake "github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a"; 
   with legacyPackages.${builtins.currentSystem};
-  (awscli.override 
-    { 
-      python3 = python38; 
-    }
-  )
+
 )' \
 --command \
 python --version
@@ -936,6 +932,49 @@ python --version
 ```
 Refs.:
 - https://github.com/NixOS/nixpkgs/blob/d1ca40ea766da1b639937084d18d3e54e4e5da1b/pkgs/tools/admin/awscli/default.nix#L52-L63
+
+
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+
+        imageEnv = pkgs.buildEnv {
+          name = "python3-awscli-env";
+          paths = with pkgs.pkgsStatic; [ 
+            bashInteractive 
+            coreutils 
+            python3 
+            (hiPrio awscli)
+          ];
+        };
+        pauseImage = pkgs.dockerTools.buildImage {
+          name = "python3-awscli";
+          tag = "latest";
+          copyToRoot = imageEnv;
+          config.Entrypoint = [ "/bin/python3" ];
+        };
+      in
+        pauseImage
+  )
+'
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/k3s-pause:latest
+```
 
 
 
@@ -2911,11 +2950,17 @@ ls -al $(nix build --print-out-paths nixpkgs#stdenv.cc.cc.lib)/lib
 
 
 
-### Trick to troubleshooting, master the nix develop
+### Trick to troubleshooting, mastering the nix develop
 
 > Note: the nix-shell is from the legacy CLI
 https://nixos.org/manual/nix/stable/#managing-build-environments
 https://stackoverflow.com/a/31627258
+
+
+> The replacement is the `nix develop` command which uses the devShell.${system}` flake 
+> output if it exists or `defaultPackage.${system}` otherwise.
+> https://github.com/NixOS/nix/issues/2854#issuecomment-673923349 by Eelco
+
 
 Legacy, do not use.
 ```bash
