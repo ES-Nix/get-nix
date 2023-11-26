@@ -1763,6 +1763,89 @@ Refs.:
 - https://unix.stackexchange.com/questions/452559/what-is-etc-timezone-used-for#comment822484_452566 FHS
 - https://wiki.archlinux.org/title/System_time
 
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.18.3 as alpine-with-ca-certificates-tzdata
+# FROM docker.io/library/python:3.9.18-alpine3.18 as alpine-with-ca-certificates-tzdata
+
+# https://stackoverflow.com/a/69918107
+# https://serverfault.com/a/1133538
+# https://wiki.alpinelinux.org/wiki/Setting_the_timezone
+# https://bobcares.com/blog/change-time-in-docker-container/
+# https://github.com/containers/podman/issues/9450#issuecomment-783597549
+# https://www.redhat.com/sysadmin/tick-tock-container-time
+ENV TZ=America/Recife
+
+RUN apk update \
+ && apk \
+          add \
+          --no-cache \
+          ca-certificates \
+          tzdata \
+          shadow \
+ && mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser \
+ && echo \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || groupadd kvm \
+ && usermod --append --groups kvm nixuser \
+ && echo 'End kvm stuff!' \
+ && echo 'Start tzdata stuff' \
+ && (test -d /etc || mkdir -pv /etc) \
+ && cp -v /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
+ && apk del tzdata shadow \
+ && echo 'End tzdata stuff!' 
+
+# sudo sh -c 'mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv '"$(id -nu)":"$(id -gn)"' /nix'
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+
+EOF
+
+podman \
+build \
+--cap-add=SYS_ADMIN \
+--tag alpine-with-ca-certificates-tzdata \
+--target alpine-with-ca-certificates-tzdata \
+. \
+&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata &> /dev/null || true \
+&& podman rm --force conteiner-unprivileged-alpine-with-ca-certificates-tzdata || true \
+
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh
+```
+
+
+
+
+
+
 ```bash
 cat > Containerfile << 'EOF'
 FROM docker.io/library/alpine:3.18.3 as alpine-with-ca-certificates-tzdata
@@ -1837,28 +1920,15 @@ RUN CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 
  && nix flake --version \
  && nix flake metadata nixpkgs
 
-#RUN nix \
-#    --refresh \
-#    run \
-#    github:ES-nix/es#installStartConfigTemplate
-# && nix \
-#   store \
-#   gc \
-#     --verbose \
-#     --option keep-derivations false \
-#     --option keep-env-derivations false \
-#     --option keep-outputs false \
-#   && nix-collect-garbage --delete-old \
-#   && nix store optimise --verbose
-
 EOF
 
 podman \
 build \
+--cap-add=SYS_ADMIN \
 --tag alpine-with-ca-certificates-tzdata \
 --target alpine-with-ca-certificates-tzdata \
 . \
-&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata &> /dev/null \
+&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata &> /dev/null || true \
 && podman rm --force conteiner-unprivileged-alpine-with-ca-certificates-tzdata || true \
 && podman \
 run \
@@ -1871,7 +1941,23 @@ run \
 --tty=true \
 --rm=true \
 localhost/alpine-with-ca-certificates-tzdata:latest \
-sh
+sh -c '. ~/.profile && nix flake metadata nixpkgs'
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix \
+--interactive=true \
+--name=conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh -c '. ~/.profile && nix run nixpkgs#xorg.xclock'
 ```
 
 
@@ -5891,104 +5977,178 @@ And maybe in another use `btop`.
 
 
 ```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsStatic.hello.out
-  )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths nixpkgs#pkgsStatic.hello.out
+#  )/bin/hello | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=e9432d6ec7de3c26eebfc867a704c12020b7321539ed507a53e7f8f67d5615bb15289628a5e45dc1e44f54142cccfffeead8fb3f03f4678ded9a9cdd7d5cba0e
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check --quiet
+  )/bin/hello | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.hello.out
+  )/bin/hello | sha512sum --check
 ```
 
 
 ```bash
-# EXPECTED_SHA512SUM_OLD=
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
-  )/bin/hello | cut -d' ' -f1)
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths nixpkgs#pkgsStatic.hello.out
+#  )/bin/hello | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
 
-echo "$EXPECTED_SHA512SUM"
+EXPECTED_SHA512SUM_OLD=a6127524dabf117f226007c8ac75bbfcd12e8c561a83936b016c07e294e36c1ad53d7a7ef1c207b9228d597d01be878d164461a3bffb090bd045c326b834a494
 
-echo "$EXPECTED_SHA512SUM" $(
+echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check --quiet
+  )/bin/hello | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
+  )/bin/hello | sha512sum --check
 ```
 
 
+
 ```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
-  )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
+#  )/bin/hello | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=0c39a967a5aaf2207dcdc7ea6c580bba2f3dc3c8224fd9bb54c47766329f65a942b22cf829973984178a7524c100b0aecbc0d205095e5d68436f382df6063d54
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check --quiet
+  )/bin/hello | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
+  )/bin/hello | sha512sum --check
 ```
 
 
 ```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
+RESULT_1_SHA512SUM=$(sha512sum $(
+    nix build --no-link --print-out-paths nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
   )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
+echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check --quiet
+  )/bin/hello | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
+  )/bin/hello | sha512sum --check
 ```
 
 
 ```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
-  )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
-  )/bin/hello | sha512sum --check --quiet
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+#  )/lib/libreadline.a | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=c0de259d312c3246dcf9d5c53dfcf60e342a1b3ae46afd4e477c63cd374f143ef2485bff47f36e326455118600688f740621ef2e13aca72b45c3c87ee6bdff3e
+ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/lib/libreadline.a | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/lib/libreadline.a | sha512sum --check
 ```
 
 
 ```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.bashInteractive.out
-  )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.bashInteractive.out
-  )/bin/hello | sha512sum --check --quiet
+ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.bashInteractive.out
+
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths "$ATTR"
+#  )/bin/bash | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=9d528c6b284a693453786a1bdeb1458488f40f8fbd481d1bd83fe9545d115ecf0d347cbb9c64de3dee81e797e5337ac3d2c6915caa84b77edba75f24aaa1e9a1
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/bash | sha512sum -check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/bash | sha512sum --check
 ```
 
 
 ```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.zsh.out
-  )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.zsh.out
-  )/bin/hello | sha512sum --check --quiet
+ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.zsh.out
+
+RESULT_1_SHA512SUM=$(sha512sum $(
+    nix build --no-link --print-out-paths "$ATTR"
+  )/bin/zsh | cut -d' ' -f1)
+echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=984df7b66608f660ba21590f5a40cc94dd5b31527cbc67fa8c51da5c7e9370177fcffe671011647461bbd43666ebea9266baae60be361f7e28b976f8b58e9f6d
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/zsh | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/zsh | sha512sum --check
 ```
 
 
 ```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix --cores $(nproc --ignore=2) build --no-link --print-out-paths nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.python3.out
-  )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
-nix --cores $(nproc --ignore=2) build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.python3.out
-  )/bin/hello | sha512sum --check --quiet
+ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.python3.out
+
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths "$ATTR"
+#  )/bin/python3 | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=2f0cb17db388087fca3645e5b194b9b89ca5b77290e680559ababd1b0533f30619b94d265319b5fa6f578ef4e7da31414372470a195dbf51f0ec075d2d80bd5a
+
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/python3 | sha512sum -c
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/python3 | sha512sum -c
 ```
 
-```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix --cores $(nproc --ignore=2) build --no-link --print-out-paths nixpkgs#pkgsCross.raspberryPi.pkgsStatic.python3.out
-  )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
-nix --cores $(nproc --ignore=2) build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.raspberryPi.pkgsStatic.python3.out
-  )/bin/hello | sha512sum --check --quiet
-```
 
 ```bash
-EXPECTED_SHA512SUM=$(sha512sum $(
-nix --cores $(nproc --ignore=3) build --no-link --print-out-paths nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.python3.out
-  )/bin/hello | cut -d' ' -f1)
-echo "$EXPECTED_SHA512SUM" $(
-nix --cores $(nproc --ignore=2) build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.python3.out
-  )/bin/hello | sha512sum --check --quiet
+ATTR=nixpkgs#pkgsCross.raspberryPi.pkgsStatic.python3.out
+
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths "$ATTR"
+#  )/bin/python3 | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=0ec42d7dcada44ca41a4dcce33bf3b4c28e94e7f4275b1c38d7ddb944a18ce2bbc49bc9a2fae4b2064f4713f2fb9484cac7010b65cded893e6af0fc3754b392a
+
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/python3 | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/python3 | sha512sum --check
 ```
 
 
@@ -6010,25 +6170,31 @@ Refs.:
 - https://nixos.org/manual/nix/stable/advanced-topics/cores-vs-jobs
 
 
+
 ```bash
-nix build --no-link --print-build-logs --print-out-paths \
-  nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.boehmgc \
-&& nix build --no-link --print-build-logs --print-out-paths --rebuild \
-  nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.boehmgc
+ATTR=nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.python3.out
+
+RESULT_1_SHA512SUM=$(sha512sum $(
+    nix build --no-link --print-out-paths "$ATTR"
+  )/bin/python3 | cut -d' ' -f1)
+echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=
+
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/python3 | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/python3 | sha512sum --check
 ```
 
 
-```bash
-sha256sum $(
-nix build --no-link --print-out-paths nixpkgs#pkgsStatic.readline.out
-  )/lib/libreadline.a \
-&& sha256sum $(
-  nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.readline.out
-)/lib/libreadline.a
-```
 
-
-
+### Other
 
 ```bash
 nix shell nixpkgs#pandoc --command sh -c 'pandoc --list-input-formats && echo && pandoc --list-output-formats'
@@ -30306,6 +30472,852 @@ nix develop --pure-eval --ignore-environment nixpkgs#hello \
 --command sh -c \
 'cd "$TMPDIR" && source $stdenv/setup
 ```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a LaTeX hello
+  hello = pkgs.writeTextDir "latex-demo-document.tex" ''
+    \documentclass[a4paper]{article}
+    
+    \begin{document}
+      Hello, World!
+    \end{document}
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-minimal latex-bin latexmk;
+  };
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "latex-demo-document";
+          src = hello;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/latex-demo-document.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+          # dontUnpack = true;
+          # dontPatchELF = true;
+          # dontFixup = true;
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/latex-demo-document.pdf
+```
+Refs.:
+- 
+
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    caffeine = pkgs.writeTextDir "caffeine.tex" ''
+        \documentclass{article}
+        \usepackage{chemfig}
+        \begin{document}
+        \section{I need caffeine.}
+        
+        \chemfig{*6((=O)-N(-H)-(*5(-N=-N(-H)-))=-(=O)-N(-H)-)}
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "caffeine";
+          src = caffeine;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/caffeine.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/caffeine.pdf
+```
+Refs.:
+- https://www.overleaf.com/learn/latex/Chemistry_formulae#Connected_rings
+
+
+Broken:
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    exampleChemfig = pkgs.writeTextDir "example-chemfig.tex" ''
+        \documentclass{article}
+        \usepackage{chemfig}
+        \renewcommand*\printatom[1]{\ensuremath{\mathsf{#1}}}
+        \begin{document}
+        
+        \setcrambond{2pt}{}{}
+        \chemfig{
+          HO-[2,.5,2]?<[7,.7](-[2,.5]OH)-[,,,,line width=2.4pt](-[6,.5]OH)>[1,.7]
+            (-[:-65,.7]O-[:65,.7]?[b](-[2,.7]CH_2OH)<[:-60,.707](-[6,.5]OH)
+              -[,,,,line width=2.4pt](-[2,.5,,2]HO)>[:60,.707](-[6,.5]CH_2OH)-[:162,.9]O?[b])
+          -[3,.7]O-[4]?(-[2,.3]-[3,.5]HO)}
+        
+        \setatomsep{2em}
+        \chemfig{
+          H_3C-[:72]{\color{blue}N}
+            *5(-
+              *6(-(={\color{red}O})-{\color{blue}N}(-CH_3)-(={\color{red}O})-{\color{blue}N}(-CH_3)-=)
+            --{\color{blue}N}=-)}
+        
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "example-chemfig";
+          src = exampleChemfig;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/example-chemfig.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/example-chemfig.pdf
+```
+Refs.:
+- https://tex.stackexchange.com/a/53572
+
+
+
+
+##### Feynman diagrams
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    feynmanDiagram = pkgs.writeTextDir "feynman-diagram.tex" ''
+        \documentclass[pstricks, border=6pt]{standalone}
+        \usepackage{pst-feyn, pst-node, pst-arrow}
+        
+        \begin{document}
+        
+            \begin{pspicture}(-3,-2)(4,2)
+            \psline[linestyle=dashed, linecolor=red](2,0)(4,0)
+            \uput[ul](4,0){$\color{red}H$}
+            \psset{windings=6, amplitude=3mm, linejoin=1, arrowinset=0.12}
+            \psGluon(-2,-1)(0,-1)\uput[l](-2,-1){$g$}
+            \psGluon(-2,1)(0,1)\uput[l](-2,1){$g$}
+            \psset{ArrowInside=->, ArrowInsidePos=0.55}
+            \pspolygon (0,1)(0,-1)(2,0)
+            \uput[l](1,0){$t$}
+            \end{pspicture}
+        
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "feynman-diagram";
+          src = feynmanDiagram;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/feynman-diagram.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/feynman-diagram.pdf
+```
+Refs.:
+- https://tex.stackexchange.com/a/620214
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    feynmanDiagram = pkgs.writeTextDir "feynman-diagram.tex" ''
+        \documentclass[a4paper,12pt]{article}
+        \usepackage{tikz}
+        \usetikzlibrary{decorations.pathmorphing,decorations.markings,trees}
+        \begin{document}
+        
+            \tikzset{
+            photon/.style={decorate, decoration={snake}, draw=red},
+            particle/.style={draw=blue, postaction={decorate},
+                decoration={markings,mark=at position .5 with {\arrow[draw=blue]{>}}}},
+            antiparticle/.style={draw=blue, postaction={decorate},
+                decoration={markings,mark=at position .5 with {\arrow[draw=blue]{<}}}},
+            gluon/.style={decorate, draw=black,
+                decoration={snake,amplitude=4pt, segment length=5pt}}
+             }
+        
+        \begin{tikzpicture}[
+                thick,
+                % Set the overall layout of the tree
+                level/.style={level distance=1.5cm},
+                level 2/.style={sibling distance=3.5cm},
+            ]
+            \coordinate
+                child[grow=left]{
+                    edge from parent [gluon]
+                    child {
+                        edge from parent [particle]
+                        node [above] {$g$}
+                    }
+                    child {
+                        edge from parent [antiparticle]
+                        node [below] {$g$}
+                    }
+                    node [above=3pt] {$g$}
+                 }
+                % I have to insert a dummy child to get the tree to grow
+                % correctly to the right.
+                child[grow=right, level distance=0pt] {
+                    child {
+                        edge from parent [antiparticle]
+                        node [above] {$g$}
+                    }
+                    child {
+                        edge from parent [particle]
+                        node [below] {$g$}
+                    }
+                };
+        \end{tikzpicture}
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "feynman-diagram";
+          src = feynmanDiagram;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/feynman-diagram.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/feynman-diagram.pdf
+```
+Refs.:
+- https://tex.stackexchange.com/q/22622
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    feynmanDiagram = pkgs.writeTextDir "feynman-diagram.tex" ''
+        \documentclass{article}
+        \usepackage{subcaption}
+        \usepackage{tikz-feynman}
+        \begin{document}
+        \begin{figure}
+        \begin{subfigure}{.5\textwidth}
+            \centering
+            \begin{tikzpicture}
+            \begin{feynman}
+                \vertex at (0, 1) (i1) {\(g\)};
+                \vertex at (0,-1) (i2) {\(g\)};
+                \vertex at (2, 1) (a);
+                \vertex at (2,-1) (b);
+                \vertex at (3.5, 0) (c);
+                \vertex at (5, 0) (f);
+                \vertex at (2.5,0) () {\(t\)};
+                \vertex[red] at (4.7,.3) () {\(H\)};
+                \diagram*{
+                    (i1) -- [gluon] (a),
+                    (i2) -- [gluon] (b),
+                    (a) -- [fermion] (b) -- [fermion] (c) -- [fermion] (a),
+                    (c) -- [scalar, red] (f),
+                };
+            \end{feynman}
+            \end{tikzpicture}
+            \caption{}
+        \end{subfigure}%
+        \setcounter{subfigure}{3}%
+        \begin{subfigure}{.5\textwidth}
+            \centering
+            \begin{tikzpicture}
+            \begin{feynman}
+                \vertex at (0, 1) (i1) {\(g\)};
+                \vertex at (0,-1) (i2) {\(g\)};
+                \vertex at (2, 1) (a);
+                \vertex at (2,-1) (b);
+                \vertex at (4, 1) (f1) {\(t\)};
+                \vertex at (4,-1) (f2) {\(\bar{t}\)};
+                \vertex at (2,0) (c);
+                \vertex[red] at (4,0) (f3) {\(H\)};
+            \diagram*{
+                (i1) -- [gluon] (a) -- [fermion] (f1),
+                (i2) -- [gluon] (b) -- [anti fermion] (f2),
+                (a) -- [fermion] (b),
+                (c) -- [scalar, red] (f3);
+            };
+            \end{feynman}
+            \end{tikzpicture}
+            \caption{}
+        \end{subfigure}
+        \end{figure}
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "feynman-diagram";
+          src = feynmanDiagram;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/feynman-diagram.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/feynman-diagram.pdf
+```
+Refs.:
+- https://tex.stackexchange.com/a/620193
+
+
+
+Broken:
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    feynmanDiagram = pkgs.writeTextDir "feynman-diagram.tex" ''
+        % Feynman diagram
+        % Requires PGF >= 2.0
+        \documentclass{article}
+        
+        \usepackage[latin1]{inputenc}
+        \usepackage{tikz}
+        \usetikzlibrary{trees}
+        \usetikzlibrary{decorations.pathmorphing}
+        \usetikzlibrary{decorations.markings}
+        \begin{document}
+        
+        % Define styles for the different kind of edges in a Feynman diagram
+        \tikzset{
+            photon/.style={decorate, decoration={snake}, draw=red},
+            electron/.style={draw=blue, postaction={decorate},
+                decoration={markings,mark=at position .55 with {\arrow[draw=blue]{>}}}},
+            gluon/.style={decorate, draw=magenta,
+                decoration={coil,amplitude=4pt, segment length=5pt}} 
+        }
+        
+        \begin{tikzpicture}[
+                thick,
+                % Set the overall layout of the tree
+                level/.style={level distance=1.5cm},
+                level 2/.style={sibling distance=2.6cm},
+                level 3/.style={sibling distance=2cm}
+            ]
+            \coordinate
+                child[grow=left]{
+                    child {
+                        node {$g$}
+                        % The 'edge from parent' is actually not needed because it is
+                        % implicitly added.
+                        edge from parent [gluon]
+                    }
+                    child {
+                        node {$g$}
+                        edge from parent [gluon]
+                    }
+                    edge from parent [gluon] node [above=3pt] {$g$}
+                }
+                % I have to insert a dummy child to get the tree to grow
+                % correctly to the right.
+                child[grow=right, level distance=0pt] {
+                child  {
+                    child {
+                        child {
+                            node {$\bar{d}$}
+                            edge from parent [electron]
+                        }
+                        child {
+                            node {$u$}
+                            edge from parent [electron]
+                        }
+                        edge from parent [photon]
+                    }
+                    child {
+                        node {$b$}
+                        edge from parent [electron]
+                    }
+                    edge from parent [electron]
+                    node [below] {$t$}
+                }
+                child {
+                    child {
+                        node {$\bar{b}$}
+                        edge from parent [electron]
+                    }
+                    child {
+                        child {
+                            node {$\bar{v}$}
+                            edge from parent [electron]
+                        }
+                        child {
+                            node {$e^{-}$}
+                            edge from parent [electron]
+                        }
+                        edge from parent [photon]
+                    }
+                    edge from parent [electron]
+                    node [above] {$\bar{t}$}
+                }
+            };
+        \end{tikzpicture}
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "feynman-diagram";
+          src = feynmanDiagram;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/feynman-diagram.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/feynman-diagram.pdf
+```
+Refs.:
+- https://texample.net/tikz/examples/feynman-diagram/
+
+
+
+Broken:
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    feynmanDiagram = pkgs.writeTextDir "feynman-diagram.tex" ''
+        \documentclass{article}
+        \usepackage{feynmp-auto}
+        \begin{document}
+        \begin{fmffile}{complex-b}
+        \begin{fmfgraph*}(200,200)
+            % bottom and top verticies
+            \fmfstraight
+            \fmfleft{i0,i1,i2,id1,id2,i3,i4,i5}
+            \fmfright{o0,o1,o2,od1,od2,o3,o4,o5}
+            % incoming proton to gluon vertices
+            \fmf{fermion,label=$d$}{i1,o1}
+            % tension shifts vertex to one side
+            \fmf{fermion,tension=1.5,label=$\overline{b}$}{v2,i4}
+            \fmf{fermion,label=$\overline{c}$}{o4,v2}
+            \fmffreeze
+            \fmf{fermion}{o2,v3,o3}
+            \fmf{fermion,label=$\overline{s}$}{o2,v3}
+            \fmf{fermion,label=$c$}{v3,o3}
+            \fmf{photon, tension=2,label=$W^{+}$}{v2,v3}
+            % phantom centres the W->cs vertex
+            \fmf{phantom,tension=1.5}{i1,v3}
+        
+            \fmfv{lab=$V_{cb}^{\ast}$}{v2}
+            \fmfv{lab=$V_{cs}$,lab.dist=-.1w}{v3}
+        \end{fmfgraph*}
+        \end{fmffile}
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "feynman-diagram";
+          src = feynmanDiagram;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/feynman-diagram.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/feynman-diagram.pdf
+```
+Refs.:
+- https://www.overleaf.com/learn/latex/Feynman_diagrams
+
+
 
 
 TODO
