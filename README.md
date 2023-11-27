@@ -29019,7 +29019,7 @@ add2 = { a, b, ... }: a + b
 
 
 
-The nix language fu:
+The nix language fu/nix-fu:
 - http://www.chriswarbo.net/projects/nixos/useful_hacks.html
 - https://teu5us.github.io/nix-lib.html
 - https://github.com/NixOS/nixpkgs/blob/b11ced7a9c1fc44392358e337c0d8f58efc97c89/nixos/lib/make-multi-disk-zfs-image.nix#L122-L123
@@ -29027,6 +29027,12 @@ The nix language fu:
 - https://nixos.wiki/wiki/Nix_Language_Quirks
 - https://nixos.wiki/wiki/C
 
+```nix
+buildInputs = [ makeWrapper ];
+postBuild
+```
+Refs.:
+- https://github.com/jvolkman/bazel-nix-python-example/blob/4dd4b58e2884c647de1fab5452cde5fefe96c952/python39.nix#L14C17-L14C17
 
 
 > Unfortunately we can't provide useful error messages when people use sub-attributes 
