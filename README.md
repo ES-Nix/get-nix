@@ -7751,6 +7751,22 @@ gc \
 && nix store optimise --verbose
 ```
 
+## starship
+
+TODO:
+
+
+https://allsyed.com/posts/consistent-prompt-with-starship/
+
+```bash
+starship explain
+```
+Refs.:
+- https://starship.rs/faq/#i-see-symbols-i-don-t-understand-or-expect-what-do-they-mean
+
+
+https://spaceship-prompt.sh/sections/git/
+
 
 ## Tests
 
