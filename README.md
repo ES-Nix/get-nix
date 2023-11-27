@@ -23294,6 +23294,7 @@ podman run -it --rm docker.io/library/alpine:latest
 
 ##### NixOS OCI with home-manager
 
+
 ```bash
 cat > flake.nix << 'EOF'
 {
@@ -30367,16 +30368,16 @@ nix.nixPath = [ "nixpkgs=${pkgs.outPath}" "unstable=${unstable.outPath}" ];
 ```
 Refs.:
 - https://discourse.nixos.org/t/correct-way-to-use-nixpkgs-in-nix-shell-on-flake-based-system-without-channels/19360/3
-
+- https://github.com/Misterio77/nix-starter-configs/issues/27#issuecomment-1481054674
 
 ```nix
 home.sessionVariables.NIX_PATH = "nixpkgs=${pkgs.outPath}:unstable=${unstable.outPath}";
 ```
 Refs.:
 - https://discourse.nixos.org/t/correct-way-to-use-nixpkgs-in-nix-shell-on-flake-based-system-without-channels/19360/3
+- https://github.com/Misterio77/nix-starter-configs/issues/27#issuecomment-1481370169
 
-
-About channels name etc:
+About channels name's etc:
 https://github.com/NixOS/rfcs/pull/153
 https://github.com/NixOS/rfcs/pull/153#issuecomment-1611222752
 https://github.com/NixOS/rfcs/pull/153#discussion_r1232100363
