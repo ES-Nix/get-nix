@@ -23,7 +23,9 @@ nix flake clone 'github:ES-Nix/get-nix' --dest get-nix \
 
 
 https://nixos.org/manual/nix/stable/#sect-single-user-installation
-
+Other manuals:
+- https://nixos.org/manual/nixpkgs/stable/
+- https://nixos.wiki/
 
 ```bash
 command -v curl || (command -v apt && sudo apt-get update && sudo apt-get install -y curl)
@@ -6069,6 +6071,27 @@ nix build --no-link --print-out-paths --rebuild "$ATTR"
 
 
 ```bash
+ATTR=nixpkgs#pkgsStatic.bashInteractive.out
+
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths "$ATTR"
+#  )/bin/bash | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=485fb0d11089dea08fedb9f6e11384654f9bbed121ec815a0c4614530e59efca6cfb78931ddc59fac5b507132cf0a0eb32e1d92923fe5fb2ba54dc51782a461f
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/bash | sha512sum -c
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/bash | sha512sum -c
+```
+
+
+```bash
 ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.bashInteractive.out
 
 #RESULT_1_SHA512SUM=$(sha512sum $(
@@ -6077,19 +6100,20 @@ ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.bashInteractive.out
 #echo "$RESULT_1_SHA512SUM"
 
 EXPECTED_SHA512SUM_OLD=9d528c6b284a693453786a1bdeb1458488f40f8fbd481d1bd83fe9545d115ecf0d347cbb9c64de3dee81e797e5337ac3d2c6915caa84b77edba75f24aaa1e9a1
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild "$ATTR"
-  )/bin/bash | sha512sum -check
+  )/bin/bash | sha512sum -c
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild "$ATTR"
-  )/bin/bash | sha512sum --check
+  )/bin/bash | sha512sum -c
 ```
 
 
 ```bash
-ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.zsh.out
+ATTR=nixpkgs#pkgsStatic.zsh.out
 
 RESULT_1_SHA512SUM=$(sha512sum $(
     nix build --no-link --print-out-paths "$ATTR"
@@ -6097,14 +6121,36 @@ RESULT_1_SHA512SUM=$(sha512sum $(
 echo "$RESULT_1_SHA512SUM"
 
 EXPECTED_SHA512SUM_OLD=984df7b66608f660ba21590f5a40cc94dd5b31527cbc67fa8c51da5c7e9370177fcffe671011647461bbd43666ebea9266baae60be361f7e28b976f8b58e9f6d
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild "$ATTR"
-  )/bin/zsh | sha512sum --check
+  )/bin/zsh | sha512sum -c
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild "$ATTR"
-  )/bin/zsh | sha512sum --check
+  )/bin/zsh | sha512sum -c
+```
+
+
+```bash
+ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.zsh.out
+
+#RESULT_1_SHA512SUM=$(sha512sum $(
+#    nix build --no-link --print-out-paths "$ATTR"
+#  )/bin/zsh | cut -d' ' -f1)
+#echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=984df7b66608f660ba21590f5a40cc94dd5b31527cbc67fa8c51da5c7e9370177fcffe671011647461bbd43666ebea9266baae60be361f7e28b976f8b58e9f6d
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/zsh | sha512sum -c
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/zsh | sha512sum -c
 ```
 
 
@@ -11102,6 +11148,7 @@ hydra-check --arch x86_64-linux --channel unstable nix
 Interesting urls:
 - https://status.nixos.org
 - https://hydra.nixos.org/build/103222205#tabs-details
+- https://hydra.nixos.org/jobset/nix/master#tabs-jobs
 - https://hydra.nixos.org/eval/1449?filter=gcc&compare=1283&full=#tabs-still-succeed
 - https://hydra.nixos.org/job/nixos/trunk-combined/tested
 - https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
@@ -11704,6 +11751,48 @@ Refs.:
 - https://unix.stackexchange.com/questions/111365/how-to-change-default-shell-to-zsh-chsh-says-invalid-shell
 
 
+#### Reverting an zsh install
+
+
+
+`chsh` changes login shell, but doesn't prevent you from starting any 
+shell installed system-wide.
+https://github.com/ohmyzsh/ohmyzsh/issues/8865#issuecomment-620669105
+
+
+
+> `chsh` changes the login shell, that information goes to the 
+> `/etc/passwd` file. GUI terminal emulators don't use that value 
+> in general, instead they have their own settings where you can 
+> specify which shell to call.
+Refs.:
+- https://unix.stackexchange.com/a/218963
+
+
+Read: https://askubuntu.com/a/247271
+
+
+```bash
+getent passwd "$(id -un)"
+```
+
+```bash
+test $SHELL -ef $(grep $USER /etc/passwd | cut -d':' -f7)
+test $SHELL -ef $(getent passwd "$(id -un)" | cut -d':' -f7)
+```
+Refs.:
+- https://serverfault.com/a/832222
+- https://serverfault.com/a/832222
+- https://unix.stackexchange.com/a/325208
+
+
+
+https://unix.stackexchange.com/a/646291
+
+#### From `nix`
+
+
+
 ```bash
 nix profile install nixpkgs#zsh
 cat /etc/shells
@@ -11713,6 +11802,8 @@ chsh -s "$(which zsh)"
 sudo reboot
 ```
 
+
+Extra:
 ```bash
 nix profile install nixpkgs#fzf
 ```
@@ -29788,6 +29879,8 @@ done
 ```bash
 ps axo pid,args,pmem,rss,vsz --sort -pmem,-rss,-vsz | head -2
 ```
+Refs.:
+- https://unix.stackexchange.com/a/268428
 
 
 
@@ -30549,7 +30642,7 @@ build \
 )/latex-demo-document.pdf
 ```
 Refs.:
-- 
+- https://github.com/NixOS/nixpkgs/issues/28910
 
 
 
@@ -31378,3 +31471,21 @@ TODO: test it!
 rm -frv ~/.nix-profile ~/.nix-defexpr ~/.zshenv ~/.z
 ```
 
+
+```bash
+# find -L . -type l -exec echo -- {} +
+# find -L . -type l -exec rm -- {} +
+
+# find . -xtype l -print -delete
+find . -xtype l -exec echo -- {} +
+```
+Refs.:
+- https://unix.stackexchange.com/a/314975
+- https://unix.stackexchange.com/a/625628
+
+
+```bash
+if [ ! -e "$1" ] && [ -h "$1" ]; then ...; fi
+```
+Refs.:
+- https://unix.stackexchange.com/a/586346
