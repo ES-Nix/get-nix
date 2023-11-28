@@ -5979,94 +5979,108 @@ And maybe in another use `btop`.
 
 
 ```bash
+ATTR=nixpkgs#pkgsStatic.hello.out
+
 #RESULT_1_SHA512SUM=$(sha512sum $(
 #    nix build --no-link --print-out-paths nixpkgs#pkgsStatic.hello.out
 #  )/bin/hello | cut -d' ' -f1)
 #echo "$RESULT_1_SHA512SUM"
 
 EXPECTED_SHA512SUM_OLD=e9432d6ec7de3c26eebfc867a704c12020b7321539ed507a53e7f8f67d5615bb15289628a5e45dc1e44f54142cccfffeead8fb3f03f4678ded9a9cdd7d5cba0e
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/hello | sha512sum -c
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/hello | sha512sum -c
 ```
 
 
 ```bash
-#RESULT_1_SHA512SUM=$(sha512sum $(
-#    nix build --no-link --print-out-paths nixpkgs#pkgsStatic.hello.out
-#  )/bin/hello | cut -d' ' -f1)
-#echo "$RESULT_1_SHA512SUM"
+ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
 
-EXPECTED_SHA512SUM_OLD=a6127524dabf117f226007c8ac75bbfcd12e8c561a83936b016c07e294e36c1ad53d7a7ef1c207b9228d597d01be878d164461a3bffb090bd045c326b834a494
-
-echo "$EXPECTED_SHA512SUM_OLD" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check
-
-echo "$EXPECTED_SHA512SUM_OLD" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check
-```
-
-
-
-```bash
-#RESULT_1_SHA512SUM=$(sha512sum $(
-#    nix build --no-link --print-out-paths nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
-#  )/bin/hello | cut -d' ' -f1)
-#echo "$RESULT_1_SHA512SUM"
-
-EXPECTED_SHA512SUM_OLD=0c39a967a5aaf2207dcdc7ea6c580bba2f3dc3c8224fd9bb54c47766329f65a942b22cf829973984178a7524c100b0aecbc0d205095e5d68436f382df6063d54
-
-echo "$EXPECTED_SHA512SUM_OLD" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check
-
-echo "$EXPECTED_SHA512SUM_OLD" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
-  )/bin/hello | sha512sum --check
-```
-
-
-```bash
 RESULT_1_SHA512SUM=$(sha512sum $(
-    nix build --no-link --print-out-paths nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
+    nix build --no-link --print-out-paths "$ATTR"
   )/bin/hello | cut -d' ' -f1)
 echo "$RESULT_1_SHA512SUM"
 
-EXPECTED_SHA512SUM_OLD=
+EXPECTED_SHA512SUM_OLD=a6127524dabf117f226007c8ac75bbfcd12e8c561a83936b016c07e294e36c1ad53d7a7ef1c207b9228d597d01be878d164461a3bffb090bd045c326b834a494
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
+nix build --no-link --print-out-paths --rebuild "$ATTR"
   )/bin/hello | sha512sum --check
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
-nix build --no-link --print-out-paths --rebuild nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
+nix build --no-link --print-out-paths --rebuild "$ATTR"
   )/bin/hello | sha512sum --check
 ```
 
 
+
 ```bash
+ATTR=nixpkgs#pkgsCross.ppc64-musl.pkgsStatic.hello.out
+
+RESULT_1_SHA512SUM=$(sha512sum $(
+    nix build --no-link --print-out-paths "$ATTR"
+  )/lib/libreadline.a | cut -d' ' -f1)
+echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/lib/libreadline.a | sha512sum -c
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/lib/libreadline.a | sha512sum -c
+```
+
+
+```bash
+ATTR=nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.hello.out
+
+RESULT_1_SHA512SUM=$(sha512sum $(
+    nix build --no-link --print-out-paths "$ATTR"
+  )/lib/libreadline.a | cut -d' ' -f1)
+echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/lib/libreadline.a | sha512sum -c
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/lib/libreadline.a | sha512sum -c
+```
+
+
+```bash
+ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+
 #RESULT_1_SHA512SUM=$(sha512sum $(
-#    nix build --no-link --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+#    nix build --no-link --print-out-paths "$ATTR"
 #  )/lib/libreadline.a | cut -d' ' -f1)
 #echo "$RESULT_1_SHA512SUM"
 
 EXPECTED_SHA512SUM_OLD=c0de259d312c3246dcf9d5c53dfcf60e342a1b3ae46afd4e477c63cd374f143ef2485bff47f36e326455118600688f740621ef2e13aca72b45c3c87ee6bdff3e
-ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.readline.out
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild "$ATTR"
-  )/lib/libreadline.a | sha512sum --check
+  )/lib/libreadline.a | sha512sum -c
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
 nix build --no-link --print-out-paths --rebuild "$ATTR"
-  )/lib/libreadline.a | sha512sum --check
+  )/lib/libreadline.a | sha512sum -c
 ```
 
 
@@ -6142,6 +6156,7 @@ ATTR=nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.zsh.out
 #echo "$RESULT_1_SHA512SUM"
 
 EXPECTED_SHA512SUM_OLD=984df7b66608f660ba21590f5a40cc94dd5b31527cbc67fa8c51da5c7e9370177fcffe671011647461bbd43666ebea9266baae60be361f7e28b976f8b58e9f6d
+
 nix build --no-link --print-out-paths --print-build-logs "$ATTR"
 
 echo "$EXPECTED_SHA512SUM_OLD" $(
