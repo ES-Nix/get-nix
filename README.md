@@ -1643,6 +1643,8 @@ Not recommended commands:
 
 
 [Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
+[CLI stabilization effort](https://github.com/NixOS/nix/issues/7701)
+
 
 ```bash
 nix \
