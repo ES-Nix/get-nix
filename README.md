@@ -4,9 +4,14 @@ Is an unofficial wrapper of the nix installer, unstable for now!
 
 [https://nixos.org/guides/install-nix.html](https://nixos.org/download.html)
 
-https://nix.dev/tutorials/install-nix
-https://docs.staging.mozilla-releng.net/develop/install-nix.html
-https://github.com/DeterminateSystems/nix-installer
+
+Depending on what hardware you run:
+- https://nix.dev/tutorials/install-nix
+- https://docs.staging.mozilla-releng.net/develop/install-nix.html
+- https://github.com/DeterminateSystems/nix-installer
+- https://determinate.systems/posts/nix-on-the-steam-deck
+- https://guacamolie.nl/en/blog/sway-on-the-steam-deck/
+
 
 # Contributing locally
 
