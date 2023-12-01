@@ -3085,6 +3085,7 @@ mkdir build-dir \
 '
 ```
 
+
 ```bash
 nix \
 develop \
@@ -3195,7 +3196,9 @@ Refs.:
 - https://github.com/NixOS/nixpkgs/issues/21667#issuecomment-270899104
 
 
+### devShells and services
 
+TODO: https://discourse.nixos.org/t/how-to-run-a-service-only-while-a-devshell-is-open/19752/2
 
 ```bash
 nix \

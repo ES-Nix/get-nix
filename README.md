@@ -6817,7 +6817,7 @@ nixpkgs#python310Packages.numpy
 
 
 nix \
---option enforce-determinism false \
+--option keep-going true \
 build \
 --no-link \
 --print-build-logs \
@@ -26787,7 +26787,7 @@ Refs.:
 
 TODO: where it fits? https://github.com/NixOS/nixpkgs/issues/48749#issuecomment-431700134
 
-
+TODO: re read https://discourse.nixos.org/t/disable-a-systemd-service-while-having-it-in-nixoss-conf/12732/3
 ```bash
 
 
@@ -31451,6 +31451,204 @@ Refs.:
 - https://www.overleaf.com/learn/latex/Feynman_diagrams
 
 
+##### Minted
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    minted = pkgs.writeTextDir "minted.tex" ''
+        \documentclass{article}
+        \usepackage{minted}
+        \begin{document}
+        \begin{minted}{python}
+        import numpy as np
+
+        def incmatrix(genl1,genl2):
+            m = len(genl1)
+            n = len(genl2)
+            M = None #to become the incidence matrix
+            VT = np.zeros((n*m,1), int)  #dummy variable
+            
+            #compute the bitwise xor matrix
+            M1 = bitxormatrix(genl1)
+            M2 = np.triu(bitxormatrix(genl2),1) 
+
+            for i in range(m-1):
+                for j in range(i+1, m):
+                    [r,c] = np.where(M2 == M1[i,j])
+                    for k in range(len(r)):
+                        VT[(i)*n + r[k]] = 1;
+                        VT[(i)*n + c[k]] = 1;
+                        VT[(j)*n + r[k]] = 1;
+                        VT[(j)*n + c[k]] = 1;
+
+                        if M is None:
+                            M = np.copy(VT)
+                        else:
+                            M = np.concatenate((M, VT), 1)
+
+                        VT = np.zeros((n*m,1), int)
+
+            return M
+        \end{minted}
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "minted";
+          src = minted;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/minted.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/minted.pdf
+```
+Refs.:
+- 
+
+
+##### Emojis
+
+Broken: re-test with newer commit?
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+
+    emoji = pkgs.writeTextDir "emoji.tex" ''
+        \documentclass[12pt]{article}
+        \usepackage{emoji}
+        
+        \begin{document}
+        
+        These are colour emojis using the \texttt{emoji} package and LuaLaTeX:
+        \emoji{leaves}
+        \emoji{rose}
+        
+        You can use emoji-modifiers:
+        \emoji{woman-health-worker-medium-skin-tone}
+        \emoji{family-man-woman-girl-boy}
+        \emoji{flag-malaysia}
+        \emoji{flag-united-kingdom}
+        
+        \end{document}
+  '';
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full latex-bin latexmk;
+  };
+
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "emoji";
+          src = emoji;
+          buildInputs = [ pkgs.coreutils tex ];
+          phases = ["unpackPhase" "buildPhase" "installPhase"];
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+
+            mkdir -pv .cache/texmf-var
+
+            env \
+              TEXMFHOME=.cache \
+              TEXMFVAR=.cache/texmf-var \
+              latexmk \
+              -f \
+              -interaction=nonstopmode \
+              -outdir=/build \
+              -pdf \
+              -lualatex \
+              $src/emoji.tex
+          '';
+          installPhase = ''
+            mkdir -p $out
+            # ls -alh /build
+            cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
+          '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/emoji.pdf
+```
+Refs.:
+- https://www.overleaf.com/learn/latex/Questions/Inserting_emojis_in_LaTeX_documents_on_Overleaf#Colour_emojis
+
 
 
 TODO
@@ -31474,7 +31672,7 @@ Even deeper: Automatic Code Generation with SymPy
 https://www.sympy.org/scipy-2017-codegen-tutorial/
 https://www.youtube.com/watch?v=5jzIVp6bTy0
 
-#### determinate systems nix installer
+#### The determinate systems nix installer, written in Rust
 
 
 ```bash
