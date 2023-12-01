@@ -896,6 +896,9 @@ ls -al $(nix eval --impure --expr "<nixpkgs/nixos>")
 
 nix-instantiate --strict "<nixpkgs/nixos>" -A system
 nix-instantiate --strict --json --eval -E 'builtins.map (p: p.name) (import <nixpkgs/nixos> {}).config.environment.systemPackages' | jq -c | jq -r '.[]' | sort -u
+nix-instantiate --strict --json --eval --expr ...
+
+
 nix eval --impure --json --expr 'builtins.map (p: p.name) (import <nixpkgs/nixos> {}).config.environment.systemPackages' | jq -c | jq -r '.[]' | sort -u
 
 nix eval --impure --expr 'with import <nixpkgs>{}; idea.pycharm-community.outPath'
@@ -975,7 +978,7 @@ Refs.:
 - https://discourse.nixos.org/t/can-i-run-nix-instantiate-eval-strict-on-my-configuration-nix/7105/2
 - https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-realisation-info.html#examples
 - https://discourse.nixos.org/t/eval-nix-expression-from-the-command-line/8993/2
-
+- https://discourse.nixos.org/t/can-i-run-nix-instantiate-eval-strict-on-my-configuration-nix/7105/4
 
 
 ```bash
@@ -31525,7 +31528,7 @@ in
               -lualatex \
               $src/minted.tex
           '';
-          installPhase = ''
+          installnix-instantiatePhase = ''
             mkdir -p $out
             # ls -alh /build
             cp -rv /build/{*.pdf,*.log,*.fls,*.fdb_latexmk,*.aux} $out/
@@ -31557,7 +31560,7 @@ build \
 )/minted.pdf
 ```
 Refs.:
-- 
+- https://www.overleaf.com/learn/latex/Code_Highlighting_with_minted#Introduction
 
 
 ##### Emojis

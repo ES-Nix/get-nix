@@ -2956,6 +2956,8 @@ ls -al $(nix build --print-out-paths nixpkgs#stdenv.cc.cc.lib)/lib
 https://nixos.org/manual/nix/stable/#managing-build-environments
 https://stackoverflow.com/a/31627258
 
+TODO: read it and try to see extract what should be here!
+https://github.com/NixOS/nix/issues/6908
 
 > The replacement is the `nix develop` command which uses the devShell.${system}` flake 
 > output if it exists or `defaultPackage.${system}` otherwise.
