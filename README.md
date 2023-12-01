@@ -12129,13 +12129,20 @@ nix eval --impure --expr '<nixpkgs>'
 
 nix eval --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c")'
 nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs")'
-nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").outPath'
 nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").rev'
+nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").outPath'
+
+nix-instantiate --eval --attr 'pkgs.path' '<nixpkgs>'
+nix-instantiate --eval --expr 'builtins.findFile builtins.nixPath "nixpkgs"'
 ```
+
+
+TODO: help there https://github.com/NixOS/nix.dev/issues/580#issuecomment-1763561804
+
 
 TODO: related? 
 ```bash
-nix-instantiate --eval -A 'pkgs.path' '<nixpkgs>'
+nix-instantiate --eval --attr 'pkgs.path' '<nixpkgs>'
 
 nix eval nixpkgs#path
 
