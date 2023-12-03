@@ -11193,7 +11193,7 @@ Interesting urls:
 - https://hydra.nixos.org/eval/1449?filter=gcc&compare=1283&full=#tabs-still-succeed
 - https://hydra.nixos.org/job/nixos/trunk-combined/tested
 - https://github.com/NixOS/nixpkgs/issues/54924#issuecomment-473726288
-
+- https://github.com/vishnubob/wait-for-it
 
 
 ```bash
