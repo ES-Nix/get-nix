@@ -810,7 +810,7 @@ nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
 
 
 ```bash
-nix eval --apply builtins.attrNames nixpkgs#stdenv.drvAttrs
+nix eval --json --apply builtins.attrNames nixpkgs#stdenv.drvAttrs
 ```
 
 ```bash
@@ -12146,6 +12146,8 @@ nix-instantiate --eval --attr 'pkgs.path' '<nixpkgs>'
 
 nix eval nixpkgs#path
 
+head -n 20 $(nix eval nixpkgs#path)/nixos/tests/common/wayland-cage.nix
+
 file ~/.nix-defexpr/channels
 file ~/.nix-defexpr/channels_root
 
@@ -18235,7 +18237,7 @@ nix run github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9#domination
 
 ##### nixosTest, enableOCR = true, vscodium
 
-
+[Robert Hensing – Fixed points all the way down: the module system (2023 Nix Developer Dialogues)](https://www.youtube.com/embed/P00SAwmhG3c?start=696&end=745&version=3), start=696&end=745
 
 ```bash
 nix \
@@ -18244,7 +18246,7 @@ build \
 --expr \
 '
   (
-    with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+    with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
     with legacyPackages.${builtins.currentSystem};
     with lib;
 let
@@ -18297,19 +18299,29 @@ with codium_running:
     machine.wait_for_text(\"Get Started\")
     machine.screenshot(\"start_screen\")
     test_string = \"testfile\"
+    test_string_2 = \"Lorem Ipsum\"
+
     # Create a new file
     machine.send_key(\"ctrl-n\")
     machine.wait_for_text(\"Untitled\")
     machine.screenshot(\"empty_editor\")
+
     # Type a string
     machine.send_chars(test_string)
     machine.wait_for_text(test_string)
     machine.screenshot(\"editor\")
+
+    # Type another string
+    # machine.send_chars(test_string_2)
+    # machine.wait_for_text(test_string_2)
+    # machine.screenshot(\"editor-with-second-text\")
+
     # Save the file
     machine.send_key(\"ctrl-s\")
     machine.wait_for_text(\"(Save|Desktop|alice|Size)\")
     machine.screenshot(\"save_window\")
     machine.send_key(\"ret\")
+
     # (the default filename is the first line of the file)
     machine.wait_for_file(f\"/home/alice/{test_string}\")
 # machine.send_key(\"ctrl-q\")
@@ -26872,12 +26884,69 @@ https://nixos.wiki/wiki/C#Debug_symbols
 ## NixOS modules
 
 
-https://nixos.wiki/wiki/NixOS_modules
-https://nixos.mayflower.consulting/blog/2018/09/11/custom-images/
-https://hoverbear.org/blog/nix-flake-live-media/
+[Robert Hensing – Fixed points all the way down: the module system (2023 Nix Developer Dialogues)](https://www.youtube.com/embed/P00SAwmhG3c?start=696&end=745&version=3), start=696&end=745
+
+[NixCon2023 Automating testing of NixOS on physical machines](https://www.youtube.com/watch?v=YzHMiP0DwXM&t=7s)
+
+
+- https://nixos.wiki/wiki/NixOS_modules
+- https://nixos.mayflower.consulting/blog/2018/09/11/custom-images/
+- https://hoverbear.org/blog/nix-flake-live-media/
+- https://nix.dev/tutorials/integration-testing-using-virtual-machines
+- https://nixos.org/manual/nixos/stable/index.html#sec-nixos-tests
+- https://nixos.mayflower.consulting/blog/2019/07/11/leveraging-nixos-tests-in-your-project/
+- https://gianarb.it/blog/my-workflow-with-nixos
+
+
+
+[Test ALL the Things – On improving the nixpkgs testing story by Profpatsch (NixCon 2017)](https://www.youtube.com/watch?v=5Z7IckV6gao)
 [Rickard Nilsson - Nix(OS) modules everywhere! (NixCon 2018)](https://www.youtube.com/watch?v=I_KCd46B8Mw)
 [Nix Friday - NixOS modules](https://www.youtube.com/watch?v=5doOHe8mnMU)
 
+
+
+```bash
+nix build nixpkgs#nixosTests.kubernetes.dns-multi-node --no-link
+nix build nixpkgs#nixosTests.kubernetes.rbac-multi-node --no-link
+nix build nixpkgs#nixosTests.kubernetes.dns-single-node --no-link
+nix build nixpkgs#nixosTests.kubernetes.rbac-single-node --no-link
+```
+
+
+```bash
+nix \
+build \
+--no-link \
+github:NixOS/nixpkgs/03d52eed55151e330de5f0cc4fde434a7227ff43#nixosTests.openarena
+```
+Refs.:
+- https://twitter.com/_Ma27_/status/1325881957142700032
+- https://github.com/NixOS/nixpkgs/commit/9f1c76f514a644d00e7bb5ae711949b23ee9b222
+
+
+```bash
+nix run nixpkgs#nixosTests.kubernetes.rbac-single-node.driverInteractive
+```
+
+```bash
+nix build github:NixOS/nixpkgs/54060e816971276da05970a983487a25810c38a7#nixosTests.chromium
+```
+
+
+```bash
+nix build github:NixOS/nixpkgs/54060e816971276da05970a983487a25810c38a7#nixosTests.openarena --no-link
+```
+
+
+```bash
+nix build --no-link nixpkgs#nixosTests.mosquitto
+```
+
+
+It was broken:
+```bash
+nix build github:NixOS/nixpkgs/54060e816971276da05970a983487a25810c38a7#nixosTests.keepassxc
+```
 
 
 ## Caching and Nix

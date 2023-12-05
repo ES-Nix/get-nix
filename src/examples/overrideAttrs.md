@@ -2346,6 +2346,41 @@ nix eval github:NixOS/nixpkgs/nixpkgs-unstable#glibc.name
 
 
 ```bash
+git pull origin nixos-22.11 
+```
+
+```bash
+git pull origin nixos-23.05 
+```
+
+
+```bash
+git fetch github.com/NixOS/nixpkgs nixos-22.11
+```
+
+
+```bash
+git fetch github.com/NixOS/nixpkgs nixos-23.05
+```
+
+
+```bash
+git log --oneline --no-patch -L '/version =/',+1:pkgs/development/web/nodejs/v16.nix | cat
+```
+
+
+```bash
+git log --all --full-history --oneline -3 -- pkgs/development/web/nodejs/v16.nix | cat
+```
+
+
+```bash
+git rev-list -n 2 HEAD -- pkgs/development/web/nodejs/v16.nix
+```
+
+
+
+```bash
 readelf -sV \
 $(nix \
 build \
@@ -2956,7 +2991,7 @@ ls -al $(nix build --print-out-paths nixpkgs#stdenv.cc.cc.lib)/lib
 https://nixos.org/manual/nix/stable/#managing-build-environments
 https://stackoverflow.com/a/31627258
 
-TODO: read it and try to see extract what should be here!
+TODO: read it and try to extract what should be here!
 https://github.com/NixOS/nix/issues/6908
 
 > The replacement is the `nix develop` command which uses the devShell.${system}` flake 
