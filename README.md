@@ -14,10 +14,13 @@ Depending on what hardware you run:
 - https://guacamolie.nl/en/blog/sway-on-the-steam-deck/
 - [Nix-on-droid packages installation, channels update on Android(part 2)](https://www.youtube.com/embed/NaaDi7cDSSA?start=870&end=875&version=3), start=870&end=875
 - [The Nix Phone and the end of Android](https://www.youtube.com/watch?v=0UIpg19KECw)
-- 
+- [Nix: a space odyssey](https://www.youtube.com/watch?v=RL2xuhU9Nhk)
+- [NixCon2023 Nix in Space ](https://www.youtube.com/watch?v=GNsHIN6SYkE)
+- [Chris Burr - Nix for software deployment in high energy physics (NixCon 2018)](https://www.youtube.com/watch?v=Ee8k97Rx3DA)
 
 
 # Contributing locally
+
 
 ```bash
 nix flake clone 'github:ES-Nix/get-nix' --dest get-nix \
@@ -25291,6 +25294,7 @@ in
 TODO:
 - [Armijn Hemel - The History of NixOS (SoN2022 - Public Lecture Series)](https://www.youtube.com/watch?v=t6goF1dM3ag)
 - [Eelco Dolstra - The Evolution of Nix (SoN2022 - public lecture series)](https://www.youtube.com/watch?v=h8hWX_aGGDc)
+- [EU Next Generation Initiative and other ways to get your NixOS project funded (NixCon 2019)](https://www.youtube.com/watch?v=M2slgOo2jQ4)
 
 
 ### sandbox
