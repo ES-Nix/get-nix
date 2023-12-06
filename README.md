@@ -19,7 +19,7 @@ Depending on what hardware you run:
 - [Chris Burr - Nix for software deployment in high energy physics (NixCon 2018)](https://www.youtube.com/watch?v=Ee8k97Rx3DA)
 - [NixCon2023 Automating testing of NixOS on physical machines](https://www.youtube.com/watch?v=YzHMiP0DwXM)
 - [NixCon2023 Nix and Kubernetes: Deployments Done Right](https://www.youtube.com/watch?v=SEA1Qm8K4gY)
-
+- [Nix tutorials](https://www.youtube.com/watch?v=bjTxiFLSNFA&list=PLko9chwSoP-15ZtZxu64k_CuTzXrFpxPE)
 
 
 # Contributing locally
@@ -1667,6 +1667,8 @@ Not recommended commands:
 > The only alternative as far as I know is the experimental `nix profile` command.
 > https://github.com/NixOS/nixpkgs/issues/126036#issuecomment-860447915
 
+
+https://discourse.nixos.org/t/cli-alternative-to-nix-env/30305/4
 
 [Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
 [CLI stabilization effort](https://github.com/NixOS/nix/issues/7701)
