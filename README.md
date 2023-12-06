@@ -17,6 +17,9 @@ Depending on what hardware you run:
 - [Nix: a space odyssey](https://www.youtube.com/watch?v=RL2xuhU9Nhk)
 - [NixCon2023 Nix in Space ](https://www.youtube.com/watch?v=GNsHIN6SYkE)
 - [Chris Burr - Nix for software deployment in high energy physics (NixCon 2018)](https://www.youtube.com/watch?v=Ee8k97Rx3DA)
+- [NixCon2023 Automating testing of NixOS on physical machines](https://www.youtube.com/watch?v=YzHMiP0DwXM)
+- [NixCon2023 Nix and Kubernetes: Deployments Done Right](https://www.youtube.com/watch?v=SEA1Qm8K4gY)
+
 
 
 # Contributing locally
@@ -948,8 +951,15 @@ export NIXPKGS_ALLOW_UNFREE=1 \
 && nix eval --impure --file '<nixpkgs>' 'vscode.outPath'
 
 # https://github.com/NixOS/nix/issues/2259#issuecomment-1144323965
-nix-instantiate --eval -E '<nixpkgs>'
+nix-instantiate --eval --expr '<nixpkgs>'
 nix eval --impure --expr '<nixpkgs>'
+nix-instantiate --eval --expr '(builtins.getFlake "nixpkgs").shortRev'
+nix-instantiate --eval --expr '(builtins.getFlake "nixpkgs").rev'
+nix-instantiate --eval --expr '(builtins.getFlake "nixpkgs").outPath'
+nix-instantiate --eval --expr '(builtins.getFlake "nixpkgs").sourceInfo.outPath'
+
+nix-instantiate --eval --expr '( import (builtins.getFlake "nixpkgs") {} ).lib.version'
+nix-instantiate --eval --expr '( import (builtins.getFlake "nixpkgs") {} ).lib.trivial.version'
 
 nix path-info -r /run/current-system
 
@@ -29137,6 +29147,7 @@ The nix language fu/nix-fu:
 - https://github.com/NixOS/nixpkgs/blob/04ba740f89b23001077df136c216a885371533ad/pkgs/development/tools/build-managers/cmake/default.nix#L132-L136
 - https://nixos.wiki/wiki/Nix_Language_Quirks
 - https://nixos.wiki/wiki/C
+- https://github.com/CommE2E/comm/blob/4190d9a0939d44cdccbb6225f1fc56451b99c84f/nix/overlay.nix#L86C1-L88
 
 ```nix
 buildInputs = [ makeWrapper ];
