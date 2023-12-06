@@ -2375,9 +2375,31 @@ git log --all --full-history --oneline -3 -- pkgs/development/web/nodejs/v16.nix
 
 
 ```bash
+git log --all --full-history --stat -1 -- pkgs/development/web/nodejs/v16.nix | cat
+```
+Refs.:
+- https://stackoverflow.com/a/60839136
+
+
+TODO: https://stackoverflow.com/questions/6839398/find-when-a-file-was-deleted-in-git/56054951#comment94687345_34755406
+
+```bash
+git log --all --oneline --no-patch --full-history -- pkgs/development/web/nodejs/ | cat 
+git log --all --oneline --no-patch -- pkgs/development/web/nodejs/ | cat 
+```
+Refs.:
+- https://stackoverflow.com/a/73312097
+- https://stackoverflow.com/a/60839136
+
+```bash
 git rev-list -n 2 HEAD -- pkgs/development/web/nodejs/v16.nix
 ```
+Refs.:
+- https://stackoverflow.com/a/56054951
 
+
+
+#### glibc
 
 
 ```bash
