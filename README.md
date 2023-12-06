@@ -4,6 +4,7 @@ Is an unofficial wrapper of the nix installer, unstable for now!
 
 [https://nixos.org/guides/install-nix.html](https://nixos.org/download.html)
 
+## Nix runs in many "systems"
 
 Depending on what hardware you run:
 - https://nix.dev/tutorials/install-nix
@@ -11,6 +12,9 @@ Depending on what hardware you run:
 - https://github.com/DeterminateSystems/nix-installer
 - https://determinate.systems/posts/nix-on-the-steam-deck
 - https://guacamolie.nl/en/blog/sway-on-the-steam-deck/
+- [Nix-on-droid packages installation, channels update on Android(part 2)](https://www.youtube.com/embed/NaaDi7cDSSA?start=870&end=875&version=3), start=870&end=875
+- [The Nix Phone and the end of Android](https://www.youtube.com/watch?v=0UIpg19KECw)
+- 
 
 
 # Contributing locally
@@ -724,6 +728,7 @@ nix eval --raw nixpkgs#lib.version
 nix eval nixpkgs#lib.fakeSha256
 
 nix eval --json nixpkgs#lib.platforms | jq .
+nix eval --json nixpkgs#google-chrome.meta.platforms
 
 nix eval --impure --expr '((builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}.stdenv.isDarwin)'
 nix eval  nixpkgs#stdenv.isDarwin
@@ -31832,7 +31837,7 @@ Refs.:
 - https://crates.io/crates/nix-installer/0.15.1
 
 
-My collection:
+My collection to improve DX:
 ```bash
 bash-prompt-prefix = (nix:$name)\040
 experimental-features = flakes nix-command repl-flake
@@ -31843,6 +31848,11 @@ keep-derivations = true
 keep-env-derivations = true
 ```
 
+Do set an `name` for `nix develop .#devShells.$system.default`, 
+it is used in `bash-prompt-prefix`: 
+```bash
+nix eval --raw nixpkgs#mkShell.__functionArgs
+```
 
 TODO: test it!
 ```bash
