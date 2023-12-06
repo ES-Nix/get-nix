@@ -2381,7 +2381,10 @@ Refs.:
 - https://stackoverflow.com/a/60839136
 
 
-TODO: https://stackoverflow.com/questions/6839398/find-when-a-file-was-deleted-in-git/56054951#comment94687345_34755406
+TODO: 
+https://stackoverflow.com/questions/6839398/find-when-a-file-was-deleted-in-git/56054951#comment94687345_34755406
+https://lazamar.github.io/download-specific-package-version-with-nix/
+
 
 ```bash
 git log --all --oneline --no-patch --full-history -- pkgs/development/web/nodejs/ | cat 

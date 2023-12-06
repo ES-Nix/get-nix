@@ -29673,6 +29673,62 @@ Refs.:
 - https://stackoverflow.com/a/53985748
 
 
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+   easy = pkgs.writeText "easy.c" ''
+    #include <stdio.h>
+     void (*(*f[])())();
+
+     int main (int argc, char **argv) {
+       printf ("Memory: %p\n", &f);
+       return 0;
+     }
+   '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "easy";
+        src = easy;
+        buildPhase = ''
+          $CC ${easy} -o easy
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp easy  $out/bin/easy
+          runHook postInstall
+        '';
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://stackoverflow.com/questions/34548762/c-isnt-that-hard-void-f
+- https://www.quora.com/How-can-the-function-void-function-void-f-declare-another-function-as-a-parameter
+
 
 ```bash
 EXPR=$(cat <<-'EOF'
