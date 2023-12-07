@@ -12256,6 +12256,11 @@ nix-index
 
 https://github.com/nix-community/home-manager/blob/master/modules/programs/nix-index.nix#blob-path
 
+Related?
+[Replit Pro: All Things Nix](https://www.youtube.com/embed/q5paXmDbk7o?start=176&end=395&version=3), start=176&end=395
+[Replit Pro: All Things Nix](https://www.youtube.com/embed/q5paXmDbk7o?start=335&end=388&version=3), start=335&end=388
+
+
 #### Investigation
 
 Take a look at: https://releases.nixos.org/?prefix=nixos/
