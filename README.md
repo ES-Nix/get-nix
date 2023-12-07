@@ -27266,6 +27266,39 @@ github:NixOS/nixpkgs/a8f8b7db23ec6450e384da183d270b18c58493d4#pkgsStatic.python
 https://nixos.org/manual/nix/stable/package-management/binary-cache-substituter.html
 
 
+## nodejs
+
+
+https://www.reddit.com/r/Nix/comments/wcuqtc/should_i_use_a_node_version_manager_with_nix/
+https://discourse.nixos.org/t/how-to-install-nvm-node-version-manager-in-nixos/20644/5
+https://stackoverflow.com/a/74409706
+https://github.com/NixOS/nixpkgs/commit/5883bfbaac10fb4afd1d97adba798a7acc9dbe8b
+https://zeroes.dev/p/nix-recipe-for-nodejs/
+
+
+https://discourse.nixos.org/t/how-to-correctly-install-a-specific-version-of-node/28097
+https://discourse.nixos.org/t/managing-multiple-versions-of-node-js-with-nix/5425/10
+https://www.uglydirtylittlestrawberry.co.uk/posts/replacing-nvm-with-nix-shells/
+https://github.com/CommE2E/comm/blob/4190d9a0939d44cdccbb6225f1fc56451b99c84f/nix/overlay.nix#L62-L89
+
+
+### T3 Stack with Monero Flake
+
+TODO: https://www.answeroverflow.com/m/1177736106062643221
+
+```bash
+shellHook = ''
+export BROWSER=none
+export NODE_OPTIONS="--no-experimental-fetch"
+export PRISMA_QUERY_ENGINE_BINARY="${prisma-engines}/bin/query-engine"
+export PRISMA_QUERY_ENGINE_LIBRARY="${prisma-engines}/lib/libquery_engine.node"
+export PRISMA_INTROSPECTION_ENGINE_BINARY="${prisma-engines}/bin/introspection-engine"
+export PRISMA_FMT_BINARY="${prisma-engines}/bin/prisma-fmt"
+export PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING="true"
+node -v
+'';
+```
+
 ## mkYarnPackage
 
 
@@ -29150,6 +29183,9 @@ The nix language fu/nix-fu:
 - https://nixos.wiki/wiki/Nix_Language_Quirks
 - https://nixos.wiki/wiki/C
 - https://github.com/CommE2E/comm/blob/4190d9a0939d44cdccbb6225f1fc56451b99c84f/nix/overlay.nix#L86C1-L88
+- nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/allow-insecure-packages-in-flake-nix/34655/2
+- nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/using-nixpkgs-legacypackages-system-vs-import/17462/6
+
 
 ```nix
 buildInputs = [ makeWrapper ];
@@ -30541,7 +30577,7 @@ ls: cannot access '/nix/var/nix/profiles/per-user/pedro/channels': No such file 
 profile  profile-6-link
 ```
 
-
+TODO: https://discourse.nixos.org/t/using-nixpkgs-legacypackages-system-vs-import/17462/19
 ```nix
 nix.nixPath = [ "nixpkgs=${pkgs.outPath}" "unstable=${unstable.outPath}" ];
 ```
