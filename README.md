@@ -30801,7 +30801,7 @@ Refs.:
 ```bash
 nix develop --pure-eval --ignore-environment nixpkgs#hello \
 --command sh -c \
-'cd "$TMPDIR" && source $stdenv/setup
+'cd "$TMPDIR" && source $stdenv/setup'
 ```
 
 
