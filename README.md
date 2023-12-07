@@ -26834,6 +26834,10 @@ Refs.:
 - https://documentation.suse.com/pt-br/sles/15-GA/html/SLES-all/cha-systemd.html
 
 TODO: where it fits? https://github.com/NixOS/nixpkgs/issues/48749#issuecomment-431700134
+https://discourse.nixos.org/t/what-is-the-difference-between-systemd-services-and-systemd-user-services/25222/2
+
+https://nixos.wiki/wiki/Systemd/Timers
+
 
 ```bash
   # journalctl --user --unit foo.service -b -f
