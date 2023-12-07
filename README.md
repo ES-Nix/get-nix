@@ -26954,6 +26954,7 @@ https://nixos.wiki/wiki/C#Debug_symbols
 - https://nixos.org/manual/nixos/stable/index.html#sec-nixos-tests
 - https://nixos.mayflower.consulting/blog/2019/07/11/leveraging-nixos-tests-in-your-project/
 - https://gianarb.it/blog/my-workflow-with-nixos
+- https://scvalex.net/posts/58/ systemd-fu
 
 
 
@@ -29219,6 +29220,7 @@ The nix language fu/nix-fu:
 - https://github.com/NixOS/nixpkgs/blob/04ba740f89b23001077df136c216a885371533ad/pkgs/development/tools/build-managers/cmake/default.nix#L132-L136
 - https://nixos.wiki/wiki/Nix_Language_Quirks
 - https://nixos.wiki/wiki/C
+- https://scvalex.net/posts/58/
 - https://github.com/CommE2E/comm/blob/4190d9a0939d44cdccbb6225f1fc56451b99c84f/nix/overlay.nix#L86C1-L88
 - nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/allow-insecure-packages-in-flake-nix/34655/2
 - nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/using-nixpkgs-legacypackages-system-vs-import/17462/6
