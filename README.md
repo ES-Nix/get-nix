@@ -26854,6 +26854,7 @@ TODO: where it fits? https://github.com/NixOS/nixpkgs/issues/48749#issuecomment-
       so setting it to be wantedBy that doesn’t
       accomplish anything.
       https://discourse.nixos.org/t/nixos-22-11-systemd-user-services-dont-start-automatically-but-global-ones-do/24809/2
+      https://discourse.nixos.org/t/systemd-user-units-are-not-started/13294/2
     */
     wantedBy = [ "default.target" ];
   };
