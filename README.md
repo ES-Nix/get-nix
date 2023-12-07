@@ -12242,7 +12242,6 @@ Refs.:
 - https://github.com/NixOS/nixpkgs/issues/12044#issuecomment-191242196
 - https://github.com/NixOS/nixpkgs/pull/187894#issuecomment-1234292290
 - https://discourse.nixos.org/t/why-isnt-there-an-official-built-in-way-to-find-what-package-provides-a-specific-executable/22937/4
-- https://github.com/nix-community/home-manager/blob/master/modules/programs/nix-index.nix#blob-path
 - https://github.com/NixOS/nixos-channel-scripts/issues/4#issuecomment-253822096
 - https://github.com/NixOS/nixpkgs/issues/39789
 - About the dbPath https://github.com/NixOS/nixpkgs/blob/d9e8d5395ed0fd93ee23114e59ba5449992829a6/nixos/modules/programs/command-not-found/command-not-found.nix#L35
@@ -12251,6 +12250,11 @@ Refs.:
 - [NixOS: Fix `command-not-found` Database File Error](https://evanrelf.com/nixos-fix-command-not-found-database-file-error)
 - https://discourse.nixos.org/t/some-question-about-nix-channel-git-commit-version-and-packages/2671/13
 - For home-manager https://github.com/NixOS/nixpkgs/issues/39789#issuecomment-989852476
+
+nix-index
+[Ryan Lahfa – Convergent configuration with NixOS (2023 Nix Developer Dialogues)](https://www.youtube.com/embed/XdB690EGDdE?start=998&end=1056&version=3), start=998&end=1056
+
+https://github.com/nix-community/home-manager/blob/master/modules/programs/nix-index.nix#blob-path
 
 #### Investigation
 
