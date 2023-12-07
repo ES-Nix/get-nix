@@ -26835,10 +26835,33 @@ Refs.:
 
 TODO: where it fits? https://github.com/NixOS/nixpkgs/issues/48749#issuecomment-431700134
 
+```bash
+  # journalctl --user --unit foo.service -b -f
+  systemd.user.services.foo = {
+    script = ''
+      #! ${pkgs.runtimeShell} -e
+
+      echo "Started"
+
+      echo #####
+      date +'%d/%m/%Y %H:%M:%S:%3N'
+      id
+
+      echo "Ended"
+    '';
+    /*
+      There is no multi-user.target in the user systemd instance,
+      so setting it to be wantedBy that doesn’t
+      accomplish anything.
+      https://discourse.nixos.org/t/nixos-22-11-systemd-user-services-dont-start-automatically-but-global-ones-do/24809/2
+    */
+    wantedBy = [ "default.target" ];
+  };
+```
+
+
 TODO: re read https://discourse.nixos.org/t/disable-a-systemd-service-while-having-it-in-nixoss-conf/12732/3
 ```bash
-
-
 systemd.services. = {
   enable = true;
   serviceConfig = {
