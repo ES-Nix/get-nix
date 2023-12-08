@@ -20,6 +20,9 @@ Depending on what hardware you run:
 - [NixCon2023 Automating testing of NixOS on physical machines](https://www.youtube.com/watch?v=YzHMiP0DwXM)
 - [NixCon2023 Nix and Kubernetes: Deployments Done Right](https://www.youtube.com/watch?v=SEA1Qm8K4gY)
 - [Nix tutorials](https://www.youtube.com/watch?v=bjTxiFLSNFA&list=PLko9chwSoP-15ZtZxu64k_CuTzXrFpxPE)
+- [RubberDuck](https://www.youtube.com/watch?v=Ukglm5KJFa8&list=PLV-ifxTuxQYigpFNYRmU0Ta9yHs80JhqD)
+- [Summer of Nix 2023 — Nix Developer Dialogues](https://www.youtube.com/watch?v=90aB_usqatE&list=PLt4-_lkyRrOPcBuz_tjm6ZQb-6rJjU3cf)
+
 
 
 # Contributing locally
