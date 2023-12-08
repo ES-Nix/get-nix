@@ -30045,13 +30045,17 @@ in
 ```bash
 sh -c 'echo $0'
 ```
+
 vs
+
 ```bash
 sh <<-EOF
 echo $0
 EOF
 ```
+
 vs
+
 ```bash
 sh <<-'EOF'
 echo $0
@@ -30116,6 +30120,8 @@ Refs.:
 - https://stackoverflow.com/questions/10856129/setting-an-environment-variable-before-a-command-in-bash-is-not-working-for-the#comment125369132_56765113
 
 
+TODO: sed-fu
+https://stackoverflow.com/a/46434705
 
 > That last script is the pedantically robust way to do this in Bash if you want to be super paranoid. 
 > The above script might not work in other shells, but hopefully this post was sufficiently clear 
