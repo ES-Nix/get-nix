@@ -1672,6 +1672,9 @@ Not recommended commands:
 
 
 https://discourse.nixos.org/t/cli-alternative-to-nix-env/30305/4
+https://discourse.nixos.org/t/how-do-nix-profiles-and-flakes-fit-together/28139/17
+https://news.ycombinator.com/item?id=35039490
+
 
 [Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
 [CLI stabilization effort](https://github.com/NixOS/nix/issues/7701)
@@ -16480,6 +16483,8 @@ $(nix eval --raw nixpkgs#ffmpeg-full) \
 TODO: 
 - https://github.com/NixOS/nix/issues/1245#issuecomment-726138112
 - https://github.com/NixOS/nix/issues/1245#issuecomment-401642781
+- https://gist.github.com/CMCDragonkai/a962f47501ab581a5925a44d192f1c78
+- --include-outputs https://github.com/NixOS/nix/pull/6147
 
 
 ```bash
