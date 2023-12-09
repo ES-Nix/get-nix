@@ -29232,7 +29232,7 @@ The nix language fu/nix-fu:
 - https://github.com/CommE2E/comm/blob/4190d9a0939d44cdccbb6225f1fc56451b99c84f/nix/overlay.nix#L86C1-L88
 - nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/allow-insecure-packages-in-flake-nix/34655/2
 - nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/using-nixpkgs-legacypackages-system-vs-import/17462/6
-
+- nix-env -qa | wc -l
 
 ```nix
 buildInputs = [ makeWrapper ];
