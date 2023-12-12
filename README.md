@@ -12153,9 +12153,13 @@ nix-shell -p nix-info --run "nix-info -m"
 ```bash
 nix eval --impure --expr '<nixpkgs>'
 
-nix eval --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c")'
+nix eval --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b")'
 nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs")'
+
 nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").rev'
+nix eval --impure --json --expr '(builtins.getFlake "nix").rev'
+nix eval --impure --json --expr '(builtins.getFlake "patchelf").rev'
+
 nix eval --impure --raw --expr '(builtins.getFlake "nixpkgs").outPath'
 
 nix-instantiate --eval --attr 'pkgs.path' '<nixpkgs>'
@@ -12168,6 +12172,7 @@ TODO: help there https://github.com/NixOS/nix.dev/issues/580#issuecomment-176356
 
 TODO: related? 
 ```bash
+nix-instantiate --eval --attr 'path' '<nixpkgs>'
 nix-instantiate --eval --attr 'pkgs.path' '<nixpkgs>'
 
 nix eval nixpkgs#path
@@ -26856,6 +26861,36 @@ https://discourse.nixos.org/t/what-is-the-difference-between-systemd-services-an
 https://nixos.wiki/wiki/Systemd/Timers
 
 
+
+#### graphical.target vs graphical-session.target
+
+
+TODO: exercise make this works
+https://discourse.nixos.org/t/systemd-how-to-properly-terminate-a-grapcal-sesion/36600/2
+
+```bash
+    wantedBy = [ "graphical-session.target" ];
+    wants = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    https://discourse.nixos.org/t/how-to-setup-xcape-in-configuration-nix-without-home-manager/20531
+```
+Refs.:
+- https://nixos.wiki/wiki/Polkit 
+- https://discourse.nixos.org/t/how-to-setup-xcape-in-configuration-nix-without-home-manager/20531
+- https://www.reddit.com/r/NixOS/comments/cg102t/how_to_run_a_shell_command_upon_startup/
+
+
+
+https://github.com/NixOS/nixpkgs/issues/169143#issuecomment-1102573808
+https://github.com/NixOS/nixpkgs/blob/aafa2b2c3d46081f1009d87ad55d438390875254/nixos/modules/services/x11/desktop-managers/xfce.nix#L105
+https://discourse.nixos.org/t/automatic-program-start-up-on-login-with-xorg/34261
+
+
+TODO: SOPS
+https://github.com/Mic92/sops-nix/issues/225#issuecomment-1321201942
+https://github.com/Mic92/sops-nix/issues/324#issuecomment-1529926435
+
+
 ```bash
   # journalctl --user --unit foo.service -b -f
   systemd.user.services.foo = {
@@ -29233,6 +29268,7 @@ The nix language fu/nix-fu:
 - nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/allow-insecure-packages-in-flake-nix/34655/2
 - nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/using-nixpkgs-legacypackages-system-vs-import/17462/6
 - nix-env -qa | wc -l
+- assert lib.versionAtLeast go.version "1.13";
 
 ```nix
 buildInputs = [ makeWrapper ];
