@@ -22,7 +22,7 @@ Depending on what hardware you run:
 - [Nix tutorials](https://www.youtube.com/watch?v=bjTxiFLSNFA&list=PLko9chwSoP-15ZtZxu64k_CuTzXrFpxPE)
 - [RubberDuck](https://www.youtube.com/watch?v=Ukglm5KJFa8&list=PLV-ifxTuxQYigpFNYRmU0Ta9yHs80JhqD)
 - [Summer of Nix 2023 — Nix Developer Dialogues](https://www.youtube.com/watch?v=90aB_usqatE&list=PLt4-_lkyRrOPcBuz_tjm6ZQb-6rJjU3cf)
-
+- [NixOS 62: Run MacOS X on NixOS With a Single Command (NixThePlanet)](https://www.youtube.com/watch?v=fFIDf8ZWX2w)
 
 
 # Contributing locally
@@ -12097,6 +12097,9 @@ home.sessionVariables.NIX_PATH = "nixpkgs=nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NI
 Refs.:
 - https://ayats.org/blog/channels-to-flakes/#pinning-your-registry
 
+
+TODO: replicate this annoying thing!
+[NixCon2023 What Flakes needs (technically)](https://www.youtube.com/embed/UHhnG4rbvzo?start=1131&end=1236&version=3), start=1131&end=1236
 
 
 ```bash
@@ -25325,7 +25328,8 @@ in
 
 ### SoN2022 
 
-TODO:
+TODO: organize it
+- https://github.com/NixOS/rfcs/pull/49#issuecomment-659372623
 - [Armijn Hemel - The History of NixOS (SoN2022 - Public Lecture Series)](https://www.youtube.com/watch?v=t6goF1dM3ag)
 - [Eelco Dolstra - The Evolution of Nix (SoN2022 - public lecture series)](https://www.youtube.com/watch?v=h8hWX_aGGDc)
 - [EU Next Generation Initiative and other ways to get your NixOS project funded (NixCon 2019)](https://www.youtube.com/watch?v=M2slgOo2jQ4)
@@ -26867,6 +26871,8 @@ https://nixos.wiki/wiki/Systemd/Timers
 
 TODO: exercise make this works
 https://discourse.nixos.org/t/systemd-how-to-properly-terminate-a-grapcal-sesion/36600/2
+https://discussion.fedoraproject.org/t/auto-start-programs-using-terminal-f37/79576/2
+
 
 ```bash
     wantedBy = [ "graphical-session.target" ];
@@ -26880,6 +26886,8 @@ Refs.:
 - https://www.reddit.com/r/NixOS/comments/cg102t/how_to_run_a_shell_command_upon_startup/
 
 
+`/run/current-system/sw/share/applications`
+Refs: https://discourse.nixos.org/t/version-independent-location-for-desktop-files/3568/2
 
 https://github.com/NixOS/nixpkgs/issues/169143#issuecomment-1102573808
 https://github.com/NixOS/nixpkgs/blob/aafa2b2c3d46081f1009d87ad55d438390875254/nixos/modules/services/x11/desktop-managers/xfce.nix#L105
@@ -26889,6 +26897,13 @@ https://discourse.nixos.org/t/automatic-program-start-up-on-login-with-xorg/3426
 TODO: SOPS
 https://github.com/Mic92/sops-nix/issues/225#issuecomment-1321201942
 https://github.com/Mic92/sops-nix/issues/324#issuecomment-1529926435
+https://discussion.fedoraproject.org/t/auto-start-programs-using-terminal-f37/79576/3
+https://discourse.nixos.org/t/alternative-way-to-handle-secrets/35511
+https://discourse.nixos.org/t/how-to-using-sops-nix-to-manage-ssh-gpg-private-key/30823
+https://samleathers.com/posts/2022-02-03-my-new-network-and-deploy-rs.html
+https://discourse.nixos.org/t/having-trouble-wrapping-my-head-around-nix-sops/28055/2
+https://bmcgee.ie/posts/2022/11/getting-nixos-to-keep-a-secret/
+https://lobste.rs/s/ymhmun/getting_nixos_keep_secret
 
 
 ```bash
@@ -26998,8 +27013,10 @@ https://nixos.wiki/wiki/C#Debug_symbols
 - https://nixos.mayflower.consulting/blog/2019/07/11/leveraging-nixos-tests-in-your-project/
 - https://gianarb.it/blog/my-workflow-with-nixos
 - https://scvalex.net/posts/58/ systemd-fu
+- https://tailscale.com/blog/nixos-minecraft/ Xe Iaso
 
-
+https://guekka.github.io/nixos-server-1/
+https://guekka.github.io/nixos-server-2/
 
 [Test ALL the Things – On improving the nixpkgs testing story by Profpatsch (NixCon 2017)](https://www.youtube.com/watch?v=5Z7IckV6gao)
 [Rickard Nilsson - Nix(OS) modules everywhere! (NixCon 2018)](https://www.youtube.com/watch?v=I_KCd46B8Mw)
@@ -29269,6 +29286,7 @@ The nix language fu/nix-fu:
 - nixpkgs.legacyPackages.${system} vs import https://discourse.nixos.org/t/using-nixpkgs-legacypackages-system-vs-import/17462/6
 - nix-env -qa | wc -l
 - assert lib.versionAtLeast go.version "1.13";
+- https://unix.stackexchange.com/a/445373
 
 ```nix
 buildInputs = [ makeWrapper ];
