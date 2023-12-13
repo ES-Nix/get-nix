@@ -23,6 +23,8 @@ Depending on what hardware you run:
 - [RubberDuck](https://www.youtube.com/watch?v=Ukglm5KJFa8&list=PLV-ifxTuxQYigpFNYRmU0Ta9yHs80JhqD)
 - [Summer of Nix 2023 — Nix Developer Dialogues](https://www.youtube.com/watch?v=90aB_usqatE&list=PLt4-_lkyRrOPcBuz_tjm6ZQb-6rJjU3cf)
 - [NixOS 62: Run MacOS X on NixOS With a Single Command (NixThePlanet)](https://www.youtube.com/watch?v=fFIDf8ZWX2w)
+- [Reproducibly building artifacts that contain embedded signatures](https://www.youtube.com/watch?v=-CUa3yVTK5U), [Martin Schwaighofer, PhD student at JKU in Austria](https://talks.nixcon.org/nixcon-2022/talk/JHVF8N/)
+
 
 
 # Contributing locally
@@ -12100,6 +12102,8 @@ Refs.:
 
 TODO: replicate this annoying thing!
 [NixCon2023 What Flakes needs (technically)](https://www.youtube.com/embed/UHhnG4rbvzo?start=1131&end=1236&version=3), start=1131&end=1236
+[Manage Nix Flake Inputs Like a Pro](https://www.youtube.com/watch?v=4ZoBGlkMPWI)
+
 
 
 ```bash
@@ -26864,7 +26868,7 @@ https://discourse.nixos.org/t/what-is-the-difference-between-systemd-services-an
 
 https://nixos.wiki/wiki/Systemd/Timers
 
-
+#### multi-user.target vs default.target
 
 #### graphical.target vs graphical-session.target
 
