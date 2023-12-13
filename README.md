@@ -17045,6 +17045,24 @@ nix eval nixpkgs#darwin.builder.meta.platforms
 ```
 
 
+> The editor to invoke is specified by the EDITOR environment variable. 
+> It defaults to cat.
+
+```bash
+nix edit nixpkgs#openssl
+```
+
+```bash
+nix eval nixpkgs#openssl.meta.position
+```
+
+
+```bash
+nix eval --impure --expr \
+'builtins.unsafeGetAttrPos "description" (import (builtins.getFlake "nixpkgs") {}).openssl.meta'
+```
+
+
 ```bash
 nix eval --system aarch64-linux --impure --raw --expr 'builtins.currentSystem'
 ```
