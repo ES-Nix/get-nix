@@ -1676,7 +1676,7 @@ Not recommended commands:
 https://discourse.nixos.org/t/cli-alternative-to-nix-env/30305/4
 https://discourse.nixos.org/t/how-do-nix-profiles-and-flakes-fit-together/28139/17
 https://news.ycombinator.com/item?id=35039490
-
+https://www.reddit.com/r/NixOS/comments/117vdpa/what_does_nixenv_install_do/
 
 [Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
 [CLI stabilization effort](https://github.com/NixOS/nix/issues/7701)
@@ -29309,6 +29309,7 @@ The nix language fu/nix-fu:
 - nix-env -qa | wc -l
 - assert lib.versionAtLeast go.version "1.13";
 - https://unix.stackexchange.com/a/445373
+- `ignoringVulns = x: x // { meta = (x.meta // { knownVulnerabilities = []; }); };` https://fnordig.de/2023/07/24/old-ruby-on-modern-nix/ 
 
 ```nix
 buildInputs = [ makeWrapper ];
