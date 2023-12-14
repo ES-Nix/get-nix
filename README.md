@@ -12046,6 +12046,10 @@ git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 1
 
 
 Eelco Dolstra explaining this:
+TODO: replicate this annoying thing!
+- [NixCon2023 What Flakes needs (technically)](https://www.youtube.com/embed/UHhnG4rbvzo?start=1131&end=1236&version=3), start=1131&end=1236
+- [The Nix Hour #3 [flake updating, nix edit, some corners of the Nix language]](https://www.youtube.com/embed/_OBcPLnyNag?start=400&end=436&version=3), start=400&end=436
+- [Manage Nix Flake Inputs Like a Pro](https://www.youtube.com/watch?v=4ZoBGlkMPWI)
 - [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=977&version=3), start=817&end=977
 - https://edolstra.github.io/talks/nixcon-oct-2019.pdf
 
@@ -12099,10 +12103,6 @@ home.sessionVariables.NIX_PATH = "nixpkgs=nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NI
 Refs.:
 - https://ayats.org/blog/channels-to-flakes/#pinning-your-registry
 
-
-TODO: replicate this annoying thing!
-[NixCon2023 What Flakes needs (technically)](https://www.youtube.com/embed/UHhnG4rbvzo?start=1131&end=1236&version=3), start=1131&end=1236
-[Manage Nix Flake Inputs Like a Pro](https://www.youtube.com/watch?v=4ZoBGlkMPWI)
 
 
 
@@ -17061,6 +17061,8 @@ nix eval nixpkgs#openssl.meta.position
 nix eval --impure --expr \
 'builtins.unsafeGetAttrPos "description" (import (builtins.getFlake "nixpkgs") {}).openssl.meta'
 ```
+Refs.:
+- [The Nix Hour #3 [flake updating, nix edit, some corners of the Nix language]](https://www.youtube.com/embed/_OBcPLnyNag?start=400&end=800&version=3)
 
 
 ```bash
@@ -32001,6 +32003,9 @@ https://www.sympy.org/scipy-2017-codegen-tutorial/
 https://www.youtube.com/watch?v=5jzIVp6bTy0
 
 #### The determinate systems nix installer, written in Rust
+
+Slice about flakes with github data.
+[Flakes: Nix Unshackled – Graham Christensen | PackagingCon 2023](https://www.youtube.com/embed/wZBiRv3ixhU?start=407&end=460&version=3), start=407&end=460
 
 
 ```bash
