@@ -3089,12 +3089,22 @@ mkdir build-dir \
 && ./hello | cowsay
 ```
 
+
 TODO: it is big, cat $stdenv/setup | wc -l
 ```bash
 source $stdenv/setup \
 && phases="buildPhase" genericBuild
 ```
 
+
+```bash
+nix eval --raw nixpkgs#stdenv.preHook | wc -l
+```
+
+```bash
+cat $(nix build --no-link --print-out-paths \
+--print-build-logs nixpkgs#stdenv)/setup | wc -l
+```
 
 ```bash
 nix \

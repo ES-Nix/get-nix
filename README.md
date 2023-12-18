@@ -24,7 +24,7 @@ Depending on what hardware you run:
 - [Summer of Nix 2023 — Nix Developer Dialogues](https://www.youtube.com/watch?v=90aB_usqatE&list=PLt4-_lkyRrOPcBuz_tjm6ZQb-6rJjU3cf)
 - [NixOS 62: Run MacOS X on NixOS With a Single Command (NixThePlanet)](https://www.youtube.com/watch?v=fFIDf8ZWX2w)
 - [Reproducibly building artifacts that contain embedded signatures](https://www.youtube.com/watch?v=-CUa3yVTK5U), [Martin Schwaighofer, PhD student at JKU in Austria](https://talks.nixcon.org/nixcon-2022/talk/JHVF8N/)
-
+- https://www.youtube.com/@NixCon/playlists
 
 
 # Contributing locally
@@ -1673,10 +1673,12 @@ Not recommended commands:
 > https://github.com/NixOS/nixpkgs/issues/126036#issuecomment-860447915
 
 
-https://discourse.nixos.org/t/cli-alternative-to-nix-env/30305/4
-https://discourse.nixos.org/t/how-do-nix-profiles-and-flakes-fit-together/28139/17
-https://news.ycombinator.com/item?id=35039490
-https://www.reddit.com/r/NixOS/comments/117vdpa/what_does_nixenv_install_do/
+List
+- [NixOS: a sales pitch](https://www.youtube.com/embed/2L2qHfNnXB4?start=432&end=476&version=3), start=432&end=476
+- https://discourse.nixos.org/t/cli-alternative-to-nix-env/30305/4
+- https://discourse.nixos.org/t/how-do-nix-profiles-and-flakes-fit-together/28139/17
+- https://news.ycombinator.com/item?id=35039490
+- https://www.reddit.com/r/NixOS/comments/117vdpa/what_does_nixenv_install_do/
 
 [Missing 'nix' subcommands](https://github.com/NixOS/nix/issues/4429)
 [CLI stabilization effort](https://github.com/NixOS/nix/issues/7701)
@@ -25348,11 +25350,20 @@ in
 
 ### --daemon
 
-
+https://youtu.be/fsgYVi2PQr0?t=295
 
 ### SoN2022 
 
 TODO: organize it
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=174&end=295&version=3), start=174&end=295
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=968&end=1201&version=3), start=968&end=1201
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=438&end=649&version=3), start=438&end=649
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1647&end=1664&version=3), start=1647&end=1664
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1471&end=1498&version=3), start=1471&end=1498
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1671&end=1705&version=3), start=1671&end=1705
+
+
+List:
 - https://github.com/NixOS/rfcs/pull/49#issuecomment-659372623
 - [Armijn Hemel - The History of NixOS (SoN2022 - Public Lecture Series)](https://www.youtube.com/watch?v=t6goF1dM3ag)
 - [Eelco Dolstra - The Evolution of Nix (SoN2022 - public lecture series)](https://www.youtube.com/watch?v=h8hWX_aGGDc)
@@ -27420,6 +27431,11 @@ export PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING="true"
 node -v
 '';
 ```
+
+## 2nix tools
+
+
+https://github.com/JuliaCN/Julia2Nix.jl
 
 ## mkYarnPackage
 
@@ -30438,6 +30454,13 @@ Refs.:
 - https://stackoverflow.com/questions/50110043/force-gnu-make-to-use-a-specific-shell#comment87271405_50110280
 
 
+##### python-fu
+
+
+- [Mark Smith - Stupid Things I've Done With Python](https://www.youtube.com/embed/jIM5urFHf2k?start=1758&end=1776&version=3), start=1758&end=1776 Facebook uses it! 
+- [Mark Smith - Stupid Things I've Done With Python](https://www.youtube.com/embed/jIM5urFHf2k?start=1818&end=1869&version=3), start=1818&end=1869
+- ?
+
 ##### Network-fu
 
 
@@ -31984,13 +32007,14 @@ Refs.:
 TODO
 https://scipython.com/blog/the-double-pendulum/
 https://rosettacode.org/wiki/Rosetta_Code
-
+https://www.youtube.com/@MrPSolver/playlists
 
 TODO: factorial and gamma in Rust
 https://stackoverflow.com/questions/59206653/how-to-calculate-21-factorial-in-rust/69534350#69534350
 https://codereview.stackexchange.com/questions/116850/gamma-function-in-rust
 
-TODO: Someone improved my code by 40,832,277,770%
+TODO: [Someone improved my code by 40,832,277,770%](https://www.youtube.com/watch?v=c33AZBnRHks)
+
 
 
 Symbolic:
@@ -32002,10 +32026,36 @@ Even deeper: Automatic Code Generation with SymPy
 https://www.sympy.org/scipy-2017-codegen-tutorial/
 https://www.youtube.com/watch?v=5jzIVp6bTy0
 
-#### The determinate systems nix installer, written in Rust
 
-Slice about flakes with github data.
-[Flakes: Nix Unshackled – Graham Christensen | PackagingCon 2023](https://www.youtube.com/embed/wZBiRv3ixhU?start=407&end=460&version=3), start=407&end=460
+### nix flakes
+
+
+- [NixCon Paris 2022 - Day 2](https://www.youtube.com/embed/-hsxXBabdX0?start=20161&end=20180&version=3), start=20161&end=20180 Graham Christensen "Death mark of two weeks"
+- [Jörg Thalheim: Nix flakes 101 (rC3 2020)](https://www.youtube.com/watch?v=QXUlhnhuRX4)
+
+
+
+[Rok Garbas – The NixOS hype and where to go from here (2023 Nix Developer Dialogues)](https://www.youtube.com/embed/C2mqmVlhihU?start=1701&end=1974&version=3), start=1701&end=1974
+
+### DX and development setup 
+
+- [GitHub Copilot and AI for Developers: Potential and Pitfalls with Scott Hanselman | BRK231H](https://www.youtube.com/embed/5pbPLHYB6-0?start=1530&end=1591&version=3), start=1530&end=1591
+- [Criativo Docker 01](https://www.youtube.com/embed/vMNyPZ7BcN8?start=7&end=20&version=3), start=7&end=20
+- [Q* seria o motivo da crise na OpenAI?, Chiselled Ubuntu, Devboxes, Flutter pode estar em risco #126](https://www.youtube.com/embed/irmMJ5hpGtM?start=897&end=1072&version=3), start=897&end=1072
+- [Microsoft Dev Box | First Look & How It Works](https://www.youtube.com/embed/kyeuSpR74W4?start=85&end=144&version=3), start=85&end=144
+- [NixCon Paris 2022 - Day 2](https://www.youtube.com/embed/-hsxXBabdX0?start=20161&end=20180&version=3), start=20161&end=20180 Graham Christensen "Death mark of two weeks"
+- [Microsoft Dev Box - First look and Setup | The Ultimate Developer Workstation](https://www.youtube.com/embed/rFfOQKLl9fU?start=14&end=148&version=3), start=14&end=148
+- ?
+
+
+
+### The determinate systems nix installer, written in Rust
+
+- Slice about flakes with github data.
+- [Flakes: Nix Unshackled – Graham Christensen | PackagingCon 2023](https://www.youtube.com/embed/wZBiRv3ixhU?start=407&end=460&version=3), start=407&end=460
+- [Rok Garbas – The NixOS hype and where to go from here (2023 Nix Developer Dialogues)](https://www.youtube.com/embed/C2mqmVlhihU?start=1701&end=1974&version=3), start=1701&end=1974
+- Is it done by the same company? https://zero-to-nix.com/
+- [A Resource for Learning Nix](https://www.youtube.com/watch?v=Nvh7A3HA_4U)
 
 
 ```bash
@@ -32065,3 +32115,11 @@ if [ ! -e "$1" ] && [ -h "$1" ]; then ...; fi
 ```
 Refs.:
 - https://unix.stackexchange.com/a/586346
+
+
+
+#### Devbox 
+
+- [Microsoft Dev Box for Microsoft engineers](https://www.youtube.com/watch?v=p8MxCMuEtao)
+- [Microsoft Dev Box - First look and Setup | The Ultimate Developer Workstation](https://www.youtube.com/embed/rFfOQKLl9fU?start=14&end=148&version=3), start=14&end=148
+- https://github.com/jetpack-io/devbox/tree/e0aad3e781eecf9cb38bc094043775e167285ef0#what-is-it
