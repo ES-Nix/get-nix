@@ -25352,10 +25352,13 @@ in
 
 https://youtu.be/fsgYVi2PQr0?t=295
 
-### SoN2022 
+### SoN2022 and more
 
 TODO: organize it
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=174&end=295&version=3), start=174&end=295
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=295&end=402&version=3), start=295&end=402
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=444&end=511&version=3), start=444&end=511, "don't touch or it will break", UKUUG Linux Conference presented paper.
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=507&end=528&version=3), start=507&end=528, "just read the Eelco Dosltra PhD thesis", by Armijn Hemel 
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=968&end=1201&version=3), start=968&end=1201
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=438&end=649&version=3), start=438&end=649
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1647&end=1664&version=3), start=1647&end=1664
