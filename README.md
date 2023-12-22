@@ -26950,8 +26950,12 @@ https://bmcgee.ie/posts/2022/11/getting-nixos-to-keep-a-secret/
 https://lobste.rs/s/ymhmun/getting_nixos_keep_secret
 https://github.com/Mic92/sops-nix/issues/225#issuecomment-1321201942
 https://konradmalik.com/posts/2023/02/sops-nix-simple-secrets-management-for-nix/
-
-
+https://www.reddit.com/r/NixOS/comments/1387bwo/how_do_you_add_multiple_ssh_identities_in_your/
+https://github.com/astro/microvm.nix/issues/52#issuecomment-1323962657 "it's a chicken/egg problem"
+https://github.com/astro/microvm.nix/issues/52#issuecomment-1510961371
+https://williamvds.me/blog/journey-into-nix/
+https://github.com/Mic92/sops-nix/pull/168
+https://github.com/Mic92/sops-nix/pull/168
 
 TODO: https://github.com/Mic92/sops-nix/issues/324 + https://github.com/Mic92/sops-nix/issues/24#issuecomment-663827948
 sops.age.sshKeyPaths = [];
@@ -32382,4 +32386,8 @@ https://developers.redhat.com/articles/2023/07/25/end-end-testing-self-hosted-ru
 https://aws.amazon.com/pt/blogs/aws-brasil/escalando-executores-self-hosted-do-github-actions-com-amazon-ecs/
 https://brandenpleines.medium.com/the-journey-to-self-hosted-github-actions-9396a2d46aa2
 https://medium.com/geekculture/assigning-pods-to-nodes-kubernetes-aa6d22af6165
+https://medium.com/simform-engineering/how-to-setup-self-hosted-github-action-runner-on-kubernetes-c8825ccbb63c
+https://medium.com/mossfinance/github-self-hosted-runners-on-kubernetes-with-actions-runner-controller-41e30c4cb76e
+
+
 
