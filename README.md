@@ -756,13 +756,19 @@ nix eval --raw --impure --expr \
 nix run --impure --expr \
 '(let pkgs = import (builtins.getFlake "github:NixOS/nixpkgs") { system = "${builtins.currentSystem}"; overlays = [(self: super: { hello = self.python3; })]; }; in pkgs.hello)'
 
-nix shell --impure --expr \
-'(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.buildFHSUserEnv (pkgs.appimageTools.defaultFhsEnvArgs // { name = "fhs"; profile = "export FHS=1"; runScript = "bash"; targetPkgs = pkgs: (with pkgs; [ hello cowsay ]); }))' \
---command fhs -c 'hello | cowsay' 
 
 echo $(nix-store --query --graph $(nix eval --raw nixpkgs#hello.drvPath)) | dot -Tpdf > hello.pdf
 ```
 
+```bash
+nix shell --impure --expr \
+'(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.buildFHSUserEnv (pkgs.appimageTools.defaultFhsEnvArgs // { name = "fhs"; profile = "export FHS=1"; runScript = "bash"; targetPkgs = pkgs: (with pkgs; [ hello cowsay ]); }))' \
+--command fhs -c 'hello | cowsay' 
+```
+Refs.:
+- https://discourse.nixos.org/t/tips-tricks-for-nixos-desktop/28488/2
+- https://github.com/ES-Nix/fhs-environment/issues/1
+- https://github.com/NixOS/nix/issues/1569
 
 ```bash
 nix show-derivation nixpkgs#hello
@@ -26942,6 +26948,13 @@ https://samleathers.com/posts/2022-02-03-my-new-network-and-deploy-rs.html
 https://discourse.nixos.org/t/having-trouble-wrapping-my-head-around-nix-sops/28055/2
 https://bmcgee.ie/posts/2022/11/getting-nixos-to-keep-a-secret/
 https://lobste.rs/s/ymhmun/getting_nixos_keep_secret
+https://github.com/Mic92/sops-nix/issues/225#issuecomment-1321201942
+https://konradmalik.com/posts/2023/02/sops-nix-simple-secrets-management-for-nix/
+
+
+
+TODO: https://github.com/Mic92/sops-nix/issues/324 + https://github.com/Mic92/sops-nix/issues/24#issuecomment-663827948
+sops.age.sshKeyPaths = [];
 
 
 ```bash
@@ -29317,6 +29330,8 @@ add2 = { a, b, ... }: a + b
 
 
 The nix language fu/nix-fu:
+- https://teu5us.github.io/nix-lib.html
+- https://bnikolic.co.uk/nix-cheatsheet.html
 - http://www.chriswarbo.net/projects/nixos/useful_hacks.html
 - https://teu5us.github.io/nix-lib.html
 - https://github.com/NixOS/nixpkgs/blob/b11ced7a9c1fc44392358e337c0d8f58efc97c89/nixos/lib/make-multi-disk-zfs-image.nix#L122-L123
@@ -29331,6 +29346,8 @@ The nix language fu/nix-fu:
 - assert lib.versionAtLeast go.version "1.13";
 - https://unix.stackexchange.com/a/445373
 - `ignoringVulns = x: x // { meta = (x.meta // { knownVulnerabilities = []; }); };` https://fnordig.de/2023/07/24/old-ruby-on-modern-nix/ 
+- https://discourse.nixos.org/t/tips-tricks-for-nixos-desktop/28488/2
+
 
 ```nix
 buildInputs = [ makeWrapper ];
@@ -32126,3 +32143,243 @@ Refs.:
 - [Microsoft Dev Box for Microsoft engineers](https://www.youtube.com/watch?v=p8MxCMuEtao)
 - [Microsoft Dev Box - First look and Setup | The Ultimate Developer Workstation](https://www.youtube.com/embed/rFfOQKLl9fU?start=14&end=148&version=3), start=14&end=148
 - https://github.com/jetpack-io/devbox/tree/e0aad3e781eecf9cb38bc094043775e167285ef0#what-is-it
+
+
+
+
+
+
+### 
+
+### 
+
+
+```bash
+# Bem haky, só bypassei o problema que deixava como pending
+kubectl label nodes nixos size=linux
+kubectl get nodes nixos --show-labels
+
+NAME_SPACE_RUNNER='actions-runner-system'
+kubectl create ns "$NAME_SPACE_RUNNER"
+
+mkdir -pv ~/k8s-bootstrap-runner \
+&& ~/k8s-bootstrap-runner
+
+cat > script.sh <<-'EOF'
+rm -rf *.pem *.csr *.srl || true
+
+# Step 1: CA
+# ----------
+
+# create CA, it is secret, keep it safe
+openssl genrsa -out ca.private.pem 2048
+
+# create public CA, give it to everyone so they can add it to trusted root
+openssl req -x509 -new -key ca.private.pem -out ca.public.pem -days 10000 -subj "/C=UA/L=Kiev"
+
+# Step 2: Certificate
+# -------------------
+
+# create certificate, it is secret, keep it safe
+openssl genrsa -out cert.private.pem 2048
+
+# create "certificate signing request" (csr)
+openssl req -new -key cert.private.pem -out cert.csr -subj "/CN=actions-runner-controller-webhook.actions-runner-system.svc"
+
+# config
+cat <<EOT >> cert.conf
+[SAN]
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = actions-runner-controller-webhook.actions-runner-system.svc
+DNS.2 = actions-runner-controller-webhook.actions-runner-system.svc.cluster.local
+EOT
+
+# sign it with our CA
+openssl x509 -req -in cert.csr -CA ca.public.pem -CAkey ca.private.pem -CAcreateserial -out cert.public.pem -days 10000 -extensions SAN -extfile cert.conf
+
+# clean
+rm -rf *.csr *.srl cert.conf || true
+
+# check
+openssl x509 -in cert.public.pem -text -noout | grep DNS
+EOF
+
+chmod 0755 script.sh
+
+./script.sh
+
+# smoke tests, better than nothing?!
+test -f cert.public.pem || exit 1
+test -f cert.private.pem || exit 1
+test -f ca.public.pem || exit 1
+
+
+kubectl create secret tls actions-runner-controller-serving-cert \
+--namespace="$NAME_SPACE_RUNNER" \
+--cert=cert.public.pem \
+--key=cert.private.pem
+
+
+# 
+
+cat > values.yml <<-'EOF'
+authSecret:
+  create: true
+  github_token: ghp_xxxxxxxxxxxxxxx
+
+# POI: disable cert manager
+certManagerEnabled: false
+
+admissionWebHooks:
+  # POI: cat ca.public.pem | base64
+  caBundle: xxxxxxxxxxxxxxxxxxxxxxxxxxxx=
+
+nodeSelector:
+size: linux
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: /metrics
+  prometheus.io/port: "8080"
+EOF
+
+
+sed -i 's/xxxxxxxxxxxxxxxxxxxxxxxxxxxx=/'"$(cat ca.public.pem | base64 -w 0)"'/g' values.yml
+sed -i 's/ghp_xxxxxxxxxxxxxxx/'"$GITHUB_TOKEN"'/g' values.yml
+
+helm upgrade actions-runner-controller actions-runner-controller \
+--install \
+--namespace "$NAME_SPACE_RUNNER" \
+--repo https://actions-runner-controller.github.io/actions-runner-controller \
+-f values.yml
+
+
+cat > runner.yml <<-'EOF'
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: gha
+  namespace: actions-runner-system
+spec:
+  replicas: 1
+  template:
+    spec:
+      # https://github.com/actions-runner-controller/actions-runner-controller/blob/master/docs/detailed-docs.md#runner-with-dind
+      dockerdWithinRunnerContainer: true
+      organization: Imobanco
+      labels:
+        - 'gha'
+        - 'gha-dev'
+      nodeSelector:
+        size: linux
+
+      resources:
+        limits:
+          cpu: "6.0"
+          memory: "5Gi"
+        requests:
+          cpu: "3.0"
+          memory: "4Gi"
+EOF
+
+kubectl --namespace="$NAME_SPACE_RUNNER" apply -f runner.yml
+
+export POD_NAME=$(kubectl get pods --namespace "$NAME_SPACE_RUNNER" -l "app.kubernetes.io/name=actions-runner-controller,app.kubernetes.io/instance=actions-runner-controller" -o jsonpath="{.items[0].metadata.name}")
+
+export CONTAINER_PORT=$(kubectl get pod --namespace "$NAME_SPACE_RUNNER" $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+
+
+echo "$POD_NAME"
+echo "$CONTAINER_PORT"
+
+```
+Refs.:
+- https://mac-blog.org.ua/github-actions-kubernetes-runner-without-certmanager/
+- https://serverfault.com/questions/1099167/node-pool-selection
+- https://superuser.com/a/1225139
+
+
+```bash
+kubectl describe -n "$NAME_SPACE_RUNNER" pod "$POD_NAME"
+```
+
+
+```bash
+kubectl describe pod "$POD_NAME" -n "$NAME_SPACE_RUNNER"
+```
+
+
+TODO: 
+Pq esse comando não termina?
+O que esse comando faz exatamente? Explicação:
+https://kubernetes.io/docs/tutorials/stateless-application/guestbook/#viewing-the-frontend-service-via-kubectl-port-forward
+```bash
+kubectl \
+--namespace "$NAME_SPACE_RUNNER" \
+port-forward $POD_NAME 8080:$CONTAINER_PORT
+```
+
+
+```bash
+kubectl -n actions-runner-system get pods
+kubectl -n actions-runner-system get runners
+```
+Refs.:
+- https://mac-blog.org.ua/github-actions-kubernetes-runner-without-certmanager/
+
+
+
+### 
+
+
+```bash
+GITHUB_TOKEN=ghp_yyyyyyyyyyyyyyy
+```
+
+
+```bash
+NAME_SPACE_RUNNER='actions-runner-system'
+
+
+helm repo add jetstack https://charts.jetstack.io
+
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.12.4 \
+  --set installCRDs=true
+
+curl -L https://github.com/summerwind/actions-runner-controller/releases/latest/download/actions-runner-controller.yaml > actions-runner-controller.yaml
+
+kubectl apply -f actions-runner-controller.yaml
+
+kubectl create secret generic controller-manager \
+--from-literal=github_token=${GITHUB_TOKEN} \
+-n actions-runner-system
+
+cat > runner.yaml <<-'EOF'
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: Runner
+metadata:
+  name: example-runner
+spec:
+  repository: summerwind/actions-runner-controller
+  env: []
+EOF
+
+kubectl apply -f runner.yaml -n "$NAME_SPACE_RUNNER"
+```
+
+
+
+
+https://mac-blog.org.ua/github-actions-kubernetes-runner-without-certmanager/
+https://hackernoon.com/how-using-self-hosted-github-runners-can-save-you-a-fortune
+https://www.rootisgod.com/2023/Creating-Ephemeral-Github-Action-Runners-In-A-Kubernetes-Cluster/
+https://developers.redhat.com/articles/2023/07/25/end-end-testing-self-hosted-runners-github-actions
+https://aws.amazon.com/pt/blogs/aws-brasil/escalando-executores-self-hosted-do-github-actions-com-amazon-ecs/
+https://brandenpleines.medium.com/the-journey-to-self-hosted-github-actions-9396a2d46aa2
+https://medium.com/geekculture/assigning-pods-to-nodes-kubernetes-aa6d22af6165
+
