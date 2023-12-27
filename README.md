@@ -30269,6 +30269,14 @@ echo "$HOME"
 EOF
 ```
 
+TODO: test it
+```bash
+read -rd '' payload << EOF || true
+```
+Refs.:
+- https://stackoverflow.com/a/61282626
+
+
 ```bash
 # TODO: is it different?
 # export "$(cat .env | xargs -L 1)" 
