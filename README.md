@@ -1868,8 +1868,8 @@ build \
 --tag alpine-with-ca-certificates-tzdata \
 --target alpine-with-ca-certificates-tzdata \
 . \
-&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata &> /dev/null || true \
-&& podman rm --force conteiner-unprivileged-alpine-with-ca-certificates-tzdata || true \
+&& podman kill container-alpine-with-ca-certificates-tzdata &> /dev/null || true \
+&& podman rm --force container-alpine-with-ca-certificates-tzdata || true \
 
 
 xhost + || nix run nixpkgs#xorg.xhost -- +
@@ -1880,7 +1880,7 @@ run \
 --env="DISPLAY=${DISPLAY:-:0}" \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+--name=container-alpine-with-ca-certificates-tzdata \
 --privileged=true \
 --tty=true \
 --rm=true \
@@ -1976,15 +1976,15 @@ build \
 --tag alpine-with-ca-certificates-tzdata \
 --target alpine-with-ca-certificates-tzdata \
 . \
-&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata &> /dev/null || true \
-&& podman rm --force conteiner-unprivileged-alpine-with-ca-certificates-tzdata || true \
+&& podman kill container-alpine-with-ca-certificates-tzdata &> /dev/null || true \
+&& podman rm --force container-alpine-with-ca-certificates-tzdata || true \
 && podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
 --device=/dev/kvm:rw \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+--name=container-alpine-with-ca-certificates-tzdata \
 --privileged=true \
 --tty=true \
 --rm=true \
@@ -1999,7 +1999,7 @@ run \
 --env="DISPLAY=${DISPLAY:-:0}" \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+--name=container-alpine-with-ca-certificates-tzdata \
 --privileged=true \
 --tty=true \
 --rm=true \
@@ -2115,15 +2115,15 @@ build \
 --tag alpine-with-ca-certificates-tzdata \
 --target alpine-with-ca-certificates-tzdata \
 . \
-&& podman kill conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
-&& podman rm --force conteiner-unprivileged-alpine-with-ca-certificates-tzdata || true \
+&& podman kill container-alpine-with-ca-certificates-tzdata \
+&& podman rm --force container-alpine-with-ca-certificates-tzdata || true \
 && podman \
 run \
 --annotation=run.oci.keep_original_groups=1 \
 --device=/dev/kvm:rw \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-alpine-with-ca-certificates-tzdata \
+--name=container-alpine-with-ca-certificates-tzdata \
 --privileged=true \
 --tty=true \
 --rm=true \
@@ -2281,7 +2281,7 @@ docker images \
 ```
 
 ```bash
-podman exec -i --tty=false conteiner-unprivileged-alpine-with-ca-certificates-tzdata sh<<'EOF'
+podman exec -i --tty=false container-alpine-with-ca-certificates-tzdata sh<<'EOF'
 apk add --no-cache sudo && echo 'nixuser:123' | chpasswd \
 && echo 'nixuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/nixuser
 EOF
@@ -4373,7 +4373,7 @@ run \
 --device=/dev/kvm:rw \
 --env="DISPLAY=${DISPLAY:-:0.0}" \
 --interactive=false \
---name=conteiner-alpine \
+--name=container-alpine \
 --privileged=true \
 --rm=false \
 --tty=true \
@@ -4389,11 +4389,11 @@ podman \
 exec \
 --interactive=true \
 --tty=true \
-conteiner-alpine sh
+container-alpine sh
 ```
 
 ```bash
-podman rm -f conteiner-alpine
+podman rm -f container-alpine
 ```
 
 
@@ -5316,7 +5316,7 @@ run \
 --group-add=keep-groups \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-nix \
+--name=container-nix \
 --privileged=true \
 --tty=true \
 --rm=true \
@@ -5393,7 +5393,7 @@ run \
 --group-add=keep-groups \
 --hostname=container-nix \
 --interactive=true \
---name=container-unprivileged-nix \
+--name=container-nix \
 --privileged=true \
 --tty=true \
 --userns=keep-id \
@@ -5413,7 +5413,7 @@ run \
 --group-add=keep-groups \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-nix \
+--name=container-nix \
 --privileged=true \
 --tty=true \
 --rm=true \
@@ -10647,8 +10647,8 @@ build \
 --tag=nix-flakes-nix-serve .
 
 
-podman kill conteiner-nix-serve \
-&& podman rm --force conteiner-nix-serve || true \
+podman kill container-nix-serve \
+&& podman rm --force container-nix-serve || true \
 && podman \
 run \
 --privileged=true \
@@ -10656,7 +10656,7 @@ run \
 --device=/dev/kvm \
 --detach=true \
 --hostname=container-nix-serve \
---name=conteiner-nix-serve \
+--name=container-nix-serve \
 --mount=type=tmpfs,destination=/var/lib/containers \
 --publish=5000:5000 \
 --rm=true \
@@ -10667,7 +10667,7 @@ bash \
 nix-serve
 '
 
-podman exec -it conteiner-nix-serve bash -c 'nix build -L nixpkgs#hello' \
+podman exec -it container-nix-serve bash -c 'nix build -L nixpkgs#hello' \
 && nix store ls --store http://localhost:5000 -lR $(nix eval --raw nixpkgs#hello)
 ```
 
@@ -13066,7 +13066,7 @@ run \
 --group-add=keep-groups \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-nix \
+--name=container-nix \
 --privileged=true \
 --tty=true \
 --userns=keep-id \
@@ -13186,7 +13186,7 @@ run \
 --interactive=true \
 --mount=type=tmpfs,tmpfs-size=3G,destination=/tmp \
 --mount=type=tmpfs,tmpfs-size=2G,destination=/var/tmp \
---name=conteiner-unprivileged-nix \
+--name=container-nix \
 --privileged=true \
 --tty=true \
 --userns=keep-id \
@@ -13322,7 +13322,7 @@ run \
 --device=/dev/kvm:rw \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-nix \
+--name=container-nix \
 --privileged=false \
 --tty=true \
 --rm=true \
@@ -13758,7 +13758,7 @@ export QEMU_NET_OPTS="hostfwd=tcp::10022-:2200" \
 
 
 ```bash
-podman exec -it conteiner-unprivileged-nix sh
+podman exec -it container-nix sh
 ```
 
 
@@ -23192,7 +23192,7 @@ run \
 --group-add=keep-groups \
 --hostname=container-nix \
 --interactive=true \
---name=conteiner-unprivileged-nix \
+--name=container-nix \
 --privileged=true \
 --tty=true \
 --userns=keep-id \
@@ -23235,7 +23235,7 @@ exec \
 --interactive=true \
 --tty=true \
 --user=0 \
-conteiner-unprivileged-nix \
+container-nix \
 bash \
 -c \
 'env; mkdir -p "$HOME"/.local/share/nix/root/nix && chmod 1777 /tmp && chown "$USER_ID_TO_CHOWN":"$USER_ID_TO_CHOWN" "$HOME"/.local/share/nix/root/nix /tmp'
@@ -29409,6 +29409,8 @@ The nix language fu/nix-fu:
 - `ignoringVulns = x: x // { meta = (x.meta // { knownVulnerabilities = []; }); };` https://fnordig.de/2023/07/24/old-ruby-on-modern-nix/ 
 - https://discourse.nixos.org/t/tips-tricks-for-nixos-desktop/28488/2
 - https://blog.stigok.com/2020/06/20/nixos-xserver-openbox-auto-start-browser-application.html
+- https://github.com/NixOS/nixpkgs/blob/86b9cdb25063a1a4545abd1dfd089ed0de5175af/pkgs/build-support/docker/default.nix#L1239-L1249
+
 
 
 ```nix
