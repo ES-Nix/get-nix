@@ -2097,9 +2097,9 @@ RUN env \
         store \
         gc \
         --verbose \
-        --option keep-derivations false \
-        --option keep-env-derivations false \
-        --option keep-outputs false \
+        --option keep-derivations true \
+        --option keep-env-derivations true \
+        --option keep-outputs true \
    && nix \
         --extra-experimental-features nix-command \
         --extra-experimental-features flakes \
@@ -5642,6 +5642,8 @@ nixpkgs#lolcat \
 nixpkgs#figlet \
 nixpkgs#cowsay \
 nixpkgs#ponysay \
+nixpkgs#pfetch \
+nixpkgs#asciiquarium \
 nixpkgs#cmatrix
 ```
 
@@ -11341,6 +11343,12 @@ TODO: try it
 nix run --file channel:nixos-15.09 hello
 nix run --file channel:nixos-15.09 firefox -- --version
 nix run --file channel:nixos-16.03 firefox -- --version
+nix run --file channel:nixos-20.03 firefox -- --version
+nix run --file channel:nixos-21.03 firefox -- --version
+nix run --file channel:nixos-22.05 firefox -- --version
+nix run --file channel:nixos-22.11 firefox -- --version
+nix run --file channel:nixos-23.03 firefox -- --version
+nix run --file channel:nixos-23.11 firefox -- --version
 ```
 Refs.:
 - https://github.com/NixOS/nix/commit/64e486ab63a87b18922bbdb8d2414e74afabb8db
@@ -12052,10 +12060,10 @@ git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 1
 > registry entry is removed, all uses of url will resolve to exactly the same flake.
 > https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-registry-pin.html#description
 
-
+specialArgs
 Eelco Dolstra explaining this:
 TODO: replicate this annoying thing!
-- [NixCon2023 What Flakes needs (technically)](https://www.youtube.com/embed/UHhnG4rbvzo?start=1131&end=1236&version=3), start=1131&end=1236
+- [NixCon2023 What Flakes needs (technically)](https://www.youtube.com/embed/UHhnG4rbvzo?start=1131&end=1236&version=3), start=1131&end=1236 by Linus Heckemann
 - [The Nix Hour #3 [flake updating, nix edit, some corners of the Nix language]](https://www.youtube.com/embed/_OBcPLnyNag?start=400&end=436&version=3), start=400&end=436
 - [Manage Nix Flake Inputs Like a Pro](https://www.youtube.com/watch?v=4ZoBGlkMPWI)
 - [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=977&version=3), start=817&end=977
@@ -12137,12 +12145,74 @@ Refs.:
 - related? https://github.com/NixOS/nix/pull/8477 
 
 
+#### `specialArgs` magic _versus_ `extraSpecialArgs`
+
+Must watch:
+- nixos-unstable vs nixpkg: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=2167&end=2204&version=3), start=2167&end=2204 
+- Infinite recursion: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=3129&end=3159&version=3), start=3129&end=3159
+- Infinite recursion: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=2789&end=3159&version=3), start=2789&end=3159
+- specialArgs example: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=3180&end=3231&version=3), start=3180&end=3231
+- Overlays example: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=3231&end=3556&version=3), start=3231&end=3556
+- Big slice: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=1635&end=3556&version=3), start=1635&end=3556
+- https://search.nixos.org/options?channel=unstable&show=nixpkgs.overlays&from=0&size=15&sort=relevance&type=packages&query=nixpkgs.overlays
+
 
 TODO: `specialArgs` magic versus `extraSpecialArgs`
+- https://github.com/NixOS/nixpkgs/blob/53bd44342d22b53677b245c15de6e8f8a37718d0/lib/modules.nix#L65-L69
 - https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883/7
 - https://nix-community.github.io/home-manager/options.html#opt-_module.args
+- https://discourse.nixos.org/t/how-to-use-overlays-in-a-flake-with-flake-parts/24308/10
+- https://github.com/nix-community/home-manager/issues/2701#issuecomment-1826807773
+- https://discourse.nixos.org/t/adding-an-overlay-on-something-else-than-nixpkgs/36151/9
+- https://discourse.nixos.org/t/applying-an-overlay-in-flake-for-custom-package/25953
+- https://github.com/NixOS/nixpkgs/pull/230523
+- https://blog.nobbz.dev/2022-12-12-getting-inputs-to-modules-in-a-flake/
+- https://github.com/thiagokokada/nix-alien/blob/7d36757ddef3c2fb1805126e0da9abc9d88060f8/flake.nix#L13-L23
+- https://www.reddit.com/r/NixOS/comments/szwiw2/how_do_you_mix_flakeutils_and_overlays/
+- https://github.com/Misterio77/nix-starter-configs/blob/972935c1b35d8b92476e26b0e63a044d191d49c3/standard/flake.nix
+- https://phip1611.de/blog/nix-overlays-add-attribute-to-lib-and-avoid-infinite-recursion-error/
+- https://discourse.nixos.org/t/overlays-in-nested-flakes/17066/3
+- https://discourse.nixos.org/t/replacing-module-with-unstable-does-not-seem-to-work/37295/5
+- https://zimbatm.com/notes/1000-instances-of-nixpkgs
+- https://github.com/jonringer/nix-template/blob/2e7238422489a608453704e9f5b897b2b1c0c2e7/flake.nix#L31-L38
+- https://discourse.nixos.org/t/overriding-nixpkgs-config-in-an-overlay/19247/8
+- https://discourse.nixos.org/t/cannot-make-nixpkgs-overlays-work-with-environment-systempackages/12948/2
+- https://flakehub.com/flake/Scrumplex/pkgs
+- https://docs.shipnix.io/starters/migration/
+- https://chrishayward.xyz/dotfiles/
+- https://discourse.nixos.org/t/why-is-my-flake-overlay-failing/24775/15
+- https://discourse.nixos.org/t/use-package-from-flake-in-another-flake-module/26658/4
+- https://discourse.nixos.org/t/flakes-idiomatic-way-to-pass-inputs-to-configuration-nix/12379/2
+- https://discourse.nixos.org/t/how-to-install-a-python-flake-package-via-configuration-nix/26970/6
+- https://nixos-and-flakes.thiscute.world/nixpkgs/overlays nix-fu
+- https://discourse.nixos.org/t/overlays-in-flakes-on-other-things-than-nixpkgs/31823/3
+- https://discourse.nixos.org/t/how-to-export-flake-nix-as-a-package/16227/5
+- https://discourse.nixos.org/t/from-nixos-flake-config-extract-custom-derivation-into-separate-flake/34279
+- https://discourse.nixos.org/t/use-a-module-from-nixpkgs-unstable-in-flake/31463/2
+- https://discourse.nixos.org/t/nixos-flakes-with-home-manager/18476/4
+- https://stackoverflow.com/a/77737026
+- https://flake.parts/overlays
 
-TODO: really important
+TODO: create a simpleer verison of that and use it to confirm 
+double/triple check that the passed nixpkgs "instance" is the 
+one with this "smoke flag" in it. 
+```nix
+overlayFoo = self: super: self.lib.optionalAttrs (!super.__fooHasBeenApplied or false) {
+  __fooHasBeenApplied = true;
+  # ...
+};
+```
+Refs.:
+- https://stackoverflow.com/a/76029984
+- https://discourse.nixos.org/t/how-to-prevent-a-overlay-from-being-applied-more-than-once/27312/2
+
+Why? 
+This old bug/behavour: 
+- https://github.com/nix-community/home-manager/issues/2942#issuecomment-1378627909
+- https://stackoverflow.com/a/77737026
+
+
+TODO: 
 > As you do not know anymore how to create that store path in the future.
 https://discourse.nixos.org/t/nix-flake-update-to-system-revision/18081/6
 
@@ -16507,6 +16577,8 @@ TODO:
 - --include-outputs https://github.com/NixOS/nix/pull/6147
 
 
+https://github.com/utdemir/nix-tree/issues/59
+
 ```bash
 nix eval nixpkgs#hello.drvPath --raw \
 | xargs nix-store -qR \
@@ -19236,9 +19308,13 @@ dmidecode -t4 | egrep 'Status'
 ### dockerTools examples
 
 
+
+
+
 ```bash
 $(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.helloOnRoot) | podman load
 ```
+
 
 ```bash
 podman load < $(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.redis)
@@ -19249,8 +19325,17 @@ podman load < $(nix build --no-link --print-out-paths nixpkgs#dockerTools.exampl
 docker load --input < $(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.redis)
 ```
 
+Test that it needs `/dev/kvm`:
+```bash
+nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.redis
+nix build --no-link --print-out-paths --rebuild nixpkgs#dockerTools.examples.redis
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/3cb442f49442e3dc76ecc661fbe236362396da8e/pkgs/build-support/docker/examples.nix#L34-L60
 
-TODO: 
+
+TODO:
+- https://github.com/NixOS/nixpkgs/blob/3cb442f49442e3dc76ecc661fbe236362396da8e/pkgs/build-support/docker/examples.nix#L146
 - https://github.com/NixOS/nix/issues/1559#issuecomment-1174574549
 - https://unix.stackexchange.com/a/652402
 - https://unix.stackexchange.com/a/725857
@@ -22675,6 +22760,9 @@ nix run nixpkgs#xorg.xhost -- -
 ### dockerTools.pullImage
 
 
+https://stackoverflow.com/questions/67198373/how-to-switch-from-docker-io-to-quay-io
+
+
 ```bash
 nix repl '<nixpkgs>' <<<'builtins.functionArgs dockerTools.pullImage'
 ```
@@ -22796,6 +22884,12 @@ run \
 localhost/alpine:0.0.1 \
 hello
 ```
+
+
+https://discourse.nixos.org/t/building-on-dockerfile-based-images/29583
+https://discourse.nixos.org/t/building-docker-images-based-on-another-distro/33613/3
+
+
 
 ```bash
 nix \
@@ -23410,8 +23504,18 @@ Refs.:
 - https://github.com/containers/podman/issues/15295#issuecomment-1215287414
 
 TODO: 
+```bash
+unshare -U sleep 100 &
+newuidmap $! 0 $(id -u) 1 1 100000 65536
+newgidmap $! 0 $(id -g) 1 1 100000 65536
+```
+Refs.:
 - https://github.com/containers/buildah/issues/3834#issuecomment-1076083456
+
+TODO: 
 - https://github.com/NixOS/nixpkgs/issues/138423#issuecomment-1236144461
+
+TODO: 2014 [Running NixOS inside Docker](https://github.com/NixOS/nixpkgs/issues/2878)
 
 ```bash
 podman run -it --rm docker.io/library/alpine:latest
@@ -26605,7 +26709,7 @@ https://github.com/LnL7/nix-docker/blob/277b1ad6b6d540e4f5979536eff65366246d4582
 
 I am against that, unless there is not a better way known.
 
-
+[Nix: What Even is it Though](https://www.youtube.com/embed/6iVXaqUfHi4?start=818&end=955&version=3), start=818&end=955
 [Jörg 'Mic92' Thalheim - About Nix sandboxes and breakpoints (NixCon 2018)](https://www.youtube.com/embed/ULqoCjANK-I?start=853&end=963&version=3), start=853&end=963
 We have that, lets use it!
 
@@ -27010,7 +27114,7 @@ https://github.com/astro/microvm.nix/issues/52#issuecomment-1323962657 "it's a c
 https://github.com/astro/microvm.nix/issues/52#issuecomment-1510961371
 https://williamvds.me/blog/journey-into-nix/
 https://github.com/Mic92/sops-nix/pull/168
-https://github.com/Mic92/sops-nix/pull/168
+
 
 TODO: https://github.com/Mic92/sops-nix/issues/324 + https://github.com/Mic92/sops-nix/issues/24#issuecomment-663827948
 sops.age.sshKeyPaths = [];
@@ -27041,6 +27145,11 @@ sops.age.sshKeyPaths = [];
   };
 ```
 
+TODO: may be really hard, but how knows?!
+https://discourse.nixos.org/t/setting-run-user-with-oci-containers-and-systemd/9900/8
+
+TODO: may be really hard, but how knows?!
+https://github.com/NixOS/nixpkgs/issues/233821
 
 TODO: re read https://discourse.nixos.org/t/disable-a-systemd-service-while-having-it-in-nixoss-conf/12732/3
 ```bash
@@ -29410,7 +29519,7 @@ The nix language fu/nix-fu:
 - https://discourse.nixos.org/t/tips-tricks-for-nixos-desktop/28488/2
 - https://blog.stigok.com/2020/06/20/nixos-xserver-openbox-auto-start-browser-application.html
 - https://github.com/NixOS/nixpkgs/blob/86b9cdb25063a1a4545abd1dfd089ed0de5175af/pkgs/build-support/docker/default.nix#L1239-L1249
-
+- https://nix.dev/guides/best-practices
 
 
 ```nix
@@ -32462,6 +32571,9 @@ https://www.youtube.com/watch?v=5jzIVp6bTy0
 - [Develop in the cloud with Microsoft Dev Box | BRK251H](https://www.youtube.com/embed/mD225hXs63s?start=175&end=198&version=3), start=175&end=198
 - [Fast, correct, reproducible builds with Nix + Bazel](https://www.youtube.com/embed/2wI5J8XYxM8?start=366&end=429&version=3), start=366&end=429
 - [Hermetic shell scripts in Bazel](https://www.youtube.com/embed/xSARLjNXmDI?start=53&end=96&version=3), start=53&end=96
+- [Shipit! Presents: How Shopify Uses Nix](https://www.youtube.com/embed/KaIRpx11qrc?start=1178&end=1183&version=3), start=1178&end=1183
+- [Nix: What Even is it Though](https://www.youtube.com/embed/6iVXaqUfHi4?start=976&end=1010&version=3), start=976&end=1010
+
 
 
 ### The determinate systems nix installer, written in Rust
@@ -32538,7 +32650,7 @@ Refs.:
 - [Microsoft Dev Box for Microsoft engineers](https://www.youtube.com/watch?v=p8MxCMuEtao)
 - [Microsoft Dev Box - First look and Setup | The Ultimate Developer Workstation](https://www.youtube.com/embed/rFfOQKLl9fU?start=14&end=148&version=3), start=14&end=148
 - https://github.com/jetpack-io/devbox/tree/e0aad3e781eecf9cb38bc094043775e167285ef0#what-is-it
-
+- [Using Nix Flakes with Devbox](https://www.jetpack.io/blog/using-nix-flakes-with-devbox/)
 
 
 

@@ -1137,6 +1137,17 @@ build \
 ```
 
 
+```nix
+overlayFoo = self: super: self.lib.optionalAttrs (!super.__fooHasBeenApplied or false) {
+  __fooHasBeenApplied = true;
+  # ...
+};
+```
+Refs.:
+- https://stackoverflow.com/a/76029984
+- https://discourse.nixos.org/t/how-to-prevent-a-overlay-from-being-applied-more-than-once/27312/2
+
+
 ```bash
 nix \
 build \
