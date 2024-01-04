@@ -23515,7 +23515,7 @@ Refs.:
 TODO: 
 - https://github.com/NixOS/nixpkgs/issues/138423#issuecomment-1236144461
 
-TODO: 2014 [Running NixOS inside Docker](https://github.com/NixOS/nixpkgs/issues/2878)
+TODO: 2014 [Running NixOS inside Docker](https://github.com/NixOS/nixpkgs/issues/2878) + https://github.com/NixOS/nixpkgs/issues/6034#issuecomment-71921941
 
 ```bash
 podman run -it --rm docker.io/library/alpine:latest
@@ -29520,7 +29520,7 @@ The nix language fu/nix-fu:
 - https://blog.stigok.com/2020/06/20/nixos-xserver-openbox-auto-start-browser-application.html
 - https://github.com/NixOS/nixpkgs/blob/86b9cdb25063a1a4545abd1dfd089ed0de5175af/pkgs/build-support/docker/default.nix#L1239-L1249
 - https://nix.dev/guides/best-practices
-
+- https://github.com/NixOS/nixpkgs/issues/261820#issuecomment-1775502830
 
 ```nix
 buildInputs = [ makeWrapper ];
