@@ -12193,6 +12193,20 @@ TODO: `specialArgs` magic versus `extraSpecialArgs`
 - https://stackoverflow.com/a/77737026
 - https://flake.parts/overlays
 
+
+```bash
+        # https://fnordig.de/2023/07/24/old-ruby-on-modern-nix/
+        # nodejs_16 = prev.nodejs_16.meta // { insecure = false; knownVulnerabilities = []; };
+#        github-runner =
+#          let
+#            ignoringVulns = x: x // { meta = (x.meta // { knownVulnerabilities = [ ]; }); };
+#          in
+#          prev.github-runner.override {
+#            nodejs_16 = prev.nodejs_20.overrideAttrs ignoringVulns;
+#          };
+```
+
+
 TODO: create a simpleer verison of that and use it to confirm 
 double/triple check that the passed nixpkgs "instance" is the 
 one with this "smoke flag" in it. 
