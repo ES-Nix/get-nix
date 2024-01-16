@@ -12220,6 +12220,10 @@ Refs.:
 - https://stackoverflow.com/a/76029984
 - https://discourse.nixos.org/t/how-to-prevent-a-overlay-from-being-applied-more-than-once/27312/2
 
+TODO: use all these tricks togther? `__fooHasBeenApplied` 
+- https://stackoverflow.com/questions/33233675/nix-whats-the-concrete-difference-between-nixpkgs-and-nixpkgs-pkgs?rq=3#comment119928068_33233675
+- https://stackoverflow.com/a/53789393
+
 Why? 
 This old bug/behavour: 
 - https://github.com/nix-community/home-manager/issues/2942#issuecomment-1378627909
