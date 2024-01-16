@@ -824,6 +824,8 @@ nix-store --query --graph --include-outputs $(nix-store --query --deriver $(read
 
 # Adapted from:
 # https://github.com/NixOS/nix/issues/1245#issuecomment-726138112
+# 
+# TODO: https://stackoverflow.com/questions/70354912/nix-propagate-dependency-for-build-time-but-not-for-run-time?rq=3
 nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
  | xargs nix-store --realise \
  | xargs nix-store --query --requisites \
