@@ -1076,6 +1076,10 @@ https://stackoverflow.com/questions/65436307/ldd-exited-with-unknown-exit-code-w
 
 #### overlays
 
+
+> Overlays exist only at the Nix language level. They're just a pattern of functions attribute sets.
+> https://stackoverflow.com/a/68215902
+
 > O atributo/nome `overlay` (sem o s) foi deprecado.
 > The attribute/name `overlay` (without the `s`) was deprecated.
 Refs.:
