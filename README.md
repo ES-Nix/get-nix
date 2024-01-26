@@ -12066,6 +12066,7 @@ specialArgs
 Eelco Dolstra explaining this:
 TODO: replicate this annoying thing!
 - [NixCon2023 What Flakes needs (technically)](https://www.youtube.com/embed/UHhnG4rbvzo?start=1131&end=1236&version=3), start=1131&end=1236 by Linus Heckemann
+- [NixOS Live Coding: Using our Flake's Nixpkgs for Nix-Shell, Building Systems on GitHub Actions](https://www.youtube.com/embed/TR0C76I59AI?start=220&end=374&version=3), start=220&end=374
 - [The Nix Hour #3 [flake updating, nix edit, some corners of the Nix language]](https://www.youtube.com/embed/_OBcPLnyNag?start=400&end=436&version=3), start=400&end=436
 - [Manage Nix Flake Inputs Like a Pro](https://www.youtube.com/watch?v=4ZoBGlkMPWI)
 - [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=977&version=3), start=817&end=977
