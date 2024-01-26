@@ -32621,6 +32621,7 @@ https://www.youtube.com/watch?v=5jzIVp6bTy0
 - [Fast, correct, reproducible builds with Nix + Bazel](https://www.youtube.com/embed/2wI5J8XYxM8?start=366&end=429&version=3), start=366&end=429
 - [Hermetic shell scripts in Bazel](https://www.youtube.com/embed/xSARLjNXmDI?start=53&end=96&version=3), start=53&end=96
 - [Shipit! Presents: How Shopify Uses Nix](https://www.youtube.com/embed/KaIRpx11qrc?start=1178&end=1183&version=3), start=1178&end=1183
+- [A sack full of angry snakes: Taming your python dependencies with Nix](https://www.youtube.com/embed/8ng4v1g5q7s?start=628&end=656&version=3), start=628&end=656
 - [Nix: What Even is it Though](https://www.youtube.com/embed/6iVXaqUfHi4?start=976&end=1010&version=3), start=976&end=1010
 
 
