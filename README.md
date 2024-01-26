@@ -18430,6 +18430,7 @@ let
 
       fonts.fonts = with pkgs; [ dejavu_fonts ];
     };
+
     xorg = { pkgs, ... }: {
       imports = [ "${path}/nixos/tests/common/user-account.nix" "${path}/nixos/tests/common/x11.nix" ];
 
@@ -18493,8 +18494,8 @@ with codium_running:
 
     # (the default filename is the first line of the file)
     machine.wait_for_file(f\"/home/alice/{test_string}\")
-# machine.send_key(\"ctrl-q\")
-# machine.wait_until_fails(\"pgrep -x codium\")
+    # machine.send_key(\"ctrl-q\")
+    # machine.wait_until_fails(\"pgrep -x codium\")
       "
       '';
     });
@@ -29543,6 +29544,20 @@ The nix language fu/nix-fu:
 - https://github.com/NixOS/nixpkgs/issues/261820#issuecomment-1775502830
 
 ```nix
+# https://fnordig.de/2023/07/24/old-ruby-on-modern-nix/
+# nodejs_16 = prev.nodejs_16.meta // { insecure = false; knownVulnerabilities = []; };
+github-runner =
+  let
+    ignoringVulns = x: x // { meta = (x.meta // { knownVulnerabilities = [ ]; }); };
+  in
+  prev.github-runner.override {
+    nodejs_16 = prev.nodejs_20.overrideAttrs ignoringVulns;
+  };
+```
+
+
+
+```nix
 buildInputs = [ makeWrapper ];
 postBuild
 ```
@@ -30400,7 +30415,21 @@ echo "$HOME"
 EOF
 ```
 
+```bash
+# compare where fd 0 is pointing to
+sh -c 'sleep 10 & lsof -p ${!}'
+sh -c 'sleep 10 0<&0 & lsof -p ${!}'
+sh -c 'set -m; sleep 10 & lsof -p ${!}'
+sh -ic 'sleep 10 & lsof -p ${!}'
+```
+Refs.:
+- https://unix.stackexchange.com/a/156869
+
+
 TODO: test it
+https://unix.stackexchange.com/a/240560
+https://unix.stackexchange.com/questions/443235/how-to-use-systemd-ask-password-console-service
+
 ```bash
 read -rd '' payload << EOF || true
 ```
