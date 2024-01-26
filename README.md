@@ -27643,6 +27643,8 @@ node -v
 
 
 https://github.com/JuliaCN/Julia2Nix.jl
+[Package and deploy Python apps faster with Poetry and Nix](https://www.youtube.com/watch?v=TbIHRHy7_JM)
+
 
 ## mkYarnPackage
 
