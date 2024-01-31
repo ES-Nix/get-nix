@@ -25488,7 +25488,7 @@ in
 
 ### --daemon
 
-https://youtu.be/fsgYVi2PQr0?t=295
+
 
 ### SoN2022 and more
 
@@ -25497,11 +25497,11 @@ TODO: organize it
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=295&end=402&version=3), start=295&end=402
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=444&end=511&version=3), start=444&end=511, "don't touch or it will break", UKUUG Linux Conference presented paper.
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=507&end=528&version=3), start=507&end=528, "just read the Eelco Dosltra PhD thesis", by Armijn Hemel 
-- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=968&end=1201&version=3), start=968&end=1201
-- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=438&end=649&version=3), start=438&end=649
-- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1647&end=1664&version=3), start=1647&end=1664
-- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1471&end=1498&version=3), start=1471&end=1498
-- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1671&end=1705&version=3), start=1671&end=1705
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=968&end=1201&version=3), start=968&end=1201, june 2005 NixOS boot session recorded by Eelco Dolstra
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=438&end=649&version=3), start=438&end=649, "Builds that were working fails after updates, debugs that was incredible hard!"
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1647&end=1664&version=3), start=1647&end=1664, "The only thing that I focused way to make Linux to work."
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1471&end=1498&version=3), start=1471&end=1498 "9 years ans 51 weeks"
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1671&end=1705&version=3), start=1671&end=1705 "Free BSD and their way to separe kernel vs user space"
 
 
 List:
@@ -31104,6 +31104,7 @@ Part 1
 wget https://sourceforge.net/projects/android-x86/files/Release%209.0/android-x86_64-9.0-r2.iso/download
 ```
 Refs.:
+- https://www.android-x86.org/download.html
 - https://www.android-x86.org/source.html
 - https://www.android-x86.org/documentation/qemu.html
 - https://github.com/termux/termux-packages/releases
