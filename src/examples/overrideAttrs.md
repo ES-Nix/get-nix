@@ -2731,6 +2731,18 @@ sh \
 -c \
 'ldd $(which hello) | wc -l'
 
+nix \
+shell \
+--ignore-environment \
+nixpkgs#python3Minimal \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bashInteractive \
+nixpkgs#coreutils \
+--command \
+sh \
+-c \
+'ldd $(which which) | wc -l'
 
 nix \
 shell \
@@ -2814,6 +2826,18 @@ sh \
 -c \
 'ldd $(which node) | wc -l'
 
+nix \
+shell \
+--ignore-environment \
+nixpkgs#rustc \
+nixpkgs#which \
+nixpkgs#glibc.bin \
+nixpkgs#bash \
+nixpkgs#coreutils \
+--command \
+sh \
+-c \
+'ldd $(which rustc) | wc -l'
 
 nix \
 shell \
@@ -2914,7 +2938,17 @@ Refs.:
 
 
 ```bash
-objdump -x $(which ffmpeg) \ 
+objdump -x $(which ffmpeg) \
+| grep 'R.*PATH' \
+| cut -d'H' -f2 \
+| tr -d ' ' \
+| tr ':' '\n' \
+| cut -d '-' -f2 \
+| sort
+```
+
+```bash
+objdump -x $(readlink -f $(which ld)) \
 | grep 'R.*PATH' \
 | cut -d'H' -f2 \
 | tr -d ' ' \

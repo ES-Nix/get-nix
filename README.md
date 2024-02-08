@@ -6313,6 +6313,75 @@ nix shell nixpkgs#pandoc --command sh -c 'pandoc --list-input-formats && echo &&
 Refs.:
 - https://medium.com/isovera/devops-for-presentations-reveal-js-markdown-pandoc-gitlab-ci-34d07d2c1011
 
+```bash
+nix \
+shell \
+--ignore-environment \
+nixpkgs#bash \
+nixpkgs#coreutils \
+nixpkgs#glibc.bin \
+nixpkgs#pandoc \
+nixpkgs#which \
+--command \
+sh \
+-c \
+'ldd $(which pandoc) | wc -l'
+```
+
+
+
+```bash
+sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+sudo apt-get update
+
+sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+sudo apt update
+
+curl -fSsL https://deb.opera.com/archive.key | gpg --dearmor | sudo tee /usr/share/keyrings/opera.gpg > /dev/null
+echo deb [arch=amd64 signed-by=/usr/share/keyrings/opera.gpg] https://deb.opera.com/opera-stable/ stable non-free | sudo tee /etc/apt/sources.list.d/opera.list
+sudo apt update
+
+apt-get download --print-uris \
+apt \
+bash \
+brave-browser \
+chromium-browser \
+default-jre \
+ffmpeg \
+firefox \
+google-chrome-stable \
+imagemagick \
+nix-bin \
+nodejs \
+opera-stable \
+pandoc \
+python3 \
+python3-pip \
+python3-venv
+```
+Refs.:
+- https://brave.com/linux/#release-channel-installation
+- https://itsfoss.com/brave-web-browser/
+
+
+```bash
+'https://deb.opera.com/opera-stable/pool/non-free/o/opera-stable/opera-stable_106.0.4998.70_amd64.deb' opera-stable_106.0.4998.70_amd64.deb 108237616 SHA256:2532eee7dc797ed8532b03f87135fca5a6d158556191ab46366d1b576c870711
+'http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_121.0.6167.139-1_amd64.deb' google-chrome-stable_121.0.6167.139-1_amd64.deb 106447036 SHA256:70ca18042b8e6335d2ececc5bef05f48bf3484163f3dc12ff645864b1de608ac
+'https://brave-browser-apt-release.s3.brave.com/pool/main/b/brave-browser/brave-browser_1.62.156_amd64.deb' brave-browser_1.62.156_amd64.deb 114959696 SHA512:99ee142d3e798921e455be7c79081c8a12b7c0f60b291f50962769208f511837b7427b449945f1dc034d98a8d16750bcac806d0d18bd2c8fb66ce3a86aca166f
+'https://mirrors.edge.kernel.org/ubuntu/pool/main/b/bash/bash_5.1-6ubuntu1_amd64.deb' bash_5.1-6ubuntu1_amd64.deb 768660 SHA512:89af38fe631eb29e89b8659aca7fa2b26e4a88c907ee1b759f336cc8e0a6d56562380651f210b1ed480bd727d21dfb9b9de9e839310cecdc619d7362cac607b4
+'https://mirrors.edge.kernel.org/ubuntu/pool/main/j/java-common/default-jre_1.11-72build2_amd64.deb' default-jre_2%3a1.11-72build2_amd64.deb 896 SHA512:0798da0a3274791d920307d3715d7a8c5e5e38fa5575bbdd4a4d7ae6cdc6f15f7f02d56e2f929f20f79fb1fc95d0ee7b2de8afe63b44e73623922ad6298a7906
+'https://mirrors.edge.kernel.org/ubuntu/pool/universe/n/nix/nix-bin_2.6.0%2bdfsg-3_amd64.deb' nix-bin_2.6.0+dfsg-3_amd64.deb 3267024 SHA512:e2221fa3d7b88fcb827694558e1dcbda35a29965ea7f3c10d2bcd696717fc6801728a246d340db8252b1e5fdfe90d45be7cfd7820ccc041bcde941df84334790
+'https://mirrors.edge.kernel.org/ubuntu/pool/universe/p/pandoc/pandoc_2.9.2.1-3ubuntu2_amd64.deb' pandoc_2.9.2.1-3ubuntu2_amd64.deb 20329782 SHA512:f341852415a827e0146fb94c04f64cc913f736e916211f8e8168986496654809d46a310d22a800b5366ecd4e01e4d59f6814ae5b17aea20d52e989bea380b49b
+'https://mirrors.edge.kernel.org/ubuntu/pool/main/a/apt/apt_2.4.11_amd64.deb' apt_2.4.11_amd64.deb 1363076 SHA512:294fc1f472d616d75138f88a8c98caf699b949dffc2c8a61b1371fbcee2742ffaed0c0821910bf65fff622fc8a3e150d2a3a95e6335ac7b4c1c18dcd93b75d48
+'https://mirrors.edge.kernel.org/ubuntu/pool/universe/c/chromium-browser/chromium-browser_85.0.4183.83-0ubuntu2.22.04.1_amd64.deb' chromium-browser_1%3a85.0.4183.83-0ubuntu2.22.04.1_amd64.deb 49248 SHA512:e18cbdb8bf19c11864ce9809855dc8959911854ac14e51235bdc46bb09cfe6c89b4173aeebaad6c0e39b9740bfadeb5d18cd0edb288017dfb31daa5d285bf325
+'https://mirrors.edge.kernel.org/ubuntu/pool/universe/f/ffmpeg/ffmpeg_4.4.2-0ubuntu0.22.04.1_amd64.deb' ffmpeg_7%3a4.4.2-0ubuntu0.22.04.1_amd64.deb 1695740 SHA512:5545b51470c08fe395445356778414873a2f7d90505ecaeedb3a8ebaf086e8037749c2f575fd936675ebc8afda077b6a3a2ed42c424443a4227a034d89872fb4
+'https://mirrors.edge.kernel.org/ubuntu/pool/universe/i/imagemagick/imagemagick_6.9.11.60%2bdfsg-1.3ubuntu0.22.04.3_amd64.deb' imagemagick_8%3a6.9.11.60+dfsg-1.3ubuntu0.22.04.3_amd64.deb 14572 SHA512:0d7b93cc9727154de082d2974561d819fe47cc025459d9fd81f98a3e0e63277a3bd583a242a0494c18a132a703cdad095d574c71ad0782794d0ed83d92ad3f9f
+'https://mirrors.edge.kernel.org/ubuntu/pool/universe/n/nodejs/nodejs_12.22.9%7edfsg-1ubuntu3.3_amd64.deb' nodejs_12.22.9~dfsg-1ubuntu3.3_amd64.deb 121764 SHA512:7232c4d43e86ccc5de5cc97df541c295bebc2168259cb9234dabb9a94bfcd9623012350f8344ac16aba3a497061c597c1fb6bb076c53258633cd1ba4218ec3f9
+'https://mirrors.edge.kernel.org/ubuntu/pool/universe/p/python-pip/python3-pip_22.0.2%2bdfsg-1ubuntu0.4_all.deb' python3-pip_22.0.2+dfsg-1ubuntu0.4_all.deb 1305234 SHA512:dec3fbea781a452169ef0c294956b11a86d4065bd561406ea8bc0abf2c27f082826b01f6debaea1fe536bdfa9c2db3a232e612afa1c602b2dc2258fd621bc099
+'https://mirrors.edge.kernel.org/ubuntu/pool/universe/p/python3-defaults/python3-venv_3.10.6-1%7e22.04_amd64.deb' python3-venv_3.10.6-1~22.04_amd64.deb 1038 SHA512:ca40ba1df28e624685857fc84dc7d7f451d86995947106e11f8b9d06375ae65689b70808f936779c6d97a87b51e74fb231dff1bd5bf7f4299ad4473877a5ed33
+```
 
 
 ```bash
@@ -10601,6 +10670,8 @@ build \
           mkdir -pv ./home/nixuser/.local/share/fonts
         ";
       };
+    )
+'
     
 ```
 
@@ -12280,6 +12351,7 @@ TODO: related?
 ```bash
 nix-instantiate --eval --attr 'path' '<nixpkgs>'
 nix-instantiate --eval --attr 'pkgs.path' '<nixpkgs>'
+nix eval --impure --expr '<nixpkgs>'
 
 nix eval nixpkgs#path
 
@@ -18889,6 +18961,7 @@ PATH="/run/current-system/sw/bin:$PATH"
 test "$(file $(which sudo))" '==' '/run/wrappers/bin/sudo: setuid executable, regular file, no read permission'
 
 
+
 #### 
 
 
@@ -24469,6 +24542,27 @@ It is there, at least, since 2014: https://voidlinux.org/news/2014/01/Using-the-
 [First look at Nix package manager](https://www.youtube.com/watch?v=sqzOPPWUc5w)
 
 
+```bash
+docker run -it --rm ghcr.io/void-linux/void-glibc-full sh  -c '
+xbps-install -Syu;
+xbps-install -yu xbps \
+&& xbps-install -Sy nix \
+&& nix \
+     --extra-experimental-features nix-command \
+     --extra-experimental-features flakes \
+     run \
+     nixpkgs#neofetch \
+&& nix \
+     --extra-experimental-features nix-command \
+     --extra-experimental-features flakes \
+     build \
+     nixpkgs#python3Packages.numpy.dist
+'
+```
+Refs.:
+- https://github.com/void-linux/void-containers
+
+
 #### The daemon version
 
 
@@ -25496,7 +25590,7 @@ TODO: organize it
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=174&end=295&version=3), start=174&end=295
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=295&end=402&version=3), start=295&end=402
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=444&end=511&version=3), start=444&end=511, "don't touch or it will break", UKUUG Linux Conference presented paper.
-- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=507&end=528&version=3), start=507&end=528, "just read the Eelco Dosltra PhD thesis", by Armijn Hemel 
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=507&end=528&version=3), start=507&end=528, "just read the Eelco Dosltra PhD thesis", by Armijn Hemel https://discourse.nixos.org/t/why-doesnt-e-g-bin-link-to-run-current-system-sw-bin/1562/4 
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=968&end=1201&version=3), start=968&end=1201, june 2005 NixOS boot session recorded by Eelco Dolstra
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=438&end=649&version=3), start=438&end=649, "Builds that were working fails after updates, debugs that was incredible hard!"
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1647&end=1664&version=3), start=1647&end=1664, "The only thing that I focused way to make Linux to work."
@@ -27642,6 +27736,8 @@ node -v
 
 ## 2nix tools
 
+
+https://github.com/tadfisher/gradle2nix
 
 https://github.com/JuliaCN/Julia2Nix.jl
 [Package and deploy Python apps faster with Poetry and Nix](https://www.youtube.com/watch?v=TbIHRHy7_JM)
@@ -32612,6 +32708,20 @@ https://www.youtube.com/watch?v=5jzIVp6bTy0
 
 ### DX and development setup 
 
+
+> "Death mark of two weeks"
+> [NixCon Paris 2022 - Day 2](https://www.youtube.com/embed/-hsxXBabdX0?start=20161&end=20180&version=3), start=20161&end=20180 Graham Christensen
+
+
+> I wanna know how can I onboard a new developer in under an week?!
+> [A sack full of angry snakes: Taming your python dependencies with Nix](https://www.youtube.com/embed/8ng4v1g5q7s?start=628&end=655&version=3), start=628&end=655
+
+
+> Take Flutter, for example: Our research shows that developers spend an average of 6 hours 
+> setting up their dev environment before they write the first lines of code.
+> https://idx.dev/blog/article/how-we-built-project-idx-a-high-level-overview
+
+
 - [Replit Developer Day Keynote](https://www.youtube.com/embed/7TCqGslll-4?start=1872&end=1886&version=3), start=1872&end=1886
 - [GitHub Copilot and AI for Developers: Potential and Pitfalls with Scott Hanselman | BRK231H](https://www.youtube.com/embed/5pbPLHYB6-0?start=1530&end=1591&version=3), start=1530&end=1591
 - [Criativo Docker 01](https://www.youtube.com/embed/vMNyPZ7BcN8?start=7&end=20&version=3), start=7&end=20
@@ -32625,10 +32735,11 @@ https://www.youtube.com/watch?v=5jzIVp6bTy0
 - [Fast, correct, reproducible builds with Nix + Bazel](https://www.youtube.com/embed/2wI5J8XYxM8?start=366&end=429&version=3), start=366&end=429
 - [Hermetic shell scripts in Bazel](https://www.youtube.com/embed/xSARLjNXmDI?start=53&end=96&version=3), start=53&end=96
 - [Shipit! Presents: How Shopify Uses Nix](https://www.youtube.com/embed/KaIRpx11qrc?start=1178&end=1183&version=3), start=1178&end=1183
-- [A sack full of angry snakes: Taming your python dependencies with Nix](https://www.youtube.com/embed/8ng4v1g5q7s?start=628&end=655&version=3), start=628&end=655
 - [Nix: What Even is it Though](https://www.youtube.com/embed/6iVXaqUfHi4?start=976&end=1010&version=3), start=976&end=1010
 
 
+Texts:
+- https://flox.dev/blog/nitw-idx Vova Kryachko has been working at Google for nearly seven years on many projects.
 
 ### The determinate systems nix installer, written in Rust
 
