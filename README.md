@@ -12187,7 +12187,7 @@ TODO:
 - https://stackoverflow.com/a/36472934 `nixPath = [ "nixpkgs=http://nixos.org/channels/nixos-unstable/nixexprs.tar.xz" ]; # allow users to use nix-env`
 - https://discourse.nixos.org/t/do-flakes-also-set-the-system-channel/19798/12
 ```bash
-nix.nixPath = ["nixpkgs=flake:nixpkgs"];
+nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
 home.sessionVariables.NIX_PATH = "nixpkgs=nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NIX_PATH}";
 ```
 Refs.:
@@ -12227,7 +12227,7 @@ Must watch:
 - Infinite recursion: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=2789&end=3159&version=3), start=2789&end=3159
 - specialArgs example: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=3180&end=3231&version=3), start=3180&end=3231
 - Overlays example: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=3231&end=3556&version=3), start=3231&end=3556
-- Big slice: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=1635&end=3556&version=3), start=1635&end=3556
+- Bigger slice: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=1635&end=3556&version=3), start=1635&end=3556
 - https://search.nixos.org/options?channel=unstable&show=nixpkgs.overlays&from=0&size=15&sort=relevance&type=packages&query=nixpkgs.overlays
 
 
@@ -14724,7 +14724,14 @@ shell \
 python3 -c 'import mmh3; print(mmh3.__version__)'
 ```
 
- 
+
+```bash
+nix-shell \
+-p 'python311.withPackages(ps: with ps; [ numpy ])' \
+--run 'python3 -c "import numpy as np; print(np.arange(24).reshape(2, 3, 4))"'
+```
+
+
 
 ```bash
 { nix \
@@ -19435,6 +19442,9 @@ TODO:
 - https://unix.stackexchange.com/a/652402
 - https://unix.stackexchange.com/a/725857
 - https://github.com/NixOS/nixpkgs/issues/37172#issuecomment-640358700
+- https://discourse.nixos.org/t/nix-build-too-large-docker-image/9394
+- https://yrh.dev/blog/using-nix-to-build-docker-images/
+
 
 Bonus:
 ```bash
@@ -29581,6 +29591,7 @@ About nix language + flakes + templates:
 - https://github.com/Hoverbear-Consulting/flake
 - https://github.com/t184256/nix-on-droid#examples--templates
 - https://peppe.rs/posts/novice_nix:_flake_templates/ latex-report and rust-hello + https://users.rust-lang.org/t/solved-how-do-i-build-cargo-on-nixos/7620/2
+- https://fasterthanli.me/series/building-a-rust-service-with-nix/part-11
 - https://zero-to-nix.com/concepts/flakes#templates
 - [Nix Flake for Scala - a Nix Introduction, Overview and Demo](https://www.youtube.com/watch?v=HnoP7JZn2MQ)
 
@@ -30580,6 +30591,9 @@ https://stackoverflow.com/a/46434705
 > that you can adapt the script to your needs.
 > https://www.haskellforall.com/2022/10/
 
+
+
+https://github.com/docker-library/docker/blob/de55ce1ae86abd97836f99759ae8badc30d0e0e6/25/cli/docker-entrypoint.sh#L9-L13
 
 
 ```bash
@@ -32682,9 +32696,15 @@ TODO: factorial and gamma in Rust
 https://stackoverflow.com/questions/59206653/how-to-calculate-21-factorial-in-rust/69534350#69534350
 https://codereview.stackexchange.com/questions/116850/gamma-function-in-rust
 
-TODO: [Someone improved my code by 40,832,277,770%](https://www.youtube.com/watch?v=c33AZBnRHks)
+TODO: 
+- [Someone improved my code by 40,832,277,770%](https://www.youtube.com/watch?v=c33AZBnRHks)
 
 
+TODO: 
+- [Numerical Integration with Variable Limits in Python](https://www.youtube.com/watch?v=Snf1eeZC3ug)
+- https://www.youtube.com/@MrPSolver
+- https://www.youtube.com/shorts/MPcHmfDgAVs
+- https://www.youtube.com/watch?v=iKAVRgIrUOU
 
 Symbolic:
 - https://github.com/iurisegtovich/PyTherm-applied-thermodynamics/blob/master/contents/main-lectures/4-sympy-vdWEoS-analytical-solutions.ipynb
@@ -32693,7 +32713,7 @@ Symbolic:
 
 Even deeper: Automatic Code Generation with SymPy
 https://www.sympy.org/scipy-2017-codegen-tutorial/
-https://www.youtube.com/watch?v=5jzIVp6bTy0
+[Automatic Code Generation with SymPy | SciPy 2017 Tutorial | Jason, Aaron, Björn & Kenneth](https://www.youtube.com/watch?v=5jzIVp6bTy0)
 
 
 ### nix flakes
@@ -32736,6 +32756,7 @@ https://www.youtube.com/watch?v=5jzIVp6bTy0
 - [Hermetic shell scripts in Bazel](https://www.youtube.com/embed/xSARLjNXmDI?start=53&end=96&version=3), start=53&end=96
 - [Shipit! Presents: How Shopify Uses Nix](https://www.youtube.com/embed/KaIRpx11qrc?start=1178&end=1183&version=3), start=1178&end=1183
 - [Nix: What Even is it Though](https://www.youtube.com/embed/6iVXaqUfHi4?start=976&end=1010&version=3), start=976&end=1010
+- [Make Data Fun](https://www.youtube.com/watch?v=2ih-WeUTrpw), by DataCamp
 
 
 Texts:
