@@ -6,12 +6,14 @@ Is an unofficial wrapper of the nix installer, unstable for now!
 
 ## Nix runs in many "systems"
 
+
+
 Depending on what hardware you run:
 - https://nix.dev/tutorials/install-nix
 - https://docs.staging.mozilla-releng.net/develop/install-nix.html
 - https://github.com/DeterminateSystems/nix-installer
-- https://determinate.systems/posts/nix-on-the-steam-deck
-- https://guacamolie.nl/en/blog/sway-on-the-steam-deck/
+- https://determinate.systems/posts/nix-on-the-steam-deck steam deck
+- [Is NixOS Overrated?](https://www.youtube.com/embed/sSxGEHakfuc?start=2411&end=2435&version=3), start=2411&end=2435 https://guacamolie.nl/en/blog/sway-on-the-steam-deck/
 - [Nix-on-droid packages installation, channels update on Android(part 2)](https://www.youtube.com/embed/NaaDi7cDSSA?start=870&end=875&version=3), start=870&end=875
 - [The Nix Phone and the end of Android](https://www.youtube.com/watch?v=0UIpg19KECw)
 - [Nix: a space odyssey](https://www.youtube.com/watch?v=RL2xuhU9Nhk)
