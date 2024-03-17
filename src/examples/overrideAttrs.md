@@ -5269,6 +5269,24 @@ python3 -c 'import matplotlib.pyplot as plt'
 
 
 ```bash
+nix \
+shell \
+github:NixOS/nixpkgs/nixpkgs-unstable#yt-dlp \
+yt-dlp \
+--download-sections "*2629-2860" \
+-v \
+https://www.youtube.com/embed/FClHhLxtab4 \
+--force-ipv4 \
+-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+```
+Refs.:
+- https://unix.stackexchange.com/a/744276
+- https://github.com/yt-dlp/yt-dlp/issues/7860#issuecomment-1959091672
+- https://github.com/ytdl-org/youtube-dl/blob/a96a45b2cdcfa5f20ae4264bed268cce93fbc521/README.md#L739-L740
+- https://gist.github.com/ChristopherA/3361e44d569452e9ead65543b1dfbfb6
+- [Roda Viva | Alessandro Vieira e Fabiano Contarato | 18/10/2021](https://www.youtube.com/embed/FClHhLxtab4?start=2629&end=2860&version=3), start=2629&end=2860
+
+```bash
 ffmpeg -r 30 -i {1,2,3}.jpg -vcodec mpeg4 -y movie.mp4 -vcodec mpeg4 -y -vb 40M
 ```
 Refs.:
