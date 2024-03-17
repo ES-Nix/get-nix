@@ -873,6 +873,124 @@ eval \
 ' | jq .
 ```
 
+
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+      
+      extraPreConfigure = ''
+        # grep -n -C3 where src/nix/upgrade-nix.cc && exit 1
+        sed -i '/Path getProfileDir(ref<Store> store)/!{p;d;};n;a printInfo("On: nix/upgrade-nix.cc");' src/nix/upgrade-nix.cc
+        sed -i '/void run(ref<Store> store, Installables && installables) override/!{p;d;};n;a printInfo("On: nix/profile.cc");' src/nix/profile.cc
+      '';
+    in
+      (pkgs.pkgsStatic.nix.overrideAttrs( oldAttrs: {
+          preConfigure = (oldAttrs.preConfigure or "") 
+            + extraPreConfigure;
+        })
+      )
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+```
+Refs.: 
+- https://stackoverflow.com/questions/30099736/sed-insert-line-after-x-lines-after-match#comment48313449_30100063
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/98b00b6947a9214381112bdb6f89c25498db4959"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+      
+      extraPreConfigure = ''
+        sed -i 's@getDataDir() + "/nix/root";@getStateDir() + "/nix";@' \
+        src/libstore/store-api.cc
+      '';
+    in
+      (pkgs.pkgsStatic.nix.overrideAttrs( oldAttrs: {
+          preConfigure = (oldAttrs.preConfigure or "") + extraPreConfigure;
+        })
+      )
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let 
+      nix = builtins.getFlake "github:NixOS/nix/6a5210f48e20dc7ed0d2f8ea36d9dfb7f7da0821"; 
+
+      extraPreConfigure = ''
+        
+        sed -i 's@getDataDir() + "/nix/root";@getStateDir() + "/nix";@' \
+        src/libstore/store-api.cc
+      '';
+    in
+      nix.packages.x86_64-linux.nix-static.overrideAttrs( oldAttrs: {
+          preConfigure = (oldAttrs.preConfigure or "") + extraPreConfigure;
+        })
+)
+EOF
+)
+
+
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+```
+
+
+nix \   
+build \
+--max-jobs auto \
+--print-build-logs \
+--file - \                  
+<<'EOF'
+    let                                                                  
+      nix = builtins.getFlake "github:NixOS/nix/6a5210f48e20dc7ed0d2f8ea36d9dfb7f7da0821"; 
+
+      extraPreConfigure = ''
+        sed -i 's@getDataDir() + "/nix/root";@getStateDir() + "/nix";@' \
+        src/libstore/store-api.cc
+      '';
+    in
+      nix.packages.x86_64-linux.nix-static.overrideAttrs( oldAttrs: {
+          preConfigure = (oldAttrs.preConfigure or "") + extraPreConfigure;
+        })
+EOF
+
 ```bash
 nix eval --apply builtins.attrNames nix#checks
 nix eval --apply builtins.attrNames nix#checks.x86_64-linux
@@ -1634,6 +1752,7 @@ Refs.:
 
 
 
+#### Tests/investigate old bugs?
 
 
 ```bash
@@ -1940,7 +2059,7 @@ sh
 
 ```bash
 cat > Containerfile << 'EOF'
-FROM docker.io/library/alpine:3.18.3 as alpine-with-ca-certificates-tzdata
+FROM docker.io/library/alpine:3.19.1 as alpine-with-ca-certificates-tzdata
 # FROM docker.io/library/python:3.9.18-alpine3.18 as alpine-with-ca-certificates-tzdata
 
 # https://stackoverflow.com/a/69918107
@@ -1953,20 +2072,20 @@ ENV TZ=America/Recife
 
 RUN apk update \
  && apk \
-          add \
-          --no-cache \
-          ca-certificates \
-          tzdata \
-          shadow \
+        add \
+        --no-cache \
+        ca-certificates \
+        tzdata \
+        shadow \
  && mkdir -pv /home/nixuser \
  && addgroup nixgroup --gid 4455 \
  && adduser \
-     -g '"An unprivileged user with an group"' \
-     -D \
-     -h /home/nixuser \
-     -G nixgroup \
-     -u 3322 \
-     nixuser \
+        -g '"An unprivileged user with an group"' \
+        -D \
+        -h /home/nixuser \
+        -G nixgroup \
+        -u 3322 \
+        nixuser \
  && echo \
  && echo 'Start kvm stuff...' \
  && getent group kvm || groupadd kvm \
@@ -2032,8 +2151,8 @@ run \
 --privileged=true \
 --tty=true \
 --rm=true \
-localhost/alpine-with-ca-certificates-tzdata:latest \
-sh -c '. ~/.profile && nix flake metadata nixpkgs'
+alpine-with-ca-certificates-tzdata:latest \
+sh -lc 'nix flake metadata nixpkgs'
 
 xhost + || nix run nixpkgs#xorg.xhost -- +
 podman \
@@ -2048,10 +2167,16 @@ run \
 --tty=true \
 --rm=true \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
-localhost/alpine-with-ca-certificates-tzdata:latest \
-sh -c '. ~/.profile && nix run nixpkgs#xorg.xclock'
+--volume=/etc/localtime:/etc/localtime:ro \
+alpine-with-ca-certificates-tzdata:latest \
+sh -cl 'nix run nixpkgs#xorg.xclock'
 ```
 
+
+TODO:
+```bash
+nix registry pin nixpkgs github:NixOS/nixpkgs/"$(nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/nixpkgs-unstable").rev')"
+```
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -6389,6 +6514,50 @@ sh \
 
 
 
+TODO: 
+
+```bash
+freecad
+obsidian
+opera
+pingora
+rustdesk
+starship
+
+
+nix shell nixpkgs#rustc nixpkgs#cargo nixpkgs#gcc nixpkgs#cmake nixpkgs#libclang
+
+git clone https://github.com/cloudflare/pingora.git \
+&& cd pingora \
+&& git checkout v0.1.0
+
+git clone https://github.com/RustPython/RustPython \
+&& cd RustPython \
+&& cargo run --release demo_closures.py
+
+
+https://github.com/python/cpython
+https://www.linuxuntu.com/install-safari-linux/
+
+
+wget https://github.com/rustdesk/rustdesk/releases/download/1.1.8/rustdesk-1.1.8.deb
+apt install ./rustdesk-1.1.8.deb -y 
+```
+
+
+
+```bash
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get install -y curl gnupg
+curl -s https://s3.eu-central-1.amazonaws.com/jetbrains-ppa/0xA6E8698A.pub.asc | gpg --dearmor | tee /usr/share/keyrings/jetbrains-ppa-archive-keyring.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/jetbrains-ppa-archive-keyring.gpg] http://jetbrains-ppa.s3-website.eu-central-1.amazonaws.com any main" | tee /etc/apt/sources.list.d/jetbrains-ppa.list > /dev/null
+apt-get update
+
+apt-get install -y pycharm-community
+```
+
+
 ```bash
 sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
 wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
@@ -6396,11 +6565,11 @@ sudo apt-get update
 
 sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-sudo apt update
+sudo apt-get update
 
 curl -fSsL https://deb.opera.com/archive.key | gpg --dearmor | sudo tee /usr/share/keyrings/opera.gpg > /dev/null
 echo deb [arch=amd64 signed-by=/usr/share/keyrings/opera.gpg] https://deb.opera.com/opera-stable/ stable non-free | sudo tee /etc/apt/sources.list.d/opera.list
-sudo apt update
+sudo apt-get update
 
 apt-get download --print-uris \
 apt \
@@ -6412,19 +6581,24 @@ ffmpeg \
 firefox \
 google-chrome-stable \
 imagemagick \
+klavaro \
+mupdf \
 nix-bin \
 nodejs \
+okular \
 opera-stable \
 pandoc \
 python3 \
 python3-pip \
-python3-venv
+python3-venv \
+qgis \
+vlc
 ```
 Refs.:
 - https://brave.com/linux/#release-channel-installation
 - https://itsfoss.com/brave-web-browser/
 
-
+TODO: regenerate this
 ```bash
 'https://deb.opera.com/opera-stable/pool/non-free/o/opera-stable/opera-stable_106.0.4998.70_amd64.deb' opera-stable_106.0.4998.70_amd64.deb 108237616 SHA256:2532eee7dc797ed8532b03f87135fca5a6d158556191ab46366d1b576c870711
 'http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_121.0.6167.139-1_amd64.deb' google-chrome-stable_121.0.6167.139-1_amd64.deb 106447036 SHA256:70ca18042b8e6335d2ececc5bef05f48bf3484163f3dc12ff645864b1de608ac
@@ -7684,7 +7858,13 @@ nix run github:NixOS/nixpkgs/release-21.11#ocaml -- --version
 nix-build '<nixpkgs>' -A hello --arg crossSystem '{ config = "aarch64-unknown-linux-gnu"; }'
 ```
 
-
+```bash
+nix \
+  profile \
+  install \
+  github:NixOS/nixpkgs#pkgsStatic.nix \
+  --profile ~/.nix-static 
+```
 
 ```bash
 nix \
@@ -14442,6 +14622,45 @@ fhs
 ```
 
 
+TODO: add runtime deps
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+  in
+  (
+    pkgs.buildFHSUserEnvBubblewrap { name = "fhs"; }
+  )
+)' \
+--command \
+fhs
+```
+https://github.com/NixOS/nix/issues/10080
+
+TODO: it was removed https://github.com/NixOS/nixpkgs/blob/nixos-23.11/pkgs/top-level/all-packages.nix#L413-L415
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+  in
+  (
+    pkgs.buildFHSUserEnvChroot { name = "fhs"; }
+  )
+)' \
+--command \
+fhs
+```
+
 
 ```bash
 # nix-shell -p "(steam.override { extraPkgs = pkgs: [pkgs.fuse]; nativeOnly = true;}).run"
@@ -14544,11 +14763,13 @@ nix \
 shell \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-(gnused.overrideAttrs (oldAttrs: {
-  preFixup = (oldAttrs.preFixup or "") + "set -x";
-}))
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+  (gnused.overrideAttrs (oldAttrs: {
+    preFixup = (oldAttrs.preFixup or "") + "set -x";
+    })
+  )
 )'
 ```
 
@@ -15134,6 +15355,108 @@ python3 \
 ```
 
 
+TODO: it is broken
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixpkgs-unstable");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ 
+        # gpt4all 
+        # langchainhub 
+        # llama-cpp-python
+        chromadb 
+        langchain 
+        langchain-community 
+        unstructured
+        pillow-heif
+        emoji 
+        iso-639 
+        langdetect
+      ]));
+    in
+      [ customPython3 ]
+)' \
+--command \
+python3 \
+-c \
+'from unstructured.partition.pdf import partition_pdf'
+```
+Refs.:
+- https://medium.com/@jackatunstructured/how-to-process-pdfs-in-python-a-step-by-step-guide-d0532f795afe
+- https://unstructured-io.github.io/unstructured/core/partition.html
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ 
+        unstructured
+        pillow-heif
+        emoji 
+        iso-639 
+        langdetect
+        typing-extensions
+        wrapt
+      ]));
+    in
+      [ customPython3 ]
+)' \
+--command \
+python3 \
+-c \
+'from unstructured.partition.pdf import partition_pdf'
+```
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/f945939fd679284d736112d3d5410eb867f3b31c"); 
+    pkgs = import nixpkgs {};
+  in
+    pkgs.python3.withPackages (p: with p; [ 
+        # chainlit
+        # langchainhub
+        # pyautogen
+        # pypdf
+        chromadb
+        huggingface-hub
+        langchain
+        langchain-community
+        openai 
+        pypdf2 #PyPDF2
+        sentence-transformers
+        tiktoken 
+    ])
+)
+EOF
+)
+
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR" \
+--command \
+python3 \
+-c \
+'import geopandas as gpd; print(gpd.__version__)'
+```
 
 
 ```bash
@@ -20137,6 +20460,66 @@ localhost/hello:0.0.1
 ```
 
 
+TODO: it is really big.
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/79baff8812a0d68e24a836df0a364c678089e2c7");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.dockerTools.buildImage {
+      name = "redis";
+      tag = "latest";
+    
+      copyToRoot = pkgs.buildEnv {
+        name = "image-root";
+        paths = [ pkgs.redis ];
+        pathsToLink = [ "/bin" ];
+      };
+    
+      runAsRoot = ''
+        #!${pkgs.runtimeShell}
+        mkdir -p /data
+      '';
+    
+      config = {
+        Cmd = [ "/bin/redis-server" ];
+        WorkingDir = "/data";
+        Volumes = { "/data" = { }; };
+      };
+    
+      diskSize = 1024;
+      buildVMMemorySize = 512;
+    }
+)
+EOF
+)
+
+
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+
+podman load < result
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/redis:latest
+```
+Refs.:
+- https://ryantm.github.io/nixpkgs/builders/images/dockertools/
+
+
+
+
 ```bash
 nix \
 build \
@@ -20737,6 +21120,74 @@ let
 in
   nixos.config.system.nixos.label
 '
+```
+
+
+```bash
+nix \
+eval \
+--impure \
+--json \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.11");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                      ]; 
+          };  
+in
+  nixos.config.environment.variables 
+' | jq .
+
+
+nix \
+eval \
+--impure \
+--json \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.11");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                        ({ pkgs, ... }: { 
+                          hardware.opengl.enable = true;
+                          hardware.opengl.setLdLibraryPath = true;                    
+                        }) 
+                      ]; 
+          };  
+in
+  nixos.config.environment.variables 
+' | jq .
+
+
+nix \
+eval \
+--impure \
+--json \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.11");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                        ({ pkgs, ... }: { 
+                          hardware.opengl.driSupport32Bit = true;
+                          hardware.opengl.enable = true;
+                          hardware.opengl.setLdLibraryPath = true;                    
+                        }) 
+                      ]; 
+          };  
+in
+  nixos.config.environment.variables 
+' | jq .
 ```
 
 
@@ -30794,6 +31245,714 @@ run \
 ```
 Refs.:
 - [Arguing with Linus Torvalds - Steven Rostedt](https://www.youtube.com/embed/0pHImHVrI2I?start=645&end=800&version=3), start=645&end=800
+
+
+
+#### C
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C program that prints Hello World
+  helloWorld = pkgs.writeText "hello.c" ''
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <sys/types.h>
+    #include <unistd.h>
+    #include <errno.h>
+    
+    int main() {
+        int t;
+    
+        printf("before, geteuid() returned %d\n", geteuid());
+        printf("before, getuid() returned %d\n", getuid());
+    
+        t = setuid(geteuid());
+        if (t < 0) {
+            perror("Error with setuid() - errno " + errno);
+            exit(1);
+        }
+    
+        printf("after, geteuid() returned %d\n", geteuid());
+        printf("after, getuid() returned %d\n", getuid());
+    
+        // setreuid(geteuid(), geteuid());
+    
+        printf("finally, geteuid() returned %d\n", geteuid());
+        printf("finally, getuid() returned %d\n", getuid());
+    
+        printf("did work fine, look who I am:\n");
+        system("/bin/bash -c whoami");
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "hello-world-c-inline";
+        src = helloWorld;
+        buildPhase = ''
+          $CC ${helloWorld} -o hello-world-c-inline
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp hello-world-c-inline $out/bin/hello-world-c-inline
+          runHook postInstall
+        '';
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+ldd $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/bin/hello-world-c-inline
+
+
+#nix \
+#develop \
+#--impure \
+#--expr \
+#"$EXPR" \
+#--command \
+#sh \
+#'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://unix.stackexchange.com/questions/548480/why-doesnt-setuid-work-with-non-root-users/548507#548507
+
+
+
+#### OpenGL and more
+
+
+
+TODO: 
+- https://github.com/mrotaru/OpenGL-linux/blob/master/wk1_linux.cpp
+- https://gist.github.com/victorvalentee/c893913468523d362ba2f1633261b6e1
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C++ program that
+  openGLExample = pkgs.writeText "openGL-example.cpp" ''
+    #include <glad/glad.h> 
+    #include <GLFW/glfw3.h>
+    #include <iostream>
+    
+    using namespace std;
+    
+    void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+    void processInput(GLFWwindow* window);
+    
+    const unsigned int SCR_WIDTH = 800;
+    const unsigned int SCR_HEIGHT = 600;
+    
+    // Container struct for shaders & programs.
+    struct ShaderData
+    {
+        unsigned int vertexShader = 0;
+        unsigned int fragmentShader = 0;
+        unsigned int shaderProgram = 0;
+        bool success = false;
+    
+        void cleanup() {
+            glDeleteShader(vertexShader);
+            glDeleteShader(fragmentShader);
+            glDeleteProgram(shaderProgram);
+        }
+    };
+    
+    // Container struct for data associated with setup stage.
+    struct RenderSetupData
+    {
+        unsigned int VAO;
+        unsigned int VBO;
+    
+        void cleanup() {
+            glDeleteVertexArrays(1, &VAO);
+            glDeleteBuffers(1, &VBO);
+        }
+    };
+    
+    const char* vertexShaderSource = "#version 330 core\n"
+    "layout (location = 0) in vec3 aPos;\n"
+    "void main()\n"
+    "{\n"
+    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    "}\0";
+    
+    const char* fragmentShaderSource = "#version 330 core\n"
+    "out vec4 FragColor; \n"
+    "void main() \n"
+    "{\n"
+    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f); \n"
+    "}\n\0";
+    
+    unsigned int setupVertexShader()
+    {
+        unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+        glCompileShader(vertexShader);
+    
+        int success;
+        char infoLog[512];
+        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    
+        if (!success)
+        {
+            glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+            return 0;
+        }
+    
+        return vertexShader;
+    }
+    
+    unsigned int setupFragmentShader()
+    {
+        unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+        glCompileShader(fragmentShader);
+    
+        int  success;
+        char infoLog[512];
+        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    
+        if (!success)
+        {
+            glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+            return 0;
+        }
+    
+        return fragmentShader;
+    }
+    
+    ShaderData setupShaderProgram()
+    {
+        ShaderData result;
+        result.shaderProgram = glCreateProgram();
+        result.vertexShader = setupVertexShader();
+        result.fragmentShader = setupFragmentShader();
+    
+        if (result.vertexShader == 0 || result.fragmentShader == 0)
+        {
+            return {};
+        }
+    
+        glAttachShader(result.shaderProgram, result.vertexShader);
+        glAttachShader(result.shaderProgram, result.fragmentShader);
+        glLinkProgram(result.shaderProgram);
+    
+        int  success;
+        char infoLog[512];
+        glGetProgramiv(result.shaderProgram, GL_LINK_STATUS, &success);
+        if (!success) {
+            glGetProgramInfoLog(result.shaderProgram, 512, NULL, infoLog);
+            std::cout << "ERROR::SHADER::Program::COMPILATION_FAILED\n" << infoLog << std::endl;
+            result.cleanup();
+            return {};
+        }
+    
+        result.success = true;
+        return result;
+    }
+    
+    RenderSetupData setupRendering()
+    {
+        // set up vertex data (and buffer(s)) and configure vertex attributes
+        // ------------------------------------------------------------------
+        float vertices[] = {
+            -0.5f, -0.5f, 0.0f,  // left
+             0.5f, -0.5f, 0.0f,  // right
+             0.0f,  0.5f, 0.0f   // top
+        };
+    
+        // ..:: Initialization code (done once (unless your object frequently changes)) :: ..
+        // 1. bind Vertex Array Object
+        RenderSetupData result;
+        glGenVertexArrays(1, &result.VAO);
+        glGenBuffers(1, &result.VBO);
+    
+        // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+        glBindVertexArray(result.VAO);
+    
+        glBindBuffer(GL_ARRAY_BUFFER, result.VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+    
+        // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+        // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+        // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+        glBindVertexArray(0);
+    
+        return result;
+    }
+    
+    void render(ShaderData shaderData, unsigned int VAO)
+    {
+        // Set a clear color.
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+    
+        // 2. use our shader program when we want to render an object
+        glUseProgram(shaderData.shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+    
+    int main()
+    {
+        glfwInit();
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        // ^ Needed for Mac OS.
+    
+        GLFWwindow* window = glfwCreateWindow(
+            SCR_WIDTH, SCR_HEIGHT, "Hello World OpenGL", NULL, NULL);
+        if (window == NULL)
+        {
+            std::cout << "Failed to create GLFW window" << std::endl;
+            glfwTerminate();
+            return -1;
+        }
+        glfwMakeContextCurrent(window);
+        glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    
+        // Initialize GLAD.
+        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
+        {
+            std::cout << "Failed to initialize GLAD" << std::endl;
+            return -1;
+        }
+    
+        ShaderData shaderData = setupShaderProgram();
+        if (!shaderData.success)
+        {
+            return -1;
+        }
+    
+        RenderSetupData renderSetupData = setupRendering();
+    
+        // Start rendering infinitely.
+        while (!glfwWindowShouldClose(window))
+        {
+            processInput(window);
+    
+            // Render
+            render(shaderData, renderSetupData.VAO);
+    
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
+    
+        // Clean-up
+        shaderData.cleanup();
+        renderSetupData.cleanup();
+    
+        glfwTerminate();
+        return 0;
+    }
+    
+    /** glfw: whenever the window size changed (by OS or user resize) this callback function executes. */
+    void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+    {
+        // make sure the viewport matches the new window dimensions; note that width and 
+        // height will be significantly larger than specified on retina displays.
+        glViewport(0, 0, width, height);
+    }
+    
+    /** Process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly. */
+    void processInput(GLFWwindow* window)
+    {
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        {
+            glfwSetWindowShouldClose(window, true);
+        }
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "openGL-example";
+        buildInputs = with pkgs; [ 
+            freeglut
+            libGLU
+        ];
+
+        src = openGLExample;
+        buildPhase = ''
+          g++ ${openGLExample} -o openGL-example -lglut -lGLU -lGL
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp openGL-example $out/bin/openGL-example
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--rebuild \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://blog.minhazav.dev/hellow-world-in-open-gl/#rendering-a-gl-window
+
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C++ program that
+  openGLExample = pkgs.writeText "openGL-example.cpp" ''
+    // http://www.codebind.com/linux-tutorials/install-opengl-ubuntu-linux/
+    #include <GL/glut.h>
+     
+    void displayMe(void)
+    {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glBegin(GL_POLYGON);
+            glVertex3f(0.5, 0.0, 0.5);
+            glVertex3f(0.5, 0.0, 0.0);
+            glVertex3f(0.0, 0.5, 0.0);
+            glVertex3f(0.0, 0.0, 0.5);
+        glEnd();
+        glFlush();
+    }
+     
+    int main(int argc, char** argv)
+    {
+        glutInit(&argc, argv);
+        glutInitDisplayMode(GLUT_SINGLE);
+        glutInitWindowSize(400, 300);
+        glutInitWindowPosition(100, 100);
+        glutCreateWindow("Hello world!");
+        glutDisplayFunc(displayMe);
+        glutMainLoop();
+        return 0;
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "openGL-example";
+        buildInputs = with pkgs; [ 
+            freeglut
+            libGLU
+        ];
+
+        src = openGLExample;
+        buildPhase = ''
+          g++ ${openGLExample} -o openGL-example -lglut -lGLU -lGL
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp openGL-example $out/bin/openGL-example
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--rebuild \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://programminggems.wordpress.com/2019/11/27/getting-started-with-opengl-from-c-c/
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C program that
+  firstOpenGlApp = pkgs.writeText "first_opengl_app.c" ''
+    #include<stdio.h>
+    #include<GL/glut.h>
+    void displayMe(void)
+    {
+            glClear(GL_COLOR_BUFFER_BIT);
+            glBegin(GL_POLYGON);
+            glVertex3f(0.5, 0.0, 0.5);
+            glVertex3f(0.5, 0.0, 0.0);
+            glVertex3f(0.0, 0.5, 0.0);
+            glVertex3f(0.0, 0.0, 0.5);
+            glEnd();
+            glFlush();
+    }
+    int main(int argc, char** argv){
+            glutInit(&argc, argv);
+            glutInitDisplayMode(GLUT_SINGLE);
+            glutInitWindowSize(400, 300);
+            glutInitWindowPosition(100, 100);
+            glutCreateWindow("Hello world!");
+            glutDisplayFunc(displayMe);
+            glutMainLoop();
+            return 0;
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "first_opengl_app";
+        buildInputs = with pkgs; [ 
+            freeglut
+            libGLU
+        ];
+
+        src = firstOpenGlApp;
+        buildPhase = ''
+          $CC ${firstOpenGlApp} -o first_opengl_app -lGL -lGLU -lglut
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp first_opengl_app $out/bin/first_opengl_app
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--rebuild \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://stackoverflow.com/questions/70147459/freeglut-failed-to-open-display-linux-subsystem
+
+
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C program that
+  testGlut = pkgs.writeText "test_glut.c" ''
+    #include <stdlib.h>
+    #include <GL/glew.h>
+    #include <GL/glut.h>
+    
+    void keyboard(unsigned char key, int x, int y);
+    void display(void);
+    
+    
+    int main(int argc, char** argv)
+    {
+      glutInit(&argc, argv);
+      glutCreateWindow("GLUT Test");
+      glutKeyboardFunc(&keyboard);
+      glutDisplayFunc(&display);
+      glutMainLoop();
+    
+      return EXIT_SUCCESS;
+    }
+    
+    
+    void keyboard(unsigned char key, int x, int y)
+    {
+      switch (key)
+      {
+        case '\x1B':
+          exit(EXIT_SUCCESS);
+          break;
+      }
+    }
+    
+    
+    void display()
+    {
+      glClear(GL_COLOR_BUFFER_BIT);
+    
+      glColor3f(1.0f, 0.0f, 0.0f);
+    
+      glBegin(GL_POLYGON);
+        glVertex2f(-0.5f, -0.5f);
+        glVertex2f( 0.5f, -0.5f);
+        glVertex2f( 0.5f,  0.5f);
+        glVertex2f(-0.5f,  0.5f);
+      glEnd();
+    
+      glFlush();
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "test_glut";
+        buildInputs = with pkgs; [ 
+            freeglut
+            freeglut.dev
+            glew
+            glew.dev
+            libGL
+            libGL.dev
+            libGLU
+        ];
+        src = testGlut;
+        buildPhase = ''
+          $CC ${testGlut} -o test_glut -lGL -lGLU -lglut
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp test_glut  $out/bin/test_glut
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://github.com/msys2/MINGW-packages/issues/2176#issuecomment-282843235
+- https://stackoverflow.com/a/8352560
 
 
 
