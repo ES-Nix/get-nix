@@ -764,6 +764,14 @@ echo $(nix-store --query --graph $(nix eval --raw nixpkgs#hello.drvPath)) | dot 
 ```
 
 ```bash
+nix eval --store dummy:// --expr '1 + 2' # https://man.archlinux.org/man/extra/nix/nix3-help-stores.1.en#Dummy_Store
+nix build --store 'local?store=/tmp/my-nix/store&state=/tmp/my-nix/state&log=/tmp/my-nix/log' nixpkgs#hello
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/store/types/local-store
+- https://nixos.org/manual/nix/stable/store/types/#store-url-format
+
+```bash
 nix shell --impure --expr \
 '(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.buildFHSUserEnv (pkgs.appimageTools.defaultFhsEnvArgs // { name = "fhs"; profile = "export FHS=1"; runScript = "bash"; targetPkgs = pkgs: (with pkgs; [ hello cowsay ]); }))' \
 --command fhs -c 'hello | cowsay' 
@@ -841,7 +849,11 @@ nix eval --json --apply builtins.attrNames nixpkgs#stdenv.drvAttrs
 ```
 
 ```bash
-nix eval --json nixpkgs#pkgsStatic.nix.override.__functionArgs
+nix eval --json nixpkgs#nix.override.__functionArgs | jq .
+```
+
+```bash
+nix eval --json nixpkgs#pkgsStatic.nix.override.__functionArgs | jq .
 ```
 
 ```bash
@@ -935,6 +947,8 @@ nix eval --impure --json --expr 'builtins.map (p: p.name) (import <nixpkgs/nixos
 
 nix eval --impure --expr 'with import <nixpkgs>{}; idea.pycharm-community.outPath'
 
+
+
 nix build --impure --expr \
 'with import <nixpkgs> {};
 runCommand "foo" {
@@ -959,6 +973,9 @@ nix eval --impure --expr '(import <nixpkgs> {}).vscode.version'
 
 nix eval --impure --raw --expr '(import <nixpkgs> {}).hello'
 nix eval --impure --raw --expr '(import <nixpkgs> {}).python3Full.postInstall'
+
+nix repl --expr 'import <nixpkgs>{}'
+nix repl --file '<nixpkgs>' # https://nixos.org/manual/nix/stable/release-notes/rl-2.10
 
 nix build --impure --expr '(import <nixpkgs> {}).vscode' 
 nix build nixpkgs#vscode
@@ -1091,6 +1108,8 @@ diff \
 lscpu | grep op-mode
 ```
 
+
+
 ## TMP, TMPDIR, XDG_RUNTIME_DIR
 
 [XDG_DATA_DIR is the PROPER way to add Applications](https://www.youtube.com/watch?v=bZN3BZOYW_k)
@@ -1208,6 +1227,22 @@ Refs.:
 
 
 
+> NixOS intentionally does not expose GSettings schemas globally to avoid conflicts. Each program is expected to have 
+> the schemas it needs passed to it through XDG_DATA_DIRS by wrapGAppsHook.
+> 
+> Of course, the corollary is that you can no longer edit system-wide settings. 
+> It would be possible to modify gsettings and dconf-editor programs to scan the system for schemas
+> [...]
+
+```bash
+nix-shell \
+-I nixpkgs="nixpkgs=channel:nixos-unstable" \
+-p glib gnome.gnome-remote-desktop \
+--run 'XDG_DATA_DIRS=$GSETTINGS_SCHEMAS_PATH gsettings get org.gnome.desktop.remote-desktop.rdp screen-share-mode'
+```
+Refs.:
+- https://discourse.nixos.org/t/headless-gnome-remote-desktop-on-nixos/19251/2
+
 ```bash
 xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
 xhost + || nix run nixpkgs#xorg.xhost -- +
@@ -1235,6 +1270,8 @@ Refs.:
 - https://serverfault.com/questions/1064759/xorg-not-starting-in-gke-with-gpu-ee-no-screens-foundee
 - https://www.linuxquestions.org/questions/linux-from-scratch-13/blfs-stuck-at-x-server-start-ee-no-screens-found-ee-4175684483/#post6182397
 - https://bbs.archlinux.org/viewtopic.php?pid=2035298#p2035298
+
+
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -1384,6 +1421,8 @@ build \
 --print-out-paths \
 "$HOME/.config/nixpkgs"#homeConfigurations.$(nix eval --impure --raw --expr 'builtins.currentSystem')."$(id -un)"-"$(hostname)".activationPackage
 ```
+
+
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -3690,7 +3729,7 @@ systemctl list-unit-files --type=service
 
 ```bash
 cat > Containerfile << 'EOF'
-FROM ubuntu:23.04 as ubuntu-base
+FROM docker.io/library/ubuntu:23.04 as ubuntu-base
 
 RUN apt-get update -y \
  && apt-get install --no-install-recommends --no-install-suggests -y \
@@ -3719,7 +3758,7 @@ RUN addgroup abcgroup --gid 4455  \
  && echo 'abcuser ALL=(ALL) PASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
  && echo 'Start kvm stuff...' \
  && $(getent group kvm || groupadd kvm) \
- && sudo usermod --append --groups kvm abcuser \
+ && usermod --append --groups kvm abcuser \
  && echo 'End kvm stuff!'
  
 # Uncomment that to compare
@@ -3759,6 +3798,23 @@ run \
 --userns=keep-id \
 localhost/ubuntu-base:latest
 # TODO: install systemd from nix
+
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--entrypoint="" \
+--group-add=keep-groups \
+--hostname=container-nix-hm \
+--interactive=true \
+--name=container-ubuntu23 \
+--privileged=true \
+--rm=true \
+--tty=true \
+--user=abcuser \
+--userns=keep-id \
+localhost/ubuntu-base:latest \
+bash
 ```
 
 
@@ -3769,33 +3825,33 @@ https://git.sr.ht/~jshholland/nixos-configs/tree/master/item/flake.nix#L30
 ###### ARM
 
 
-```bash
-              # Enable the X11 windowing system.
-              services.xserver = {
-                enable = true;
-                displayManager.gdm.enable = true;
-                displayManager.startx.enable = true;
-                logFile = "/var/log/X.0.log";
-                desktopManager.xterm.enable = true;
-                # displayManager.gdm.autoLogin.enable = true;
-                # displayManager.gdm.autoLogin.user = "nixuser";
-              };
-              services.spice-vdagentd.enable = true;
+```nix
+  # Enable the X11 windowing system.
+  services.xserver = {
+    enable = true;
+    displayManager.gdm.enable = true;
+    displayManager.startx.enable = true;
+    logFile = "/var/log/X.0.log";
+    desktopManager.xterm.enable = true;
+    # displayManager.gdm.autoLogin.enable = true;
+    # displayManager.gdm.autoLogin.user = "nixuser";
+  };
+  services.spice-vdagentd.enable = true;
 
 
-              security.polkit.enable = true;
+  security.polkit.enable = true;
 
-              hardware.opengl.enable = true;
-              hardware.opengl.driSupport = true;
-              programs.ssh.forwardX11 = true;
-              services.qemuGuest.enable = true;
+  hardware.opengl.enable = true;
+  hardware.opengl.driSupport = true;
+  programs.ssh.forwardX11 = true;
+  services.qemuGuest.enable = true;
 
-              services.sshd.enable = true;
+  services.sshd.enable = true;
 
-              programs.dconf.enable = true;
+  programs.dconf.enable = true;
 
-            # https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
-            # boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
+# https://gist.github.com/andir/88458b13c26a04752854608aacb15c8f#file-configuration-nix-L11-L12
+# boot.loader.grub.extraConfig = "serial --unit=0 --speed=115200 \n terminal_output serial console; terminal_input serial console";
 ```
 
 
@@ -8858,6 +8914,7 @@ COMMANDS
 ##### Xorg, X11, xauth, build-vm, ssh, vscode
 
 
+
 ```bash
 xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
 # export QEMU_OPTS='-nographic -display gtk,gl=on'
@@ -10672,10 +10729,9 @@ build \
           # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
           mkdir -pv ./home/nixuser/.local/share/fonts
         ";
-      };
+      }
     )
 '
-    
 ```
 
 
@@ -10951,7 +11007,7 @@ nix flake metadata github:NixOS/nixpkgs/nixos-22.05 --json | jq --join-output '.
 ```bash
 # It does not exist in NixOS systems!
 # --volume=/etc/localtime:/etc/localtime:ro \
-# It is not sure taht it exists 
+# It is not sure that it exists 
 # --volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
 podman \
 run \
@@ -11208,6 +11264,8 @@ verify \
 
 
 TODO: use the `--ofiline` flag.
+
+TODO: narinfo-cache-negative-ttl https://stackoverflow.com/a/62278472
 ```bash
 nix \
 --option eval-cache false \
@@ -12139,12 +12197,39 @@ git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 1
 specialArgs
 Eelco Dolstra explaining this:
 TODO: replicate this annoying thing!
+- https://discourse.nixos.org/t/why-does-nix-flake-show-try-to-write-a-lock-file/24123/2
+- https://github.com/NixOS/nix/issues/5790#issuecomment-996690415
+- https://discourse.nixos.org/t/how-to-get-a-package-path-in-nix-store-which-not-containing-a-bin-dir/4653/9
 - [NixCon2023 What Flakes needs (technically)](https://www.youtube.com/embed/UHhnG4rbvzo?start=1131&end=1236&version=3), start=1131&end=1236 by Linus Heckemann
 - [NixOS Live Coding: Using our Flake's Nixpkgs for Nix-Shell, Building Systems on GitHub Actions](https://www.youtube.com/embed/TR0C76I59AI?start=220&end=374&version=3), start=220&end=374
 - [The Nix Hour #3 [flake updating, nix edit, some corners of the Nix language]](https://www.youtube.com/embed/_OBcPLnyNag?start=400&end=436&version=3), start=400&end=436
 - [Manage Nix Flake Inputs Like a Pro](https://www.youtube.com/watch?v=4ZoBGlkMPWI)
 - [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=977&version=3), start=817&end=977
 - https://edolstra.github.io/talks/nixcon-oct-2019.pdf
+
+```nix
+specialArgs = { flake = self; };
+```
+Refs.:
+- https://github.com/jnsgruk/crafts-flake/blob/b2cbfcc1acd650c3242df35d0d2850e1f5998477/flake.nix#L112
+
+
+```nix
+ nixpkgs.overlays = builtins.attrValues self.overlays;
+```
+Refs.:
+- https://github.com/kclejeune/system/blob/d4480530c49b0bf91f34bb242756bbb9ccda16ff/modules/common.nix#L13
+
+
+
+
+```nix
+nixpkgs.overlays = [ self.overlay ];
+```
+Refs.:
+- https://github.com/astro/microvm.nix/blob/c5074bb6d328a6071a70dcb097f8bcd208fce80a/examples/graphics.nix#L26
+
+
 
 > Bare `nixpkgs` corresponds to `master`, that's something to keep in mind :)
 > https://github.com/NixOS/flake-registry/issues/6#issuecomment-716115466
@@ -12189,6 +12274,10 @@ Refs.:
 TODO:
 - https://stackoverflow.com/a/36472934 `nixPath = [ "nixpkgs=http://nixos.org/channels/nixos-unstable/nixexprs.tar.xz" ]; # allow users to use nix-env`
 - https://discourse.nixos.org/t/do-flakes-also-set-the-system-channel/19798/12
+- https://github.com/wireapp/wire-server-deploy/blob/7b00c0230b14d865ea8ebb058201e8bda84f6364/default.nix#L12-L19
+- 
+
+
 ```bash
 nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
 home.sessionVariables.NIX_PATH = "nixpkgs=nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NIX_PATH}";
@@ -12197,8 +12286,55 @@ Refs.:
 - https://ayats.org/blog/channels-to-flakes/#pinning-your-registry
 
 
+TODO: read and try to understand it
+https://github.com/NixOS/nix/pull/9819#discussion_r1463521301
+
+```bash
+nix \
+eval \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                        ({...}: { nix.registry.nixpkgs.flake = "${nixpkgs}"; })
+                      ]; 
+          };  
+in
+  nixos.config.nix.nixPath
+'
+```
+Refs.:
+- related? https://github.com/NixOS/nix/pull/7871#issuecomment-1446418480 
+- related? https://github.com/NixOS/nix/pull/8477 
 
 
+
+```bash
+nix \
+eval \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/7eeacecff44e05a9fd61b9e03836b66ecde8a525");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                      ]; 
+          };  
+in
+  nixos.config.nix.optimise.dates
+'
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/6033#issuecomment-1948924684
+
+
+TODO:
 ```bash
 nix \
 eval \
@@ -12214,12 +12350,54 @@ let
                       ]; 
           };  
 in
-  nixos.config.nix.nixPath
+  nixos.config.system.extraSystemBuilderCmds
 '
 ```
 Refs.:
-- related? https://github.com/NixOS/nix/pull/7871#issuecomment-1446418480 
-- related? https://github.com/NixOS/nix/pull/8477 
+- https://github.com/NixOS/nix/issues/4874#issuecomment-1047971727
+
+
+
+TODO: test it
+```nix
+{
+  nix.nixPath = [
+    # Point to a stable path so system updates immediately update
+    "nixpkgs=/run/current-system/nixpkgs"
+    # Allow using nixos-option to query current config
+    "nixos-config=/run/current-system/flake/configuration.nix"
+  ];
+  system.extraSystemBuilderCmds = ''
+    ln -s ${nixpkgs.outPath} $out/nixpkgs
+    ln -s ${self.outPath} $out/flake
+  '';
+  nix.registry.nixpkgs.flake = self.inputs.nixpkgs;
+}
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/4874#issuecomment-1047971727
+
+
+TODO: test it
+```nix
+{
+  nix.settings.flake-registry = toFile "global-registry.json" ''{"flakes":[],"version":2}'';
+}
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/8953#issuecomment-1919310666
+
+
+TODO: test it
+```nix
+{
+nix.settings.flake-registry = ""
+}
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/8953#issuecomment-1919310666
+
+
 
 
 #### `specialArgs` magic _versus_ `extraSpecialArgs`
@@ -12232,9 +12410,16 @@ Must watch:
 - Overlays example: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=3231&end=3556&version=3), start=3231&end=3556
 - Bigger slice: [The Nix Hour #41 [passthru attribute, using services from nixos-unstable]](https://www.youtube.com/embed/bJY2O8_ZNiU?start=1635&end=3556&version=3), start=1635&end=3556
 - https://search.nixos.org/options?channel=unstable&show=nixpkgs.overlays&from=0&size=15&sort=relevance&type=packages&query=nixpkgs.overlays
-
+- other way infinite recursion: https://github.com/danth/stylix/blob/fcff15ac5ffbe81f1c66e352f3167c270d79cdab/modules/gnome/nixos.nix#L4-L6
 
 TODO: `specialArgs` magic versus `extraSpecialArgs`
+
+Source definitions:
+- https://github.com/nix-community/home-manager/blob/2f3367769a93b226c467551315e9e270c3f78b15/flake.nix#L42
+- specialArgs ? TODO: find it
+
+Other:
+- https://discourse.nixos.org/t/infinite-recursion-encountered-at-undefined-position/3039/13 lilyball explanation about an infinite recursion error
 - https://github.com/NixOS/nixpkgs/blob/53bd44342d22b53677b245c15de6e8f8a37718d0/lib/modules.nix#L65-L69
 - https://discourse.nixos.org/t/how-to-pin-nix-registry-nixpkgs-to-release-channel/14883/7
 - https://nix-community.github.io/home-manager/options.html#opt-_module.args
@@ -12268,12 +12453,13 @@ TODO: `specialArgs` magic versus `extraSpecialArgs`
 - https://discourse.nixos.org/t/use-a-module-from-nixpkgs-unstable-in-flake/31463/2
 - https://discourse.nixos.org/t/nixos-flakes-with-home-manager/18476/4
 - https://stackoverflow.com/a/77737026
+- https://labs.quansight.org/blog/2020/07/nixos-rpi-wifi-router
 - https://flake.parts/overlays
 
 
 ```bash
-        # https://fnordig.de/2023/07/24/old-ruby-on-modern-nix/
-        # nodejs_16 = prev.nodejs_16.meta // { insecure = false; knownVulnerabilities = []; };
+# https://fnordig.de/2023/07/24/old-ruby-on-modern-nix/
+# nodejs_16 = prev.nodejs_16.meta // { insecure = false; knownVulnerabilities = []; };
 #        github-runner =
 #          let
 #            ignoringVulns = x: x // { meta = (x.meta // { knownVulnerabilities = [ ]; }); };
@@ -12374,7 +12560,7 @@ echo $(nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/
 ```
 
 ```bash
-[ "$(nix-shell -p hello --run "which hello")" = "$(nix shell nixpkgs#hello -c which hello)" ] && echo -e '\n\n\e[32msuccess\e[0m\n\n'
+[ "$(nix-shell -p hello which --run "which hello")" = "$(nix shell nixpkgs#hello nixpkgs#which -c which hello)" ] && echo -e '\n\n\e[32msuccess\e[0m\n\n'
 ```
 Refs.:
 - https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html
@@ -12405,6 +12591,8 @@ Refs.:
 - https://nix-community.github.io/home-manager/options.html#opt-programs.nix-index.enable
 - https://rycee.gitlab.io/home-manager/options.html#opt-nix.registry._name_.flake
 - https://dee.underscore.world/blog/home-manager-flakes/
+- https://github.com/NixOS/nix/issues/4874#issuecomment-1048028301
+- https://github.com/NixOS/nix/issues/4874#issuecomment-1048177621
 
 #### Must read
 
@@ -12454,6 +12642,11 @@ Related?
 
 
 #### Investigation
+
+
+TODO: 
+[Using Stable and Unstable At the Same Time on NixOS](https://www.youtube.com/watch?v=hlytf6Uxf4E)
+
 
 Take a look at: https://releases.nixos.org/?prefix=nixos/
 
@@ -12559,7 +12752,8 @@ nix flake metadata nixos-unstable
 ```bash
 nix \
 --option flake-registry https://raw.githubusercontent.com/serokell/flake-registry/6fd0b94e3e40b409a7cd352c1c78f0477e4a9069/flake-registry.json \
-eval nixpkgs#lib.version
+eval \
+nixpkgs#lib.version
 ```
 Refs.:
 - https://github.com/serokell/flake-registry/tree/6fd0b94e3e40b409a7cd352c1c78f0477e4a9069#serokell-flake-registry
@@ -13949,13 +14143,15 @@ EXPR_NIX='
         pkgs = import nixpkgs { };    
       in
         (pkgs.pkgsStatic.nix.override {
-                                       storeDir = "/home/nixuser/.local/share/nix/root/nix/store";
-                                       stateDir = "/home/nixuser/.local/share/nix/root/nix/var";
-                                       confDir = "/home/nixuser/.local/share/nix/root/nix/etc";
+                                       storeDir = "/home/abcuser/.local/share/nix/root/nix/store";
+                                       stateDir = "/home/abcuser/.local/share/nix/root/nix/var";
+                                       confDir = "/home/abcuser/.local/share/nix/root/nix/etc";
          })
   )
 '
 
+nix run nixpkgs#nix -- \
+build --impure --no-link --print-build-logs --print-out-paths --expr "$EXPR_NIX"
 
 nix \
 build \
@@ -13967,7 +14163,7 @@ build \
 "$EXPR_NIX"
 
 
-OUT_PATH_STAGE_1=$(
+OUT_PATH_STAGE_1="$HOME"/.local/share/nix/root/$(
     nix \
     build \
     --impure \
@@ -13979,6 +14175,20 @@ OUT_PATH_STAGE_1=$(
 )/bin/nix
 
 cp -v "$OUT_PATH_STAGE_1" nix-stage-1
+```
+
+
+
+```bash
+./nix-stage-1 \
+build \
+--impure \
+--no-link \
+--no-sandbox \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
 ```
 
 
@@ -14074,6 +14284,14 @@ nix eval --raw --expr 'builtins.storeDir'
 ```
 
 ```bash
+nix \
+--store 'dummy://?store='"$(pwd)"'/blah' \
+eval \
+--expr \
+'builtins.storeDir'
+```
+
+```bash
       storeDir = "/home/ubuntu/nix/store";
       stateDir = "/home/ubuntu/nix/var";
       confDir = "/home/ubuntu";
@@ -14118,16 +14336,17 @@ nix \
 build \
 --impure \
 --expr \
-'(with builtins.getFlake "nixpkgs"; 
-with legacyPackages.${builtins.currentSystem}; 
-pkgsStatic.openssl
+'(
+  with builtins.getFlake "nixpkgs"; 
+  with legacyPackages.${builtins.currentSystem}; 
+    pkgsStatic.openssl
 )'
 ```
 
 
 ```bash
 nix \
-build \
+shell \
 --impure \
 --expr \
 '(
@@ -16838,6 +17057,17 @@ $(
 
 
 
+```bash
+nix-store --query --references --include-outputs --force-realise \
+$(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.nix) \
+ | tr ',' '\n'
+```
+
+```bash
+nix-store --query --requisites --include-outputs --force-realise \       
+$(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.nix) \
+ | tr ',' '\n'
+```
 
 ```bash
 nix \
@@ -17065,6 +17295,68 @@ $(
 ) \
  | dot -Tps > glibc.ps
 ```
+
+
+
+Use:
+```bash
+nix-store --query --references $(nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+nixpkgs#hello)
+``` 
+
+for direct runtime dependencies.
+
+Use:
+```bash
+nix-store --query --requisites --include-outputs $(nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+nixpkgs#hello)
+```
+for all runtime dependencies.
+
+If you pass a .drv , you will get the related build dependencies.
+Refs.: https://discourse.nixos.org/t/how-does-nix-compute-runtime-dependencies/11381/3
+
+
+```bash
+nix-store --query --references --include-outputs --force-realise $(nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+nixpkgs#nix) | wc -l
+```
+
+
+```bash
+`nix-store --query --requisites --include-outputs --force-realise $(nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+nixpkgs#nix) | wc -l`
+```
+
+
+```bash
+nix-store --query --requisites --include-outputs --force-realise $(nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+nixpkgs#fontconfig) | wc -l
+```
+
+
+
+
 
 ```bash
 nix-store --query --requisites --include-outputs \
@@ -18589,6 +18881,20 @@ builtins.mapAttrs (k: v: mkTest k v { }) tests
 '
 ```
 
+TODO:
+```nix
+  environment.sessionVariables = {
+    WAYLAND_DISPLAY = "wayland-1";
+    DISPLAY = ":0";
+    QT_QPA_PLATFORM = "wayland"; # Qt Applications
+    GDK_BACKEND = "wayland"; # GTK Applications
+    XDG_SESSION_TYPE = "wayland"; # Electron Applications
+    SDL_VIDEODRIVER = "wayland";
+    CLUTTER_BACKEND = "wayland";
+  };
+```      
+https://github.com/astro/microvm.nix/blob/c5074bb6d328a6071a70dcb097f8bcd208fce80a/examples/graphics.nix#L41-L49
+
 #### X11
 
 
@@ -18630,6 +18936,8 @@ Refs.:
 
 #### test-selenium-firefox
 
+
+[Selenium Automation Testing Tutorial | Selenium Tutorial For Beginners | Selenium| Simplilearn](https://www.youtube.com/watch?v=cobEbkTwbwY)
 
 ```bash
 nix \
@@ -19422,8 +19730,22 @@ $(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.helloOnRoot
 
 
 ```bash
-podman load < $(nix build --no-link --print-out-paths nixpkgs#dockerTools.examples.redis)
+podman load < $(nix build --impure --no-link --print-out-paths nixpkgs#dockerTools.examples.redis)
 ```
+
+TODO: https://github.com/NixOS/nix/pull/9854
+```bash
+podman load < $(nix build --no-link --print-out-paths nix#dockerImage)/image.tar.gz
+```
+Refs.:
+- https://github.com/NixOS/nix/blob/6b976a1898cb1f6688da66725a8182279d83c0fa/flake.nix#L273-L274
+
+
+```bash
+docker load < $(nix build --no-link --print-out-paths nix#dockerImage)
+```
+Refs.:
+- https://github.com/NixOS/nix/blob/6b976a1898cb1f6688da66725a8182279d83c0fa/flake.nix#L273-L274
 
 
 ```bash
@@ -19440,6 +19762,9 @@ Refs.:
 
 
 TODO:
+- http://lethalman.blogspot.com/2016/04/cheap-docker-images-with-nix_15.html
+- https://gist.github.com/sigma/9887c299da60955734f0fff6e2faeee0#file-redis-mini-nix-L85
+- https://gist.github.com/jasoncarr0/8a745d70b84331382795f37020884ebc
 - https://github.com/NixOS/nixpkgs/blob/3cb442f49442e3dc76ecc661fbe236362396da8e/pkgs/build-support/docker/examples.nix#L146
 - https://github.com/NixOS/nix/issues/1559#issuecomment-1174574549
 - https://unix.stackexchange.com/a/652402
@@ -19447,6 +19772,15 @@ TODO:
 - https://github.com/NixOS/nixpkgs/issues/37172#issuecomment-640358700
 - https://discourse.nixos.org/t/nix-build-too-large-docker-image/9394
 - https://yrh.dev/blog/using-nix-to-build-docker-images/
+- https://jameswillia.ms/posts/go-nix-containers.html Go example must see it
+- https://news.ycombinator.com/item?id=29834422
+- https://nixos.wiki/wiki/Docker
+- https://github.com/NixOS/nixpkgs/blob/617579a787259b9a6419492eaac670a5f7663917/nixos/modules/services/cluster/kubernetes/kubelet.nix#L274-L289
+- https://discourse.nixos.org/t/including-folders-in-docker-images/25385 Rust example
+- https://discourse.nixos.org/t/how-to-include-files-in-docker-containers-created-with-nix/26201/2
+- https://discourse.nixos.org/t/how-to-build-a-docker-image-with-a-working-nix-inside-it/32960/4
+- TODO: make an OCI and nixosTests! https://scvalex.net/posts/63/ https://scvalex.net/posts/68/ Rust example libGL libxkbcommon wayland xorg.libX11 xorg.libXcursor xorg.libXi xorg.libXrandr
+
 
 
 Bonus:
@@ -19565,7 +19899,7 @@ EXPR_NIX='
         tag = "latest";
         config = {
           Env = [
-            # "PAGER=less -F"
+            # "PAGER=less -F" # TODO: write an nixosTest about it an use only as a fraction of the toybox
             # A user is required by nix
             # https://github.com/NixOS/nix/blob/9348f9291e5d9e4ba3c4347ea1b235640f54fd79/src/libutil/util.cc#L478
             "USER=foobar"
@@ -20211,6 +20545,27 @@ in
 ```bash
 nix \
 eval \
+--raw \
+--expr \
+'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+  nixos = nixpkgs.lib.nixosSystem { 
+            system = "x86_64-linux"; 
+            modules = [ 
+                        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" 
+                      ]; 
+          };  
+in
+  nixos.config.system.nixos.codeName
+'
+```
+
+
+
+```bash
+nix \
+eval \
 --expr \
 '
 let
@@ -20368,10 +20723,11 @@ in
 ```bash
 nix \
 eval \
+--impure \
 --expr \
 '
 let
-  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c");
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.05");
   nixos = nixpkgs.lib.nixosSystem { 
             system = "x86_64-linux"; 
             modules = [ 
@@ -22277,9 +22633,6 @@ echo $EXPECTED_SHA512  $ISO_PATH | sha512sum -c
 ```
 
 ```bash
-
-
-
 #nix \
 #build \
 #--impure \
@@ -22771,6 +23124,8 @@ nix run github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#nix-info -
 nix profile install nixpkgs#hello --profile "$HOME"/.local/share/nix/root/nix/var/nix/profiles/per-user/"$USER"/profile
 ```
 
+
+```bash
 runAsRoot = "
   #!${pkgs.runtimeShell}
   ${pkgs.dockerTools.shadowSetup}
@@ -22784,6 +23139,8 @@ runAsRoot = "
   # https://www.reddit.com/r/ManjaroLinux/comments/sdkrb1/comment/hue3gnp/?utm_source=reddit&utm_medium=web2x&context=3
   ${pkgs.coreutils}/bin/mkdir -pv ./home/appuser/.local/share/fonts
 ";
+```
+
 
 ```bash
 nix \
@@ -25437,8 +25794,12 @@ Refs.:
 - https://github.com/NixOS/nix/issues/3908#issuecomment-717723809
 - https://github.com/NixOS/nix/issues/7299 nix-build -E 'with import <nixpkgs> {}; closureInfo { rootPaths = [ (builtins.unsafeDiscardOutputDependency hello.drvPath) ]; }'
 
+```nix
+exportReferencesGraph
+writeReferencesToFile
+```
 
-Why it build evan before this merge?
+Why it builds even before this merge?
 https://github.com/NixOS/nixpkgs/pull/153194
 ```bash
 EXPR_NIX=$(cat <<-'EOF'
@@ -25802,6 +26163,8 @@ Refs.:
 - https://stackoverflow.com/a/67607698
 
 
+TODO: is this the same thing?
+https://github.com/USEPA/EPANET2.2
 
 ```bash
 nix \
@@ -26653,6 +27016,8 @@ TODO: Test this in an nixosTest and in an runInLinuxVM
 - https://stackoverflow.com/a/47214691
 - https://discourse.nixos.org/t/using-fuse-inside-nix-derivation/8534/2
 - https://github.com/NixOS/nixpkgs/issues/101038
+- https://unix.stackexchange.com/questions/454686/how-fakeroot-is-not-a-security-breach-in-linux
+- https://www.thedroneely.com/posts/cooking-and-baking-linux-distributions-in-nix/
 
 
 ```bash
@@ -27057,6 +27422,10 @@ https://discourse.nixos.org/t/in-overlays-when-to-use-self-vs-super/2968/9
 #### builtins.trace and lib.debug.traceVal (old stdenv.lib.traceVal)
 
 
+TODO: do this example https://unix.stackexchange.com/questions/720895/how-to-print-all-available-attributes-of-a-nix-expression
+
+
+
 [How to package {Python,Ruby,Rust,Node,Go} programs - Zimbatm (NixCon 2019)](https://www.youtube.com/embed/MrRnGPyQ_9s?start=2658&end=2734&version=3), start=2658&end=2734
 
 [How to package {Python,Ruby,Rust,Node,Go} programs - Zimbatm (NixCon 2019)](https://www.youtube.com/embed/MrRnGPyQ_9s?start=2736&end=2798&version=3), start=2736&end=2798
@@ -27362,6 +27731,7 @@ https://nixos.wiki/wiki/C#Debug_symbols
 - https://gianarb.it/blog/my-workflow-with-nixos
 - https://scvalex.net/posts/58/ systemd-fu
 - https://tailscale.com/blog/nixos-minecraft/ Xe Iaso
+- https://nixos.org/manual/nixpkgs/stable/#sec-postgresqlTestHook nixosTests it!
 
 https://guekka.github.io/nixos-server-1/
 https://guekka.github.io/nixos-server-2/
@@ -27379,6 +27749,9 @@ nix build nixpkgs#nixosTests.kubernetes.dns-single-node --no-link
 nix build nixpkgs#nixosTests.kubernetes.rbac-single-node --no-link
 ```
 
+```bash
+nix build github:NixOS/nixpkgs/nixos-23.11#nixosTests.kubernetes.rbac-multi-node
+```
 
 ```bash
 nix \
@@ -28833,6 +29206,10 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames python3Packages' | 
 ```
 
 ```bash
+nix eval --impure --json --expr '(let nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3"); pkgs = import nixpkgs {}; in builtins.attrNames pkgs.python3Packages)' | jq . | wc -l
+```
+
+```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames rustPackages.packages' | tr ' ' '\n' | wc -l
 ```
 
@@ -28843,6 +29220,10 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames rPackages' | tr ' '
 
 ```bash
 nix eval --json nixpkgs#rustPlatform.buildRustPackage.override.__functionArgs
+```
+
+```bash
+nix eval --json github:NixOS/nixpkgs/nixpkgs-unstable#nixosTests.kubernetes.rbac-multi-node.nodes.machine2.services.kubernetes.kubelet.containerRuntimeEndpoint
 ```
 
 ```bash
@@ -28909,7 +29290,7 @@ nix#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.install-force-no-daemon |
 ```
 
 
-##### Dummies certificates, acme, snakeoil
+##### Dummies certificates, acme, snakeoil, ca-certs
 
 TODO:
 http://blog.tpleyer.de/posts/2020-01-17-nix-show-derivation-is-your-friend.html
@@ -29395,6 +29776,10 @@ Maybe `devenv` fit well here?
 - https://github.com/NixOS/nix/issues/6782
 
 
+TODO: test it
+https://www.reddit.com/r/Nix/comments/1443k3o/home_manager_installation_could_not_find_suitable/
+https://github.com/DeterminateSystems/nix-installer/issues/477#issuecomment-1951565790
+
 #### 
 
 
@@ -29597,6 +29982,8 @@ About nix language + flakes + templates:
 - https://fasterthanli.me/series/building-a-rust-service-with-nix/part-11
 - https://zero-to-nix.com/concepts/flakes#templates
 - [Nix Flake for Scala - a Nix Introduction, Overview and Demo](https://www.youtube.com/watch?v=HnoP7JZn2MQ)
+- [How to get started with Nix as a Rust developer](https://www.youtube.com/watch?v=tv9s4jhdUpU) cargo2nix
+
 
 TODO: https://github.com/NixOS/nixpkgs/blob/f91ee3065de91a3531329a674a45ddcb3467a650/pkgs/top-level/all-packages.nix#L14-L27
 
@@ -29633,7 +30020,19 @@ add2 = { a, b, ... }: a + b
 
 
 
+Text:
+- > /* Technical details
+  > 
+  > `make-disk-image` has a bit of magic to minimize the amount of work to do in a virtual machine.
+  > https://github.com/NixOS/nixpkgs/blob/d89fdbfc985022d183073cb52df4d35b791d42cf/nixos/lib/make-disk-image.nix#L1-L3
+
+
+
 The nix language fu/nix-fu:
+- https://github.com/orgs/nix-community/repositories?type=all&page=2
+- https://nixcloud.io/tour/?id=introduction/nix
+- https://nixlang.wiki/en/nix/language/nix-language-for-js-developers
+- https://learnxinyminutes.com/docs/nix/
 - https://teu5us.github.io/nix-lib.html
 - https://bnikolic.co.uk/nix-cheatsheet.html
 - http://www.chriswarbo.net/projects/nixos/useful_hacks.html
@@ -29655,6 +30054,10 @@ The nix language fu/nix-fu:
 - https://github.com/NixOS/nixpkgs/blob/86b9cdb25063a1a4545abd1dfd089ed0de5175af/pkgs/build-support/docker/default.nix#L1239-L1249
 - https://nix.dev/guides/best-practices
 - https://github.com/NixOS/nixpkgs/issues/261820#issuecomment-1775502830
+- https://br0g.0brg.net/nix.html
+- https://www.socallinuxexpo.org/scale/21x/nixcon-us
+
+
 
 ```nix
 # https://fnordig.de/2023/07/24/old-ruby-on-modern-nix/
@@ -29794,7 +30197,36 @@ localhost/k3s-pause:latest
 ```
 
 
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.11"); 
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      in
+        builtins.length (builtins.attrValues pkgs.xorg)
+  )
+'
 
+
+nix \
+eval \
+--impure \
+--expr \
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.11"); 
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      in
+        builtins.length (builtins.filter nixpkgs.lib.isDerivation (builtins.attrValues pkgs.xorg))
+  )
+'
+```
 
 ```bash
 nix \
@@ -29804,12 +30236,31 @@ eval \
 '
   (
       let
-        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs"); 
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.11"); 
         pkgs = import nixpkgs { system = "x86_64-linux"; };
       in
-        builtins.length (builtins.filter nixpkgs.lib.isDerivation (builtins.attrValues pkgs.python311Packages))
+        builtins.length (builtins.attrValues pkgs.stdenv)
   )
 '
+
+
+nix \
+eval \
+--impure \
+--expr \
+'
+  (
+      let
+        nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/nixos-23.11"); 
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      in
+        builtins.length (builtins.filter nixpkgs.lib.isDerivation (builtins.attrValues pkgs.stdenv))
+  )
+'
+```
+
+```bash
+nix eval --json --apply builtins.attrNames github:NixOS/nixpkgs/nixos-23.11#python3Packages | jq length
 ```
 
 ```bash
@@ -30054,6 +30505,9 @@ run \
 "$EXPR"
 ```
 
+TODO: boost 
+https://stackoverflow.com/a/23668329 
+https://stackoverflow.com/questions/41413791/unable-to-link-against-boost-libraries
 
  
 ```bash
@@ -30484,6 +30938,11 @@ in
 ```
 
 ##### bash, POSIX, bash-fu
+
+
+TODO: jq-fu
+https://news.ycombinator.com/item?id=20246727
+
 
 
 ```bash
@@ -30989,6 +31448,18 @@ COMMANDS
 ```
 
 
+```bash
+sqlite3 /nix/var/nix/db/db.sqlite
+```
+
+```bash
+sqlite> select id from ValidPaths where path = "/nix/store/...-coreutils-8.32"
+```
+Refs.:
+- https://discourse.nixos.org/t/how-does-nix-compute-runtime-dependencies/11381/4
+
+
+
 TODO: https://github.com/NixOS/nixos-channel-scripts/issues/45
 
 ```bash
@@ -31024,7 +31495,7 @@ github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c#pkgsStatic.nix
 ```
 
 
-### nix-channel, channels, NIX_PATH
+### nix-channel, channels, NIX_PATH, -I
 
 
 [Nix Multi-User Installation Without Default Channel](https://dev.to/drsensor/nix-multi-user-installation-without-default-channel-45nd)
@@ -31052,6 +31523,11 @@ nix eval --impure --expr '<nixpkgs/nixos>'
 
 ```bash
 nix eval --impure --expr 'builtins.findFile builtins.nixPath "nixpkgs/nixos"'
+```
+
+
+```bash
+nix repl --impure --expr 'import (builtins.findFile builtins.nixPath "nixpkgs/nixos") {}'
 ```
 
 
@@ -32690,10 +33166,13 @@ Refs.:
 
 
 
-TODO
-https://scipython.com/blog/the-double-pendulum/
-https://rosettacode.org/wiki/Rosetta_Code
-https://www.youtube.com/@MrPSolver/playlists
+TODO:
+- [Efficient Lambert W Computation](https://www.youtube.com/watch?v=-38Qsr0bQYY), 
+- https://scipython.com/blog/the-double-pendulum/
+- [Detect Text in Images with Python - pytesseract vs. easyocr vs keras_ocr](https://www.youtube.com/watch?v=oyqNdcbKhew)
+- https://pspdfkit.com/blog/2023/how-to-use-tesseract-ocr-in-python/
+- https://rosettacode.org/wiki/Rosetta_Code
+- https://www.youtube.com/@MrPSolver/playlists
 
 TODO: factorial and gamma in Rust
 https://stackoverflow.com/questions/59206653/how-to-calculate-21-factorial-in-rust/69534350#69534350
@@ -32760,15 +33239,18 @@ https://www.sympy.org/scipy-2017-codegen-tutorial/
 - [Shipit! Presents: How Shopify Uses Nix](https://www.youtube.com/embed/KaIRpx11qrc?start=1178&end=1183&version=3), start=1178&end=1183
 - [Nix: What Even is it Though](https://www.youtube.com/embed/6iVXaqUfHi4?start=976&end=1010&version=3), start=976&end=1010
 - [Make Data Fun](https://www.youtube.com/watch?v=2ih-WeUTrpw), by DataCamp
+- [How to measure and improve developer productivity | Nicole Forsgren (Microsoft Research, Google)](https://www.youtube.com/shorts/2qgj6_ofLuA)
 
 
 Texts:
 - https://flox.dev/blog/nitw-idx Vova Kryachko has been working at Google for nearly seven years on many projects.
+- [Why did Nix adopt Flakes?](https://www.jetpack.io/blog/why-did-nix-adopt-flakes/)
+- 
+
 
 ### The determinate systems nix installer, written in Rust
 
-- Slice about flakes with github data.
-- [Flakes: Nix Unshackled – Graham Christensen | PackagingCon 2023](https://www.youtube.com/embed/wZBiRv3ixhU?start=407&end=460&version=3), start=407&end=460
+- Slice about flakes with github data: [Flakes: Nix Unshackled – Graham Christensen | PackagingCon 2023](https://www.youtube.com/embed/wZBiRv3ixhU?start=407&end=460&version=3), start=407&end=460
 - [Rok Garbas – The NixOS hype and where to go from here (2023 Nix Developer Dialogues)](https://www.youtube.com/embed/C2mqmVlhihU?start=1701&end=1974&version=3), start=1701&end=1974
 - Is it done by the same company? https://zero-to-nix.com/
 - [A Resource for Learning Nix](https://www.youtube.com/watch?v=Nvh7A3HA_4U)
