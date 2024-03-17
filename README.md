@@ -27,6 +27,7 @@ Depending on what hardware you run:
 - [NixOS 62: Run MacOS X on NixOS With a Single Command (NixThePlanet)](https://www.youtube.com/watch?v=fFIDf8ZWX2w)
 - [Reproducibly building artifacts that contain embedded signatures](https://www.youtube.com/watch?v=-CUa3yVTK5U), [Martin Schwaighofer, PhD student at JKU in Austria](https://talks.nixcon.org/nixcon-2022/talk/JHVF8N/)
 - https://www.youtube.com/@NixCon/playlists
+- [OpenBSD + Nix is now a thing](https://discourse.nixos.org/t/openbsd-nix-is-now-a-thing/25525/26)
 
 
 # Contributing locally
