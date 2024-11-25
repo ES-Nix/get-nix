@@ -384,6 +384,7 @@ https://crypto.stackexchange.com/questions/84271/why-openssh-prefers-ecdsa-nistp
 nix eval --raw nixpkgs#python3.postFixup
 ```
 
+
 ```bash
 nix \
 build \
@@ -401,6 +402,24 @@ build \
   )
 )
 '
+```
+
+
+TODO: really cool explanation and examples!
+https://discourse.nixos.org/t/overlays-remove-a-package-in-a-list-using-torch-bin-instead-of-torch/22202/2
+
+
+```bash
+final: prev: rec {
+  python3 = prev.python3.override {
+    self = python3;
+    packageOverrides = final_: prev_: {
+      openai-whisper = prev_.openai-whisper.override {
+        torch = final_.torch-bin;
+      };
+    };
+  };
+}
 ```
 
 
@@ -551,10 +570,10 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "nixpkgs";
+  with builtins.getFlake "github:NixOS/nixpkgs/c04d5652cfa9742b1d519688f65d1bbccea9eb7e";
   with legacyPackages.${builtins.currentSystem};
     (
-      podman-unwrapped.override
+      pkgsStatic.podman.override
         {
           systemd = null;
           lvm2 = null;
@@ -565,12 +584,62 @@ build \
     ).overrideAttrs (oldAttrs:
         {
           postFixup = "";
+
+          buildInputs = lib.optionals false [
+            btrfs-progs
+            gpgme
+            libapparmor
+            libseccomp
+            libselinux
+            lvm2
+            # systemd
+          ];
         }
       )
   )
 '
 ```
 
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$(cat <<- 'EOF'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ae2fc9e0e42caaf3f068c1bfdc11c71734125e06"); 
+    pkgs = import nixpkgs {};
+  in
+    (
+      (pkgs.pkgsStatic.podman.override
+          {
+            systemd = null;
+            lvm2 = null;
+            libapparmor = null;
+            libselinux = null;
+            btrfs-progs = null;
+          }
+      ).overrideAttrs (oldAttrs:
+          {
+            postFixup = "";
+            buildInputs = [];
+          }
+        )
+    )
+EOF
+)"
+```
+
+
+```bash
+git clone https://github.com/containers/podman.git
+nix shell nixpkgs#go nixpkgs#pkg-config
+make podman-remote-static
+```
 
 ```bash
 NIXPKGS_ALLOW_BROKEN=1 \
@@ -1774,6 +1843,7 @@ run \
 
 
 WARNING: it works but it must not! Read the link.
+
 ```bash
 nix \
 build \
@@ -1788,8 +1858,15 @@ build \
 ).nixosTests.nginx
 '
 ```
-https://github.com/NixOS/nixpkgs/issues/62116#issuecomment-1225180043
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/62116#issuecomment-1225180043
 
+TODO: related? 
+```nix
+(python3.override { packageOverrides=(self: super: { requests="hello"; }); }).passthru.pkgs.requests
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/64334
 
 ```bash
 nix \
@@ -2897,7 +2974,9 @@ sh \
 
 ```bash
 podman run --rm alpine sh -c \
-'apk add ffmpeg && ldd $(which ffmpeg) && ldd $(which ffmpeg) | wc -l'
+'
+apk add ffmpeg && ldd $(which ffmpeg) && ldd $(which ffmpeg) | wc -l
+'
 
 podman run --rm ubuntu bash -c \
 '
@@ -2910,7 +2989,11 @@ apt-get update -y \
 podman run --rm ubuntu bash -c \
 '
 apt-get update -y \
-&& apt-get install --no-install-recommends --no-install-suggests -y ffmpeg \
+&& apt-get install \
+     --no-install-recommends \
+     --no-install-suggests \
+     -y \
+     ffmpeg \
 && ldd $(which ffmpeg) \
 && ldd $(which ffmpeg) | wc -l
 '
@@ -2923,9 +3006,89 @@ dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-releas
 && ldd $(which ffmpeg) \
 && ldd $(which ffmpeg) | wc -l
 '
+
+
+podman run -it --rm ghcr.io/void-linux/void-glibc-full sh -c \
+'
+xbps-install \
+-Sy \
+bash \
+ffmpeg \
+file \
+firefox \
+nix \
+pandoc \
+qemu \
+which
+
+ldd $(which bash) | wc -l
+ldd $(which ffmpeg) | wc -l
+ldd $(which file) | wc -l
+ldd $(which firefox) | wc -l
+ldd $(which nix) | wc -l
+ldd $(which pandoc) | wc -l
+ldd $(which qemu) | wc -l
+ldd $(which which) | wc -l
+'
+
+
+podman run --rm docker.io/opensuse/leap bash -c \
+'
+zypper --non-interactive install \
+ffmpeg \
+which
+
+ldd $(which ffmpeg) \
+&& ldd $(which ffmpeg) | wc -l
+
+# zypper --non-interactive install --type pattern xfce
+# zypper --non-interactive install --type pattern gnome
+'
+
+podman run --rm docker.io/archlinux/archlinux bash -c \
+'
+pacman --noconfirm -Sy \
+bash \
+ffmpeg \
+file \
+firefox \
+nix \
+pandoc \
+qemu \
+which
+
+ldd $(which bash) | wc -l
+ldd $(which ffmpeg) | wc -l
+ldd $(which file) | wc -l
+ldd $(which firefox) | wc -l
+ldd $(which nix) | wc -l
+ldd $(which pandoc) | wc -l
+ldd $(which qemu) | wc -l
+ldd $(which which) | wc -l
+'
+
+#podman run --rm docker.io/library/almalinux bash -c \
+#'
+#dnf repolist --all \
+#&& dnf install -y dnf-utils dnf-plugins-core epel-release \
+#&& dnf upgrade -y
+#dnf config-manager --add-repo=https://negativo17.org/repos/epel-multimedia.repo
+#dnf config-manager --set-enabled powertools
+#dnf install -y ffmpeg
+#'
+
+podman run --rm docker.io/library/almalinux bash -c \
+'
+dnf repolist --all \
+&& dnf install -y dnf-utils dnf-plugins-core epel-release \
+&& dnf upgrade -y
+dnf config-manager --add-repo=https://negativo17.org/repos/epel-multimedia.repo
+dnf config-manager --set-enabled powertools
+dnf install -y ffmpeg
+'
 ```
 
-TODO: how to find the n biggest ones?
+TODO: how to find the biggest ones?
 ```bash
 ldd {} | wc -l
 find . -perm /555 | sort -u
@@ -3079,23 +3242,19 @@ Legacy, do not use.
 nix-shell '<nixpkgs>' -A pan
 ```
 
-Modern (ironically it is broken):
+Modern:
 ```bash
 nix \
 develop \
+--ignore-environment \
 nixpkgs#pan \
 --command \
 bash \
 -c \
 '
-source $stdenv/setup
-
-cd "$(mktemp -d)" \
-&& unpackPhase \
-&& cd */ \
-&& pwd \
-&& phases="configurePhase buildPhase" genericBuild \
-&& ./pan/gui/pan
+source $stdenv/setup \
+&& genericBuild \
+&& timeout 8 ./pan/gui/pan
 '
 ```
 Refs.:
@@ -5452,12 +5611,152 @@ cat << 'EOF' > flake.nix
 }
 EOF
 
-# nix build -L .#
+nix build -L .#
 # nix shell .# --command python3 -c 'import sys; print(sys.path)'
 nix shell .# --command python3 -c 'from pottery import ReleaseUnlockedLock'
 ```
 Refs.:
 - https://discourse.nixos.org/t/add-python-package-via-overlay/19783/4
+
+
+
+```bash
+cat << 'EOF' > flake.nix
+{
+  description = "TODO";
+
+  outputs = { nixpkgs, ... }:
+    let
+      overlay = final: prev: 
+        {
+          pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+            (pythonFinal: pythonPrev: {
+              biom-format = (pythonFinal.buildPythonPackage rec {
+                          name = "biom-format";
+                          version = "2.1.15.2";
+                          src = prev.fetchFromGitHub {
+                            owner = "biocore";
+                            repo = "biom-format";
+                            rev = "ef0d9163ea65599ac586d8a9a24878c11a6e24ab";
+                            sha256 = "sha256-7AcRLYFFjfxJ3MKhK65ZlcRLyakfC01DFOC2RkGorWw=";
+                          };
+
+                          buildInputs = with prev.python3Packages; [
+                            numpy
+                            cython
+                          ];
+                          nativeBuildInputs = with prev.python3Packages; [  ];
+                          propagatedBuildInputs = with prev.python3Packages; [  ];
+                          doCheck = false;
+                        });
+
+              phylophlan = (pythonFinal.buildPythonPackage rec {
+                          name = "phylophlan";
+                          version = "3.1.1";
+                          src = prev.fetchFromGitHub {
+                            owner = "biobakery";
+                            repo = "phylophlan";
+                            rev = "74abaaad97e27c09044d26770d1f01b7099b268a";
+                            sha256 = "sha256-KlWKt2tH2lQBh/eQ2Hbcu2gXHEFfmFEc6LrybluxINc=";
+                          };
+                          # checkInputs = with prev.python3Packages; [ ];
+                          buildInputs = with prev.python3Packages; [
+                          seaborn
+                          pandas
+                          dendropy
+                          biopython
+                          matplotlib
+                          numpy
+                          ];
+                          nativeBuildInputs = with prev.python3Packages; [  ];
+                          propagatedBuildInputs = with prev.python3Packages; [  ];
+                          doCheck = false;
+                        });
+
+              hclust2 = (pythonFinal.buildPythonPackage rec {
+                          name = "hclust2";
+                          version = "1.0.0";
+                          src = prev.fetchFromGitHub {
+                            owner = "SegataLab";
+                            repo = "hclust2";
+                            rev = "d7311cfce844ea06ecd6deae854746c4bb616b47";
+                            sha256 = "sha256-xdS36Sfxg4bz5ztRbCdD3uq4Dx50E8n501ScMArjwso=";
+                          };
+                          # checkInputs = with prev.python3Packages; [ ];
+                          buildInputs = with prev.python3Packages; [
+                          scipy
+                          pandas
+                          matplotlib
+                          numpy
+                          ];
+                          nativeBuildInputs = with prev.python3Packages; [  ];
+                          propagatedBuildInputs = with prev.python3Packages; [  ];
+                          doCheck = false;
+                        });
+
+              metaphlan = (pythonFinal.buildPythonPackage rec {
+                          name = "metaphlan";
+                          version = "4.1.0";
+                          src = prev.fetchFromGitHub {
+                            owner = "biobakery";
+                            repo = "metaphlan";
+                            rev = "7c6cf873a1b1a574146a16163328ec3499a2899c";
+                            sha256 = "sha256-+7K5gVLRUYSulMDLszlUsKbNLNg57le63wLPtl26D8c=";
+                          };
+                          # checkInputs = with prev.python3Packages; [ ];
+                          buildInputs = with prev.python3Packages; [
+                            biopython
+                            dendropy
+                            h5py
+                            numpy
+                            pandas
+                            pysam
+                            pythonFinal.biom-format
+                            pythonFinal.hclust2
+                            requests
+                            scipy
+                          ];
+                          nativeBuildInputs = with prev.python3Packages; [  ];
+                          propagatedBuildInputs = with prev.python3Packages; [  ];
+                          doCheck = false;
+                        });
+            })
+          ];
+
+          python3 =
+            let
+              self = prev.python3.override {
+                inherit self;
+                packageOverrides = prev.lib.composeManyExtensions final.pythonPackagesOverlays;
+              }; in
+            self;
+
+          python3Packages = final.python3.pkgs;
+        };
+
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+    in {
+      inherit overlay;
+      defaultPackage.x86_64-linux = (pkgs.python3.withPackages (ps: with ps; [
+#        biom-format
+#        hclust2
+#        phylophlan
+        metaphlan
+      ]));
+    };
+}
+
+EOF
+
+nix shell .# --command python3 -c 'import metaphlan; dir(metaphlan)'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/299219
+
+
 
 
 #### deeper...
@@ -5609,7 +5908,7 @@ print(cpfcnpj.validate("67170904055"))
 ```
 
 
-
+TODO: PR to upstream
 ```bash
 cat << 'EOF' > flake.nix
 {
@@ -5620,8 +5919,8 @@ cat << 'EOF' > flake.nix
       overlay = final: prev: 
         {
           pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
-            (python-final: python-prev: {
-              numpngw = (python-final.buildPythonPackage rec {
+            (pythonFinal: pythonPrev: {
+              numpngw = (pythonFinal.buildPythonPackage rec {
                           name = "numpngw";
                           version = "0.1.2";
                           src = prev.fetchFromGitHub {
@@ -5658,7 +5957,7 @@ cat << 'EOF' > flake.nix
     in {
       inherit overlay;
       # defaultPackage.x86_64-linux = pkgs.python3;
-      # defaultPackage.x86_64-linux = pkgs.python3Packages.pottery;
+      # defaultPackage.x86_64-linux = pkgs.python3Packages.numpngw;
       defaultPackage.x86_64-linux = (pkgs.python3.withPackages (ps: with ps; [ 
         numpngw 
       ]));    
@@ -5834,7 +6133,7 @@ cat << 'EOF' > flake.nix
           };
 
           poetry2nix = prev.poetry2nix.overrideScope' (p2nixfinal: p2nixprev: {
-            # pyfinal & pyprev refers to python packages
+            # pyfinal and pyprev refers to python packages
             defaultPoetryOverrides = (p2nixprev.defaultPoetryOverrides.extend (pyfinal: pyprev:
               {
                 ### dodge infinite recursion ###

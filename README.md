@@ -14,6 +14,7 @@ Depending on what hardware you run:
 - https://github.com/DeterminateSystems/nix-installer
 - https://determinate.systems/posts/nix-on-the-steam-deck steam deck
 - [Is NixOS Overrated?](https://www.youtube.com/embed/sSxGEHakfuc?start=2411&end=2435&version=3), start=2411&end=2435 https://guacamolie.nl/en/blog/sway-on-the-steam-deck/
+- [Is NixOS Overrated?](https://www.youtube.com/embed/sSxGEHakfuc?start=2436&end=2458&version=3), start=2436&end=2458
 - [Nix-on-droid packages installation, channels update on Android(part 2)](https://www.youtube.com/embed/NaaDi7cDSSA?start=870&end=875&version=3), start=870&end=875
 - [The Nix Phone and the end of Android](https://www.youtube.com/watch?v=0UIpg19KECw)
 - [Nix: a space odyssey](https://www.youtube.com/watch?v=RL2xuhU9Nhk)
@@ -28,6 +29,13 @@ Depending on what hardware you run:
 - [Reproducibly building artifacts that contain embedded signatures](https://www.youtube.com/watch?v=-CUa3yVTK5U), [Martin Schwaighofer, PhD student at JKU in Austria](https://talks.nixcon.org/nixcon-2022/talk/JHVF8N/)
 - https://www.youtube.com/@NixCon/playlists
 - [OpenBSD + Nix is now a thing](https://discourse.nixos.org/t/openbsd-nix-is-now-a-thing/25525/26)
+- https://nixos.wiki/wiki/Applications
+- https://github.com/nix-community
+
+Links:
+- https://nixos.org/
+- https://search.nixos.org/packages
+- https://nixpk.gs/pr-tracker.html?pr=153425
 
 
 # Contributing locally
@@ -70,6 +78,9 @@ BASE_URL='https://raw.githubusercontent.com/ES-Nix/get-nix/' \
 > Maybe, if you use `zsh`, you need `. ~/.zshrc` to get the zsh shell working again.
 > TODO: test it.
 
+About the 2.25 release: 
+- https://discourse.nixos.org/t/nix-2-25-released/55994
+- https://github.com/NixOS/nix/tags
 
 About the 2.4 release: 
 - [Nix 2.4 released](https://discourse.nixos.org/t/nix-2-4-released/15822)
@@ -78,7 +89,6 @@ About the 2.4 release:
 - https://github.com/NixOS/nix/releases/tag/2.4
 
 
-https://github.com/NixOS/nix/tags
 
 ### Broken: Testing your installation (not a must, it is probably broken in your system!)
 
@@ -326,7 +336,7 @@ nix profile list --profile "$HOME"/.nix-profile
 From: https://askubuntu.com/a/600028
 
 For detect KVM:
-```
+```bash
 egrep -c '(vmx|svm)' /proc/cpuinfo
 egrep -q 'vmx|svm' /proc/cpuinfo && echo yes || echo no
 egrep '^flags.*(vmx|svm)' /proc/cpuinfo
@@ -774,7 +784,19 @@ Refs.:
 ```bash
 nix shell --impure --expr \
 '(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.buildFHSUserEnv (pkgs.appimageTools.defaultFhsEnvArgs // { name = "fhs"; profile = "export FHS=1"; runScript = "bash"; targetPkgs = pkgs: (with pkgs; [ hello cowsay ]); }))' \
---command fhs -c 'hello | cowsay' 
+--command fhs -c 'hello | cowsay'
+
+nix \
+shell \
+--impure \
+--expr \
+'
+(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.buildFHSUserEnv (pkgs.appimageTools.defaultFhsEnvArgs // { name = "fhs"; profile = "export FHS=1"; runScript = "bash"; targetPkgs = pkgs: (with pkgs; [ hello cowsay ]); }))
+' \
+--command \
+fhs \
+-c \
+'hello | cowsay'
 ```
 Refs.:
 - https://discourse.nixos.org/t/tips-tricks-for-nixos-desktop/28488/2
@@ -846,6 +868,8 @@ nix-store --query --references $(nix eval --raw nixpkgs#hello.drvPath) \
 
 ```bash
 nix eval --json --apply builtins.attrNames nixpkgs#stdenv.drvAttrs
+
+nix eval --json --apply builtins.attrNames nixpkgs#stdenv.hostPlatform
 ```
 
 ```bash
@@ -972,6 +996,7 @@ build \
 ```
 
 
+```bash
 nix \   
 build \
 --max-jobs auto \
@@ -990,6 +1015,9 @@ build \
           preConfigure = (oldAttrs.preConfigure or "") + extraPreConfigure;
         })
 EOF
+```
+
+
 
 ```bash
 nix eval --apply builtins.attrNames nix#checks
@@ -1009,6 +1037,14 @@ https://github.com/NixOS/nix/issues/5567#issuecomment-1335434799
 
 ```bash
 nix eval --apply builtins.attrNames nixpkgs#vmTools.diskImages
+```
+
+```bash
+nix eval --json --expr 'builtins.attrNames builtins' | nix run nixpkgs#jq .
+```
+
+```bash
+nix eval --json nix#nix-static.mesonFlags
 ```
 
 
@@ -1239,6 +1275,9 @@ https://discord.com/channels/692426888563523716/1017825280175394828/101782528247
 https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-hash-to-sri?search=use-xdg-base-directories
 
 
+[The Most OVERRATED Linux Distros](https://www.youtube.com/embed/i6wSn8OlBNc?start=562&end=611&version=3), start=562&end=611
+
+
 ```bash
 if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]
 then 
@@ -1360,6 +1399,14 @@ nix-shell \
 ```
 Refs.:
 - https://discourse.nixos.org/t/headless-gnome-remote-desktop-on-nixos/19251/2
+
+
+```bash
+XDG_STATE_HOME
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/7930#issuecomment-1485099319
+- https://github.com/nix-community/home-manager/issues/3734#issuecomment-2092598017
 
 ```bash
 xhost +localhost || nix run nixpkgs#xorg.xhost -- +localhost
@@ -1841,6 +1888,9 @@ Not recommended commands:
 > The only alternative as far as I know is the experimental `nix profile` command.
 > https://github.com/NixOS/nixpkgs/issues/126036#issuecomment-860447915
 
+It is an joke, April 1.
+[Top 6 Best NixOS Tips & Tricks](https://www.youtube.com/embed/cH9HGs2AxuA?start=14&end=35&version=3), start=14&end=35
+
 
 List
 - [NixOS: a sales pitch](https://www.youtube.com/embed/2L2qHfNnXB4?start=432&end=476&version=3), start=432&end=476
@@ -1909,7 +1959,9 @@ ls -Alh $(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsS
 test -d /nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix); \
 test $(stat -c %a /nix) -eq 0755 || sudo -k chmod -v 0755 /nix
 
-test -f nix || curl -L https://hydra.nixos.org/build/231020695/download/2/nix > nix && chmod -v +x nix
+
+URL=https://hydra.nixos.org/build/231020695/download-by-type/file/binary-dist
+test -f nix || curl -L "$URL" > nix && chmod -v +x nix
 
 ./nix --option experimental-features 'nix-command flakes' \
        registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b \
@@ -1946,6 +1998,19 @@ Refs.:
 - https://discourse.nixos.org/t/how-to-get-the-latest-unbroken-commit-for-a-broken-package-from-hydra/26354/4
 
 
+Example:
+```bash
+https://hydra.nixos.org/build/231020695/download-by-type/file/binary-dist
+```
+
+Detailed references:
+- http://sandervanderburg.blogspot.com/2013/04/setting-up-hydra-build-cluster-for_10.html
+- https://stackoverflow.com/questions/68596265/what-is-a-jobset-in-the-parlance-of-the-hydra-continuous-integration-tool
+- https://determinate.systems/posts/hydra-deployment-source-of-truth/
+- https://discourse.nixos.org/t/how-to-get-the-latest-unbroken-commit-for-a-broken-package-from-hydra/26354/3
+- https://discourse.nixos.org/t/which-packages-make-it-to-the-hydra-jobset/27465/2
+
+
 TODO: 
 - Archlinux https://blog.vkhitrin.com/booting-arch-linux-using-apple-virtualization-framework-with-utm/
 - Ubuntu OCI https://serverfault.com/a/949998
@@ -1969,7 +2034,6 @@ g++ prog.cpp -Wall -Wextra -std=gnu++2b
 ```
 Refs.:
 - https://stackoverflow.com/a/33881726
-
 - https://unix.stackexchange.com/a/452566 FHS
 - https://unix.stackexchange.com/questions/452559/what-is-etc-timezone-used-for#comment822484_452566 FHS
 - https://wiki.archlinux.org/title/System_time
@@ -2032,7 +2096,7 @@ build \
 --target alpine-with-ca-certificates-tzdata \
 . \
 && podman kill container-alpine-with-ca-certificates-tzdata &> /dev/null || true \
-&& podman rm --force container-alpine-with-ca-certificates-tzdata || true \
+&& podman rm --force container-alpine-with-ca-certificates-tzdata || true
 
 
 xhost + || nix run nixpkgs#xorg.xhost -- +
@@ -2060,6 +2124,958 @@ sh
 ```bash
 cat > Containerfile << 'EOF'
 FROM docker.io/library/alpine:3.19.1 as alpine-with-ca-certificates-tzdata
+# FROM docker.io/library/python:3.9.18-alpine3.18 as alpine-with-ca-certificates-tzdata
+
+# https://stackoverflow.com/a/69918107
+# https://serverfault.com/a/1133538
+# https://wiki.alpinelinux.org/wiki/Setting_the_timezone
+# https://bobcares.com/blog/change-time-in-docker-container/
+# https://github.com/containers/podman/issues/9450#issuecomment-783597549
+# https://www.redhat.com/sysadmin/tick-tock-container-time
+ENV TZ=America/Recife
+
+RUN apk update \
+ && apk \
+        add \
+        --no-cache \
+        ca-certificates \
+        tzdata \
+        shadow \
+ && mkdir -pv /home/nixuser \
+ && groupmod ping --gid 998 \
+ && addgroup nixgroup --gid 999 \
+ && adduser \
+        -g '"An unprivileged user with an group"' \
+        -D \
+        -h /home/nixuser \
+        -G nixgroup \
+        -u 1234 \
+        nixuser \
+ && echo \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || groupadd kvm \
+ && usermod --append --groups kvm nixuser \
+ && echo 'End kvm stuff!' \
+ && echo 'Start tzdata stuff' \
+ && (test -d /etc || mkdir -pv /etc) \
+ && cp -v /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
+ && apk del tzdata shadow \
+ && echo 'End tzdata stuff!' 
+
+# sudo sh -c 'mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv '"$(id -nu)":"$(id -gn)"' /nix'
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+
+RUN CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo no-curl-or-wget) \
+ && $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix \
+ && chmod -v +x nix \
+ && echo \
+ && ./nix \
+         --extra-experimental-features nix-command \
+         --extra-experimental-features flakes \
+         --extra-experimental-features auto-allocate-uids \
+         profile \
+         install \
+         github:NixOS/nixpkgs/ebe6e807793e7c9cc59cf81225fdee1a03413811#pkgsStatic.nix \
+ && rm -v ./nix \
+ && mkdir -pv "$HOME"/.config/nix \
+ && grep 'experimental-features' "$HOME"/.config/nix/nix.conf -q &> /dev/null || (echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf) \
+ && grep 'nix-profile' "$HOME"/.profile -q  &> /dev/null || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile) \
+ && . "$HOME"/.profile \
+ && nix flake --version \
+ && nix \
+    store \
+    gc \
+    --verbose \
+    --option keep-build-log false \
+    --option keep-derivations false \
+    --option keep-env-derivations false \
+    --option keep-failed false \
+    --option keep-going false \
+    --option keep-outputs false \
+ && nix-collect-garbage --delete-old \
+ && nix store optimise --verbose \
+ && nix \
+      registry \
+      pin \
+      nixpkgs github:NixOS/nixpkgs/ebe6e807793e7c9cc59cf81225fdee1a03413811 \
+ && nix flake metadata nixpkgs
+
+EOF
+
+podman \
+build \
+--cap-add=SYS_ADMIN \
+--tag alpine-with-ca-certificates-tzdata \
+--target alpine-with-ca-certificates-tzdata \
+. \
+&& podman kill container-alpine-with-ca-certificates-tzdata &> /dev/null || true \
+&& podman rm --force container-alpine-with-ca-certificates-tzdata || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=container-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh -cl 'nix flake metadata nixpkgs'
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--device /dev/dri:rw \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix \
+--interactive=true \
+--name=container-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--security-opt seccomp=unconfined \
+--shm-size=2G \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume=/etc/localtime:/etc/localtime:ro \
+--volume="$(pwd)":/home/nixuser/code:rw \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh -l
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix \
+--interactive=true \
+--name=container-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume=/etc/localtime:/etc/localtime:ro \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh -cl 'nix run nixpkgs#xorg.xclock'
+```
+Refs.:
+- https://stackoverflow.com/a/43743532
+
+
+```bash
+nix run --impure github:guibou/nixGL -- nix run nixpkgs#gpt4all
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/285719#issuecomment-1953881610
+
+
+```bash
+nix \
+run \
+--override-input nixpkgs github:NixOS/nixpkgs/0fbcc4b2e8571f4af39be41752581ea09dd9ab06 \
+--impure \
+github:guibou/nixGL \
+-- \
+nix \
+run \
+github:NixOS/nixpkgs/1536926ef5621b09bba54035ae2bb6d806d72ac8#gpt4all
+```
+
+
+```bash
+nix \
+run \
+--impure \
+--override-flake \
+nixpkgs \
+github:NixOS/nixpkgs/219951b495fc2eac67b1456824cc1ec1fd2ee659 \
+github:guibou/nixGL \
+nix \
+run \
+nixpkgs#stremio
+```
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.19.1 as alpine-with-ca-certificates-tzdata
+# FROM docker.io/library/python:3.9.18-alpine3.18 as alpine-with-ca-certificates-tzdata
+
+# https://stackoverflow.com/a/69918107
+# https://serverfault.com/a/1133538
+# https://wiki.alpinelinux.org/wiki/Setting_the_timezone
+# https://bobcares.com/blog/change-time-in-docker-container/
+# https://github.com/containers/podman/issues/9450#issuecomment-783597549
+# https://www.redhat.com/sysadmin/tick-tock-container-time
+ENV TZ=America/Recife
+
+RUN apk update \
+ && apk \
+          add \
+          --no-cache \
+          ca-certificates \
+          tzdata \
+          shadow \
+ && mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser \
+ && echo \
+ && echo 'Start kvm stuff...' \
+ && getent group kvm || groupadd kvm \
+ && usermod --append --groups kvm nixuser \
+ && echo 'End kvm stuff!' \
+ && echo 'Start tzdata stuff' \
+ && (test -d /etc || mkdir -pv /etc) \
+ && cp -v /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
+ && apk del tzdata shadow \
+ && echo 'End tzdata stuff!' 
+
+# sudo sh -c 'mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv '"$(id -nu)":"$(id -gn)"' /nix'
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+
+RUN CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo no-curl-or-wget) \
+ && $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix \
+ && chmod -v +x nix \
+ && echo 
+ ./nix \
+    --extra-experimental-features nix-command \
+    --extra-experimental-features flakes \
+    --extra-experimental-features auto-allocate-uids \
+    registry \
+    pin \
+    nixpkgs github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3 \
+ && ./nix \
+    --extra-experimental-features nix-command \
+    --extra-experimental-features flakes \
+    --extra-experimental-features auto-allocate-uids \
+    profile \
+    install \
+    nixpkgs#nix \
+ && rm -v ./nix \
+ && mkdir -pv "$HOME"/.config/nix \
+ && grep 'experimental-features' "$HOME"/.config/nix/nix.conf -q &> /dev/null || (echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf) \
+ && grep 'nix-profile' "$HOME"/.profile -q  &> /dev/null || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile) \
+ && . "$HOME"/.profile \
+ && nix flake --version \
+ && nix \
+    run \
+    nixpkgs#home-manager \
+    -- \
+    init \
+    --switch \
+ && nix \
+    store \
+    gc \
+    --verbose \
+    --option keep-build-log false \
+    --option keep-derivations false \
+    --option keep-env-derivations false \
+    --option keep-failed false \
+    --option keep-going false \
+    --option keep-outputs false \
+ && nix-collect-garbage --delete-old \
+ && nix store optimise --verbose \
+ && nix \
+      registry \
+      pin \
+      nixpkgs github:NixOS/nixpkgs/ebe6e807793e7c9cc59cf81225fdee1a03413811 \
+ && nix flake metadata nixpkgs
+
+EOF
+
+podman \
+build \
+--cap-add=SYS_ADMIN \
+--tag alpine-with-ca-certificates-tzdata \
+--target alpine-with-ca-certificates-tzdata \
+. \
+&& podman kill container-alpine-with-ca-certificates-tzdata &> /dev/null || true \
+&& podman rm --force container-alpine-with-ca-certificates-tzdata || true \
+&& podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--hostname=container-nix \
+--interactive=true \
+--name=container-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh -cl 'nix flake metadata nixpkgs'
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix \
+--interactive=true \
+--name=container-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume=/etc/localtime:/etc/localtime:ro \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh -l
+
+xhost + || nix run nixpkgs#xorg.xhost -- +
+podman \
+run \
+--annotation=run.oci.keep_original_groups=1 \
+--device=/dev/kvm:rw \
+--env="DISPLAY=${DISPLAY:-:0}" \
+--hostname=container-nix \
+--interactive=true \
+--name=container-alpine-with-ca-certificates-tzdata \
+--privileged=true \
+--tty=true \
+--rm=true \
+--volume=/tmp/.X11-unix:/tmp/.X11-unix:ro \
+--volume=/etc/localtime:/etc/localtime:ro \
+localhost/alpine-with-ca-certificates-tzdata:latest \
+sh -cl 'nix run nixpkgs#xorg.xclock'
+```
+Refs.:
+- 
+
+
+```bash
+nix \
+--option use-xdg-base-directories true \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+profile \
+install \
+nixpkgs#hello
+
+export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"
+```
+
+
+```bash
+export NIX_PATH='nixpkgs='$(nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+eval --raw nixpkgs#path)
+
+
+./nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+profile \
+install \
+nixpkgs#nix \
+&& rm -v ./nix \
+&& env \
+PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH" \
+NIX_CONFIG="extra-experimental-features = nix-command flakes auto-allocate-uids" \
+NIX_PATH='nixpkgs='$(./nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+eval --raw github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#path) \
+nix \
+run \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#home-manager \
+-- \
+init \
+--switch
+```
+
+
+```bash
+env \
+NIX_CONFIG="extra-experimental-features = nix-command flakes auto-allocate-uids" \
+NIX_PATH='nixpkgs='$(./nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+eval --raw github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#path) \
+./nix \
+shell \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#nix \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#coreutils \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#bashInteractive \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#home-manager \
+--command \
+bash \
+-c \
+'
+rm -v ./nix
+
+home-manager \
+init \
+--switch
+'
+```
+
+
+
+```bash
+export NIX_CONFIG="extra-experimental-features = nix-command flakes auto-allocate-uids"
+
+./nix \
+registry \
+pin \
+nixpkgs github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3
+
+export NIX_PATH='nixpkgs='$(./nix eval --raw nixpkgs#path)
+
+./nix \
+shell \
+--ignore-environment \
+--keep HOME \
+--keep NIX_CONFIG \
+--keep NIX_PATH \
+--keep USER \
+nixpkgs#nix \
+nixpkgs#coreutils \
+nixpkgs#bashInteractive \
+nixpkgs#home-manager \
+--command \
+bash \
+-c \
+'
+rm -v ./nix
+
+home-manager \
+init \
+--switch
+'
+```
+
+
+
+```bash
+nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+run \
+-I 'nixpkgs='$(nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+eval --raw nixpkgs#path) \
+nixpkgs#home-manager \
+-- \
+init \
+--switch
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/98b00b6947a9214381112bdb6f89c25498db4959"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+      
+      text = ''
+        
+        sed -i 's@getDataDir() + "/nix/root";@getStateDir() + "/nix";@' \
+        src/libstore/store-api.cc
+      '';
+    in
+      (pkgs.pkgsStatic.nix.overrideAttrs( oldAttrs: {
+          preConfigure = oldAttrs.preConfigure + 
+          text;
+        })
+      )
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e4f8408450ee1deeed77bd89d404f68514006e42"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+    in
+    pkgs.dockerTools.buildLayeredImage {
+        name = "owner";
+        tag = "pkgs.pkgsStatic.busybox.version";
+        enableFakechroot = true;
+        includeStorePaths = false;
+        fakeRootCommands = ''
+          mkdir -pv ./bin
+          cp -aTv ${pkgs.pkgsStatic.busybox}/bin/ ./bin/
+        '';
+        config.Entrypoint = [ "busybox" ];
+        config.Cmd = [ "sh" ];
+        config.Env = [ "PATH=/bin" ];
+    }
+)
+EOF
+)
+
+
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+
+docker load < result
+
+docker run --interactive=true --rm=true --tty=true owner:latest 
+
+
+docker run --interactive=true --rm=true --tty=true owner:latest /bin/busybox sh -c '/bin/busybox ls -alh /nix/store/'
+```
+
+
+```bash
+git clone -b master --single-branch https://github.com/NixOS/nixpkgs.git \
+&& cd nixpkgs
+```
+
+
+```bash
+git config --global http.postBuffer 524288000 # Set buffer size to 500 MB
+git config --global http.lowSpeedLimit 0      # Disable low speed limit
+git config --global http.lowSpeedTime 999999  # Set low speed time limit to a large value
+```
+Refs.:
+- https://stackoverflow.com/a/77999795
+- https://github.com/orgs/community/discussions/48568#discussioncomment-9998178
+
+
+TODO: what about the self referential thing
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e4f8408450ee1deeed77bd89d404f68514006e42"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+    in
+    pkgs.dockerTools.buildLayeredImage {
+        name = "no-store-paths";
+        tag = "latest";
+        includeStorePaths = false;        
+        extraCommands = ''
+          mkdir -pv ./bin
+          cp -aTv ${pkgs.pkgsStatic.busybox}/bin/ ./bin/
+        '';
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+
+docker load < result
+
+docker run --interactive=true --rm=true --tty=true no-store-paths:latest sh -c '/bin/busybox ls -alh /'
+
+
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e4f8408450ee1deeed77bd89d404f68514006e42"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+    in
+    pkgs.dockerTools.buildLayeredImage {
+        name = "static-zsh";
+        tag = "latest";
+        includeStorePaths = false;        
+        extraCommands = ''
+          mkdir -pv ./bin
+          cp -aTv ${pkgs.pkgsStatic.zsh}/bin/ ./bin/
+        '';
+        config.Entrypoint = [ "zsh" ];
+        config.Cmd = [ "--login" ];      
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+
+docker load < result
+
+docker run --rm=true static-zsh:latest -c 'echo /*' 
+docker run --interactive=true --rm=true --tty=true static-zsh:latest
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e4f8408450ee1deeed77bd89d404f68514006e42"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+    in
+    pkgs.dockerTools.buildLayeredImage {
+        name = "static-bash";
+        tag = "latest";
+        includeStorePaths = false;        
+        extraCommands = ''
+          mkdir -pv ./bin
+          cp -aTv ${pkgs.pkgsStatic.bashInteractive}/bin/ ./bin/
+        '';
+        config.Entrypoint = [ "bash" ];
+        config.Cmd = [ "--login" ];      
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+
+docker load < result
+
+docker run --rm=true static-bash:latest -c 'echo /*' 
+docker run --interactive=true --rm=true --tty=true static-bash:latest
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+  (
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e4f8408450ee1deeed77bd89d404f68514006e42"); 
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+    in
+    pkgs.dockerTools.buildLayeredImage {
+        name = "static-redis";
+        tag = "latest";
+        includeStorePaths = false;        
+        extraCommands = ''
+          mkdir -pv ./bin
+          cp -aTv ${pkgs.pkgsStatic.redis}/bin/ ./bin/
+        '';
+        config.Cmd = [ "redis-server" ];      
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR"
+
+docker load < result
+
+docker run --rm=true static-redis:latest -c 'echo /*' 
+docker run --interactive=true --rm=true --tty=true static-redis:latest
+```
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/ubuntu:24.04
+
+RUN apt-get update -y \
+&& apt-get install --no-install-recommends --no-install-suggests -y \
+    adduser \
+    ca-certificates \
+    curl \
+    sudo \
+    tar \
+    xz-utils \
+    wget \
+    \
+    autoconf \
+    autoconf-archive \
+    automake \
+    autotools-dev \
+    bison \
+    cmake \
+    flex \
+    g++ \
+    gcc \
+    git \
+    gettext \
+    jq \
+    libarchive-dev \
+    libboost-dev \
+    libbrotli-dev \
+    libbz2-dev \
+    libcpuid-dev \
+    libcurl4-openssl-dev \
+    libedit-dev \
+    libgc-dev \
+    libgit2-dev \
+    libicu-dev \
+    libseccomp-dev \
+    libsodium-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    libtool \
+    m4 \
+    make \
+    nlohmann-json3-dev \
+    pkg-config \
+    python3-dev \
+    sqlite3 \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser \
+ && echo 'abcuser:123' | chpasswd \
+ && echo 'abcuser ALL=(ALL) NOPASSWD:SETENV: ALL' > /etc/sudoers.d/abcuser \
+ && echo \
+ && echo 'Start kvm stuff...' \
+ && (getent group kvm || sudo groupadd kvm) \
+ && sudo usermod --append --groups kvm abcuser \
+ && echo 'End kvm stuff!'
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+
+RUN git clone --branch master --single-branch https://github.com/NixOS/nix.git \ 
+ && cd nix \
+ && git checkout 222c38370fcf3ae52bc1883aafcadbbad3df7d1c
+ 
+WORKDIR /home/abcuser/nix
+
+EOF
+
+
+docker \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu24 .
+
+
+docker \
+run \
+--privileged=false \
+--interactive=true \
+--tty=true \
+--rm=true \
+unprivileged-ubuntu24:latest \
+bash
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/installation/building-source
+- https://nixos.org/manual/nix/stable/installation/prerequisites-source.html
+- https://github.com/crasm/dead-simple-home-manager
+- https://github.com/NixOS/nix/issues/295
+- https://github.com/NixOS/nix/issues/566
+- https://github.com/NixOS/nix/issues/512#issuecomment-225517822
+- https://github.com/NixOS/nix/issues/512#issuecomment-92527161
+- https://github.com/NixOS/nix/issues/512#issuecomment-218947396
+- https://github.com/NixOS/nix/blob/90e86bf6d3f0c031b8fa2f7e68ce8457d2601ea4/configure.ac#L47-L48
+- https://github.com/NixOS/nix/issues/4100#issuecomment-744704277
+- https://stackoverflow.com/a/20103436
+- https://stackoverflow.com/a/48100609
+- https://github.com/NixOS/nix/issues/2306 TODO: nix show derivation nix#nix-static ld: library not found for -lboost_context
+- https://github.com/NixOS/nix/issues/5832#issuecomment-1001150991 TODO: test it
+- https://git.alternativebit.fr/picnoir/nix-gh/commit/57daa860e8ed8432937aeecdcf6b9e952b0481b1 ./configure CXX=g++-7 --disable-doc-gen --with-boost=$(nix-build --no-link '<nixpkgs>' -A boost.dev)
+- https://github.com/NixOS/nixpkgs/issues/45462
+- https://github.com/NixOS/nix/issues/4807
+- https://github.com/NixOS/nix/issues/2616#issuecomment-454948376
+
+TODO: https://github.com/NixOS/nix/issues/5832
+
+```bash
+autoreconf -fi
+./configure \
+EDITLINE_CFLAGS=-IEDITLINEPATH/include \
+EDITLINE_LIBS=-LEDITLINEPATH/lib \
+--disable-unit-tests
+make
+```
+Refs.:
+- https://nixos.org/manual/nix/unstable/contributing/hacking.html#hacking
+- https://nixos.org/manual/nix/stable/installation/building-source
+- https://nixos.org/manual/nix/unstable/contributing/hacking.html#makefile-variables
+
+
+```bash
+autoreconf --install --force --verbose
+autoconf --verbose --force --warnings=all
+
+./configure \
+EDITLINE_CFLAGS=-IEDITLINEPATH/include \
+EDITLINE_LIBS=-LEDITLINEPATH/lib \
+--disable-unit-tests
+```
+
+
+```bash
+cd nix
+sed -i 's/m4_esyscmd/m4_esyscmd_s/' configure.ac
+autoconf
+autoreconf -ivf -Werror
+automake --add-missing
+```
+
+```bash
+nix \
+develop \
+--pure-eval \
+--ignore-environment \
+nixpkgs#hello \
+--command \
+sh \
+-c \
+'
+source $stdenv/setup \
+&& phases="unpackPhase" genericBuild
+'
+```
+
+
+```bash
+nix \
+develop \
+--pure-eval \
+--ignore-environment \
+nixpkgs#pkgsStatic.nix \
+--command \
+sh \
+-c \
+'
+source $stdenv/setup \
+&& phases="unpackPhase" genericBuild \
+&& env | sort
+'
+```
+Refs.:
+- https://nixos.org/manual/nix/unstable/contributing/hacking.html#building-nix-with-flakes
+
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+github:NixOS/nix/bff5c94184e0eee2a093f3e04d4cec5010de81c7#native-clangStdenvPackages \
+--command \
+sh \
+-c \
+'
+source $stdenv/setup \
+&& genericBuild
+'
+
+
+nix \
+develop \
+--impure \
+--ignore-environment \
+github:NixOS/nix/bff5c94184e0eee2a093f3e04d4cec5010de81c7#native-clangStdenvPackages \
+--command \
+sh \
+-c \
+'
+source $stdenv/setup \
+&& phases="unpackPhase patchPhase configurePhase autoreconfPhase" genericBuild
+'
+```
+Ref.:
+- https://nixos.org/manual/nix/unstable/contributing/hacking.html#compilation-environments
+- https://nixos.org/manual/nix/unstable/contributing/hacking.html#building-nix-with-flakes
+
+
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+nixpkgs#hello \
+--command \
+sh \
+-c \
+'
+source $stdenv/setup \
+&& phases="unpackPhase patchPhase configurePhase buildPhase checkPhase installPhase fixupPhase installCheckPhase distPhase" genericBuild
+'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/230874/files
+- TODO: post an example https://discourse.nixos.org/t/nix-build-phases-run-nix-build-phases-interactively/36090/17
+
+
+```bash
+nix build .#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.{install-default,install-force-daemon,install-force-no-daemon}
+nix build nix#hydraJobs.installerTests.ubuntu-22-04.x86_64-linux.{install-default,install-force-daemon,install-force-no-daemon}
+```
+Refs.:
+- https://github.com/NixOS/nix/pull/9590#issuecomment-1854578811
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.18.3 as alpine-with-ca-certificates-tzdata
 # FROM docker.io/library/python:3.9.18-alpine3.18 as alpine-with-ca-certificates-tzdata
 
 # https://stackoverflow.com/a/69918107
@@ -2113,35 +3129,44 @@ RUN CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 
          --extra-experimental-features nix-command \
          --extra-experimental-features flakes \
          --extra-experimental-features auto-allocate-uids \
-         registry \
-         pin \
-         nixpkgs github:NixOS/nixpkgs/98e7aaa5cfad782b8effe134bff3717280ec41ca \
- && ./nix \
-         --extra-experimental-features nix-command \
-         --extra-experimental-features flakes \
-         --extra-experimental-features auto-allocate-uids \
          profile \
          install \
-         nixpkgs#pkgsStatic.nix \
+         github:NixOS/nixpkgs/ebe6e807793e7c9cc59cf81225fdee1a03413811#pkgsStatic.nix \
  && rm -v ./nix \
  && mkdir -pv "$HOME"/.config/nix \
  && grep 'experimental-features' "$HOME"/.config/nix/nix.conf -q || (echo 'experimental-features = nix-command flakes' >> "$HOME"/.config/nix/nix.conf) \
  && grep 'nix-profile' "$HOME"/.profile -q || (echo 'export PATH="$HOME"/.nix-profile/bin:"$HOME"/.local/bin:"$PATH"' >> "$HOME"/.profile) \
  && . "$HOME"/.profile \
  && nix flake --version \
+ && nix \
+    store \
+    gc \
+    --verbose \
+    --option keep-build-log false \
+    --option keep-derivations false \
+    --option keep-env-derivations false \
+    --option keep-failed false \
+    --option keep-going false \
+    --option keep-outputs false \
+ && nix-collect-garbage --delete-old \
+ && nix store optimise --verbose \
+ && nix \
+      registry \
+      pin \
+      nixpkgs github:NixOS/nixpkgs/ebe6e807793e7c9cc59cf81225fdee1a03413811 \
  && nix flake metadata nixpkgs
-
+       
 EOF
 
-podman \
+docker \
 build \
---cap-add=SYS_ADMIN \
+--file Containerfile \
 --tag alpine-with-ca-certificates-tzdata \
 --target alpine-with-ca-certificates-tzdata \
 . \
-&& podman kill container-alpine-with-ca-certificates-tzdata &> /dev/null || true \
-&& podman rm --force container-alpine-with-ca-certificates-tzdata || true \
-&& podman \
+&& docker kill container-alpine-with-ca-certificates-tzdata &> /dev/null || true \
+&& docker rm --force container-alpine-with-ca-certificates-tzdata &> /dev/null || true \
+&& docker \
 run \
 --annotation=run.oci.keep_original_groups=1 \
 --device=/dev/kvm:rw \
@@ -2318,6 +3343,9 @@ test $(stat -c %a /nix/var/nix) -eq 0755 || sudo -k chmod -v 0755 /nix/var/nix
 sudo mkdir -pv -m 0666 /nix/var/nix
 ```
 
+
+
+
 ```bash
 # test -f nix || curl -L https://hydra.nixos.org/build/237228729/download/2/nix > nix && chmod -v +x nix
 # test -f nix || wget https://hydra.nixos.org/build/237228729/download/2/nix && chmod -v +x nix
@@ -2429,7 +3457,7 @@ podman machine init \
 
 
 ```bash
-export DOCKER_HOST='unix:///home/nixuser/.local/share/containers/podman/machine/qemu/podman.sock'
+export DOCKER_HOST='unix:///home/'"$USER"'/.local/share/containers/podman/machine/qemu/podman.sock'
 nix \
 shell \
 --ignore-environment \
@@ -2448,6 +3476,7 @@ docker images \
 && docker run --rm quay.io/podman/stable podman --version
 '
 ```
+
 
 ```bash
 podman exec -i --tty=false container-alpine-with-ca-certificates-tzdata sh<<'EOF'
@@ -2480,6 +3509,8 @@ echo "$EXPECTED_SHA512SUM"  "$FULL_PATH_2" | sha512sum -c
 
 ```bash
 nix eval --raw --expr 'builtins.storeDir'
+nix eval --raw --expr 'builtins.dirOf builtins.storeDir'
+nix eval --raw --apply builtins.dirOf --expr 'builtins.storeDir'
 ```
 
 
@@ -2505,8 +3536,6 @@ echo "$EXPECTED_SHA512SUMpre20230810_a1fdc68"  "$FULL_PATH_2" | sha512sum -c
 
 
 
-
-
 ## chroot and others
 
 [Local Nix without Root (HPC)](https://www.reddit.com/r/NixOS/comments/iod7wi/local_nix_without_root_hpc/)
@@ -2519,7 +3548,14 @@ Refs.:
 - [Add 'nix diff-closures' command](https://github.com/NixOS/nix/pull/3818). 
 
 
-### nix statically built, WIP
+### nixStatic, pkgsStatic.nix, nix-static, nix statically built
+
+
+List:
+- nix build github:NixOS/nixpkgs/nixpkgs#nixStatic
+- nix build github:NixOS/nixpkgs/nix#nix-static
+- nix build github:NixOS/nixpkgs/nixpkgs#pkgsStatic.nix
+- nix build github:NixOS/nixpkgs/nixpkgs#pkgsStatic.nixVersions.nix_2_4
 
 
 
@@ -2529,6 +3565,174 @@ and defaulting to something in Mac like in GNU/Linux there is
 `~/.local/share/nix/root` that must just work:
 - https://discourse.nixos.org/t/nix-var-nix-opt-nix-usr-local-nix/7101/66
 - https://discourse.nixos.org/t/change-my-mind-i-still-want-single-user-on-macos/16278
+
+
+
+```bash
+sudo sh -c 'mkdir -pv -m 0777 /nix/var/nix && chown -Rv '"$(id -nu)":"$(id -gn)"' /nix'
+```
+
+
+```bash
+sudo sh -c 'mkdir -pv -m 1735 /nix/var/nix && chown -Rv '"$(id -nu)":"$(id -gn)"' /nix'
+
+#test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo chown -Rv "$(id -nu)":"$(id -gn)" /nix)
+#test $(stat -c %a /nix/var/nix) -eq 0755 || sudo chmod -v 0755 /nix/var/nix
+
+
+CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo no-curl-or-wget) \
+&& $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix \
+&& chmod -v +x nix \
+&& ./nix \
+shell \
+--ignore-environment \
+--keep HOME \
+--keep USER \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#pkgsStatic.busybox \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#nix \
+--command \
+sh \
+-c \
+'
+type type
+type export
+
+export NIX_CONFIG="extra-experimental-features = nix-command flakes auto-allocate-uids"
+
+./nix \
+registry \
+pin \
+nixpkgs github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3
+
+export NIX_PATH=nixpkgs=$(./nix eval --raw nixpkgs#path)
+
+./nix \
+profile \
+install \
+nixpkgs#nix
+
+rm -v ./nix
+'
+
+export NIX_CONFIG="extra-experimental-features = nix-command flakes auto-allocate-uids"
+export PATH="$HOME"/.nix-profile/bin:"$PATH"
+export NIX_PATH=nixpkgs=$(nix eval --raw nixpkgs#path)
+
+nix flake --version
+```
+Refs.:
+- https://nix-community.github.io/home-manager/#sec-install-standalone
+- https://discourse.nixos.org/t/bootstrapping-stand-alone-home-manager-config-with-flakes/17087/3
+- https://bnikolic.co.uk/blog/nix/2024/01/16/nix-without-root.html
+
+
+This one may be the least host environment dependent.
+```bash
+CURL_OR_WGET_OR_ERROR=$($(curl -V &> /dev/null) && echo 'curl -L' && exit 0 || $(wget -q &> /dev/null; test $? -eq 1) && echo 'wget -O-' && exit 0 || echo no-curl-or-wget) \
+&& $CURL_OR_WGET_OR_ERROR https://hydra.nixos.org/build/237228729/download/2/nix > nix \
+&& chmod -v +x nix \
+&& ./nix \
+shell \
+--ignore-environment \
+--keep HOME \
+--keep USER \
+--option use-xdg-base-directories true \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+--extra-experimental-features auto-allocate-uids \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#bashInteractive \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#coreutils \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#nix \
+github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3#home-manager \
+--command \
+bash \
+-c \
+'
+type type
+type export
+
+export NIX_CONFIG="extra-experimental-features = nix-command flakes auto-allocate-uids"
+
+./nix \
+registry \
+pin \
+nixpkgs github:NixOS/nixpkgs/c5101e457206dd437330d283d6626944e28794b3
+
+export NIX_PATH=nixpkgs=$(./nix eval --raw nixpkgs#path)
+
+./nix \
+profile \
+install \
+nixpkgs#nix
+
+# rm -v ./nix
+
+home-manager \
+init \
+--switch
+'
+
+export NIX_CONFIG="extra-experimental-features = nix-command flakes auto-allocate-uids"
+export PATH="$HOME"/.nix-profile/bin:"$PATH"
+export NIX_PATH=nixpkgs=$(./nix eval --raw nixpkgs#path)
+
+home-manager news
+```
+Refs.:
+- https://nix-community.github.io/home-manager/#sec-install-standalone
+- https://discourse.nixos.org/t/bootstrapping-stand-alone-home-manager-config-with-flakes/17087/3
+
+
+
+```bash
+curl -L https://releases.nixos.org/nix/nix-2.21.1/install | sh -s -- --yes --no-daemon
+. "$HOME"/.nix-profile/etc/profile.d/nix.sh
+
+
+nix run --no-write-lock-file github:nix-community/home-manager -- init --switch
+
+home-manager switch
+```
+
+TODO:
+[Neovim and Nix home-manager: Supercharge Your Development Environment](https://www.youtube.com/watch?v=YZAnJ0rwREA)
+
+
+```bash
+nix profile install nixpkgs#nano nixpkgs#git nixpkgs#tree nixpkgs#which
+
+nix flake clone 'github:vimjoyer/nvim-nix-video' --dest ./nvim-nix-video
+cd nvim-nix-video/
+git checkout a5cf1f09d920c61137a8bb8367f6dad685026093
+```
+
+TODO: test it
+```bash
+nix \
+run \
+--no-write-lock-file \
+github:nix-community/home-manager/ \
+-- \
+--flake \
+'.#'"$USER" \
+switch
+```
+Refs.:
+- https://discourse.nixos.org/t/bootstrapping-stand-alone-home-manager-config-with-flakes/17087/3
+
+
+TODO: test it
+```nix
+nixpkgs#pkgsStatic.busybox-sandbox-shell \
+nixpkgs#toybox \
+```
+
+
+#### Creating /nix
+
 
 
 ```bash
@@ -2615,6 +3819,769 @@ nix run nixpkgs#nix-info -- --markdown
 ```
 
 TODO: and the `nix store --store some-dir-name`
+
+
+
+```bash
+cat > Containerfile << 'EOF2'
+FROM docker.io/library/alpine:3.19.1 as cached-base
+
+RUN apk update \
+ && apk \
+        add \
+        --no-cache \
+        ca-certificates \
+        curl \
+        file \
+        shadow \
+        strace \
+ && mkdir -pv -m 0700 /home/abcuser \
+ && addgroup abcgroup --gid 4455 \
+ && adduser \
+        -g '"An unprivileged user with an group"' \
+        -D \
+        -h /home/abcuser \
+        -G abcgroup \
+        -u 3322 \
+        abcuser \
+ && echo \
+ && apk del shadow
+
+# If is added nix statically compiled works!
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+ENV HYDRA_BUILD_ID=250594210
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && curl -L https://hydra.nixos.org/build/"$HYDRA_BUILD_ID"/download/2/nix > nix \
+ && chmod -v +x nix
+
+COPY <<-'EOF' expression.nix
+{}
+EOF
+
+RUN nix \
+    build \
+    --max-jobs auto \
+    --print-build-logs \
+    --file expression.nix \
+ && nix store gc --verbose
+
+
+FROM cached-base as unprivileged-alpine
+
+
+EOF2
+
+
+docker \
+build \
+--file=Containerfile \
+--target unprivileged-alpine \
+--tag=unprivileged-alpine .
+
+```
+Refs.:
+- https://serverfault.com/a/1152613
+
+
+
+```bash
+cat > Containerfile << 'EOF2'
+FROM docker.io/library/alpine:3.19.1 as cached-base
+
+RUN apk update \
+ && apk \
+        add \
+        --no-cache \
+        ca-certificates \
+        curl \
+        file \
+        shadow \
+        strace \
+ && mkdir -pv -m 0700 /home/abcuser \
+ && addgroup abcgroup --gid 4455 \
+ && adduser \
+        -g '"An unprivileged user with an group"' \
+        -D \
+        -h /home/abcuser \
+        -G abcgroup \
+        -u 3322 \
+        abcuser \
+ && echo \
+ && apk del shadow
+
+
+FROM cached-base as cached-base-envs
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+ENV HYDRA_BUILD_ID=250594210
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && curl -L https://hydra.nixos.org/build/"$HYDRA_BUILD_ID"/download/2/nix > nix \
+ && chmod -v +x nix
+
+
+FROM cached-base as cached-nix-static
+
+# If is added nix statically compiled works!
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+ENV HYDRA_BUILD_ID=250594210
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && curl -L https://hydra.nixos.org/build/"$HYDRA_BUILD_ID"/download/2/nix > nix \
+ && chmod -v +x nix
+
+# sed -i 's@getDataDir() + "/nix/root";@getStateDir() + "/nix";@' \
+#   src/libstore/store-api.cc
+COPY <<-'EOF' expression.nix
+    let                                                                  
+      nix = builtins.getFlake "github:NixOS/nix/6a5210f48e20dc7ed0d2f8ea36d9dfb7f7da0821"; 
+
+      extraPreConfigure = ''
+      
+        substituteInPlace \
+        src/libstore/store-api.cc \
+        --replace \
+        'if (uri == "" || uri == "auto") {' \
+        'warn("70a6ce139bd"); if (uri == "" || uri == "auto") {'
+
+        substituteInPlace \
+        src/libstore/profiles.cc \
+        --replace \
+        'auto [gens, dummy] = findGenerations(profile);' \
+        'warn("In createGeneration"); auto [gens, dummy] = findGenerations(profile);'
+
+        substituteInPlace \
+        src/libcmd/command.cc \
+        --replace \
+        'void MixProfile::updateProfile(const BuiltPaths & buildables)
+         {' \
+        'void MixProfile::updateProfile(const BuiltPaths & buildables)
+         { warn("In updateProfile");'
+      '';
+    in
+      nix.packages.x86_64-linux.nix-static.overrideAttrs( oldAttrs: {
+          preConfigure = (oldAttrs.preConfigure or "") + extraPreConfigure;
+        })
+EOF
+
+RUN nix \
+    build \
+    --out-link /home/abcuser/nix-static \
+    --print-build-logs \
+    --print-out-paths \
+    --file expression.nix \
+ && nix store gc --verbose
+
+
+FROM cached-base-envs as unprivileged-alpine
+
+COPY --from=cached-nix-static /home/abcuser/nix-static/bin/nix /home/abcuser/.local/bin/nix-static
+
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIXPKGS_COMMIT=51063ed4f2343a59fdeebb279bb81d87d453942b
+
+RUN nix-static registry pin --verbose github:NixOS/nixpkgs github:NixOS/nixpkgs/"$NIXPKGS_COMMIT" \
+ && nix-static build --print-build-logs --print-out-paths github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello \
+ && nix-static flake --version \
+ && nix-static flake metadata github:NixOS/nixpkgs/"$NIXPKGS_COMMIT" \
+ && nix-static store gc --verbose
+
+EOF2
+
+
+docker \
+build \
+--file=Containerfile \
+--target unprivileged-alpine \
+--tag=unprivileged-alpine .
+
+
+docker \
+run \
+--privileged=false \
+--interactive=true \
+--network=none \
+--tty=true \
+--rm=true \
+unprivileged-alpine:latest \
+sh \
+-c \
+'
+nix-static \
+--offline \
+--no-use-registries \
+profile \
+install \
+github:NixOS/nixpkgs/51063ed4f2343a59fdeebb279bb81d87d453942b#hello
+'
+
+docker \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+unprivileged-alpine:latest \
+sh
+```
+
+
+```bash
+nix \
+develop \
+--impure \
+--ignore-environment \
+github:NixOS/nix/bff5c94184e0eee2a093f3e04d4cec5010de81c7#nix-static \
+--command \
+sh \
+-c \
+'true'
+```
+
+
+
+```bash
+source $stdenv/setup; phases="unpackPhase patchPhase" genericBuild
+```
+
+
+```bash
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+github:NixOS/nix/bff5c94184e0eee2a093f3e04d4cec5010de81c7#nix-static
+
+
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+github:NixOS/nix/bff5c94184e0eee2a093f3e04d4cec5010de81c7#nix-static
+
+
+time \
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+github:NixOS/nix/bff5c94184e0eee2a093f3e04d4cec5010de81c7#nix-static
+
+
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+github:NixOS/nixpkgs/98b00b6947a9214381112bdb6f89c25498db4959#pkgsStatic.nix
+
+time \
+nix \
+build \
+--impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+github:NixOS/nixpkgs/98b00b6947a9214381112bdb6f89c25498db4959#pkgsStatic.nix
+
+```
+
+
+TODO: 
+```bash
+/bin/nix daemon &> /dev/null &
+su -l your-normal-user
+```
+Refs.:
+- https://discourse.nixos.org/t/how-to-build-a-docker-image-with-a-working-nix-inside-it/32960/6
+
+
+TODO: probably misses the builders group.
+```bash
+echo 'Start nix-daemon...' \
+&& mkdir -pv /nix/var/nix/daemon-socket \
+&& sudo cp -v "$(nix eval --raw nixpkgs#nixStatic)"/lib/systemd/system/{nix-daemon.service,nix-daemon.socket} /etc/systemd/system/ \
+&& sudo systemctl enable --now nix-daemon.socket \
+&& sudo systemctl enable --now nix-daemon.service \
+&& sudo chown -v root:"$(id -gn)" /nix/var/nix/daemon-socket/socket \
+&& systemctl is-active nix-daemon.socket \
+&& systemctl is-active nix-daemon.service \
+&& test -S /nix/var/nix/daemon-socket/socket \
+&& echo 'End nix-daemon!'
+```
+Refs.: 
+- 
+
+```bash
+strace \
+-t \
+-v \
+-s 4096 \
+-f \
+-o trace.txt \
+nix \
+--offline \
+--no-use-registries \
+profile \
+install \
+github:NixOS/nixpkgs/51063ed4f2343a59fdeebb279bb81d87d453942b#hello
+```
+
+
+```bash
+strings $(which nix) | grep 'No such file or directory'
+```
+
+
+```bash
+nix \
+--option trace-function-calls true \
+--offline \
+--no-use-registries \
+profile \
+install \
+github:NixOS/nixpkgs/51063ed4f2343a59fdeebb279bb81d87d453942b#hello \
+2>&1 | cat
+```
+
+
+TODO: It is really rare/undocumented?!
+```bash
+nix --offline --no-eval-cache --no-use-registries config show
+nix --offline --no-eval-cache --no-use-registries store verify
+nix --offline --no-eval-cache --no-use-registries doctor 
+nix --option flake-registry "" --offline --no-eval-cache flake metadata nixpkgs
+```
+
+
+TODO: It looks like that it is broken. Have no ideia how to bissect it.
+
+> When you copy a self-referential path to the root, the original store 
+> path must still be added, in order to satisfy the self-reference. 
+> This generally wastes space.
+> https://github.com/NixOS/nixpkgs/issues/139895#issuecomment-1318946405
+
+```bash
+docker load < $(nix build --print-out-paths github:NixOS/nixpkgs/nixos-21.11#dockerTools.examples.no-store-paths)
+docker run -it no-store-paths:latest sh -c 'ls -alh /'
+
+
+docker load < $(nix build --print-out-paths github:NixOS/nixpkgs/nixos-22.05#dockerTools.examples.no-store-paths)
+docker run -it no-store-paths:latest sh -c 'ls -alh /nix/store'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/148341/files#diff-10bf9e22f9e11b683b82dc8a4e0ba9ffe3755044b94e22c5d0601f20ed40af6aR290-R294
+- https://github.com/NixOS/nixpkgs/pull/80921#issuecomment-594720385
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/ubuntu:24.04
+
+RUN apt-get update -y \
+ && apt-get install --no-install-recommends --no-install-suggests -y \
+     adduser \
+     ca-certificates \
+     curl \
+     file \
+ && apt-get -y autoremove \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup abcgroup --gid 4455  \
+ && adduser -q \
+     --gecos '"An unprivileged user with an group"' \
+     --disabled-password \
+     --ingroup abcgroup \
+     --uid 3322 \
+     abcuser
+
+# If is added nix statically compiled works!
+# RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv abcuser:abcgroup /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+ENV HYDRA_BUILD_ID=250594210
+ENV NIXPKGS_COMMIT=43d259f8d726113fac056e8bb17d5ac2dea3e0a8
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && curl -L https://hydra.nixos.org/build/"$HYDRA_BUILD_ID"/download/2/nix > nix \
+ && chmod -v +x nix \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/"$NIXPKGS_COMMIT" \
+ && nix build --print-build-logs --print-out-paths nixpkgs#hello \
+ && nix flake --version \
+ && nix flake metadata nixpkgs \
+ && nix store gc -v
+EOF
+
+
+docker \
+build \
+--file=Containerfile \
+--tag=unprivileged-ubuntu24 .
+
+
+docker \
+run \
+--privileged=false \
+--interactive=true \
+--network=none \
+--tty=true \
+--rm=true \
+unprivileged-ubuntu24:latest \
+bash \
+-c \
+'
+nix \
+--offline \
+--option flake-registry "" \
+profile \
+install \
+github:NixOS/nixpkgs/43d259f8d726113fac056e8bb17d5ac2dea3e0a8#hello
+'
+```
+
+
+
+https://hydra.nixos.org/build/231020695/download-by-type/file/binary-dist
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.19.1
+
+RUN apk update \
+ && apk \
+        add \
+        --no-cache \
+        ca-certificates \
+        curl \
+        shadow \
+ && mkdir -pv -m 0700 /home/abcuser \
+ && addgroup abcgroup --gid 4455 \
+ && adduser \
+        -g '"An unprivileged user with an group"' \
+        -D \
+        -h /home/abcuser \
+        -G abcgroup \
+        -u 3322 \
+        abcuser \
+ && echo \
+ && apk del shadow
+
+# If it is uncommented nix profile works!
+# RUN mkdir -pv -m 1735 /nix/var/nix && chown -Rv abcuser:abcgroup /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+ENV HYDRA_BUILD_ID=250594210
+ENV NIXPKGS_COMMIT=98b00b6947a9214381112bdb6f89c25498db4959
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && curl -L https://hydra.nixos.org/build/"$HYDRA_BUILD_ID"/download-by-type/file/binary-dist > nix \
+ && chmod -v +x nix \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/"$NIXPKGS_COMMIT" \
+ && nix flake --version \
+ && nix flake metadata nixpkgs
+EOF
+
+
+docker \
+build \
+--file=Containerfile \
+--tag=alpine-with-static-nix .
+
+
+docker \
+run \
+--cap-add=SYS_ADMIN \
+--interactive=true \
+--tty=true \
+--rm=true \
+alpine-with-static-nix:latest \
+sh \
+-c \
+'
+nix run github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello
+
+nix \
+profile \
+install \
+github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello \
+&& hello
+'
+
+docker \
+run \
+--cap-add=SYS_ADMIN \
+--interactive=true \
+--tty=true \
+--rm=true \
+alpine-with-static-nix:latest \
+sh \
+-c \
+'
+nix \
+shell \
+nixpkgs#bashInteractive \
+nixpkgs#nix \
+--command \
+bash \
+-c \
+"
+nix profile install nixpkgs#hello \
+&& hello
+"
+'
+```
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine:3.19.1
+
+RUN apk update \
+ && apk \
+        add \
+        --no-cache \
+        ca-certificates \
+        curl \
+        shadow \
+ && mkdir -pv -m 0700 /home/abcuser \
+ && addgroup abcgroup --gid 4455 \
+ && adduser \
+        -g '"An unprivileged user with an group"' \
+        -D \
+        -h /home/abcuser \
+        -G abcgroup \
+        -u 3322 \
+        abcuser \
+ && echo \
+ && apk del shadow
+
+# If it is uncommented nix profile works!
+# RUN mkdir -pv -m 1735 /nix/var/nix && chown -Rv abcuser:abcgroup /nix
+
+USER abcuser
+WORKDIR /home/abcuser
+ENV USER="abcuser"
+ENV PATH=/home/abcuser/.nix-profile/bin:/home/abcuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+ENV HYDRA_BUILD_ID=257665509
+ENV NIXPKGS_COMMIT=58a1abdbae3217ca6b702f03d3b35125d88a2994
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && curl -L https://hydra.nixos.org/build/"$HYDRA_BUILD_ID"/download-by-type/file/binary-dist > nix \
+ && chmod -v +x nix \
+ && nix flake --version
+EOF
+
+
+podman \
+build \
+--file=Containerfile \
+--tag=alpine-with-static-nix .
+
+
+podman \
+run \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/alpine-with-static-nix:latest \
+sh \
+-c \
+'
+nix run github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello
+
+nix \
+profile \
+install \
+github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello \
+&& hello
+'
+
+podman \
+run \
+--cap-add=SYS_ADMIN \
+--interactive=true \
+--tty=true \
+--rm=true \
+localhost/alpine-with-static-nix:latest \
+sh \
+-c \
+'
+nix \
+shell \
+nixpkgs#bashInteractive \
+nixpkgs#nix \
+--command \
+bash \
+-c \
+"
+nix profile install nixpkgs#hello \
+&& hello
+"
+'
+```
+
+
+
+
+
+
+```bash
+podman \
+run \
+--privileged=false \
+--interactive=true \
+--network=none \
+--tty=true \
+--rm=true \
+localhost/alpine-with-static-nix:latest \
+sh \
+-c \
+'
+nix \
+--offline \
+--option flake-registry "" \
+build \
+github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello
+
+nix \
+--offline \
+--option flake-registry "" \
+run \
+github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello
+
+nix \
+--offline \
+--option flake-registry "" \
+shell \
+github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello \
+--command \
+hello
+
+nix \
+--offline \
+--option flake-registry "" \
+profile \
+install \
+github:NixOS/nixpkgs/"$NIXPKGS_COMMIT"#hello \
+&& hello
+'
+```
+
+
+
+
+```bash
+file ~/.nix-profile
+
+nix \
+--offline \
+--option flake-registry "" \
+--store /home/abcuser/.local/share/nix/root \
+profile \
+install \
+github:NixOS/nixpkgs/43d259f8d726113fac056e8bb17d5ac2dea3e0a8#hello
+
+nix \
+--offline \
+--option flake-registry "" \
+profile \
+install \
+github:NixOS/nixpkgs/43d259f8d726113fac056e8bb17d5ac2dea3e0a8#hello \
+--eval-store /home/abcuser/.local/share/nix/root \
+--profile /home/abcuser/.local/share/nix/root/nix/var/nix/profiles/per-user/abcuser
+
+nix \
+--offline \
+--option flake-registry "" \
+profile \
+install \
+github:NixOS/nixpkgs/43d259f8d726113fac056e8bb17d5ac2dea3e0a8#hello \
+--eval-store /home/abcuser/.local/share/nix/root \
+--profile /home/abcuser/.local/state/nix/profiles/default
+```
+
+TODO: probably only solvable when fine-grained impurity is done it will be possible?
+```bash
+export NIX_STATE_DIR="$HOME"
+export NIX_STATE_DIR="$HOME"
+```
+
+
+
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/ubuntu:24.04
+RUN apt update
+RUN apt install -y curl xz-utils
+RUN useradd -m guest
+RUN mkdir /nix && mkdir /app && chown guest /nix && chown guest /app
+
+WORKDIR /app
+USER guest
+ENV USER=guest
+RUN curl -L https://nixos.org/nix/install | sh
+
+ENV PATH="/home/guest/.nix-profile/bin:${PATH}"
+EOF
+
+docker \
+build \
+--file=Containerfile \
+--tag=unprivileged-alpine .
+```
+Refs.:
+- https://discourse.nixos.org/t/how-to-use-nix-only-in-docker-for-a-project/18043/13 
+
+
 
 #### Install nix statically built
 
@@ -2740,7 +4707,6 @@ bash \
 "id && echo \$DISPLAY && python -c 'from tkinter import Tk; Tk().mainloop()'"
 
 
-
 podman \
 build \
 --tag test-with-sudo-nix-single-user-installer \
@@ -2774,6 +4740,7 @@ localhost/test-with-sudo-nix-single-user-installer:latest \
 bash 
 ```
 
+
 ```bash
   --qemu-commandline QEMU_COMMANDLINE
                         Pass arguments directly to the QEMU emulator. Ex:
@@ -2783,6 +4750,9 @@ bash
 From:
 - virt-install --help | rg DISPLAY -B3
 - virt-install --version == 4.0.0
+
+
+
 
 
 ##### build-vm, qemu-vm, pkgsStatic.nix, ssh, X11
@@ -3089,6 +5059,8 @@ nixuser@localhost \
 #--expr \
 #"$EXPR_NIX"
 ```
+
+
 
 ###### A little bloated 
 
@@ -3946,6 +5918,7 @@ bash
 
 TODO:
 https://git.sr.ht/~jshholland/nixos-configs/tree/master/item/flake.nix#L30
+
 
 ###### ARM
 
@@ -6202,7 +8175,7 @@ In one terminal:
 sha256sum /dev/zero
 ```
 
-In an second terminal:
+In a second terminal:
 ```bash
 openssl speed -multi $(nproc --ignore=2)
 ```
@@ -6487,6 +8460,28 @@ nix build --no-link --print-out-paths --rebuild "$ATTR"
   )/bin/python3 | sha512sum --check
 ```
 
+
+
+```bash
+ATTR=nixpkgs#pkgsCross.armv7a-android-prebuilt.pkgsStatic.starship.out
+
+RESULT_1_SHA512SUM=$(sha512sum $(
+    nix build --no-link --print-out-paths "$ATTR"
+  )/bin/python3 | cut -d' ' -f1)
+echo "$RESULT_1_SHA512SUM"
+
+EXPECTED_SHA512SUM_OLD=
+
+nix build --no-link --print-out-paths --print-build-logs "$ATTR"
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/python3 | sha512sum --check
+
+echo "$EXPECTED_SHA512SUM_OLD" $(
+nix build --no-link --print-out-paths --rebuild "$ATTR"
+  )/bin/python3 | sha512sum --check
+```
 
 
 ### Other
@@ -6923,7 +8918,7 @@ Refs.:
 - https://discourse.nixos.org/t/cannot-access-internet-in-nix-build-even-with-no-sandbox/25510/2
 
 
-Broken:
+Broken: TODO make it access internet 
 ```bash
 EXPR_NIX='
   (
@@ -7174,7 +9169,25 @@ build \
 --print-out-paths \
 --rebuild \
 nixpkgs#python310Packages.numpy
+
+
+nix \
+build \
+--no-enforce-determinism \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+nixpkgs#python310Packages.numpy
+
 ```
+Refs.:
+- https://discourse.nixos.org/t/reproducibility-checking-with-new-cli-and-fixed-output-derivations/27053
+
+TODO: how to turn off the enforce-determinism?
+- https://github.com/NixOS/nix/issues/2619#issuecomment-1200552839
+- https://github.com/NixOS/nix/pull/7099
+- https://discourse.nixos.org/t/nix-2-13-0-released/24729
 
 
 ```bash
@@ -7666,7 +9679,10 @@ github:ES-Nix/nix-oci-image/nix-static-unpriviliged#oci.nix-static-toybox-static
 
 https://stackoverflow.com/questions/6345973/who-uses-posix-realtime-signals-and-why
 
+```bash
 strings $HOME/bin/nix | grep Real
+```
+
 
 ```bash
 nix \
@@ -7720,36 +9736,21 @@ Refs.:
 - https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-466804361
 - https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510
 
-TODO: test it :/ 
-[Nix-anywhere: run nix-shell script in nix-user-chroot](https://discourse.nixos.org/t/nix-anywhere-run-nix-shell-script-in-nix-user-chroot/2594)
+TODO: test each of those 
+- [Nix-anywhere: run nix-shell script in nix-user-chroot](https://discourse.nixos.org/t/nix-anywhere-run-nix-shell-script-in-nix-user-chroot/2594)
+- [Nix without (p)root: error getting status of `/nix`](https://discourse.nixos.org/t/nix-without-p-root-error-getting-status-of-nix/9858)
+- https://github.com/freuk/awesome-nix-hpc
+- [Packaging with Nix](https://www.youtube.com/embed/Ndn5xM1FgrY?start=329&end=439&version=3), start=329&end=439
+- [Nix Portable: Nix - Static, Permissionless, Install-free, Pre-configured](https://discourse.nixos.org/t/nix-portable-nix-static-permissionless-install-free-pre-configured/11719)
+- https://support.glitch.com/t/install-prebuilt-packages-without-root-from-nixpkgs/43775
+- https://yann.hodique.info/blog/nix-in-custom-location/
+- https://hhoeflin.github.io/nix/home_folder_nix/
+- https://github.com/NixOS/nixpkgs/pull/144197#issuecomment-965351423
 
-
-TODO: test it :]
-[Nix without (p)root: error getting status of `/nix`](https://discourse.nixos.org/t/nix-without-p-root-error-getting-status-of-nix/9858)
-
-TODO: try it
-https://github.com/freuk/awesome-nix-hpc
-
-
-
-TODO: [Packaging with Nix](https://www.youtube.com/embed/Ndn5xM1FgrY?start=329&end=439&version=3), start=329&end=439
-
-[Nix Portable: Nix - Static, Permissionless, Install-free, Pre-configured](https://discourse.nixos.org/t/nix-portable-nix-static-permissionless-install-free-pre-configured/11719)
-
-https://support.glitch.com/t/install-prebuilt-packages-without-root-from-nixpkgs/43775
-
-
-TODO: https://yann.hodique.info/blog/nix-in-custom-location/
-
-TODO: https://hhoeflin.github.io/nix/home_folder_nix/
-
-TODO: https://github.com/NixOS/nixpkgs/pull/144197#issuecomment-965351423
-TODO: 
 
 > Oh yeah, chroot stores won’t work on macOS. Neither will proot. Having a flat-file binary cache in the shared dir
 > and copying to/from that will be your only option there.
 [How to use a local directory as a nix binary cache?](https://discourse.nixos.org/t/how-to-use-a-local-directory-as-a-nix-binary-cache/655/14)
-
 
 In this [issue comment](https://github.com/NixOS/nixpkgs/pull/70024#issuecomment-717568914)
 [see too](https://matthewbauer.us/blog/static-nix.html).
@@ -7945,10 +9946,15 @@ file ~/output/store/*-nix-2.4pre20210727_706777a-x86_64-unknown-linux-musl/bin/n
 file ~/output/store/*-profile/bin/nix
 ```
 
-
-where nix is the static nix from https://matthewbauer.us/nix and a pkgsStatic.busybox
-RUN ln -sf /bin/busybox /bin/sh
-https://discourse.nixos.org/t/dockertools-buildimage-and-user-writable-tmp/5397/8
+Figured out that the clever way would be to use nix itself for instal nix.
+This way it is not neede to manually construct each symbolic link and what 
+ever would change in future in nix. 
+> where nix is the static nix from 
+> https://matthewbauer.us/nix and a pkgsStatic.busybox
+> [ ... ]
+> RUN ln -sf /bin/busybox /bin/sh
+> [ ... ]
+> https://discourse.nixos.org/t/dockertools-buildimage-and-user-writable-tmp/5397/8
 
 TODO: use this to troubleshoot
 - https://stackoverflow.com/a/22686512
@@ -7962,8 +9968,12 @@ result/bin/busybox sh -c 'echo $$ && uname --all'
 ```bash
 nix run nixpkgs#pkgsStatic.busybox -- sh -c 'echo $$ && uname --all'
 ```
+
+```bash
 nix run nixpkgs#pkgsStatic.xorg.xclock
-[LinuxCon Portland 2009 - Roundtable - Q&A 1](https://www.youtube.com/embed/K3FsmpXeqHc?start=342&end=350&version=3)
+```
+Refs.:
+- [LinuxCon Portland 2009 - Roundtable - Q&A 1](https://www.youtube.com/embed/K3FsmpXeqHc?start=342&end=350&version=3)
 
 TODO: `umask` 
 https://github.com/NixOS/nix/issues/2377#issuecomment-633165541
@@ -7972,6 +9982,7 @@ https://ivanix.wordpress.com/tag/umask/
 TODO:
 - https://github.com/NixOS/nixpkgs/pull/56281#issuecomment-484242510 and https://github.com/lethalman/nix-user-chroot/pull/13#issuecomment-462200418
 - https://github.com/NixOS/nix/blob/d9cfd853e52d0173f86a1648246360faa96c516c/flake.nix#L87
+
 
 ### Install direnv and nix-direnv using nix + flakes
 
@@ -8055,7 +10066,7 @@ sed \
 flake.nix
 ```
 
-Tried, but does not work:
+TODO: review it! Tried, but does not work:
 ```bash
 timeout 20 bash -c 'until command -v hello; do sleep 1; echo "Waiting for hello..."; done' || true
 timeout 20 bash -c 'until command -v figlet; do sleep 1; echo "Waiting for figlet..."; done'
@@ -8068,9 +10079,12 @@ sed -i '/^[^#]/ s/\(^.*plugins.*$\)/#\ \1/' "$GUESSED_SHELL_RC"
 From: https://stackoverflow.com/a/29685539
 
 https://github.com/direnv/direnv/issues/301#issuecomment-335752541
-&& echo 'export DIRENV_BASH=$(which bash)' >> "$GUESSED_SHELL_RC" \
 
-https://github.com/chisui/zsh-nix-shell/issues/17
+```bash
+echo 'export DIRENV_BASH=$(which bash)' >> "$GUESSED_SHELL_RC"
+```
+Refs.:
+- https://github.com/chisui/zsh-nix-shell/issues/17
 
 
 #### Troubleshoot direnv and nix-direnv
@@ -8119,7 +10133,7 @@ gc \
 --option keep-env-derivations false \
 --option keep-failed false \
 --option keep-going false \
---option keep-outputs false \
+--option keep-outputs true \
 && nix-collect-garbage --delete-old \
 && nix store optimise --verbose
 ```
@@ -8154,8 +10168,6 @@ nix build --refresh github:ES-Nix/nix-qemu-kvm/dev#qemu.vm \
 
 ### Tests
 
-pkgs.stdenvNoCC.mkDerivation
-https://wellquite.org/posts/latex_fonts_and_nixos/
 
 #### Minimal build
 
@@ -8180,12 +10192,12 @@ nix-build \
 'derivation { name = "foo"; system = "x86_64-linux"; builder = "/bin/sh"; args = ["-c" "echo foobar > \$out"]; }'
 ```
 
-Hope it works:
+
 ```bash
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.hello --no-link
 ```
 From:
-- https://www.youtube.com/watch?v=OV2hi8b5t48
+- [NixOS/Nix - Cross Compilation via pkgsCross](https://www.youtube.com/watch?v=OV2hi8b5t48)
 
 ```bash
 nix build nixpkgs#pkgsCross.aarch64-multiplatform.pkgsStatic.nix --no-link
@@ -8295,7 +10307,7 @@ build \
 
 
 
-That is insane to be possible, but it is, well hope it does not brake for you:
+That is insane to be possible, but it is, well, hope it does not brake for you:
 ```bash
 nix \
 shell \
@@ -8337,6 +10349,60 @@ yarn --version
 '
 ```
 
+
+
+TODO: brew
+https://github.com/Homebrew/brew
+
+```bash
+git clone https://github.com/Homebrew/brew.git \
+&& cd brew \
+&& git checkout 1f9bd2de89883ec9a59db3eab0f5475bce06d5bc
+```
+
+
+
+TODO: zypper: 
+- https://en.opensuse.org/openSUSE:Zypper_development#Building_Zypper
+- https://github.com/openSUSE/zypper
+
+
+```bash
+nix \
+shell \
+--ignore-environment \
+--max-jobs 0 \
+--override-flake \
+nixpkgs \
+github:NixOS/nixpkgs/ae2fc9e0e42caaf3f068c1bfdc11c71734125e06 \
+nixpkgs#pkgsStatic.busybox-sandbox-shell \
+nixpkgs#apk-tools \
+nixpkgs#apt \
+nixpkgs#dnf5 \
+nixpkgs#dpkg \
+nixpkgs#pacman \
+nixpkgs#rpm \
+nixpkgs#xbps \
+--command \
+sh \
+-c \
+'
+echo .
+apk --version
+echo .
+apt-get --version
+echo .
+dnf5 --version
+echo .
+dpkg --version
+echo .
+pacman --version
+echo .
+rpm --version
+echo .
+xbps-alternatives --version
+'
+```
 
 
 ```bash
@@ -10366,11 +12432,12 @@ Refs.:
 
 
 https://discord.com/channels/692426888563523716/713450173094953022/839256975623847949
-
 https://discord.com/channels/692426888563523716/713450173094953022/1050139524266729553
 
-code --list-extensions --show-versions
 
+```bash
+code --list-extensions --show-versions
+```
 
 
 
@@ -11645,6 +13712,8 @@ Watch and try to build it:
 [Nix and legacy enterprise software development: an unlikely match made in heaven](https://www.youtube.com/watch?v=0dVxtNlD5N4)
 
 
+Related: wayback machine? https://github.com/NixOS/nixpkgs/issues/53653#issuecomment-1366076408
+
 [NixCon2023 Single Website Firefox VMs with NixOS](https://www.youtube.com/watch?v=Vo4LVO_L408)
 
 TODO: try it
@@ -12318,9 +14387,9 @@ LATEST_COMMIT_SHA256_IN_BRANCH=git ls-remote --heads origin nixos-21.11
 git ls-remote git://github.com/
 
 
-# git ls-remote --tags git://github.com/NixOS/nixpkgs.git "refs/tags/21.11^{}" | cut -f 1
+# git ls-remote --tags https://github.com/NixOS/nixpkgs.git "refs/tags/21.11^{}" | cut -f 1
 # https://stackoverflow.com/questions/64268055/when-listing-remote-tags-in-git-what-does-signify
-FIRST_COMMIT_SHA256_IN_BRANCH=$(git ls-remote --tags git://github.com/NixOS/nixpkgs.git "refs/tags/21.11" | cut -f 1)
+FIRST_COMMIT_SHA256_IN_BRANCH=$(git ls-remote --tags https://github.com/NixOS/nixpkgs.git "refs/tags/21.11" | cut -f 1)
 
 
 git log --pretty=oneline nixpkgs-unstable > 1
@@ -12366,6 +14435,19 @@ nix flake metadata --refresh github:NixOS/nixpkgs/$(git ls-remote git://github.c
 git log --oneline --format=format:"%H" nixpkgs-unstable..nixos-21.11 | head -n 10
 ```
 
+
+```bash
+git ls-remote --exit-code --tags --refs https://github.com/NixOS/nixpkgs.git "refs/tags/21.11" | cut -f1
+```
+Refs.:
+- https://stackoverflow.com/questions/64268055/when-listing-remote-tags-in-git-what-does-signify
+- https://stackoverflow.com/a/67682506
+- https://stackoverflow.com/a/52699078
+- https://nixos.github.io/release-wiki/Branch-Off.html#on-the-master-branch
+- https://stackoverflow.com/a/15949160
+
+
+
 ### nix registry pin nixpkgs
 
 > This command adds an entry to the user registry that maps flake reference url 
@@ -12386,6 +14468,8 @@ TODO: replicate this annoying thing!
 - [Manage Nix Flake Inputs Like a Pro](https://www.youtube.com/watch?v=4ZoBGlkMPWI)
 - [Nix flakes (NixCon 2019)](https://www.youtube.com/embed/UeBX7Ide5a0?start=817&end=977&version=3), start=817&end=977
 - https://edolstra.github.io/talks/nixcon-oct-2019.pdf
+- https://github.com/NixOS/nix/issues/8953#issuecomment-1919310666
+- https://github.com/NixOS/nixpkgs/issues/218006
 
 ```nix
 specialArgs = { flake = self; };
@@ -12437,6 +14521,14 @@ nix.registry.<name>.flake
 Refs.:
 - https://search.nixos.org/options?channel=unstable&from=0&size=50&sort=relevance&type=packages&query=nix.registry.%3Cname%3E.flake
 
+
+```bash
+nix.registry.nixpkgs.flake = nixpkgs;
+```
+Refs.:
+- https://www.tweag.io/blog/2020-07-31-nixos-flakes/#pinning-nixpkgs
+- https://bou.ke/blog/nix-tips/
+
 ```bash
 ({...}: { nix.registry.nixpkgs.flake = nixpkgs; })
 ```
@@ -12455,19 +14547,45 @@ TODO:
 - https://stackoverflow.com/a/36472934 `nixPath = [ "nixpkgs=http://nixos.org/channels/nixos-unstable/nixexprs.tar.xz" ]; # allow users to use nix-env`
 - https://discourse.nixos.org/t/do-flakes-also-set-the-system-channel/19798/12
 - https://github.com/wireapp/wire-server-deploy/blob/7b00c0230b14d865ea8ebb058201e8bda84f6364/default.nix#L12-L19
-- 
+- read the commit mesage https://github.com/LnL7/nix-darwin/commit/f9724c4543035d6190c00168ebfa93f0b2e927d0#diff-206b9ce276ab5971a2489d75eb1b12999d4bf3843b7988cbe8d687cfde61dea0R26-R33
+- https://github.com/NobbZ/nixos-config/blob/0dc416d1e89b1d1b2390ce3e33726710c4856f11/nixos/modules/flake.nix#L29
 
-
+TODO:
 ```bash
 nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
 home.sessionVariables.NIX_PATH = "nixpkgs=nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NIX_PATH}";
 ```
 Refs.:
 - https://ayats.org/blog/channels-to-flakes/#pinning-your-registry
-
+- https://github.com/NixOS/nixpkgs/commit/e456032addae76701eb17e6c03fc515fd78ad74f
 
 TODO: read and try to understand it
 https://github.com/NixOS/nix/pull/9819#discussion_r1463521301
+
+```nix
+environment.sessionVariables.NIX_PATH
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/9574#issuecomment-2096804470
+
+
+```nix
+nix.pure-eval = true
+
+nix-repl> :p builtins.nixPath
+```
+Refs.:
+- https://github.com/Mic92/nixpkgs-review/issues/355
+- https://github.com/Mic92/nixpkgs-review/issues/343#issuecomment-1703999765
+
+```bash
+$ export NIX_PATH=test=$PWD
+
+$ nix-shell --pure -I nixpkgs=. -p hello --run 'env | grep NIX_PATH'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/273170#issuecomment-1880808849
+
 
 ```bash
 nix \
@@ -12650,9 +14768,150 @@ Other:
 ```
 
 
+```bash
+nix eval --json nixpkgs#config | nix run nixpkgs#jq -- .
+```
+
+```bash
+nix eval nixpkgs#config.allowUnfree
+```
+
+
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "nixpkgs") 
+  { config.allowUnfreePredicate = (_: true); }
+).config.allowUnfreePredicate
+'
+```
+
+
+```bash
+nix \
+eval \
+--raw \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/d272ca50d1f7424fbfcd1e6f1c9e01d92f6da167") 
+  { 
+    system = "x86_64-linux";
+    # config.allowUnfreePredicate = (_: true);
+    config.android_sdk.accept_license = true;
+    config.allowUnfree = true;
+  }
+).hello-unfree     
+'
+
+nix \
+eval \
+--raw \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/d272ca50d1f7424fbfcd1e6f1c9e01d92f6da167") 
+  { 
+    system = "x86_64-linux";
+    # config.allowUnfreePredicate = (_: true);
+    config.android_sdk.accept_license = true;
+    config.allowUnfree = true;
+  }
+).pkgs.hello-unfree     
+'
+```
+
+python3Packages.cupy
+
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "nixpkgs") 
+  { 
+    config.allowUnfreePredicate = (_: true);
+    config.android_sdk.accept_license = true;
+    config.allowUnfree = true;
+  }
+).config.android_sdk.accept_license
+'
+```
+
+
+```bash
+nix \
+run \
+--expr \
+'
+(
+  import (builtins.getFlake "github:NixOS/nixpkgs/e38d7cb66ea4f7a0eb6681920615dfcc30fc2920") 
+  { system = "x86_64-linux"; config.allowUnfree = true; }
+).unrar
+'
+```
+
+
+```nix
+  pkgs = args.pkgs.extend (self: super: {
+    stdenv = super.stdenv.override {
+      config = super.config // {
+        allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+          "vscode" "vscode-with-extensions" "vscode-extension-ms-vscode-remote-remote-ssh"
+        ];
+      };
+    };
+  });
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/7d71b24bd4acbd7fa6373c1de3c52fd1594a17a9/nixos/tests/vscode-remote-ssh.nix#L2-L10
+
+```nix
+, # Attributes passed to nixpkgs. Don't build packages marked as unfree.
+  nixpkgsArgs ? { config = { allowUnfree = false; inHydra = true; }; }
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/master/pkgs/top-level/release-cross.nix#L19-L20
+
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "nixpkgs") 
+  { config.allowUnfree = true; }
+).hello-unfree
+'
+```
+
 TODO: create a simpleer verison of that and use it to confirm 
 double/triple check that the passed nixpkgs "instance" is the 
-one with this "smoke flag" in it. 
+one with this "smoke flag" in it.
+
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'
+(
+  import (builtins.getFlake "nixpkgs") 
+  { config.__fooHasBeenApplied = true; }
+).config.__fooHasBeenApplied
+'
+```
+
+
 ```nix
 overlayFoo = self: super: self.lib.optionalAttrs (!super.__fooHasBeenApplied or false) {
   __fooHasBeenApplied = true;
@@ -12693,7 +14952,7 @@ nixos-version --revision
 
 TODO: https://discourse.nixos.org/t/nix-channel-revision-url-meta-data/9381/12
 ```bash
-nix-shell -p nix-info --run "nix-info -m"
+nix-shell -p nix-info --run "nix-info --markdown"
 ```
 
 ```bash
@@ -12714,6 +14973,12 @@ nix-instantiate --eval --expr 'builtins.findFile builtins.nixPath "nixpkgs"'
 
 
 TODO: help there https://github.com/NixOS/nix.dev/issues/580#issuecomment-1763561804
+
+```bash
+ln -s ${pkgs.path} /nix/var/nix/profiles/per-user/root/channels/nixos
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/blob/7d71b24bd4acbd7fa6373c1de3c52fd1594a17a9/nixos/tests/vscode-remote-ssh.nix#L121C23-L121C92
 
 
 TODO: related? 
@@ -12746,6 +15011,24 @@ Refs.:
 - https://dataswamp.org/~solene/2022-07-20-nixos-flakes-command-sync-with-system.html
 - https://github.com/NixOS/nixpkgs/issues/62832#issuecomment-1406628331
 - https://github.com/NixOS/nix/issues/3871
+
+TODO: explain
+```bash
+diff \
+<(nix run nixpkgs#nix-info -- --markdown) \
+<(nix-shell --quiet -p nix-info --run "nix-info --markdown")
+```
+
+
+```bash
+echo $NIX_PATH
+nix eval --impure --expr '<nixpkgs/nixos>'
+```
+
+It searchs for nixos-config:
+```bash
+nix eval --impure --expr '(import <nixpkgs/nixos> {}).config'
+```
 
 Related: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-run#opt-extra-nix-path
 
@@ -12890,6 +15173,14 @@ nix run github:NixOS/nix#nix-static -- show-config --json
 nix run github:NixOS/nixpkgs/nixpkgs-unstable#pkgsStatic.nix -- show-config
 ```
 
+
+
+```bash
+nix build --impure --no-link --print-build-logs --print-out-paths \
+nixpkgs/$(
+git ls-remote --exit-code --tags --refs https://github.com/NixOS/nixpkgs.git "refs/tags/20.09" | cut -f1
+)#hello
+```
 
 #### Examples
 
@@ -13367,7 +15658,9 @@ build \
   )
 '
 ```
-https://rgoswami.me/posts/local-nix-no-root/#patches
+Refs.:
+- https://rgoswami.me/posts/local-nix-no-root/#patches
+- https://discourse.nixos.org/t/built-with-custom-store-every-package-install-fails-with-error-path-is-not-in-the-nix-store/8143/5
 
 
 ```bash
@@ -13394,7 +15687,7 @@ EXPR=$(cat <<-EOF
 (
   let
     nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
-    pkgs = import nixpkgs { };    
+    pkgs = import nixpkgs { };
   in
     (pkgs.pkgsStatic.nix.override {
                                    storeDir = "/tmp/nix/store";
@@ -13765,6 +16058,8 @@ FROM docker.nix-community.org/nixpkgs/nix-flakes
 
 ENV PATH=/root/.nix-profile/bin:/usr/bin:/bin
 
+RUN nix registry pin nixpkgs github:NixOS/nixpkgs/"$(nix eval --impure --raw --expr '(builtins.getFlake "github:NixOS/nixpkgs/nixpkgs-unstable").rev')"
+
 EOF
 
 
@@ -13777,7 +16072,7 @@ build \
 podman \
 run \
 --interactive=true \
---network=none \
+--network=host \
 --privileged=true \
 --tty=true \
 --rm=true \
@@ -13785,7 +16080,79 @@ localhost/test-nix \
 bash
 ```
 
-ldd $(which qemu-system-x86_64)
+
+```bash
+git clone https://github.com/Mozilla-Ocho/llamafile.git \
+&& cd llamafile \
+&& make 
+# nix profile install nixpkgs#make
+```
+
+
+
+
+   
+```bash
+EXPR=$(cat <<-'EOF'
+(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e367f7a1fb93137af22a3908f00b9a35e2d286a7"); 
+      pkgs = import nixpkgs {};
+    in
+      pkgs.stdenvNoCC.mkDerivation {
+        name = "llamafile";
+        buildInputs = with pkgs; [ cosmocc which unzip ];
+        src = pkgs.fetchFromGitHub {
+          hash = "sha256-gysIexERIKpRZu3tTHsHUG7CdR/PdVcQXxLQ8MTUrcU=";
+          rev = "4ab9d7285c08c0ab7996e7a4f0b16d4864560996";
+          owner = "Mozilla-Ocho";
+          repo = "llamafile";
+          name = "llamafile";
+        };
+        buildPhase = ''
+        
+           mkdir -v $out
+
+           ls -alh /build
+           cd /build/llamafile
+           ls -alh
+
+           substituteInPlace build/config.mk --replace '.cosmocc/3.3.2:' '#.cosmocc/3.3.2:'
+           substituteInPlace build/config.mk --replace '   build/download-cosmocc.sh' '#   build/download-cosmocc.sh'
+          
+           tail -n5 build/config.mk
+           export PATH=${pkgs.cosmocc}/bin:$PATH
+           which make
+           make
+        '';
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+develop \
+--impure \
+--expr \
+"$EXPR"
+
+source $stdenv/setup && genericBuild
+
+```
+Refs.:
+- https://www.youtube.com/watch?v=GjP7y3AiFWc
+- https://github.com/Mozilla-Ocho/llamafile/issues/272
+
+
 
 ```bash
 cat > Containerfile << 'EOF'
@@ -14678,7 +17045,6 @@ shell \
 ```
 
 
-https://ftp.gnu.org/gnu/sed/sed-4.0.6.tar.gz
 
 ```bash
 nix \
@@ -14835,8 +17201,8 @@ bash \
 'file $(readlink -f $(which hello))'
 ```
 From:
-- https://youtu.be/6VepnulTfu8?t=477
-- 
+- [Overrides: In and Out (NixCon 2019)](https://youtu.be/6VepnulTfu8?t=477)
+
 
 
 
@@ -15154,6 +17520,9 @@ nix-instantiate \
 '
 ```
 
+
+
+
 ```bash
 nix \
 shell \
@@ -15173,7 +17542,6 @@ nix-shell \
 -p 'python311.withPackages(ps: with ps; [ numpy ])' \
 --run 'python3 -c "import numpy as np; print(np.arange(24).reshape(2, 3, 4))"'
 ```
-
 
 
 ```bash
@@ -15215,8 +17583,8 @@ shell \
 '
   (
     let
-      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
-      pkgs = p.legacyPackages.${builtins.currentSystem};
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
       customPython3 = (pkgs.python3.withPackages (p: with p; [ pandas ]));
     in
       [
@@ -15236,8 +17604,8 @@ shell \
 '
   (
     let
-      p = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
-      pkgs = p.legacyPackages.${builtins.currentSystem};
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/8ba90bbc63e58c8c436f16500c526e9afcb6b00a");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
       customPython3 = (pkgs.python3.withPackages (p: with p; [ pandas ]));
     in
       [
@@ -15309,6 +17677,7 @@ shell \
 python3 -c 'import geopandas as gpd; print(gpd.__version__)'
 ```
 
+
 ```bash
 EXPR=$(cat <<-'EOF'
 (
@@ -15316,7 +17685,65 @@ EXPR=$(cat <<-'EOF'
     nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
     pkgs = import nixpkgs {};
   in
-    pkgs.python3.withPackages (p: with p; [ geopandas ])
+    pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ 
+      geopandas
+    ])
+)
+EOF
+)
+
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR" \
+--command \
+python3 \
+-c \
+'import geopandas as gpd; print(gpd.__version__)'
+```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/58a1abdbae3217ca6b702f03d3b35125d88a2994");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ 
+         chromadb
+         langchain
+         anthropic
+         openai
+         langchain_community
+         langchainhub
+         scikit-learn
+         tiktoken
+         umap-learn         
+      ]));
+    in
+      customPython3
+)' \
+--command \
+python3
+```
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+  in
+      (pkgs.python3.buildEnv.override
+        {
+          extraLibs = with pkgs.python3Packages; [ geopandas ];
+        }
+      )
 )
 EOF
 )
@@ -15353,6 +17780,223 @@ python3 \
 -c \
 'import geopandas as gpd; print(gpd.__version__)'
 ```
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e976fa8f49c35cf28496301a1ef2aa23ad576b56");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ tinygrad ]));
+    in
+      customPython3
+)' \
+--command \
+python3 \
+-c \
+'from tinygrad import Tensor;
+N = 1024; a, b = Tensor.rand(N, N), Tensor.rand(N, N);
+c = (a.reshape(N, 1, N) * b.T.reshape(1, N, N)).sum(axis=2);
+print((c.numpy() - (a.numpy() @ b.numpy())).mean())'
+```
+Refs.:
+- https://github.com/tinygrad/tinygrad/releases/tag/v0.8.0
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e976fa8f49c35cf28496301a1ef2aa23ad576b56");
+      pkgs = import <nixpkgs> {system = "${builtins.currentSystem}"; 
+        config.allowUnfree = true; 
+        config.cudaSupport = true;
+      };
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ 
+        pytorch-bin      
+      ]));
+    in
+      customPython3
+)' \
+--command \
+python3 \
+-c \
+'
+import torch; print("cuda" if torch.cuda.is_available() else "cpu")
+'
+```
+Refs.:
+- https://towardsdatascience.com/cuda-by-numba-examples-1-4-e0d06651612f
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/7d053c812bb59bbb15293f9bb6087748e7c21b1a"); 
+    pkgs = import nixpkgs {};
+  in
+    pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ 
+      torch
+    ])
+)
+EOF
+)
+
+nix \
+shell \
+--impure \
+--expr \
+"$EXPR" \
+--command \
+python3 \
+-c \
+'import torch; print(torch.__version__, torch.backends.mps.is_available())'
+```
+Refs.:
+- https://n8henrie.com/2023/08/hacking-on-nixpkgs-with-nix-develop/
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/e976fa8f49c35cf28496301a1ef2aa23ad576b56");
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ 
+        pytorch-bin
+        numba
+      ]));
+    in
+      customPython3
+)' \
+--command \
+python3 \
+-c \
+'
+from cuda.cuda import CUdevice_attribute, cuDeviceGetAttribute, cuDeviceGetName, cuInit
+
+# Initialize CUDA Driver API
+(err,) = cuInit(0)
+
+# Get attributes
+err, DEVICE_NAME = cuDeviceGetName(128, 0)
+DEVICE_NAME = DEVICE_NAME.decode("ascii").replace("\x00", "")
+
+err, MAX_THREADS_PER_BLOCK = cuDeviceGetAttribute(
+    CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, 0
+)
+err, MAX_BLOCK_DIM_X = cuDeviceGetAttribute(
+    CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, 0
+)
+err, MAX_GRID_DIM_X = cuDeviceGetAttribute(
+    CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X, 0
+)
+err, SMs = cuDeviceGetAttribute(
+    CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, 0
+)
+
+print(f"Device Name: {DEVICE_NAME}")
+print(f"Maximum number of multiprocessors: {SMs}")
+print(f"Maximum number of threads per block: {MAX_THREADS_PER_BLOCK:10}")
+print(f"Maximum number of blocks per grid:   {MAX_BLOCK_DIM_X:10}")
+print(f"Maximum number of threads per grid:  {MAX_GRID_DIM_X:10}")
+'
+
+'
+import numpy as np
+import numba
+from numba import cuda
+
+print(np.__version__)
+print(numba.__version__)
+
+cuda.detect()
+# Example 1.1: Add scalars
+@cuda.jit
+def add_scalars(a, b, c):
+    c[0] = a + b
+
+dev_c = cuda.device_array((1,), np.float32)
+
+add_scalars[1, 1](2.0, 7.0, dev_c)
+
+c = dev_c.copy_to_host()
+print(f"2.0 + 7.0 = {c[0]}")
+'
+```
+Refs.:
+- https://towardsdatascience.com/cuda-by-numba-examples-1-4-e0d06651612f
+
+
+
+
+```bash
+nix \
+shell \
+--impure \
+--expr \
+'(
+    let
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3");
+      pkgs = import nixpkgs { 
+        system = builtins.currentSystem;
+        overlays = [ 
+            (self: super: rec {
+                    python3 = super.python3.override {
+                      packageOverrides = python-self: python-super: {
+                        PyLTI = {};
+                        sqlalchemy-imageattach = {};
+                      };
+                    };
+            
+                    # python3Packages = python3.pkgs;
+                    pythonPackages = self.python.pkgs;
+                  })
+        ];
+      };
+
+      customPython3 = (pkgs.python3.withPackages (pyPkgs: 
+        (builtins.filter (builtins.hasAttr "disabled") (builtins.filter pkgs.lib.isDerivation (builtins.attrValues pyPkgs)))
+      ));
+    in
+      customPython3
+)' \
+--command \
+python3 \
+-c \
+'import this'
+```
+
+
+```bash
+nix \
+eval \
+--impure \
+--json \
+--expr \
+'(let nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea692c2ad1afd6384e171eabef4f0887d2b882d3"); pkgs = import nixpkgs {}; 
+in builtins.attrNames pkgs.python312Packages)' \
+| jq . | tr -d '[' | tr -d ']' | tr -d '"' | tr -d ',' > pypkgs.txt
+```
+Refs.:
+- https://discourse.nixos.org/t/python-packages-without-support-for-certain-interpreters/29853
+- https://github.com/NixOS/nixpkgs/issues/48663
 
 
 TODO: it is broken
@@ -15430,22 +18074,30 @@ EXPR=$(cat <<-'EOF'
     pkgs = import nixpkgs {};
   in
     pkgs.python3.withPackages (p: with p; [ 
-        # chainlit
-        # langchainhub
-        # pyautogen
-        # pypdf
-        chromadb
-        huggingface-hub
-        langchain
-        langchain-community
-        openai 
-        pypdf2 #PyPDF2
-        sentence-transformers
-        tiktoken 
+        attrs
+        jupyter
+        matplotlib
+        nbconvert
+        nbformat
+        numpy
+        pandas
+        pytest
+        scipy
+        seaborn
+        structlog
     ])
 )
 EOF
 )
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
 
 nix \
 shell \
@@ -15455,7 +18107,7 @@ shell \
 --command \
 python3 \
 -c \
-'import geopandas as gpd; print(gpd.__version__)'
+'import numpy as np; print(np.dot)'
 ```
 
 
@@ -15476,7 +18128,7 @@ shell \
 --command \
 python3 \
 -c \
-python3 -c 'import tensorflow as tf; print(tf.Variable(tf.zeros([4, 3]))); print(tf.__version__)'
+'import tensorflow as tf; print(tf.Variable(tf.zeros([4, 3]))); print(tf.__version__)'
 ```
 
 
@@ -16693,7 +19345,7 @@ nixpkgs#python3Packages.wheel \
 wheel \
 unpack \
 $(nix build --no-link --print-out-paths --print-build-logs github:NixOS/nixpkgs/nixpkgs-unstable#python3Packages.pandas.dist)/* \
-&& ldd pandas-2.0.3/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
+&& ldd pandas-*/pandas/_libs/window/aggregations.cpython-3*-x86_64-linux-gnu.so
 ```
 
 
@@ -16910,9 +19562,9 @@ Refs.:
 
 
 ```bash
-podman run --rm python:3.9-alpine python -c 'import sysconfig;print(sysconfig.get_config_var("SOABI"))'
+podman run --rm python:3.9-alpine python -c 'import sysconfig; print(sysconfig.get_config_var("SOABI"))'
 
-podman run --rm python:3.10-alpine python -c 'import sysconfig;print(sysconfig.get_config_var("SOABI"))'
+podman run --rm python:3.10-alpine python -c 'import sysconfig; print(sysconfig.get_config_var("SOABI"))'
 ```
 Refs.:
 - https://gitlab.alpinelinux.org/alpine/aports/-/issues/13227#note_194071
@@ -16973,6 +19625,11 @@ Refs.:
 nix hash to-sri --type sha256 $(echo 'abc' | sha256sum | cut -d' ' -f1)
 ```
 
+
+```bash
+echo -n abcde | openssl dgst -binary | base64
+```
+
 ```bash
 export NIXPKGS_ALLOW_UNFREE=1; \
 nix \
@@ -16992,11 +19649,7 @@ shell \
 nixpkgs#python3Packages.wheel
 ```
 
-```bash
-cryptography
-scikitimage
-scikitlearn
-```
+
 
 ```bash
 ls -alh $(nix build --no-link --print-out-paths --print-build-logs github:NixOS/nixpkgs/release-23.05#stdenv.cc.cc.lib)/lib/libstdc++.so.6.0.30
@@ -17149,7 +19802,11 @@ nix-store --query --graph --include-outputs \
 $(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello) \
  | wc -l 
 ```
+
+TODO: compare!
+```bash
 nix path-info -rsSh $(nix path-info --derivation github:NixOS/nixpkgs/3954218cf613eba8e0dcefa9abe337d26bc48fd0#hello)
+```
 
 ```bash
 nix-store --query --graph --include-outputs --force-realise \
@@ -17793,6 +20450,10 @@ nix eval nixpkgs#shadow.out.outputs
 
 nix eval nixpkgs#glibc.out.outputs
 
+nix eval nixpkgs#ffmpeg-headless.out.outputs
+
+nix eval nixpkgs#comixcursors.out.outputs
+
 nix eval --raw nixpkgs#openssl.out
 
 # ls -al $(nix build --no-show-trace --no-link --print-build-logs --print-out-paths nixpkgs#openssl.out)/lib
@@ -17842,9 +20503,10 @@ nix eval nixpkgs#qemu.pname
 nix eval nixpkgs#darwin.builder.meta.platforms
 ```
 
-
+TODO: where is it in source code?
 > The editor to invoke is specified by the EDITOR environment variable. 
 > It defaults to cat.
+
 
 ```bash
 nix edit nixpkgs#openssl
@@ -17935,6 +20597,22 @@ eval \
 Refs.:
 - https://stackoverflow.com/a/48057264
 
+TODO:
+```bash
+nix \
+eval \
+--impure \
+--expr \
+'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/683f2f5ba2ea54abb633d0b17bc9f7f6dede5799"); 
+    pkgs = import nixpkgs {};
+    nixos = import <nixpkgs/nixos> { }; 
+  in
+    (import <nixpkgs/nixos> { configuration = {lib, options, ...}: { }; }
+    ).config.programs.zsh.shellAliases
+'
+```
 
 ### vmTools.runInLinuxVM
 
@@ -18118,7 +20796,7 @@ build \
 Broken.
 `qemu-kvm: cannot set up guest memory 'pc.ram': Cannot allocate memory`
 it needs more memory, I guess, the outer VM the `runInLinuxVM` may need to have 
-as much as RAM as it self needs and the inner `nixosTest` needs too.
+as much as RAM as itself needs and the inner `nixosTest` needs too.
 ```bash
 nix \
 build \
@@ -18151,28 +20829,31 @@ build \
 
 
 
-### vmTools.runInLinuxVM
+### vmTools.runInLinuxImage
 
 
 ```bash
 nix \
 build \
---print-build-logs \
 --impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/ba6ba2b90096dc49f448aa4d4d783b5081b1cc87";
-  with legacyPackages.${builtins.currentSystem};
-  with lib;
-  vmTools.runInLinuxImage (stdenv.mkDerivation {
-    name = "deb-compile";
-    src = patchelf.src;
-    diskImage = vmTools.diskImages.ubuntu1804x86_64;
-    diskImageFormat = "qcow2";
-    memSize = 512;
-    postHook = "dpkg-query --list";
-  })
+  let                                   
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ba6ba2b90096dc49f448aa4d4d783b5081b1cc87");
+    pkgs = import nixpkgs { };                
+  in   
+    pkgs.vmTools.runInLinuxImage (pkgs.stdenv.mkDerivation {
+      name = "deb-compile";
+      src = pkgs.patchelf.src;
+      diskImage = pkgs.vmTools.diskImages.ubuntu1804x86_64;
+      diskImageFormat = "qcow2";
+      memSize = 512;
+      postHook = "dpkg-query --list";
+    })
 )
 '
 ```
@@ -18183,19 +20864,410 @@ Refs.:
 
 
 
-### nixosTest
+### nixosTest nixos-lib.runTest runNixOSTest 
 
 
+- [Unveiling the Power of the NixOS Integration Test Driver (Part 1)](https://nixcademy.com/2023/10/24/nixos-integration-tests/)
 - https://nix.dev/tutorials/integration-testing-using-virtual-machines
 - https://nixos.org/manual/nixos/stable/index.html#sec-nixos-tests
 - https://nixos.mayflower.consulting/blog/2019/07/11/leveraging-nixos-tests-in-your-project/
 - https://twitter.com/_Ma27_/status/1325881957142700032
 - https://www.youtube.com/watch?v=5Z7IckV6gao
 - https://gianarb.it/blog/my-workflow-with-nixos
+- https://github.com/NixOS/nixpkgs/blob/26c40e2ef83f6d4ebedb0b092f79619962271af2/nixos/tests/fcitx5/default.nix#L163-L165
+- really cool specialisation https://discourse.nixos.org/t/dynamically-modifying-a-machine-during-a-nixos-test/1262/3
+- nixosTest vs runTest https://discourse.nixos.org/t/nixostest-vs-runtest/26419
+- https://discourse.nixos.org/t/nixos-integration-tests-with-graphical-applications-best-practice/11617/6
+
+
+> pkgs.testers.runNixOSTest calls nixos-lib.runTest for you, 
+> but without you having to obtain nixos-lib from somewhere.
+Refs.:
+- https://discourse.nixos.org/t/run-nixos-interactive-tests-on-aarch64-darwin/34534/4
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$(cat <<- 'EOF'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ae2fc9e0e42caaf3f068c1bfdc11c71734125e06"); 
+    pkgs = import nixpkgs {};
+  in
+    pkgs.testers.runNixOSTest {
+      name = "Test enabling docker";
+      nodes = {
+        machineWithDocker = { pkgs, ... }: { virtualisation.docker.enable = true; };
+      };
+      testScript = ''
+        machineWithDocker.wait_for_unit("docker.service")
+        machineWithDocker.succeed("docker images")
+      '';
+    }
+EOF
+)"
+```
+
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$(cat <<- 'EOF'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ae2fc9e0e42caaf3f068c1bfdc11c71734125e06");
+    overlays.default = final: prev: {
+      alpineOCIImage = prev.dockerTools.pullImage {
+        finalImageTag = "3.20.3";
+        imageDigest = "sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d";
+        imageName = "docker.io/library/alpine";
+        name = "docker.io/library/alpine";
+        sha256 = "sha256-jGOIwPKVsjIbmLCS3w0AiAuex3YSey43n/+CtTeG+Ds=";
+      };    
+    };
+    pkgs = import nixpkgs { overlays = [ overlays.default ]; };
+  in
+    pkgs.testers.runNixOSTest {
+      name = "Test enabling docker";
+      nodes = {
+        machineWithDocker = { pkgs, ... }: { 
+          virtualisation.docker.enable = true;
+          systemd.services.docker-helper-load-images = {
+            description = "Docker helper to load images";
+            wantedBy = [ "multi-user.target" ];
+            after = [ "docker.service" ];
+            path = with pkgs; [ docker ];
+            script = ''
+              echo "Loading OCI alpine..."
+              docker load <"${pkgs.alpineOCIImage}"
+            '';
+            serviceConfig = {
+              Type = "oneshot";
+            };
+          };
+        };
+      };
+      testScript = ''
+        machineWithDocker.wait_for_unit("multi-user.target")
+        assert 'PRETTY_NAME="Alpine Linux v3.20"' in machineWithDocker.succeed("docker run alpine:3.20.3 sh -c 'cat /etc/os-release'")
+      '';
+    }
+EOF
+)"
+```
+
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$(cat <<- 'EOF'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/080166c15633801df010977d9d7474b4a6c549d7");
+    pkgs = import nixpkgs { };
+  in
+    pkgs.testers.runNixOSTest {
+      name = "Test enabling kubernetes";
+      nodes = {
+        machineWithKubernetes = { pkgs, config, ... }: { 
+          environment.systemPackages = with pkgs; [ kubectl ];
+          services.kubernetes.roles = [ "master" "node" ];
+          services.kubernetes.masterAddress = "${config.networking.hostName}";
+          environment.variables.KUBECONFIG = "/etc/${config.services.kubernetes.pki.etcClusterAdminKubeconfig}";
+          # services.kubernetes.kubelet.extraOpts = "--fail-swap-on=false"; # If you use swap it is an must!
+          zramSwap = {
+            enable = true;
+            algorithm = "zstd";
+            memoryPercent = 30;
+          };
+        };
+      };
+      globalTimeout = 2 * 60;
+      testScript = ''
+        machineWithKubernetes.wait_for_unit("kubernetes.target")
+        machineWithKubernetes.wait_until_succeeds("kubectl get pods -n kube-system --field-selector status.phase=Running")
+        print(machineWithKubernetes.execute("free -h"))
+      '';
+    }
+EOF
+)"
+```
+
+
+
+
+```bash
+      nginxOCIImage = prev.dockerTools.pullImage {
+        finalImageTag = "1.27.1-alpine3.20-slim";
+        imageDigest = "sha256:087f90d16ce1004cf11671e229b62cc36dca1b837870aa357983954a46034d33";
+        imageName = "nginx";
+        name = "nginx";
+        sha256 = "sha256-1GWQVbYofLXpfzGlgazQEuwLqRvYfRJj4xio6anxFLk=";
+      };
+```
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$(cat <<- 'EOF'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/d063c1dd113c91ab27959ba540c0d9753409edf3");
+    overlays.default = final: prev: {
+      
+      myCustomImage = let
+        conf = {
+          nginxWebRoot = prev.writeTextDir "index.html"
+            ''
+              <html>
+                <body>
+                  <center>
+                  <marquee><h1>all ur PODZ is belong to ME</h1></marquee>
+                  <img src=\"https://m.media-amazon.com/images/M/MV5BYjBlODg3ZTgtN2ViNS00MDlmLWIyMTctZmQ2NWYwMzE2N2RmXkEyXkFqcGdeQVRoaXJkUGFydHlJbmdlc3Rpb25Xb3JrZmxvdw@@._V1_.jpg\" width=\"100%\">
+                  </center>
+                </body>
+              </html>\n
+            '';
+
+          nginxPort = "80";
+          nginxConf = prev.writeText "nginx.conf" ''
+            user nobody nobody;
+            daemon off;
+            error_log /dev/stdout info;
+            pid /dev/null;
+            events {}
+            http {
+              access_log /dev/stdout;
+              server {
+                listen ${conf.nginxPort};
+                index index.html;
+                location / {
+                  root ${conf.nginxWebRoot};
+                }
+              }
+            }
+          '';
+        };
+      in
+      prev.dockerTools.buildLayeredImage {
+        name = "joshrosso";
+        tag = "1.4";
+        contents = [ prev.fakeNss prev.nginx ];
+
+        extraCommands = ''
+          mkdir -p tmp/nginx_client_body
+
+          # nginx still tries to read this directory even if error_log
+          # directive is specifying another file :/
+          mkdir -p var/log/nginx
+        '';
+        config = {
+          Cmd = [ "nginx" "-c" conf.nginxConf ];
+          ExposedPorts = { "${conf.nginxPort}/tcp" = { }; };
+        };
+      };
+      
+      joshrossoKubecon = prev.writeTextDir "joshrosso-kubecon.yml"
+        ''
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: a-message
+            namespace: default
+          spec:
+            containers:
+            - name: message
+              image: joshrosso:1.4
+              ports:
+              - containerPort: 80
+        '';
+    };
+    pkgs = import nixpkgs { overlays = [ overlays.default ]; };
+  in
+    pkgs.testers.runNixOSTest {
+      name = "Test enabling kubernetes and use nginx";
+      nodes = {
+        nixos =  { config, pkgs, lib, modulesPath, ... }: { 
+          imports = [ "${dirOf modulesPath}/tests/common/x11.nix" ];
+          
+          config.services.xserver.enable = true;
+
+          config.environment.systemPackages = with pkgs; [ kubectl firefox ];
+          config.services.kubernetes.roles = [ "master" "node" ];
+          config.services.kubernetes.masterAddress = "${config.networking.hostName}";
+          config.environment.variables.KUBECONFIG = "/etc/${config.services.kubernetes.pki.etcClusterAdminKubeconfig}";
+          # config.services.kubernetes.kubelet.extraOpts = "--fail-swap-on=false"; # If you use swap it is an must!
+
+          config.services.kubernetes.kubelet.seedDockerImages = (with pkgs; [
+            myCustomImage
+          ]);
+          
+          # config.networking.firewall.allowedTCPPorts = [ 443 8080 8090 80 ]; # Almost got me crazy!
+          
+          # https://discourse.nixos.org/t/nixpkgs-support-for-linux-builders-running-on-macos/24313/2
+          #config.virtualisation.forwardPorts = [
+          #  {
+          #    from = "host";
+          #    host.port = 8080;
+          #    guest.port = 8090;
+          #  }
+          #];          
+        };
+      };
+      enableOCR = true;
+      globalTimeout = 3 * 60;
+      
+      testScript = ''
+        nixos.wait_for_unit("kubernetes.target")
+        nixos.wait_until_succeeds("kubectl get node nixos | grep -w Ready")
+        # nixos.wait_until_succeeds("kubectl get pods --namespace kube-system --field-selector status.phase=Running")
+        # nixos.wait_until_succeeds("kubectl get pods --namespace kube-system --field-selector status.phase=Running | grep Running")
+
+        nixos.wait_until_succeeds("kubectl get pods --namespace kube-system | grep 'coredns.*1/1'")
+
+        print(nixos.execute("hostname"))
+        nixos.wait_until_succeeds("kubectl get namespaces")
+        print(nixos.execute("kubectl get namespaces"))
+
+        # https://github.com/kubernetes/kubernetes/issues/66689#issuecomment-463097073
+        nixos.wait_until_succeeds("kubectl --namespace default get serviceaccount default -o name")
+
+        nixos.succeed("kubectl apply -f ${pkgs.joshrossoKubecon}/joshrosso-kubecon.yml")
+
+        nixos.wait_until_succeeds("kubectl get pod a-message --namespace default | grep Running")
+        nixos.wait_until_succeeds("kubectl get pods --namespace default --field-selector status.phase=Running")
+        # nixos.wait_until_succeeds("kubectl get pods --namespace default --field-selector status.phase=Running | grep Running")
+
+        # print(nixos.succeed("kubectl get pod a-message --namespace default --template='{{(index (index .spec.containers 0).ports 0).containerPort}}{{"\n"}}'"))
+        nixos.execute("kubectl port-forward --namespace default --address 0.0.0.0 pods/a-message 8090:80 &")
+
+        nixos.wait_until_succeeds("curl localhost:8090")
+
+        result = nixos.succeed("curl localhost:8090")
+        expected = '<html><body><center><marquee><h1>all ur PODZ is belong to ME</h1></marquee>'
+        assert expected in result
+
+        nixos.execute("firefox localhost:8090 &")
+        nixos.wait_until_succeeds("pgrep -f '.firefox-wrapped'")
+        nixos.wait_for_window("Mozilla Firefox")
+        nixos.sleep(5) # TODO: race condition!
+
+        nixos.screenshot("screen1")
+        nixos.wait_for_text(r"all ur PODZ is belong to ME")
+        nixos.screenshot("screen2")
+      '';
+    }
+EOF
+)"
+```
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$(cat <<- 'EOF'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ae2fc9e0e42caaf3f068c1bfdc11c71734125e06"); 
+    pkgs = import nixpkgs {};
+  in
+    pkgs.testers.runNixOSTest {
+      name = "Two machines ping each other";
+    
+      nodes = {
+        # These configs do not add anything to the default system setup
+        machine1 = { pkgs, ... }: { };
+        machine2 = { pkgs, ... }: { };
+      };
+    
+      # Note that machine1 and machine2 are now available as
+      # Python objects and also as hostnames in the virtual network
+      testScript = ''
+        machine1.wait_for_unit("network-online.target")
+        machine2.wait_for_unit("network-online.target")
+    
+        machine1.succeed("ping -c 1 machine2")
+        machine2.succeed("ping -c 1 machine1")
+      '';
+    }
+EOF
+)"
+```
+Refs.:
+- https://nixcademy.com/posts/nixos-integration-tests-part-2/
+
+
+
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$(cat <<- 'EOF'
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ae2fc9e0e42caaf3f068c1bfdc11c71734125e06"); 
+    pkgs = import nixpkgs {};
+  in
+    pkgs.testers.runNixOSTest {
+      name = "Test enabling docker";
+      nodes = {
+        machine = { pkgs, ... }: { 
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = with pkgs; [
+            file
+            pkgsCross.aarch64-multiplatform.python3Minimal
+          ];
+        };
+      };
+      testScript = ''
+        expected = 'ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter'
+
+        assert expected in machine.succeed("file $(readlink -f $(which python3))")
+        machine.succeed("python3 --version")
+      '';
+    }
+EOF
+)"
+```
+
+https://github.com/NixOS/nixpkgs/pull/261694#issue-1948075326
 
 
 TODO: related, might be tangential, testing nix it self:
 https://github.com/NixOS/nix/blob/26c7602c390f8c511f326785b570918b2f468892/tests/flakes/flakes.sh
+
+
+> Use random modifications in any artefact combined with nixosTests.
+
 
 #### nixosTest minimal
 
@@ -18494,6 +21566,7 @@ nix-build postgrest.nix
 $(nix-build -A driverInteractive postgrest.nix)/bin/nixos-test-driver
 ```
 
+
 ```bash
 nix \
 shell \
@@ -18501,10 +21574,11 @@ shell \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-  with lib;
-    nixosTest ({
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
       name = "nixos-test-empty";
       nodes = {
         machine = { config, pkgs, ... }: {
@@ -18531,15 +21605,16 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-  with lib;
-    nixosTest ({
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
       name = "nixos-test-python3-examples";
       nodes = {
         machine = { config, pkgs, ... }: {
           environment.systemPackages = [
-            python3
+            pkgs.python3
           ];
         };
       };
@@ -18803,9 +21878,9 @@ build \
           };
         };
       };
-    
+
       testScript = ''
-        "machine.succeed(\"systemctl is-active kubelet\")"
+        "machine.wait_until_succeed(\"systemctl is-active kubelet\")"
       '';
     })
 )
@@ -19006,6 +22081,51 @@ print(tf.Variable(tf.zeros([4, 3]))); print(tf.__version__)"'';
 
 
 ##### nixosTest, enableOCR = true, xclock
+
+```bash
+nix \
+build \
+--impure \
+--expr \
+'
+  (
+    with builtins.getFlake "github:NixOS/nixpkgs/f0609d6c0571e7e4e7169a1a2030319950262bf9";
+    with legacyPackages.${builtins.currentSystem};
+    with lib;
+      import ("${path}/nixos/tests/make-test-python.nix") ({
+        name = "xclock";
+        nodes.machine = { config, pkgs, ... }: {
+          imports = [
+            "${path}/nixos/tests/common/x11.nix"
+          ];
+          services.xserver.enable = true;
+          environment.systemPackages = [ pkgs.xorg.xclock ];
+        };
+
+        enableOCR = true;
+
+        testScript =
+        ''
+        "
+@polling_condition
+def xclock_running():
+    machine.succeed(\"pgrep -x xclock\")
+
+machine.wait_for_unit(\"graphical.target\")
+machine.wait_for_x()
+machine.execute(\"xclock >&2 &\")
+machine.wait_for_window(\"xclock\")
+machine.screenshot(\"screen\")
+machine.send_key(\"alt-f4\")
+machine.wait_until_fails(\"pgrep -x xclock\")
+      "
+      '';
+      }
+    )
+  )
+'
+```
+
 
 ```bash
 nix \
@@ -19548,10 +22668,10 @@ run \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-  with lib;
   let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+    pkgs = import nixpkgs { };    
+
     uidCustom = 1122;
     # NixOS module?
     sharedModule = {
@@ -19563,8 +22683,10 @@ run \
         isNormalUser = true;
       };      
     };
-  in nixosTest ({
+  in
+    pkgs.nixosTest ({
     nodes = {
+      name = "nixos-test-sudo";    
       machine = { config, pkgs, ... }: {
         imports = [ sharedModule ];
       };
@@ -19575,7 +22697,7 @@ run \
   
     testScript = { nodes, ... }:
     let
-      sudo = lib.concatStringsSep " " [
+      sudo = nixpkgs.lib.concatStringsSep " " [
         "XDG_RUNTIME_DIR=/run/user/${toString uidCustom}"
         "DOCKER_HOST=unix:///run/user/${toString uidCustom}/docker.sock"
         "sudo" "--preserve-env=XDG_RUNTIME_DIR,DOCKER_HOST" "-u" "alice"
@@ -19613,30 +22735,26 @@ run \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-  with lib;
-    nixosTest ({
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
       name = "nixos-test-empty";
       nodes = {
-        machine = { config, pkgs, ... }: {
-          virtualisation.graphics = false;
+        server = { config, pkgs, ... }: {
+          virtualisation.graphics = true;
           nixpkgs.config.allowUnfree = true;
           nix = {
-            package = pkgs.nixFlakes;
             extraOptions = "experimental-features = nix-command flakes";
             settings.sandbox = true;
-            # From:
-            # https://github.com/sherubthakur/dotfiles/blob/be96fe7c74df706a8b1b925ca4e7748cab703697/system/configuration.nix#L44
-            # pointing to: https://github.com/NixOS/nixpkgs/issues/124215
-            # settings.extra-sandbox-paths= [ "/bin/sh=${pkgs.bash}/bin/sh"];
             readOnlyStore = true;
           };
    
           users = {
             mutableUsers = false;
             users = {
-              # For ease of debugging the VM as the `root` user
+              # For ease of debugging the VM has the `root` user
               root = {
                 password = "";
                 shell = pkgs.bashInteractive;
@@ -19645,9 +22763,6 @@ run \
               abcde = {
                 password = "";
                 createHome = true;
-                # Create a system user that matches the database user so that we
-                # can use peer authentication.  The tutorial defines a password,
-                # but it is not necessary.                
                 # isSystemUser = true;
                 isNormalUser = true;
                 description = "Some user";
@@ -19655,19 +22770,20 @@ run \
                             "wheel"
                             "kvm"
                 ];
-                packages = [ hello ];
+                packages = with pkgs; [ hello ];
                 shell = pkgs.bashInteractive;
-                # uid = 12321;    
               };              
             };
           };         
         };
       };
-      testScript = "";
+      testScript = "start_all(); server.shell_interact();";
     })
 ).driverInteractive
 '
 ```
+
+
 
 ```bash
 start_all(); server.shell_interact();
@@ -19891,17 +23007,19 @@ machine.succeed(\"systemctl is-active kubernetes.target\")
 #### nixosTest + pkgsCross
 
 
+First lets start with a "trivial" example that does not involve crosscompiling:
 ```bash
 EXPR=$(cat <<-'EOF'
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"; 
-  with legacyPackages.${builtins.currentSystem}; 
-  with lib;
-    nixosTest ({
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
       name = "nixos-test-hello";
       nodes = {
         machine = { config, pkgs, ... }: {
-          environment.systemPackages = [
+          environment.systemPackages = with pkgs; [
             hello
           ];
         };
@@ -19927,25 +23045,120 @@ build \
 "$EXPR"
 ```
 
+
+
 ```bash
 EXPR=$(cat <<-'EOF'
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
-  with legacyPackages.${builtins.currentSystem}; 
-  with lib;
-    nixosTest ({
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
       name = "nixos-test-hello-cross";
       nodes = {
         machine = { config, pkgs, ... }: {
-          # boot.binfmt.emulatedSystems = ["aarch64-linux"];
-          environment.systemPackages = [
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = with pkgs; [
             pkgsCross.aarch64-multiplatform.pkgsStatic.hello
           ];
         };
+      };
+
+      testScript = ''
+        machine.succeed("hello | grep -q -F -e 'Hello, world!'")
+      '';
+    })
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/d50918bc1c43dea8fd5282dcaca3ebc7144e210f");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
+      name = "nixos-test-hello-cross";
+      nodes = {
+        machineA = { config, pkgs, ... }: {
+          environment.systemPackages = with pkgs; [
+            file
+            pkgsCross.aarch64-multiplatform.pkgsStatic.hello
+          ];
+        };
+        
+        machineB = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.aarch64-multiplatform.pkgsStatic.hello
+          ];
+        };
+
+        machineC = { config, pkgs, ... }: {
+          boot.binfmt.registrations = { 
+            s390x-linux = {
+              # interpreter = getEmulator "s390x-linux";
+              interpreter = "${pkgs.qemu}/bin/qemu-s390x";
+              magicOrExtension = ''\x7fELF\x02\x02\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x16'';
+              mask = ''\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff'';
+            };
+          };
+          environment.systemPackages = [
+            pkgs.pkgsCross.s390x.pkgsStatic.hello
+          ];
+        };
+
+        machineD = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "riscv64-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.riscv64.pkgsStatic.hello
+          ];
+        };
+
+        machineE = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv7l-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.armv7l-hf-multiplatform.pkgsStatic.hello
+          ];
+        };
+
+        machineF = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv6l-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.raspberryPi.pkgsStatic.hello
+          ];
+        };       
+
       };
     
       testScript = ''
-        machine.succeed("! hello")
+        machineA.succeed("! hello | grep -q -F -e ' exec format error: '")
+        machineA.succeed("file $(readlink -f $(which hello)) | grep -q -F -e ': ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, not stripped'")
+        machineA.succeed("! ldd $(readlink -f $(which hello)) | grep -q -F -e 'not a dynamic executable'")
+        machineA.succeed("! patchelf --print-needed $(readlink -f $(which hello)) | grep -q -F -e 'patchelf: cannot find section '.dynamic'. The input file is most likely statically linked'")
+        machineA.succeed("! readelf --dynamic $(readlink -f $(which hello)) | grep -q -F -e 'There  is no dynamic section in this file.'")
+
+        machineB.succeed("hello | grep -q -F -e 'Hello, world!'")
+        machineC.succeed("hello | grep -q -F -e 'Hello, world!'")
+        machineD.succeed("hello | grep -q -F -e 'Hello, world!'")
+        machineE.succeed("hello | grep -q -F -e 'Hello, world!'")
+        machineF.succeed("hello | grep -q -F -e 'Hello, world!'")
       '';
     })
 )
@@ -19956,34 +23169,191 @@ EOF
 nix \
 --cores "$(nproc --ignore=2)" \
 build \
---no-link \
---print-out-paths \
---print-build-logs \
 --impure \
+--no-link \
+--print-build-logs \
+--print-out-paths \
 --expr \
 "$EXPR"
 ```
 
 
+
+
 ```bash
 EXPR=$(cat <<-'EOF'
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
-  with legacyPackages.${builtins.currentSystem}; 
-  with lib;
-    nixosTest ({
-      name = "nixos-test-hello-cross";
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/d50918bc1c43dea8fd5282dcaca3ebc7144e210f");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
+      name = "nixos-test-python-cross";
       nodes = {
-        machine = { config, pkgs, ... }: {
-          boot.binfmt.emulatedSystems = ["aarch64-linux"];
-          environment.systemPackages = [
-            pkgsCross.aarch64-multiplatform.pkgsStatic.hello
+        machineA = { config, pkgs, ... }: {
+          environment.systemPackages = with pkgs; [
+            file
+            pkgsCross.aarch64-multiplatform.pkgsStatic.python3
           ];
         };
-      };
+        
+        machineB = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.aarch64-multiplatform.pkgsStatic.python3
+          ];
+        };
 
+        machineC = { config, pkgs, ... }: {
+          boot.binfmt.registrations = { 
+            s390x-linux = {
+              # interpreter = getEmulator "s390x-linux";
+              interpreter = "${pkgs.qemu}/bin/qemu-s390x";
+              magicOrExtension = ''\x7fELF\x02\x02\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x16'';
+              mask = ''\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff'';
+            };
+          };
+          environment.systemPackages = [
+            pkgs.pkgsCross.s390x.pkgsStatic.python3
+          ];
+        };
+
+        machineD = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "riscv64-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.riscv64.pkgsStatic.python3
+          ];
+        };
+
+        machineE = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv7l-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.armv7l-hf-multiplatform.pkgsStatic.python3
+          ];
+        };
+
+        machineF = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv6l-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.raspberryPi.pkgsStatic.python3
+          ];
+        };       
+
+      };
+    
       testScript = ''
-        machine.succeed("hello")
+        machineA.succeed("! python3 | grep -q -F -e ' exec format error: '")
+        machineA.succeed("file $(readlink -f $(which python3)) | grep -q -F -e ': ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, not stripped'")
+        machineA.succeed("! ldd $(readlink -f $(which python3)) | grep -q -F -e 'not a dynamic executable'")
+        machineA.succeed("! patchelf --print-needed $(readlink -f $(which python3)) | grep -q -F -e 'patchelf: cannot find section '.dynamic'. The input file is most likely statically linked'")
+        machineA.succeed("! readelf --dynamic $(readlink -f $(which python3)) | grep -q -F -e 'There  is no dynamic section in this file.'")
+
+        machineB.succeed("python3 --version | grep -q -F -e '3.11.8'")
+        machineC.succeed("python3 --version | grep -q -F -e '3.11.8'")
+        machineD.succeed("python3 --version | grep -q -F -e '3.11.8'")
+        machineE.succeed("python3 --version | grep -q -F -e '3.11.8'")
+        machineF.succeed("python3 --version | grep -q -F -e '3.11.8'")
+      '';
+    })
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/d50918bc1c43dea8fd5282dcaca3ebc7144e210f");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
+      name = "nixos-test-python-cross";
+      nodes = {
+        machineA = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            pkgs.file
+            (pkgs.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ mmh3 ])
+            )
+          ];
+        };
+        
+        machineB = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.aarch64-multiplatform.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ mmh3 ])
+            )
+          ];
+        };
+
+        machineC = { config, pkgs, ... }: {
+          boot.binfmt.registrations = { 
+            s390x-linux = {
+              # interpreter = getEmulator "s390x-linux";
+              interpreter = "${pkgs.qemu}/bin/qemu-s390x";
+              magicOrExtension = ''\x7fELF\x02\x02\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x16'';
+              mask = ''\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff'';
+            };
+          };
+          environment.systemPackages = [
+            (pkgs.pkgsCross.s390x.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ mmh3 ])
+            )            
+          ];
+        };
+
+        machineD = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "riscv64-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.riscv64.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ mmh3 ])
+            ) 
+          ];
+        };
+
+        machineE = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv7l-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.armv7l-hf-multiplatform.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ mmh3 ])
+            )             
+          ];
+        };
+
+        machineF = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv6l-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.raspberryPi.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ mmh3 ])
+            )            
+          ];
+        };        
+      };
+    
+      testScript = let
+        testCommand = "python3 -c 'import mmh3; assert mmh3.hash128(bytes(123)) == 126000048256919600573431412872524959502'";
+      in ''
+        machineA.succeed("${testCommand}")
+        machineB.succeed("${testCommand}")
+        machineC.succeed("${testCommand}")
+        machineD.succeed("${testCommand}")
+        machineE.succeed("${testCommand}")
+        machineF.succeed("${testCommand}")        
       '';
     })
 )
@@ -20006,19 +23376,286 @@ build \
 ```bash
 EXPR=$(cat <<-'EOF'
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b";
-  with legacyPackages.${builtins.currentSystem}; 
-  with lib;
-    nixosTest ({
-      name = "nixos-test-dmidecode";
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/d50918bc1c43dea8fd5282dcaca3ebc7144e210f");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
+      name = "nixos-test-python-cross";
       nodes = {
-        machine = { config, pkgs, ... }: {
+        machineA = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            pkgs.file
+            (pkgs.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ numpy ])
+            )
+          ];
         };
+        
+        machineB = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.aarch64-multiplatform.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ numpy ])
+            )
+          ];
+        };
+
+        machineD = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "riscv64-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.riscv64.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ numpy ])
+            ) 
+          ];
+        };
+
+        machineE = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv7l-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.armv7l-hf-multiplatform.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ numpy ])
+            )             
+          ];
+        };
+
+        machineF = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv6l-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.raspberryPi.pkgsStatic.python3
+            (pkgs.pkgsCross.raspberryPi.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ numpy ])
+            )            
+          ];
+        };        
+      };
+    
+      testScript = let
+        testCommand = ''
+          python3 \
+          -c \
+          'import numpy as np; 
+          np.array_equal(np.array([1,2]), np.sqrt(np.square(np.array([1,2]))))
+          '
+        '';
+      in ''
+        machineA.succeed("${testCommand}")
+        machineB.succeed("${testCommand}")
+        machineD.succeed("${testCommand}")
+        machineE.succeed("${testCommand}")
+        machineF.succeed("${testCommand}")        
+      '';
+    })
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/d50918bc1c43dea8fd5282dcaca3ebc7144e210f");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
+      name = "nixos-test-python-cross";
+      nodes = {
+        machineA = { config, pkgs, ... }: {
+          environment.systemPackages = [
+            pkgs.file
+            (pkgs.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ tinygrad ])
+            )
+          ];
+        };
+        
+        machineB = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.aarch64-multiplatform.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ tinygrad ])
+            )
+          ];
+        };
+
+        machineD = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "riscv64-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.riscv64.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ tinygrad ])
+            ) 
+          ];
+        };
+
+        machineE = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv7l-linux" ];
+          environment.systemPackages = [
+            (pkgs.pkgsCross.armv7l-hf-multiplatform.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ tinygrad ])
+            )             
+          ];
+        };
+
+        machineF = { config, pkgs, ... }: {
+          boot.binfmt.emulatedSystems = [ "armv6l-linux" ];
+          environment.systemPackages = [
+            pkgs.pkgsCross.raspberryPi.pkgsStatic.python3
+            (pkgs.pkgsCross.raspberryPi.python3.withPackages 
+              (pyPkgs: with pyPkgs; [ tinygrad ])
+            )            
+          ];
+        };        
       };
 
-      testScript = ''
-        machine.succeed("dmesg")
+      testScript = let
+        testCommand = ''
+          python3 \
+          -c \
+          'from tinygrad import Tensor;
+          N = 1024; a, b = Tensor.rand(N, N), Tensor.rand(N, N);
+          c = (a.reshape(N, 1, N) * b.T.reshape(1, N, N)).sum(axis=2);
+          print((c.numpy() - (a.numpy() @ b.numpy())).mean())'
+        '';
+      in ''
+        machineA.succeed("${testCommand}")
+        machineB.succeed("${testCommand}")
+        machineC.succeed("${testCommand}")
+        machineD.succeed("${testCommand}")
+        machineE.succeed("${testCommand}")
+        machineF.succeed("${testCommand}")        
       '';
+    })
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+```
+Refs.:
+- https://github.com/tinygrad/tinygrad/releases/tag/v0.8.0
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/d50918bc1c43dea8fd5282dcaca3ebc7144e210f");
+    pkgs = import nixpkgs { };    
+
+  pyScript = pkgs.writeTextDir "pyScript.py" ''
+    """
+    =============
+    PGF texsystem
+    =============
+    """
+    
+    import matplotlib.pyplot as plt
+    
+    plt.rcParams.update({
+        "pgf.texsystem": "xelatex",
+        "pgf.preamble": "\n".join([
+             r"\usepackage[utf8x]{inputenc}",
+             r"usepackage[no-math]{fontspec}",
+             r"\setmainfont{Times New Roman}",
+        ]),
+    })
+    
+    fig, ax = plt.subplots(figsize=(4.5, 2.5))
+    
+    ax.plot(range(5))
+    
+    ax.text(-0.15, 3.80, "ABCDEFGHIJKL serif", family="serif")
+    ax.text(-0.15, 3.30, "ABCDEFGHIJKL monospace", family="monospace")
+    ax.text(-0.15, 2.9, "ABCDEFGHIJKL sans-serif", family="sans-serif")
+    ax.text(-0.15, 2.4, "ABCDEFGHIJKL DejaVu Sans", family="DejaVu Sans")
+
+    ax.set_xlabel(r"µ is not $\mu$")
+    
+    fig.tight_layout(pad=.5)
+    plt.savefig('figure.pdf')
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+
+  customPython3 = pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ numpy matplotlib ]);
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "matplotlib-xelatex-test";
+          src = pyScript;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts.minimal ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+            
+            ${customPython3}/bin/python pyScript.py
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v figure.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+
+nix \
+--cores "$(nproc --ignore=2)" \
+build \
+--no-link \
+--print-out-paths \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- 
+
+
+
+
+TODO: Find some interesting text to grep.
+```bash
+EXPR=$(cat <<-'EOF'
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+    pkgs = import nixpkgs { };    
+  in
+    pkgs.nixosTest ({
+      name = "nixos-test-dmidecode";
+      nodes = { machine = { config, pkgs, ... }: { }; };
+      testScript = ''machine.succeed("dmesg")'';
     })
 )
 EOF
@@ -20095,7 +23732,7 @@ TODO:
 - https://github.com/NixOS/nixpkgs/issues/37172#issuecomment-640358700
 - https://discourse.nixos.org/t/nix-build-too-large-docker-image/9394
 - https://yrh.dev/blog/using-nix-to-build-docker-images/
-- https://jameswillia.ms/posts/go-nix-containers.html Go example must see it
+- https://jnsgr.uk/2024/01/building-a-blog-with-go-nix-hugo/ https://jameswillia.ms/posts/go-nix-containers.html Go example must see it
 - https://news.ycombinator.com/item?id=29834422
 - https://nixos.wiki/wiki/Docker
 - https://github.com/NixOS/nixpkgs/blob/617579a787259b9a6419492eaac670a5f7663917/nixos/modules/services/cluster/kubernetes/kubelet.nix#L274-L289
@@ -20103,6 +23740,7 @@ TODO:
 - https://discourse.nixos.org/t/how-to-include-files-in-docker-containers-created-with-nix/26201/2
 - https://discourse.nixos.org/t/how-to-build-a-docker-image-with-a-working-nix-inside-it/32960/4
 - TODO: make an OCI and nixosTests! https://scvalex.net/posts/63/ https://scvalex.net/posts/68/ Rust example libGL libxkbcommon wayland xorg.libX11 xorg.libXcursor xorg.libXi xorg.libXrandr
+- services.xserver.displayManager.setupCommands xorg.xrandr xorg.xrandr https://discourse.nixos.org/t/proper-way-to-configure-monitors/12341/12
 
 
 
@@ -20228,20 +23866,20 @@ EXPR_NIX='
             "USER=foobar"
             "NIX_PATH=nixpkgs=${pkgs.releaseTools.channel { name = "nixpkgs-unstable"; src = pkgs.path; }}"
             # "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-            # "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"            
+            "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"            
             # "NIX_CONFIG=extra-experimental-features = nix-command flakes"
             "A=${pkgs.hello.inputDerivation}"
           ];
-            Entrypoint = [ "${pkgs.bashInteractive}/bin/"];
-
-            # Entrypoint = [ 
-            #                 "${pkgs.pkgsStatic.nix}/bin/nix" 
-            #                   "--option" "substitute" "false" 
-            #                   "--option" "eval-cache" "false" 
-            #                   "--option" "use-registries" "false" 
-            #                   "--option" "build-users-group" "" 
-            #                   "--option" "experimental-features" "nix-command flakes" 
-            #              ];          
+             # Entrypoint = [ "${pkgs.bashInteractive}/bin/"];
+             # TODO --offline --option flake-registry ""
+             Entrypoint = [ 
+                             "${pkgs.pkgsStatic.nix}/bin/nix" 
+                               "--option" "substitute" "true" 
+                               "--option" "eval-cache" "false" 
+                               "--option" "use-registries" "false" 
+                               "--option" "build-users-group" "" 
+                               "--option" "experimental-features" "nix-command flakes" 
+                          ];          
         };
       }
 )
@@ -20264,7 +23902,7 @@ run \
 --rm=true \
 --mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
 --rm=true \
-localhost/nix:0.0.0 \
+localhost/nix:latest \
 run github:NixOS/nixpkgs/58c85835512b0db938600b6fe13cc3e3dc4b364e#hello
 
 podman \
@@ -20963,6 +24601,9 @@ in
   nixos.config.environment.extraOutputsToInstall 
 '
 ```
+Refs.:
+- https://ryantm.github.io/nixpkgs/stdenv/multiple-output/#sec-multiple-outputs-installing-nixos
+- https://github.com/NixOS/nixpkgs/blob/f1680774340d5443a1409c3421ced84ac1163ba9/pkgs/stdenv/generic/make-derivation.nix#L310-L320
 
 
 ```bash
@@ -22036,6 +25677,168 @@ nixpkgs#pkgsStatic.nix \
 sh
 ```
 
+
+```bash
+cat > Containerfile << 'EOF'
+FROM docker.io/library/alpine as builder
+
+RUN apk update \
+ && apk add --no-cache ca-certificates
+
+RUN mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser
+
+RUN mkdir -pv /nix/var/nix && chmod -v 0777 /nix && chown -Rv nixuser:nixgroup /nix
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+ENV PATH=/home/nixuser/.nix-profile/bin:/home/nixuser/.local/bin:"$PATH"
+ENV NIX_CONFIG="extra-experimental-features = nix-command flakes"
+
+RUN mkdir -pv "$HOME"/.local/bin \
+ && cd "$HOME"/.local/bin \
+ && wget -O- https://hydra.nixos.org/build/255990139/download/1/nix > nix \
+ && chmod -v +x nix \
+ && cd - \
+ && export PATH=/home/nixuser/.local/bin:/bin:/usr/bin \
+ && nix flake --version \
+ && nix registry pin nixpkgs github:NixOS/nixpkgs/0938d73bb143f4ae037143572f11f4338c7b2d1c \
+ && nix profile install nixpkgs#path \
+ && echo 
+
+
+FROM builder as nix-develop-hello
+
+RUN \
+ nix develop nixpkgs#hello --profile ./develop-hello \
+ && nix \
+ store \
+ gc \
+ --option keep-build-log false \
+ --option keep-derivations false \
+ --option keep-env-derivations false \
+ --option keep-failed false \
+ --option keep-going false \
+ --option keep-outputs true \
+ && nix \
+ store \
+ optimise \
+ --verbose
+
+
+FROM nix-develop-hello:latest as nix-develop-hello-network-none
+
+RUN nix develop ./develop-hello --command \
+ sh \
+ -c \
+ 'cd "$TMPDIR" && source $stdenv/setup && genericBuild' \
+ && nix \
+ store \
+ gc \
+ --option keep-build-log false \
+ --option keep-derivations false \
+ --option keep-env-derivations false \
+ --option keep-failed false \
+ --option keep-going false \
+ --option keep-outputs true \
+ && nix \
+ store \
+ optimise \
+ --verbose
+
+
+FROM nix-develop-hello:latest as build-hello
+
+RUN \
+ nix copy --no-check-sigs --to /tmp/hello nixpkgs#hello \
+ && ln -fsv /tmp/hello$(nix eval --raw nixpkgs#hello)/bin/hello /tmp/symbolic-link-hello
+
+# FROM scratch as nix-develop-hello-network-none
+FROM docker.io/library/alpine as alpine-hello
+
+COPY --from=build-hello /tmp/hello/ /
+COPY --from=build-hello /tmp/symbolic-link-hello /bin/hello
+
+RUN apk update \
+ && apk add --no-cache ca-certificates
+
+RUN mkdir -pv /home/nixuser \
+ && addgroup nixgroup --gid 4455 \
+ && adduser \
+     -g '"An unprivileged user with an group"' \
+     -D \
+     -h /home/nixuser \
+     -G nixgroup \
+     -u 3322 \
+     nixuser
+
+USER nixuser
+WORKDIR /home/nixuser
+ENV USER="nixuser"
+
+
+FROM scratch as hello
+
+COPY --from=build-hello /tmp/hello/ /
+COPY --from=build-hello /tmp/symbolic-link-hello /bin/hello
+# ENV PATH="/bin/hello"
+CMD [ "/bin/hello" ]
+
+EOF
+
+
+
+docker \
+build \
+--file Containerfile \
+--tag builder \
+--target builder \
+.
+
+docker \
+build \
+--file Containerfile \
+--tag nix-develop-hello \
+--target nix-develop-hello \
+.
+
+docker \
+build \
+--file Containerfile \
+--tag nix-develop-hello-network-none \
+--target nix-develop-hello-network-none \
+.
+
+docker \
+build \
+--file Containerfile \
+--tag alpine-hello \
+--target alpine-hello \
+.
+
+docker \
+build \
+--file Containerfile \
+--tag hello \
+--target hello \
+.
+
+docker images
+```
+Refs.:
+- https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-copy#examples
+- https://github.com/moby/moby/issues/20538#issuecomment-1695746963
+
+TODO: docker build --network=none
+
 TODO: help https://discourse.nixos.org/t/create-an-offline-c-development-environment/11531/10
 
 
@@ -22050,8 +25853,25 @@ Refs.:
 
 
 ```bash
-nix develop --pure-eval --ignore-environment nixpkgs#hello \
---command sh -c \
+nix \
+--option keep-failed false \
+develop \
+nixpkgs#hello \
+--command \
+sh \
+-c \
+'cd "$TMPDIR" && touch foo-bar.txt && pwd && exit 1'
+```
+
+```bash
+nix \
+develop \
+--pure-eval \
+--ignore-environment \
+nixpkgs#hello \
+--command \
+sh \
+-c \
 'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
 
 # More "complex". It worked in an Ubuntu 22.04 with the nix single user
@@ -22071,6 +25891,14 @@ nix develop --ignore-environment nixpkgs#hello --command sh -c 'env | grep Phase
 ```bash
 nix develop --ignore-environment nixpkgs#ffmpeg --command sh -c 'env | grep Phase'
 ```
+
+
+```bash
+cd "$TMPDIR" && source $stdenv/setup
+export dontUnpack=true
+genericBuild
+```
+
 
 ```bash
 nix develop --ignore-environment nixpkgs#hello --command sh
@@ -22188,7 +26016,7 @@ make sh
 ```
 
 
-TODO: do an mult-stage docker/podman build? It could be useful.
+TODO: do a mult-stage docker/podman build? It could be useful.
 ```bash
 export TOYBOX_VERSION=0.8.10
 wget -O toybox.tgz "https://landley.net/toybox/downloads/toybox-$TOYBOX_VERSION.tar.gz"; \
@@ -22217,6 +26045,12 @@ Refs.:
 - https://github.com/NixOS/nix/issues/8657
 - https://www.tweag.io/blog/2020-05-25-flakes/
 - https://github.com/NixOS/nix/issues/2854#issuecomment-962503940 TODO: re check all
+
+TODO: `runPhase unpackPhase`
+https://github.com/NixOS/nixpkgs/pull/207083#issuecomment-1427024806
++
+https://n8henrie.com/2023/08/hacking-on-nixpkgs-with-nix-develop/
+
 
 
 TODO: related `nix registry pin nixpkgs` 
@@ -25032,6 +28866,50 @@ Refs.:
 - https://github.com/qbittorrent/qBittorrent/issues/5837#issuecomment-254978743
 
 
+```bash
+sudo \
+sh <<'COMMANDS'
+echo 'https://dl-cdn.alpinelinux.org/alpine/edge/testing' | tee -a /etc/apk/repositories
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' | tee -a /etc/apk/repositories
+echo 'http://dl-cdn.alpinelinux.org/alpine/edge/community' | tee -a /etc/apk/repositories
+
+apk upgrade \
+&& apk update \
+&& apk add --no-cache nix
+COMMANDS
+
+sudo nix --extra-experimental-features 'nix-command flakes' run nixpkgs#neofetch
+```
+
+
+
+```bash
+sudo \
+nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+github:NixOS/nix/93e8660bba42c8c90fcc1455ebb6e8631b66d4cb#hydraJobs.buildStatic.x86_64-linux
+
+sudo \
+nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+github:NixOS/nix/93e8660bba42c8c90fcc1455ebb6e8631b66d4cb#hydraJobs.buildStatic.x86_64-linux
+
+# TODO: write as an test
+139fc427001a58faf54f41a8b55a1dc6e7d2ab8b7d5e5b6653fd548aab008c575670146e3dd5d72447015d699507fb1d002372603aeff7da3eb12abd5643ccd4
+
+```
+
 So based on: https://git.alpinelinux.org/aports/tree/testing/nix/fix-docs-build.patch
 
 TODO: test the `nix-doc` thing.
@@ -25064,20 +28942,28 @@ Yes, it is possible, or it should be.
 > As of Ubuntu 22.04, the nix frozen by the Debian maintainers is
 > 2.6 while the latest as of today is 2.13.3.
 
+Note: some bug may bit you
+https://github.com/NixOS/nixpkgs/issues/230519#issuecomment-1537549860
+
 ```bash
 sudo apt-get -q update \
 && sudo apt-get install -y nix-bin \
-&& sudo chown -R "$(id -u)":"$(id -g)" /nix 
+&& sudo chown -Rv "$(id -u)":"$(id -g)" /nix \
+&& nix flake --version
 
-nix flake --version
+FLAKE_REF='github:NixOS/nixpkgs/bc194f70731cc5d2b046a6c1b3b15f170f05999c'
 
-# Note: as of now it does not have an defaul/builtin already installed nixpkgs to use.
+# Note: as of now it does not have an default/builtin/already installed,
+# nixpkgs to use.
 # So while pinning it downloads one nixpkgs too.
 nix \
 --extra-experimental-features nix-command \
 --extra-experimental-features flakes \
--vv registry pin nixpkgs github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b
-
+registry \
+pin \
+nixpkgs \
+"$FLAKE_REF" \
+--verbose 
 
 nix \
 --extra-experimental-features nix-command \
@@ -25085,29 +28971,59 @@ nix \
 shell \
 --ignore-environment \
 --keep HOME \
+--keep PATH \
 --keep SHELL \
---keep USER \
 nixpkgs#busybox \
 -c \
 sh<<'COMMANDS'
+# TODO: consider the XDG_ thing
+CONF_NIX_DIR="$HOME"/.config/nix
+CONF_NIX="$CONF_NIX_DIR"/nix.conf
 
-busybox test -d ~/.config/nix || busybox mkdir -p -m 0755 ~/.config/nix \
-&& busybox grep 'nixos' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'system-features = benchmark big-parallel kvm nixos-test' >> ~/.config/nix/nix.conf \
-&& busybox grep 'flakes' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf \
-&& busybox grep 'trace' ~/.config/nix/nix.conf 1> /dev/null 2> /dev/null || busybox echo 'show-trace = true' >> ~/.config/nix/nix.conf \
-&& busybox test -d ~/.config/nixpkgs || busybox mkdir -p -m 0755 ~/.config/nixpkgs \
-&& busybox grep 'allowUnfree' ~/.config/nixpkgs/config.nix 1> /dev/null 2> /dev/null || busybox echo '{ allowUnfree = true; android_sdk.accept_license = true; }' >> ~/.config/nixpkgs/config.nix
+CONF_NIXPKGS_DIR="$HOME"/.config/nixpkgs
+CONF_NIXPKGS="$CONF_NIXPKGS_DIR"/config.nix
 
-echo 'PATH="$HOME"/.nix-profile/bin:"$PATH"' >> ~/."$(busybox basename $SHELL)"rc && . ~/."$( busybox basename $SHELL)"rc
-COMMANDS
+test -d "$CONF_NIX_DIR" \
+|| mkdir -p -m 0755 -v "$CONF_NIX_DIR"
+
+grep -q 'flakes' "$CONF_NIX" &> /dev/null \
+|| echo 'experimental-features = nix-command flakes' >> "$CONF_NIX" 
+grep -q 'trace' "$CONF_NIX" &> /dev/null \
+|| echo 'show-trace = false' >> "$CONF_NIX" 
+
+test -d "$HOME"/.config/nixpkgs \
+|| mkdir -p -m 0755 -v "$HOME"/.config/nixpkgs 
+
+grep -q 'allowUnfree' "$CONF_NIXPKGS" &> /dev/null \
+|| echo '{ allowUnfree = true; }' >> "$CONF_NIXPKGS"
+
+echo 'PATH="$HOME"/.nix-profile/bin:"$PATH"' >> "$HOME"/."$(basename $SHELL)"rc 
+
+# If not instaled it is garbage colected.
+nix \
+profile \
+install \
+nixpkgs#path
 
 # Not an must
 nix store gc --verbose \
 && nix store optimise --verbose \
-&& sudo systemctl restart nix-daemon \
-&& systemctl status nix-daemon \
 && nix flake --version \
 && nix flake metadata nixpkgs
+COMMANDS
+
+
+(test -d /etc/nix || sudo mkdir -pv /etc/nix) \
+&& echo 'experimental-features = nix-command flakes' | sudo tee -a /etc/nix/nix.conf \
+&& sudo -i nix -v registry pin nixpkgs "$FLAKE_REF" \
+&& sudo -i nix flake metadata nixpkgs
+
+sudo systemctl restart nix-daemon \
+&& systemctl status nix-daemon \
+&& systemctl status nix-daemon.socket \
+&& systemctl is-active nix-daemon.socket \
+&& systemctl is-active nix-daemon.service \
+&& test -S /nix/var/nix/daemon-socket/socket
 ```
 Refs.:
 - https://stackoverflow.com/questions/3294072/get-last-dirname-filename-in-a-file-path-argument-in-bash#comment101491296_10274182
@@ -25116,6 +29032,22 @@ Refs.:
 TODO: test it and try to help
 https://discourse.nixos.org/t/managing-nix-daemon-via-systemd-in-ubuntu/5069
 
+TODO: which other ways to compare?
+```bash
+getent passwd "$(id -un)" | cut -d':' -f7 | cut -d'/' -f3
+basename $SHELL
+cat /proc/$$/comm
+readlink /proc/$$/exe
+basename $(readlink /proc/$$/exe)
+ps -o comm= $$
+grep "^$USER" /etc/passwd
+lsof -p $$
+ps -o comm= $$ | grep -v -e "\<ps\>" -e grep -e tail | tail -1
+```
+Refs.:
+- https://unix.stackexchange.com/a/388087
+- https://unix.stackexchange.com/a/72475
+- https://stackoverflow.com/a/44036169
 
 #### nix from pacman in Archlinux
 
@@ -25364,7 +29296,7 @@ It is there, at least, since 2014: https://voidlinux.org/news/2014/01/Using-the-
 
 
 ```bash
-docker run -it --rm ghcr.io/void-linux/void-glibc-full sh  -c '
+docker run -it --rm ghcr.io/void-linux/void-glibc-full sh -c '
 xbps-install -Syu;
 xbps-install -yu xbps \
 && xbps-install -Sy nix \
@@ -25454,6 +29386,8 @@ nixpkgs#hello
 ```
 
 
+
+
 ```bash
 EXPR_NIX='
 (
@@ -25505,6 +29439,109 @@ EXPECTED_SHA512='ce09cd8b0a2e0d5f9da2f921314417bf3f3904c7f11a590e7fde56c84a9ebec
 ISO_PATTERN_NAME='result/iso/nixos-22.11.20221217.0938d73-x86_64-linux.iso'
 echo "${EXPECTED_SHA512}"'  '"${ISO_PATTERN_NAME}" | sha512sum -c
 ```
+
+
+```bash
+EXPR_NIX='
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+    pkgs = import nixpkgs {};
+    iso = (import "${pkgs.path}/nixos/release-combined.nix" 
+        { 
+          nixpkgs = { revCount = (4773 + 428633); 
+            shortRev = "${nixpkgs.shortRev}"; 
+            rev = "${nixpkgs.rev}";
+          }; 
+          stableBranch = true;
+        }
+      ).nixos.iso_minimal.x86_64-linux;
+    
+  in
+    iso
+)
+'
+
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+EXPECTED_SHA256='76a3ac71257814a4603f941ad1803db80d51e08e758a8c119d4f5de26cdcb29d'
+ISO_PATTERN_NAME='/nix/store/pafjc6ycmbqvqbfw9zz52p62wjdsrf1r-nixos-minimal-22.11.4773.ea4c80b-x86_64-linux.iso/iso/nixos-minimal-22.11.4773.ea4c80b-x86_64-linux.iso'
+# sha256sum "${ISO_PATTERN_NAME}"
+echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
+
+
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+
+EXPECTED_SHA256='76a3ac71257814a4603f941ad1803db80d51e08e758a8c119d4f5de26cdcb29d'
+ISO_PATTERN_NAME='/nix/store/pafjc6ycmbqvqbfw9zz52p62wjdsrf1r-nixos-minimal-22.11.4773.ea4c80b-x86_64-linux.iso/iso/nixos-minimal-22.11.4773.ea4c80b-x86_64-linux.iso'
+echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
+```
+
+
+```bash
+EXPR_NIX='
+(
+  let
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/a5e4bbcb4780c63c79c87d29ea409abf097de3f7"); 
+    pkgs = import nixpkgs {};
+    iso = (import "${pkgs.path}/nixos/release-combined.nix" 
+            { 
+              nixpkgs = { 
+                revCount = (6510 + 551362); 
+                shortRev = "${nixpkgs.shortRev}"; 
+                rev = "${nixpkgs.rev}";
+              }; 
+              stableBranch = true;
+            }
+          ).nixos.iso_minimal.x86_64-linux;
+  in
+    iso
+)
+'
+
+nix \
+build \
+--impure \
+--print-out-paths \
+--expr \
+"$EXPR_NIX"
+
+EXPECTED_SHA256='8144d72323c03baefd83899fdeed03c1524afba1cf6f6aa0a1358d100895a919'
+ISO_PATTERN_NAME='/nix/store/l364jwr1f8v2xp03j5zvlrdhy4dqi39j-nixos-minimal-23.11.6510.a5e4bbc-x86_64-linux.iso/iso/nixos-minimal-23.11.6510.a5e4bbc-x86_64-linux.iso'
+sha256sum "${ISO_PATTERN_NAME}"
+echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
+
+
+nix \
+build \
+--impure \
+--print-build-logs \
+--print-out-paths \
+--rebuild \
+--expr \
+"$EXPR_NIX"
+
+EXPECTED_SHA256='8144d72323c03baefd83899fdeed03c1524afba1cf6f6aa0a1358d100895a919'
+ISO_PATTERN_NAME='/nix/store/l364jwr1f8v2xp03j5zvlrdhy4dqi39j-nixos-minimal-23.11.6510.a5e4bbc-x86_64-linux.iso/iso/nixos-minimal-23.11.6510.a5e4bbc-x86_64-linux.iso'
+# sha256sum "${ISO_PATTERN_NAME}"
+echo "${EXPECTED_SHA256}"'  '"${ISO_PATTERN_NAME}" | sha256sum -c
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/6747#issuecomment-1424508248
+
 
 
 ```bash
@@ -26250,6 +30287,26 @@ exportReferencesGraph
 writeReferencesToFile
 ```
 
+TODO: closureInfo
+```bash
+nix-store --load-db $out/registration
+
+nix-store --register-validity --hash-given $out/registration
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/7299 nix-build -E 'with import <nixpkgs> {}; closureInfo { rootPaths = [ (builtins.unsafeDiscardOutputDependency hello.drvPath) ]; }'
+- https://dram.page/p/bootstrapping-nix/
+
+```bash
+source for Nix function removeReferencesTo
+source for Bash function remove-references-to
+source for Nix function nukeReferences
+source for Bash function nuke-refs
+```
+Refs.:
+- https://discourse.nixos.org/t/whats-the-difference-between-removereferencesto-and-nukereferences/35075
+
+
 Why it builds even before this merge?
 https://github.com/NixOS/nixpkgs/pull/153194
 ```bash
@@ -26418,7 +30475,7 @@ TODO: organize it
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=507&end=528&version=3), start=507&end=528, "just read the Eelco Dosltra PhD thesis", by Armijn Hemel https://discourse.nixos.org/t/why-doesnt-e-g-bin-link-to-run-current-system-sw-bin/1562/4 
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=968&end=1201&version=3), start=968&end=1201, june 2005 NixOS boot session recorded by Eelco Dolstra
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=438&end=649&version=3), start=438&end=649, "Builds that were working fails after updates, debugs that was incredible hard!"
-- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1647&end=1664&version=3), start=1647&end=1664, "The only thing that I focused way to make Linux to work."
+- [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1650&end=1661&version=3), 1650&end=1661, "The only thing that I focused on was a way to get Linux to work."
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1471&end=1498&version=3), start=1471&end=1498 "9 years ans 51 weeks"
 - [The dark and murky past of NixOS (NixCon 2019)](https://www.youtube.com/embed/fsgYVi2PQr0?start=1671&end=1705&version=3), start=1671&end=1705 "Free BSD and their way to separe kernel vs user space"
 
@@ -28180,17 +32237,22 @@ https://nixos.wiki/wiki/C#Debug_symbols
 - https://nixos.org/manual/nixos/stable/index.html#sec-nixos-tests
 - https://nixos.mayflower.consulting/blog/2019/07/11/leveraging-nixos-tests-in-your-project/
 - https://gianarb.it/blog/my-workflow-with-nixos
-- https://scvalex.net/posts/58/ systemd-fu
+- https://scvalex.net/posts/58/ + https://github.com/NixOS/nixpkgs/issues/41092#issuecomment-861117955 systemd-fu
 - https://tailscale.com/blog/nixos-minecraft/ Xe Iaso
 - https://nixos.org/manual/nixpkgs/stable/#sec-postgresqlTestHook nixosTests it!
-
+- [KalmarCTF: Reproducible Pwning writeup](https://jade.fyi/blog/reproducible-pwning-writeup/)
+  + https://diogotc.com/blog/kalmarctf-writeup-reproducible-pwning/
+  + https://github.com/NixOS/nix/issues/9649#issuecomment-1865331902 
+  + https://github.com/NixOS/nix/issues/11066
+- https://github.com/nix-community/nix-index-database/commit/68ee1b7918c21f396552f5f7dfc378afbc2229d5
 https://guekka.github.io/nixos-server-1/
 https://guekka.github.io/nixos-server-2/
 
-[Test ALL the Things – On improving the nixpkgs testing story by Profpatsch (NixCon 2017)](https://www.youtube.com/watch?v=5Z7IckV6gao)
-[Rickard Nilsson - Nix(OS) modules everywhere! (NixCon 2018)](https://www.youtube.com/watch?v=I_KCd46B8Mw)
-[Nix Friday - NixOS modules](https://www.youtube.com/watch?v=5doOHe8mnMU)
-
+- [Test ALL the Things – On improving the nixpkgs testing story by Profpatsch (NixCon 2017)](https://www.youtube.com/watch?v=5Z7IckV6gao)
+- [Rickard Nilsson - Nix(OS) modules everywhere! (NixCon 2018)](https://www.youtube.com/watch?v=I_KCd46B8Mw)
+- [Nix Friday - NixOS modules](https://www.youtube.com/watch?v=5doOHe8mnMU)
+- [NixOS Secrets Management - Part 1/3](https://www.youtube.com/watch?v=6EMNHDOY-wo) sops.yaml 
+- [Using Nix in production for the last two years by Domen Kožar (NixCon 2017)](https://www.youtube.com/embed/dlRuMdm6pRU?start=1310&end=1543&version=3)
 
 
 ```bash
@@ -28240,6 +32302,8 @@ nix build github:NixOS/nixpkgs/54060e816971276da05970a983487a25810c38a7#nixosTes
 ```
 
 TODO: https://github.com/NixOS/nixpkgs/issues/217179
+
+https://github.com/NixOS/nixpkgs/pull/207083#issuecomment-1427024806
 
 
 ## Caching and Nix
@@ -28574,10 +32638,45 @@ node -v
 ## 2nix tools
 
 
-https://github.com/tadfisher/gradle2nix
+List:
+- https://nixos.wiki/wiki/Language-specific_package_helpers
+- https://github.com/tadfisher/gradle2nix
+- https://github.com/fzakaria/mvn2nix
+- https://github.com/JuliaCN/Julia2Nix.jl
+- https://github.com/nix-community/yarn2nix
+- https://github.com/Profpatsch/yarn2nix
+- [Package and deploy Python apps faster with Poetry and Nix](https://www.youtube.com/watch?v=TbIHRHy7_JM)
+- https://discourse.nixos.org/t/announcing-js2nix-scale-your-node-js-project-builds-with-nix/23111/11
+- https://www.reddit.com/r/NixOS/comments/1b6xfj9/how_to_install_npm_packages_in_the_nix_way/
+- https://github.com/svanderburg/node2nix
+- https://github.com/NixOS/nixpkgs/pull/189539
+- https://discourse.nixos.org/t/announcing-js2nix-scale-your-node-js-project-builds-with-nix/23111/10
+- it is about scala https://github.com/devinsideyou/
+- https://github.com/serokell/nix-npm-buildpackage
+- https://discourse.nixos.org/t/brew-nix-a-flake-automatically-packaging-all-homebrew-casks/44880/12
+- https://discourse.nixos.org/t/buildgradleapplication-a-simpler-approach-to-packaging-gradle-projects/46012/6
 
-https://github.com/JuliaCN/Julia2Nix.jl
-[Package and deploy Python apps faster with Poetry and Nix](https://www.youtube.com/watch?v=TbIHRHy7_JM)
+
+TODO: it is a Rust template 
+
+nixConfig
+--no-accept-flake-config
+```bash
+mkdir risczero
+cd risczero
+nix flake init -t github:cspr-rad/risc0pkgs#default
+
+git init
+git add -A
+
+nix build .#risc0package
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/7071
+- https://github.com/NixOS/nix/issues/9649#issuecomment-1865331902
+- https://kokada.dev/blog/quick-bits-where-does-nix-store-flakes-trusted-settings/
+- https://github.com/NixOS/nix/issues/9788
+
 
 
 ## mkYarnPackage
@@ -28749,14 +32848,16 @@ build \
 ```bash
 git --version 1> /dev/null 2> /dev/null || nix profile install nixpkgs#git
 
-nix flake clone gitlab:/all-dressed-programming/yarn-nix-example --dest ./yarn-nix-example \
+nix flake clone gitlab:/all-dressed-programming/yarn-nix-example \
+--dest ./yarn-nix-example \
 && cd yarn-nix-example \
 && cat << 'EOF' > src/wui.ts
 let message: string = 'Hello World';
 console.log(message);
 EOF
 
-nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)/lib/wui.js
+nix run nixpkgs#nodejs -- \
+$(nix build --no-link --print-build-logs --print-out-paths .#)/lib/wui.js
 ```
 Refs.:
 - https://all-dressed-programming.com/posts/nix-yarn/
@@ -28784,7 +32885,7 @@ Refs.:
 - https://all-dressed-programming.com/posts/nix-yarn/
 
 
-### yarn + .ts + lodash
+### yarn + lodash
 
 ```bash
 git --version 1> /dev/null 2> /dev/null || nix profile install nixpkgs#git
@@ -28798,9 +32899,16 @@ let message: string = 'Hello World';
 console.log(message + _.join([' ', 'a', 'b', 'c'], '~'));
 EOF
 
-nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)/lib/wui.js
-
+nix \
+flake \
+lock \
+--override-input nixpkgs 'github:NixOS/nixpkgs/d063c1dd113c91ab27959ba540c0d9753409edf3' \
+--override-input flake-utils 'github:numtide/flake-utils/b1d9ab70662946ef0850d488da1c9019f3a9752a' \
+&& git add . \
+&& nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)/lib/wui.js
 ```
+
+
 
 
 ### more libs
@@ -28863,14 +32971,21 @@ cat << 'EOF' > tsconfig.json
 }
 EOF
 
-git add . 
+nix \
+flake \
+lock \
+--override-input nixpkgs 'github:NixOS/nixpkgs/d063c1dd113c91ab27959ba540c0d9753409edf3' \
+--override-input flake-utils 'github:numtide/flake-utils/b1d9ab70662946ef0850d488da1c9019f3a9752a' \
+&& git add . 
 
 nix run nixpkgs#nodejs -- $(nix build --no-link --print-build-logs --print-out-paths .#)/lib/wui.js
 ```
 Refs.:
 -
 
-
+```bash
+yarn list --depth=0
+```
 
 ```bash
 npm list --prod --depth=0
@@ -28912,6 +33027,38 @@ shell \
   ]
 )'
 ```
+
+
+### mini-video-me 
+
+```bash
+nix \
+shell \
+--expr \
+'(
+  with builtins.getFlake "github:NixOS/nixpkgs/a5e4bbcb4780c63c79c87d29ea409abf097de3f7";
+  with legacyPackages.x86_64-linux;
+  [
+    (let
+      name = "mini-video-me ";
+      version = "4.0.2";
+     in
+      mkYarnPackage {
+        inherit name version;
+        src = fetchFromGitHub {
+          owner = "maykbrito";
+          repo = "mini-video-me";
+          rev = "e0ef58d8003a80ad4c1920a69f8a5453b6c70a2d";
+          # sha256 = "${lib.fakeSha256}";
+          sha256 = "sha256-Ky5uqaatyno9unjaBzx92vy0IwanJH8Ari7FLkASrKs=";
+        };
+      }
+    )
+  ]
+)'
+```
+
+
 
 ### hedgedoc
 
@@ -29623,6 +33770,7 @@ TODO: make some examples
 
 ```bash
 nix repl --expr 'import <nixpkgs> {}' <<<'busybox-sandbox-shell.meta.platforms'
+nix eval --json nixpkgs#busybox-sandbox-shell.meta.platforms
 ```
 
 ```bash
@@ -29671,10 +33819,12 @@ nix repl --expr 'import <nixpkgs> {}' <<<'builtins.attrNames rPackages' | tr ' '
 
 ```bash
 nix eval --json nixpkgs#rustPlatform.buildRustPackage.override.__functionArgs
+nix eval --json nixpkgs#opencv4.override.__functionArgs
 ```
 
 ```bash
-nix eval --json github:NixOS/nixpkgs/nixpkgs-unstable#nixosTests.kubernetes.rbac-multi-node.nodes.machine2.services.kubernetes.kubelet.containerRuntimeEndpoint
+nix eval --json \
+github:NixOS/nixpkgs/nixpkgs-unstable#nixosTests.kubernetes.rbac-multi-node.nodes.machine2.services.kubernetes.kubelet.containerRuntimeEndpoint
 ```
 
 ```bash
@@ -29755,6 +33905,14 @@ ls -al "$(nix eval nixpkgs#path)"/nixos/tests/common/acme/server/acme.test.{cert
 Refs.:
 - https://discourse.nixos.org/t/where-can-i-get-snakeoil-certificates/14628/4
 
+
+Only works for `aarch64-linux`:
+```bash
+ls -alh $(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsCross.aarch64-multiplatform.ubootLibreTechCC)/u-boot.gxl.sd.bin
+```
+Refs.:
+- https://hub.libre.computer/t/nixos-for-aml-s905x-cc-le-potato/3273/4
+
 > Note that here it is used `'<nixpkgs/nixos>'`
 ```bash
 nix repl --expr 'import <nixpkgs/nixos> {}' <<<'builtins.attrNames config.security.acme' | tr ' ' '\n'
@@ -29762,6 +33920,10 @@ nix repl --expr 'import <nixpkgs/nixos> {}' <<<'builtins.attrNames config.securi
 Refs.:
 - https://jorel.dev/NixOS4Noobs/options.html#method-3-using-the-nix-repl
 
+
+```bash
+ls -alh $(nix build --no-link --print-out-paths nixpkgs#sound-theme-freedesktop)/share/sounds/freedesktop/stereo
+```
 
 #### The nix-locate
 
@@ -29782,6 +33944,18 @@ nix-locate -w 'lib/libyuv.a'
 Refs.:
 - [Connor Brewster - The Road to Nix at Replit (SoN2022 - public lecture series)](https://www.youtube.com/embed/jhH2LWGUHhY?start=1290&end=1335&version=3), start=1290&end=1335
 - [The Nix Hour #8](https://www.youtube.com/embed/cfCqauM9ztM?start=2685&end=2757&version=3), start=2685&end=2757
+
+
+TODO: How to find ping?
+```bash
+toybox
+unixtools.ping
+iputils
+telnet
+busybox
+```
+Res.:
+- https://ask.replit.com/t/ping-command-broken-in-nix-repls/7169
 
 
 ##### A really hard to find package: pythonManylinuxPackages and its manylinux variants
@@ -30199,6 +34373,13 @@ TODO:
 https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-run.html#apps
 https://github.com/DeterminateSystems/nix-installer/tree/9c915b3f6aa7e2b0d19027052e010d4c03824102#installation-differences
 
+
+> I was informed in the issue on nix-direnv (nix-community/nix-direnv#336) 
+> that the bash-prompt isn't applied in nix print-dev-env, only nix develop, 
+> so apparently this is expected behavior.
+https://github.com/NixOS/nix/issues/8279#issuecomment-1533117825
+
+
 --bash-prompt value
 
 Set the bash-prompt setting.
@@ -30386,7 +34567,255 @@ EOF
 ```
 
 
+#### podman rootless
+
+
+TODO: have not yet watched it
+[Root is less: container networks get in shape with pasta - DevConf.CZ 2023](https://www.youtube.com/watch?v=tlxDmUPc4WY)
+
+
+```bash
+sudo \
+sed \
+-i \
+'s/cgroup_hierarchy=0/cgroup_hierarchy=1/' \
+/etc/default/grub \
+&& sudo update-grub
+
+sudo \
+sed \
+-i \
+'/net.ipv4.ip_forward = 1/s/^#*\s*//g' \
+/etc/sysctl.d/99-sysctl.conf \
+&& sudo sysctl --system
+
+
+sudo \
+apt-get \
+update \
+&& sudo \
+apt-get \
+install \
+--assume-yes \
+--no-install-recommends \
+--no-install-suggests \
+--quiet \
+netavark \
+podman \
+uidmap
+
+
+git clone git://passt.top/passt \
+&& cd passt \
+&& git checkout 954589b64ba55e0d85be39dc8d7b1260f0ea6f1a \
+&& make \
+&& sudo make install \
+&& cd .. \
+&& rm -frv passt 
+
+
+sudo reboot
+
+podman images
+podman run -it alpine sh -cl 'ping -c 3 8.8.8.8'
+```
+Refs.:
+- https://askubuntu.com/a/1449506
+- https://serverfault.com/a/644183
+- https://github.com/containers/podman/issues/13412#issuecomment-1058169000
+- https://github.com/containers/podman/issues/9049#issuecomment-764735996
+- https://github.com/containers/podman/issues/22015#issuecomment-1992229376
+- https://manpages.debian.org/experimental/slirp4netns/slirp4netns.1.en.html
+- https://fossies.org/linux/podman/troubleshooting.md#5_%20rootless_containers_cannot_ping_hosts
+- https://discuss.linuxcontainers.org/t/help-podman-4-6-0-has-better-performance-than-lxc-5-0-3/17752
+- https://fossies.org/linux/podman/troubleshooting.md#5_%20rootless_containers_cannot_ping_hosts
+- https://discuss.linuxcontainers.org/t/help-podman-4-6-0-has-better-performance-than-lxc-5-0-3/17752
+- https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1891020/comments/3
+- https://github.com/containers/podman/blob/main/troubleshooting.md#solution-3
+- https://github.com/containers/podman/issues/16193#issuecomment-1280062616
+- https://github.com/containers/podman/issues/22015#issuecomment-1992445094
+- https://github.com/containers/podman/issues/22168#issuecomment-2023902161
+- https://unix.stackexchange.com/a/760030
+- TODO: test this bug https://github.com/containers/common/issues/723#issuecomment-897395506
+- Was it a bug? https://github.com/containers/podman/issues/14462#issuecomment-1148653585
+- TODO: post this on there https://github.com/containers/podman.io/issues/285
+
+Did not need those: aardvark-dns, slirp4netns 
+
+```bash
+#echo 'net.ipv4.ping_group_range = 0   2147483647' \
+#| sudo tee -a /etc/sysctl.d/99-sysctl.conf \
+#&& sudo sysctl --system
+#sudo su -lc sh -c '
+#cat << EOF >> /etc/modules-load.d/iptables.conf
+#ip6_tables
+#ip6table_nat
+#ip_tables
+#iptable_nat
+#EOF
+#'
+#sudo sysctl -w "net.ipv4.ping_group_range=0 2147483647"
+#sudo sh -c "echo 0   2147483647 > /proc/sys/net/ipv4/ping_group_range"
+```
+
+```bash
+grep 'net.ipv4.ip_forward = 1' /etc/sysctl.d/99-sysctl.conf
+grep '2147483647' /proc/sys/net/ipv4/ping_group_range
+grep 'net.ipv4.ping_group_range = 0' /etc/sysctl.d/99-sysctl.conf
+
+lsmod | grep ip6_tables
+lsmod | grep ip6table_nat
+lsmod | grep ip_tables
+lsmod | grep iptable_nat
+
+sysctl net.ipv4.ping_group_range | grep 2147483647
+
+cat /proc/version_signature
+```
+
+
+--security-opt="label=disable" \
+```bash
+podman info --format {{.Host.NetworkBackend}}
+podman info --format {{.Host.CgroupVersion}}
+podman info --format {{.Host.CgroupControllers}}
+
+podman unshare cat /proc/self/uid_map /proc/self/gid_map
+podman network ls
+podman run -it --network=slirp4netns alpine sh -cl 'ping -c 3 8.8.8.8'
+podman unshare --rootless-netns true
+podman unshare --rootless-netns ip addr
+```
+Refs.:
+- https://github.com/containers/podman/issues/22168#issuecomment-2023087442
+- https://docs.podman.io/en/latest/markdown/podman-unshare.1.html#example
+
+```bash
+podman ps --size --sort size
+```
+
+```bash
+cat /sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/cgroup.controllers
+cat /proc/self/cgroup 
+```
+
+TODO: where is the official list with all of those?
+```bash
+cpuset
+cpu
+io
+memory
+hugetlb
+pids
+rdma
+misc
+```
+Refs.:
+- https://github.com/containers/podman/discussions/20386#discussioncomment-7723512
+- https://github.com/containers/podman/discussions/21901#discussioncomment-8642602
+
+```bash
+cat > /etc/systemd/system/user@.service.d/delegate.conf << EOF
+[Service]
+Delegate=cpu cpuset io memory pids
+EOF
+```
+Refs.:
+- https://github.com/containers/podman/issues/16412#issuecomment-1307615818
+
+TODO: understand this output
+```bash
+cat /proc/self/mountinfo 
+```
+
+
+
+#### podman rootless from Nix
+
+```bash
+sudo \
+sed \
+-i \
+'s/cgroup_hierarchy=0/cgroup_hierarchy=1/' \
+/etc/default/grub \
+&& sudo update-grub
+
+sudo \
+sed \
+-i \
+'/net.ipv4.ip_forward = 1/s/^#*\s*//g' \
+/etc/sysctl.d/99-sysctl.conf \
+&& sudo sysctl --system
+
+
+sudo \
+apt-get \
+update \
+&& sudo \
+apt-get \
+install \
+--assume-yes \
+--no-install-recommends \
+--no-install-suggests \
+--quiet \
+uidmap
+
+
+sudo sh -c 'mkdir -pv -m 0777 /nix/var/nix && chown -Rv '"$(id -nu)":"$(id -gn)"' /nix'
+
+NIX_RELEASE_VERSION=2.21.2 \
+&& curl -L https://releases.nixos.org/nix/nix-"${NIX_RELEASE_VERSION}"/install | sh -s -- --no-daemon \
+&& . "$HOME"/.nix-profile/etc/profile.d/nix.sh \
+&& export NIX_CONFIG='extra-experimental-features = nix-command flakes' \
+&& nix -vv registry pin nixpkgs github:NixOS/nixpkgs/f9be31de1b7b5f3738f23a0c04a20bc524cab30c
+
+nix \
+--extra-experimental-features nix-command \
+--extra-experimental-features flakes \
+profile \
+install \
+github:NixOS/nixpkgs/f9be31de1b7b5f3738f23a0c04a20bc524cab30c#podman
+
+
+mkdir -p ~/.config/containers
+cat << 'EOF' >> ~/.config/containers/policy.json
+{
+    "default": [
+        {
+            "type": "insecureAcceptAnything"
+        }
+    ],
+    "transports":
+        {
+            "docker-daemon":
+                {
+                    "": [{"type":"insecureAcceptAnything"}]
+                }
+        }
+}
+EOF
+
+mkdir -p ~/.config/containers
+cat << 'EOF' >> ~/.config/containers/registries.conf
+[registries.search]
+registries = ['docker.io']
+[registries.block]
+registries = []
+EOF
+
+
+sudo reboot
+
+podman images
+podman run -it alpine sh -cl 'ping -c 3 8.8.8.8'
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/pull/301553
+
+
 #### podman rootfull
+
+
 
 ```bash
 sudo groupadd podman; \
@@ -30421,6 +34850,7 @@ A collection of supposed useful patters.
 TODO: https://t.me/nixosbrasil/76003
 
 About nix language + flakes + templates:
+- TODO: "examples that 'JustWork', locks should be included" https://github.com/NixOS/templates/pull/72#issuecomment-1881498651
 - https://chrishayward.xyz/dotfiles/
 - https://github.com/Misterio77/nix-starter-configs
 - https://serokell.io/blog/deploy-rs https://github.com/serokell/deploy-rs https://discourse.nixos.org/t/using-deploy-rs-from-nixpkgs/22338
@@ -30434,6 +34864,29 @@ About nix language + flakes + templates:
 - https://zero-to-nix.com/concepts/flakes#templates
 - [Nix Flake for Scala - a Nix Introduction, Overview and Demo](https://www.youtube.com/watch?v=HnoP7JZn2MQ)
 - [How to get started with Nix as a Rust developer](https://www.youtube.com/watch?v=tv9s4jhdUpU) cargo2nix
+
+
+```bash
+nix flake show github:NixOS/templates
+```
+
+```bash
+nix flake show github:serokell/templates
+```
+
+```bash
+nix flake show github:/Misterio77/nix-starter-configs
+```
+
+```bash
+nix flake show github:lukebfox/nix-flake-templates
+```
+
+```bash
+nix flake show github:LovelaceAcademy/nix-templates
+```
+
+
 
 
 TODO: https://github.com/NixOS/nixpkgs/blob/f91ee3065de91a3531329a674a45ddcb3467a650/pkgs/top-level/all-packages.nix#L14-L27
@@ -30480,6 +34933,16 @@ Text:
 
 
 The nix language fu/nix-fu:
+- https://github.com/NixOS/nix/issues/6091#issuecomment-1037603171 + https://github.com/NixOS/nix/pull/7010#issuecomment-1240834717 + https://github.com/NixOS/nix/issues/6091#issuecomment-1037219994
+- https://nixos.org/manual/nix/stable/language/
+- https://learnxinyminutes.com/docs/nix/
+- https://git.sr.ht/~andir/nixpkgs/commit/d9a7d03da8c58aa863911506ae3153729f8931da
+- https://nixos.wiki/wiki/Nix_by_example
+- https://trofi.github.io/posts/240-nixpkgs-bootstrap-intro.html
+- https://dram.page/p/bootstrapping-nix/
+- https://bnikolic.co.uk/nix-cheatsheet.html
+- https://discourse.nixos.org/t/nix-interpreter-and-nix-language-quirks/25117/4
+- https://trofi.github.io/posts/278-trying-out-flakes.html
 - https://github.com/orgs/nix-community/repositories?type=all&page=2
 - https://nixcloud.io/tour/?id=introduction/nix
 - https://nixlang.wiki/en/nix/language/nix-language-for-js-developers
@@ -30507,7 +34970,45 @@ The nix language fu/nix-fu:
 - https://github.com/NixOS/nixpkgs/issues/261820#issuecomment-1775502830
 - https://br0g.0brg.net/nix.html
 - https://www.socallinuxexpo.org/scale/21x/nixcon-us
+- https://fictionbecomesfact.com/nixos-cockpit-podman
+- https://github.com/nix-community/home-manager/pull/5205/files
+- https://github.com/whazor/stupid-auth/blob/3843362135c91d19b21e22bea3dd34fe6b14f2b2/flake.nix#L207-L212
+- about java https://github.com/NixOS/nix/issues/6379
+- (pkgs.lowPrio config.boot.kernelPackages.perf)  https://github.com/TUM-DSE/doctor-cluster-config/blob/fbc549f574c4d3b0031e94996814e135fe04822a/modules/tracing.nix#L19
+- https://github.com/NixOS/nixpkgs/blob/30439d93eb8b19861ccbe3e581abf97bdc91b093/pkgs/applications/virtualization/podman/default.nix#L122-L135
 
+
+
+TODO: revise it!
+```bash
+nix \
+shell \
+--ignore-environment \
+--max-jobs 0 \
+--override-flake \
+nixpkgs \
+github:NixOS/nixpkgs/219951b495fc2eac67b1456824cc1ec1fd2ee659 \
+nixpkgs#bash \
+nixpkgs#brotli \
+nixpkgs#coreutils \
+nixpkgs#curl \
+nixpkgs#jq \
+--command \
+sh <<'COMMANDS'
+function parse_unstable_json() {
+    local url="https://channels.nixos.org/nixos-unstable/$1.json.br"
+    echo $(curl -L "$url" | brotli --decompress --stdout | jq "$2")
+}
+
+pkg_count=$(parse_unstable_json "packages" ".packages | length")
+opt_count=$(parse_unstable_json "options" "length")
+
+echo "{ 'packages': $pkg_count, 'options': $opt_count }" | tr "'" '"'
+COMMANDS
+```
+Refs.:
+- https://github.com/NixOS/nixos-search/issues/701#issuecomment-2072748730
+- https://unix.stackexchange.com/a/550160
 
 
 ```nix
@@ -30679,6 +35180,7 @@ eval \
 '
 ```
 
+
 ```bash
 nix \
 eval \
@@ -30709,6 +35211,37 @@ eval \
   )
 '
 ```
+
+
+```bash
+builtins.tail (builtins.map (x: (builtins.tryEval (builtins.hasAttr "meta.available" x)).success) (builtins.attrValues python3Packages))
+
+builtins.tail (builtins.map (x: (if x == null then false else true)) (builtins.attrValues python3Packages))
+
+
+try = expr: let yielded = builtins.tryEval expr; in if yielded.success then yielded.value else false
+
+lib.mapAttrs (k: v:
+    let name = (builtins.tryEval v.name or "");
+    out = (builtins.tryEval v.outPath or "");
+    in {
+      name = name.value;
+      out  = out.value;
+    }
+  ) pkgs.python3Packages
+```
+Refs.:
+- https://github.com/NixOS/cabal2nix/issues/130
+- https://discourse.nixos.org/t/filter-out-broken-packages-from-list-of-packages/14134
+- https://discourse.nixos.org/t/should-we-conditionally-disable-dependees-of-conditionally-disabled-python-packages/8988
+- https://fzakaria.com/2022/01/06/computing-all-output-paths-for-every-attribute-in-nixpkgs.html
+- https://discourse.nixos.org/t/how-to-check-if-a-derivation-builds-in-nix/34357/2
+- https://github.com/NixOS/nix/issues/356
+- https://www.tweag.io/blog/2023-10-26-nixtract-0-1-0/
+- https://discourse.nixos.org/t/broken-packages-what-do-we-do-or-what-can-we-do/32160/8
+- https://discourse.nixos.org/t/creating-a-derivation-that-depends-on-all-non-broken-haskell-packages/30838/11
+
+
 
 ```bash
 nix eval --json --apply builtins.attrNames github:NixOS/nixpkgs/nixos-23.11#python3Packages | jq length
@@ -30802,6 +35335,7 @@ build \
 --expr \
 "$EXPR"
 ```
+
 
 
 ```bash
@@ -31176,6 +35710,8 @@ Refs.:
 - https://www.quora.com/How-can-the-function-void-function-void-f-declare-another-function-as-a-parameter
 
 
+
+TODO: C++ examples [Lightning Talk: How to Win at Coding Interviews - David Stone - CppCon 2022](https://www.youtube.com/watch?v=y872bCqQ_P0)
 ```bash
 EXPR=$(cat <<-'EOF'
 (
@@ -32102,6 +36638,9 @@ in
 TODO: jq-fu
 https://news.ycombinator.com/item?id=20246727
 
+TODO:
+https://stackoverflow.com/a/59008330
+https://unix.stackexchange.com/a/212065 it needs nixosTests!
 
 
 ```bash
@@ -32438,6 +36977,11 @@ Refs.:
 - https://stackoverflow.com/questions/50110043/force-gnu-make-to-use-a-specific-shell#comment87271405_50110280
 
 
+```bash
+cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 5
+```
+
+
 ##### python-fu
 
 
@@ -32754,9 +37298,34 @@ https://github.com/NixOS/rfcs/pull/153#issuecomment-1611222752
 https://github.com/NixOS/rfcs/pull/153#discussion_r1232100363
 https://github.com/NixOS/rfcs/pull/153#issuecomment-1595856177
 
+```bash
+nix.channel.enable = false;
+nix.settings.nix-path
+```
+Refs.:
+- https://github.com/NixOS/nix/issues/8890#issuecomment-1705471515
+- https://github.com/NixOS/nix/issues/8890#issuecomment-1703988345
+- https://github.com/NixOS/nix/issues/8890#issuecomment-1703988345
+
+
+```nix
+  nix.registry = {
+    nixpkgs.to = {
+      type = "path";
+      path = pkgs.path;
+      narHash = builtins.readFile
+          (pkgs.runCommandLocal "get-nixpkgs-hash"
+            { nativeBuildInputs = [ pkgs.nix ]; }
+            "nix-hash --type sha256 --sri ${pkgs.path} > $out");
+    };
+  };
+```
+Refs.:
+- https://wiki.nixos.org/wiki/Flakes#Pinning_the_registry_on_NixOS
 
 ### AUTOMATIZAMOS A EDIÇÃO DO REELS DO INSTAGRAM [feat. Mayk Brito]
 
+> Did this as an execise.
 
 [AUTOMATIZAMOS A EDIÇÃO DO REELS DO INSTAGRAM [feat. Mayk Brito]](https://www.youtube.com/watch?v=i6EcAV0yhqg)
 
@@ -33040,6 +37609,806 @@ Refs.:
 - https://github.com/NixOS/nixpkgs/issues/28910
 
 
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Creates a XeLaTeX test for font
+  fontspecTest = pkgs.writeTextDir "fontspec-test.tex" ''
+    \documentclass{minimal}
+    \usepackage{fontspec}
+    \setmainfont{Latin Modern Sans}
+    \begin{document}
+    Hello
+    \end{document}
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-basic xetex fontspec euenc;
+  };
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "xelatex-fontspec-test";
+          src = fontspecTest;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            xelatex fontspec-test.tex 
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v fontspec-test.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/fontspec-test.pdf
+```
+Refs.:
+- https://github.com/NixOS/nixpkgs/issues/24485#issuecomment-290758573
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Creates a XeLaTeX test for font
+  fontspecTest = pkgs.writeTextDir "fontspec-test.tex" ''
+        \documentclass{article}
+        \usepackage{fontspec}
+        \usepackage{unicode-math}
+        
+        \setmainfont{XITS}
+        [    Extension = .otf,
+           UprightFont = *-Regular,
+              BoldFont = *-Bold,
+            ItalicFont = *-Italic,
+        BoldItalicFont = *-BoldItalic,
+        ]
+        \setmathfont{XITSMath-Regular}
+        [    
+              Extension = .otf,
+              BoldFont = XITSMath-Bold,
+        ]
+        
+        \begin{document}
+        Text $x+y=\sqrt{z}$ \boldmath $x+y=\sqrt{z}$
+        \end{document}
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "xelatex-fontspec-test";
+          src = fontspecTest;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            xelatex fontspec-test.tex 
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v fontspec-test.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/fontspec-test.pdf
+```
+Refs.:
+- https://tex.stackexchange.com/a/43680
+
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Creates a XeLaTeX test for font
+  fontspecTest = pkgs.writeTextDir "fontspec-test.tex" ''
+    \documentclass{beamer}
+    
+    \usetheme{Madrid}
+    \usepackage{tikz}
+    \usetikzlibrary{positioning}
+    \setbeamercovered{dynamic}
+    \usetikzlibrary{shapes,arrows, positioning, calc}  
+    \usetikzlibrary{overlay-beamer-styles}
+    
+    
+    \begin{document}
+    
+    \newcommand{\myani}{1-}
+    
+    \begin{frame}[label=foo]
+    \transduration<\myani>{1}
+    \begin{center}
+    \begin{tikzpicture}[auto]
+        \draw(-2.7,1.5) node[sloped,above] {Start A};
+        
+        \draw[->,thick] (-2,0.5)  -- node[below] {T} (4,0.5) ;
+        
+        \draw[visible on=<1>,gray,-,thick,dashed] (-1.7,1.7)  -- (3.7,1.7);
+        \draw[visible on=<1>] (1,1.8) node[sloped,above] {text};
+        
+        \draw[visible on=<2>,gray,-,thick,dashed] (-1.7,1.7)  -- (-0.3,1.7);
+        \draw[visible on=<2>,gray,-,thick,dashed] (2.3,1.7)  -- (3.7,1.7); 
+        \draw[visible on=<2>](3,2.5) node[sloped,above] {text};
+        \draw[visible on=<2>](1,1.68) node[sloped,above] {Point};
+        \draw[visible on=<2>](1,1.18) node[sloped,above] {C};
+        
+        \draw(4.7,1.90) node[sloped,above] {Point};
+        \draw(4.7,1.45) node[sloped,above] {B};
+    \end{tikzpicture}
+    \end{center}
+    \end{frame}
+    
+    \foreach \x in {0,...,10}{
+    \againframe{foo}
+    }
+    
+    \renewcommand{\myani}{1}
+    \againframe{foo}
+    
+    \begin{frame}
+    content
+    \end{frame}
+    \end{document}
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "xelatex-fontspec-test";
+          src = fontspecTest;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            xelatex fontspec-test.tex 
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v fontspec-test.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/fontspec-test.pdf
+```
+Refs.:
+- https://stackoverflow.com/q/67824609
+
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Creates a XeLaTeX test for font
+  pendulumAnimation = pkgs.writeTextDir "pendulum-animation.tex" ''
+    \documentclass[border=10pt]{standalone}
+    \usepackage{animate}
+    \usepackage{tikz}
+    
+    \pgfmathsetmacro{\pendulumswing}{40}
+    \pgfmathsetmacro{\pendulumlength}{5}
+    
+    \begin{document}
+        \begin{animateinline}[controls, palindrome]{45}
+            \multiframe{45}{rt=0+4}{%
+                \begin{tikzpicture}[line width=1pt]
+                    \draw[dashed] (0:0) -- (90:{-\pendulumlength}) coordinate (o);
+                    \draw[dashed] ({90-\pendulumswing}:{-\pendulumlength}) coordinate (a)
+                        arc[start angle={90-\pendulumswing}, end angle={90+\pendulumswing}, radius={-\pendulumlength}] coordinate (b);
+                    \draw[dashed, red] (a) -- (a |- o) coordinate (c) node[below] {$-x_m$};
+                    \draw[dashed, red] (b) -- (b |- o) coordinate (d) node[below] {$x_m$};
+                    \draw[-stealth, red] ([xshift=-1cm]c) -- ([xshift=1cm]d);
+                    
+                    % variable \rt goes from 0 to 180
+                    % cos(\rt) returns a value between -1 and 1 following a (co)sine curve
+                    \pgfmathsetmacro{\pendulumangle}{cos(\rt)*\pendulumswing}
+                    \draw (0:0) -- ({90+\pendulumangle}:{-\pendulumlength})
+                          node[circle, fill=blue, text=white] {$\mathbf{m}$};
+                \end{tikzpicture}%
+            }%
+        \end{animateinline}
+    \end{document}
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "pendulum-animation";
+          src = pendulumAnimation;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            xelatex pendulum-animation.tex 
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v pendulum-animation.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+```
+Refs.:
+- https://tex.stackexchange.com/a/660779
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/a5e4bbcb4780c63c79c87d29ea409abf097de3f7"); 
+   pkgs = import nixpkgs {};
+
+  # Creates a XeLaTeX test for font
+  orbit = pkgs.writeTextDir "orbit.tex" ''
+    \documentclass[border=10pt]{standalone}
+    \usepackage{animate}
+    \usepackage{tikz}
+
+    \usetikzlibrary{animations} % LaTeX and plain TeX
+    \usetikzlibrary[animations] % ConTeXt
+    
+    \begin{document}
+        \begin{tikzpicture}[
+            animate/orbit/.style 2 args = {
+                myself:shift = {
+                  along = {
+                    (0,0) circle [radius=#1]
+                  } sloped in #2s/10,
+                  repeats }} ]
+        
+         \node :color = {0s = "orange",
+                         2s = "red",
+                         4s = "orange",
+                         repeats}
+               {Sun};
+        
+          \begin{scope}[animate={orbit={2.5cm}{365}}]
+            \node {Earth};
+            \node [animate={orbit={1cm}{28}}] {Moon};
+          \end{scope}
+        
+          \useasboundingbox (-3.8,-3.8) (3.8,3.8);
+        \end{tikzpicture}
+    \end{document}
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "orbit";
+          src = orbit;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            xelatex orbit.tex 
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v orbit.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+```
+Refs.:
+- 
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  pyScript = pkgs.writeTextDir "pyScript.py" ''
+    """
+    =============
+    PGF texsystem
+    =============
+    """
+    
+    import matplotlib.pyplot as plt
+    
+    plt.rcParams.update({
+        "pgf.texsystem": "xelatex",
+        "pgf.preamble": "\n".join([
+             r"\usepackage[utf8x]{inputenc}",
+             r"\usepackage[T1]{fontenc}",
+             r"\usepackage{cmbright}",
+        ]),
+    })
+    
+    fig, ax = plt.subplots(figsize=(4.5, 2.5))
+    
+    ax.plot(range(5))
+    
+    ax.text(-0.15, 3.80, "ABCDEFGHIJKL serif", family="serif")
+    ax.text(-0.15, 3.30, "ABCDEFGHIJKL monospace", family="monospace")
+    ax.text(-0.15, 2.9, "ABCDEFGHIJKL sans-serif", family="sans-serif")
+    ax.text(-0.15, 2.4, "ABCDEFGHIJKL comic sans", family="Comic Sans MS")
+    ax.set_xlabel(r"µ is not $\mu$")
+    
+    fig.tight_layout(pad=.5)
+    plt.savefig('figure.pdf')
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+
+  customPython3 = pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ numpy matplotlib ]);
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "matplotlib-xelatex-test";
+          src = pyScript;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            ${customPython3}/bin/python pyScript.py
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v figure.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+okular \
+$(
+    nix \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --impure \
+    --expr \
+    "$EXPR"
+)/figure.pdf
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/figure.pdf
+```
+Refs.:
+- https://matplotlib.org/stable/users/explain/text/pgf.html
+- https://matplotlib.org/stable/users/explain/text/mathtext.html
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+# 
+  pyScript = pkgs.writeTextDir "pyScript.py" ''
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    plt.rcParams['text.usetex'] = True
+    
+    
+    t = np.linspace(0.0, 1.0, 100)
+    s = np.cos(4 * np.pi * t) + 2
+    
+    fig, ax = plt.subplots(figsize=(6, 4), tight_layout=True)
+    ax.plot(t, s)
+    
+    ax.set_xlabel(r'\textbf{time (s)}')
+    ax.set_ylabel('\\textit{Velocity (\N{DEGREE SIGN}/sec)}', fontsize=16)
+    ax.set_title(r'\TeX\ is Number $\displaystyle\sum_{n=1}^\infty'
+                 r'\frac{-e^{i\pi}}{2^n}$!', fontsize=16, color='r')
+    plt.savefig('tex_demo1.pdf')
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+
+  customPython3 = pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ numpy matplotlib ]);
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "matplotlib-xelatex-test";
+          src = pyScript;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            ${customPython3}/bin/python pyScript.py
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v tex_demo1.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+okular \
+$(
+    nix \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --impure \
+    --expr \
+    "$EXPR"
+)/tex_demo1.pdf
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/figure.pdf
+```
+Refs.:
+- https://matplotlib.org/stable/gallery/text_labels_and_annotations/tex_demo.html
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+# 
+  pyScript = pkgs.writeTextDir "pyScript.py" ''
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    plt.rcParams['text.usetex'] = True
+    
+    fig, ax = plt.subplots()
+    # interface tracking profiles
+    N = 500
+    delta = 0.6
+    X = np.linspace(-1, 1, N)
+    ax.plot(X, (1 - np.tanh(4 * X / delta)) / 2,    # phase field tanh profiles
+            X, (1.4 + np.tanh(4 * X / delta)) / 4, "C2",  # composition profile
+            X, X < 0, "k--")                        # sharp interface
+    
+    # legend
+    ax.legend(("phase field", "level set", "sharp interface"),
+              shadow=True, loc=(0.01, 0.48), handlelength=1.5, fontsize=16)
+    
+    # the arrow
+    ax.annotate("", xy=(-delta / 2., 0.1), xytext=(delta / 2., 0.1),
+                arrowprops=dict(arrowstyle="<->", connectionstyle="arc3"))
+    ax.text(0, 0.1, r"$\delta$",
+            color="black", fontsize=24,
+            horizontalalignment="center", verticalalignment="center",
+            bbox=dict(boxstyle="round", fc="white", ec="black", pad=0.2))
+    
+    # Use tex in labels
+    ax.set_xticks([-1, 0, 1])
+    ax.set_xticklabels(["$-1$", r"$\pm 0$", "$+1$"], color="k", size=20)
+    
+    # Left Y-axis labels, combine math mode and text mode
+    ax.set_ylabel(r"\bf{phase field} $\phi$", color="C0", fontsize=20)
+    ax.set_yticks([0, 0.5, 1])
+    ax.set_yticklabels([r"\bf{0}", r"\bf{.5}", r"\bf{1}"], color="k", size=20)
+    
+    # Right Y-axis labels
+    ax.text(1.02, 0.5, r"\bf{level set} $\phi$",
+            color="C2", fontsize=20, rotation=90,
+            horizontalalignment="left", verticalalignment="center",
+            clip_on=False, transform=ax.transAxes)
+    
+    # Use multiline environment inside a `text`.
+    # level set equations
+    eq1 = (r"\begin{eqnarray*}"
+           r"|\nabla\phi| &=& 1,\\"
+           r"\frac{\partial \phi}{\partial t} + U|\nabla \phi| &=& 0 "
+           r"\end{eqnarray*}")
+    ax.text(1, 0.9, eq1, color="C2", fontsize=18,
+            horizontalalignment="right", verticalalignment="top")
+    
+    # phase field equations
+    eq2 = (r"\begin{eqnarray*}"
+           r"\mathcal{F} &=& \int f\left( \phi, c \right) dV, \\ "
+           r"\frac{ \partial \phi } { \partial t } &=& -M_{ \phi } "
+           r"\frac{ \delta \mathcal{F} } { \delta \phi }"
+           r"\end{eqnarray*}")
+    ax.text(0.18, 0.18, eq2, color="C0", fontsize=16)
+    
+    ax.text(-1, .30, r"gamma: $\gamma$", color="r", fontsize=20)
+    ax.text(-1, .18, r"Omega: $\Omega$", color="b", fontsize=20)
+
+    plt.savefig('tex_demo2.pdf')
+  '';
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+
+  customPython3 = pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ numpy matplotlib ]);
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "matplotlib-xelatex-test";
+          src = pyScript;
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            ${customPython3}/bin/python pyScript.py
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v tex_demo2.pdf $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+okular \
+$(
+    nix \
+    build \
+    --no-link \
+    --print-build-logs \
+    --print-out-paths \
+    --impure \
+    --expr \
+    "$EXPR"
+)/tex_demo2.pdf
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/tex_demo2.pdf
+```
+Refs.:
+- https://matplotlib.org/stable/gallery/text_labels_and_annotations/tex_demo.html
+
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+  pkgs = import nixpkgs {};
+
+  tex = pkgs.texlive.combine {
+      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
+  };
+
+  customPython3 = pkgs.python3.withPackages (pyPkgs: with pyPkgs; [ scipy numpy matplotlib ]);
+in 
+  pkgs.stdenvNoCC.mkDerivation {
+          name = "matplotlib-xelatex-test";
+          src = pkgs.fetchFromGitHub {
+              hash = "sha256-duHgk7n7cUStZ+p5dzfKD/96RGKbKkKBnWlZh9Wfe7c=";
+              rev = "03ff45e8413969aaf12fd290030c14d8c05c07c1";
+              owner = "jturner314";
+              repo = "engineering-equations";
+              name = "engineering-equations";
+            };
+          buildInputs = [ pkgs.coreutils tex ];
+          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
+
+          buildPhase = ''
+            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
+            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
+
+            ${customPython3}/bin/python moody_diagram.py
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -v moody-diagram.eps $out/
+          '';
+          dontPatchELF = true;
+          dontFixup = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+
+
+file $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/moody-diagram.pdf
+```
+Refs.:
+- https://github.com/jturner314/engineering-equations
 
 
 ```bash
@@ -34332,6 +39701,10 @@ TODO:
 - https://pspdfkit.com/blog/2023/how-to-use-tesseract-ocr-in-python/
 - https://rosettacode.org/wiki/Rosetta_Code
 - https://www.youtube.com/@MrPSolver/playlists
+- [Losing your Loops Fast Numerical Computing with NumPy](https://www.youtube.com/watch?v=EEUXKG97YRw&t=240s)
+- [Compiled Python is FAST](https://www.youtube.com/watch?v=umLZphwA-dw) uses decorator @jit
+- https://discourse.nixos.org/t/why-is-the-nix-compiled-python-slower/18717/17
+- https://discuss.python.org/t/static-python-build-errors/45919/10
 
 TODO: factorial and gamma in Rust
 https://stackoverflow.com/questions/59206653/how-to-calculate-21-factorial-in-rust/69534350#69534350
@@ -34356,6 +39729,10 @@ Even deeper: Automatic Code Generation with SymPy
 https://www.sympy.org/scipy-2017-codegen-tutorial/
 [Automatic Code Generation with SymPy | SciPy 2017 Tutorial | Jason, Aaron, Björn & Kenneth](https://www.youtube.com/watch?v=5jzIVp6bTy0)
 
+Related: 
+[!!Con 2019 - You Won’t Believe This One Weird CPU Instruction! by Vaibhav Sagar](https://www.youtube.com/watch?v=bLFqLfz2Fmc)
+
+[Solving the Schrödinger Equation with Julia | Letícia Madureira | JuliaCon 2023 ](https://www.youtube.com/watch?v=eNKr2nRlE9A)
 
 ### nix flakes
 
@@ -34367,6 +39744,8 @@ https://www.sympy.org/scipy-2017-codegen-tutorial/
 
 [Rok Garbas – The NixOS hype and where to go from here (2023 Nix Developer Dialogues)](https://www.youtube.com/embed/C2mqmVlhihU?start=1701&end=1974&version=3), start=1701&end=1974
 
+
+
 ### DX and development setup 
 
 
@@ -34377,6 +39756,8 @@ https://www.sympy.org/scipy-2017-codegen-tutorial/
 > I wanna know how can I onboard a new developer in under an week?!
 > [A sack full of angry snakes: Taming your python dependencies with Nix](https://www.youtube.com/embed/8ng4v1g5q7s?start=628&end=655&version=3), start=628&end=655
 
+
+[How to build your first Devcontainer](https://www.youtube.com/embed/C_5tDWsWSj0?start=178&end=192&version=3), start=178&end=192
 
 > Take Flutter, for example: Our research shows that developers spend an average of 6 hours 
 > setting up their dev environment before they write the first lines of code.
@@ -34432,6 +39813,69 @@ Refs.:
 - https://crates.io/crates/nix-installer/0.15.1
 
 
+
+```bash
+curl \
+--proto '=https' \
+--tlsv1.2 \
+-sSf \
+-L \
+https://github.com/DeterminateSystems/nix-installer/releases/download/v0.17.1/nix-installer-x86_64-linux \
+--output nix-installer \
+&& chmod -v +x nix-installer \
+&& ./nix-installer \
+install linux \
+--init none \
+--no-confirm \
+--logger pretty \
+--diagnostic-endpoint="" \
+--nix-package-url https://releases.nixos.org/nix/nix-2.21.1/nix-2.21.1-x86_64-linux.tar.xz \
+&& . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
+&& nix flake --version \
+&& rm -v nix-installer
+```
+
+TODO: 
+```bash
+--log-directive nix_installer=trace 
+```
+
+
+#### Determinate Systems
+
+It is changing the `/nix` permissions to root, so not usable for me.
+
+```bash
+sudo sh -c 'mkdir -pv -m 0777 /nix/var/nix && chown -Rv '"$(id -nu)":"$(id -gn)"' /nix'
+
+curl \
+--proto '=https' \
+--tlsv1.2 \
+-sSf -L \
+https://github.com/DeterminateSystems/nix-installer/releases/download/v0.17.1/nix-installer-x86_64-linux \
+--output nix-installer \
+&& chmod -v 0755 nix-installer \
+&& ./nix-installer \
+     install \
+     linux \
+     --init none \
+     --no-confirm \
+     --logger pretty \
+     --diagnostic-endpoint="" \
+     --nix-package-url https://releases.nixos.org/nix/nix-2.21.1/nix-2.21.1-x86_64-linux.tar.xz \
+&& . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
+&& nix flake --version \
+&& nix run nixpkgs#hello \
+&& rm -v nix-installer
+
+nix run --no-write-lock-file github:nix-community/home-manager -- init --switch
+
+home-manager generations
+```
+
+
+
+
 My collection to improve DX:
 ```bash
 bash-prompt-prefix = (nix:$name)\040
@@ -34477,11 +39921,12 @@ Refs.:
 
 #### Devbox 
 
+
+It is not a Nix thing!
+- [Developer flow (Satya Nadella 2022 Build Keynote)](https://www.youtube.com/embed/yDnmj1kh_TY?start=31&end=52&version=3), start=31&end=52
 - [Microsoft Dev Box for Microsoft engineers](https://www.youtube.com/watch?v=p8MxCMuEtao)
 - [Microsoft Dev Box - First look and Setup | The Ultimate Developer Workstation](https://www.youtube.com/embed/rFfOQKLl9fU?start=14&end=148&version=3), start=14&end=148
-- https://github.com/jetpack-io/devbox/tree/e0aad3e781eecf9cb38bc094043775e167285ef0#what-is-it
-- [Using Nix Flakes with Devbox](https://www.jetpack.io/blog/using-nix-flakes-with-devbox/)
-
+- [Microsoft Updates Dev Box Cloud Service for GA in July](https://visualstudiomagazine.com/articles/2023/05/23/build-dev-box.aspx)
 
 
 
@@ -34755,4 +40200,3 @@ ghcr.io/actions/actions-runner:2.311.0 tail -f /dev/null
 docker exec -it action-container /bin/sh \
 -c 'docker run -it --rm alpine cat /etc/os-release'
 ```
-
