@@ -4299,6 +4299,16 @@ ldd $(
   --print-build-logs \
   github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b#python3Packages.mmh3
 )/lib/python3.10/site-packages/mmh3.cpython-310-x86_64-linux-gnu.so 
+
+
+ldd $(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --print-build-logs \
+  nixpkgs#python3Packages.mmh3
+)/lib/python3.12/site-packages/mmh3.cpython-312-x86_64-linux-gnu.so
 ```
 
 
@@ -4350,6 +4360,16 @@ build \
 
 
 ```bash
+ldd $(
+  nix \
+  build \
+  --no-link \
+  --print-out-paths \
+  --print-build-logs \
+  github:NixOS/nixpkgs/b0f0b5c6c021ebafbd322899aa9a54b87d75a313#python3Packages.pandas
+)/lib/python3.8/site-packages/pandas/_libs/window/aggregations.cpython-38-x86_64-linux-gnu.so
+
+
 ldd $(
   nix \
   build \
@@ -5187,7 +5207,7 @@ ldd $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#imagemagi
 
 TODO: LD_DEBUG=statistics
 ```bash
-ldd $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#ffmpeg-full)/bin/ffmpeg | wc -l
+ldd $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#ffmpeg-full.bin)/bin/ffmpeg | wc -l
 ```
 Refs.:
 - https://softwareengineering.stackexchange.com/a/391668

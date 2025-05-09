@@ -13581,6 +13581,14 @@ System: x86_64-linux
 Sig: cache.nixos.org-1:NsZ1Bt7Ikef5Y0hyAVDsf+YbVAIzhidNd5K2JQFgAmz3JNY/oFpCssgyXVp7ItHKfURId9AaxiHF0skDFiYLDg==
 ```
 
+```bash
+nix \
+build \
+--max-jobs 0 \
+--no-link \
+--print-out-paths \
+nixpkgs/release-24.11#nixStatic
+```
 
 ```bash
 nix shell nixpkgs#hydra-check
@@ -13589,6 +13597,7 @@ nix shell nixpkgs#hydra-check
 
 ```bash
 hydra-check --arch x86_64-linux --channel nixos/release-13.10 hello
+hydra-check --arch x86_64-linux --channel nixos/release-24.11 hello
 ```
 
 ```bash
@@ -13603,6 +13612,25 @@ hydra-check --arch x86_64-linux --channel master firefox
 
 ```bash
 hydra-check --arch x86_64-linux --channel unstable nix
+```
+
+
+
+```bash
+nix \
+shell \
+--ignore-environment \
+nixpkgs#bashInteractive \
+nixpkgs#hydra-check \
+--command \
+bash \
+<<'COMMAND'
+hydra-check --arch x86_64-linux --channel nixos/release-23.11 nixStatic
+hydra-check --arch x86_64-linux --channel nixos/release-24.05 nixStatic
+hydra-check --arch x86_64-linux --channel nixos/release-24.11 nixStatic
+hydra-check --arch x86_64-linux --channel master nixStatic
+hydra-check --arch x86_64-linux --channel unstable nixStatic
+COMMAND
 ```
 
 Interesting urls:
@@ -13675,7 +13703,7 @@ git ls-remote https://github.com/nixos/nixpkgs-channels refs/heads/nixos-unstabl
 
 
 ```bash
-git clone -b release-14.12 --single-branch https://github.com/NixOS/nixpkgs.git \
+git clone --branch release-14.12 --single-branch https://github.com/NixOS/nixpkgs.git \
 && cd nixpkgs \
 && nix-instantiate --eval --json --expr 'with import ./. {}; firefox.outPath'
 ```
@@ -13687,6 +13715,7 @@ Tried it with `nix-instantiate . -A firefox | cut -d'.' -f1-3` and with
 the "outPath" hash and only the last line of the above code worked.
 
 
+It verifies if this anciente firefox version still in the nixpkgs cache:
 ```bash
 nix \
 store \
@@ -14894,7 +14923,7 @@ run \
 '
 ```
 
-TODO: create a simpleer verison of that and use it to confirm 
+TODO: create a simpler verison of that and use it to confirm 
 double/triple check that the passed nixpkgs "instance" is the 
 one with this "smoke flag" in it.
 
@@ -15360,6 +15389,30 @@ run \
 ```
 
 
+Broken!
+```bash
+nix \
+build \
+--no-link \
+--print-build-logs \
+--expr \
+"$(cat <<- 'EOF'
+let
+  nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/95600680c021743fd87b3e2fe13be7c290e1cac4");
+  overlay = final: prev: {
+    hello = prev.hello.overrideAttrs (oldAttrs: with final; {
+        postInstallCheck = (oldAttrs.postInstallCheck or "") + "echo ${prev.lib.getExe prev.python3}";
+      }
+    );
+  };   
+  pkgs = import nixpkgs { system = "x86_64-linux"; overlays = [ overlay ]; };
+in
+  pkgs.hello
+EOF
+)" 
+```
+
+
 ```bash
 nix eval --impure --raw nixpkgs#openssl.postPatch
 ```
@@ -15429,15 +15482,15 @@ nix-instantiate \
   (
     let
         overlay = final: prev: {
-          openssl = prev.openssl.override {
+          opensslStatic = prev.openssl.override {
             static = true;
           };
         };
 
-      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/7e63eed145566cca98158613f3700515b4009ce3");
+      nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/cdd2ef009676ac92b715ff26630164bb88fec4e0");
       pkgs = import nixpkgs { overlays = [ overlay ]; };    
     in
-      pkgs.hello
+      pkgs.opensslStatic
   )
 '
 ```
@@ -20926,7 +20979,7 @@ build \
 --expr \
 "$(cat <<- 'EOF'
   let
-    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ae2fc9e0e42caaf3f068c1bfdc11c71734125e06");
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/cdd2ef009676ac92b715ff26630164bb88fec4e0");
     overlays.default = final: prev: {
       alpineOCIImage = prev.dockerTools.pullImage {
         finalImageTag = "3.20.3";
@@ -20980,7 +21033,7 @@ build \
 --expr \
 "$(cat <<- 'EOF'
   let
-    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/080166c15633801df010977d9d7474b4a6c549d7");
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/cdd2ef009676ac92b715ff26630164bb88fec4e0");
     pkgs = import nixpkgs { };
   in
     pkgs.testers.runNixOSTest {
@@ -20992,17 +21045,17 @@ build \
           services.kubernetes.masterAddress = "${config.networking.hostName}";
           environment.variables.KUBECONFIG = "/etc/${config.services.kubernetes.pki.etcClusterAdminKubeconfig}";
           # services.kubernetes.kubelet.extraOpts = "--fail-swap-on=false"; # If you use swap it is an must!
-          zramSwap = {
-            enable = true;
-            algorithm = "zstd";
-            memoryPercent = 30;
-          };
+          # zramSwap = {
+          #   enable = true;
+          #   algorithm = "zstd";
+          #   memoryPercent = 30;
+          # };
         };
       };
       globalTimeout = 2 * 60;
       testScript = ''
         machineWithKubernetes.wait_for_unit("kubernetes.target")
-        machineWithKubernetes.wait_until_succeeds("kubectl get pods -n kube-system --field-selector status.phase=Running")
+        machineWithKubernetes.wait_until_succeeds("kubectl get pods --namespace kube-system --field-selector status.phase=Running")
         print(machineWithKubernetes.execute("free -h"))
       '';
     }
@@ -22504,7 +22557,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with builtins.getFlake "github:NixOS/nixpkgs/107d5ef05c0b1119749e381451389eded30fb0d5";
   with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
@@ -22529,7 +22582,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with builtins.getFlake "github:NixOS/nixpkgs/107d5ef05c0b1119749e381451389eded30fb0d5";
   with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
@@ -22547,31 +22600,6 @@ build \
 ```
 
 
-```bash
-nix \
-build \
---impure \
---expr \
-'
-(
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
-  with legacyPackages.${builtins.currentSystem};
-  with lib;
-    nixosTest ({
-      name = "nixos-test-sudo";
-      nodes = {
-        machine = { config, pkgs, ... }: {
-          security.sudo.enable = true;
-        };
-      };
-    
-      testScript = "result = machine.succeed(\"echo $PATH\"); assert 4511 == result, f\"The permission should be: {result}\"";
-    })
-)
-'
-```
-
-
 
 ```bash
 nix \
@@ -22580,7 +22608,7 @@ build \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with builtins.getFlake "github:NixOS/nixpkgs/107d5ef05c0b1119749e381451389eded30fb0d5";
   with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
@@ -22590,7 +22618,7 @@ build \
         };
       };
     
-      testScript = "expected = len(\"Success\"); result = len(str(machine.succeed(\"unshare --user --pid echo -n Success\"))); assert expected == result, f\"The permission should be: {expected} but is {result} \"";  
+      testScript = "expected = len(\"Success\"); result = len(str(machine.succeed(\"unshare --user --pid echo -n Success\"))); assert expected == result, f\"Should be: {expected} but is {result} \"";  
     })
 )
 '
@@ -22603,53 +22631,75 @@ build \
 ```bash
 nix \
 build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
 --impure \
 --expr \
 '
 (
-  with builtins.getFlake "github:NixOS/nixpkgs/cd90e773eae83ba7733d2377b6cdf84d45558780";
+  with builtins.getFlake "github:NixOS/nixpkgs/cdd2ef009676ac92b715ff26630164bb88fec4e0";
   with legacyPackages.${builtins.currentSystem};
   with lib;
     nixosTest ({
       name = "nixos-test-hydra";
       nodes = {
         machine = { config, pkgs, ... }: {
-  nix.package = pkgs.nixUnstable;
-  nix.trustedUsers = [ "hydra" ];
-  nix.binaryCaches = [ "http://cache.example.org" "https://cache.nixos.org" ];
+          nix.package = pkgs.nix;
+          nix.trustedUsers = [ "hydra" ];
+          nix.binaryCaches = [ "http://cache.example.org" "https://cache.nixos.org" ];
 
-  nix.buildMachines = [
-    { hostName = "localhost"; sshKey = "/var/run/keys/hydra_rsa"; system = "x86_64-linux,i686-linux"; maxJobs = 4; supportedFeatures = [ "builtin" "big-parallel" "kvm" ]; }
-  ];
+          nix.buildMachines = [
+            { 
+              hostName = "localhost"; 
+              maxJobs = 4; 
+              sshKey = "/var/run/keys/hydra_rsa"; 
+              supportedFeatures = [ "builtin" "big-parallel" "kvm" ]; 
+              system = "x86_64-linux,i686-linux"; 
+            }
+          ];
 
-  services.nginx.enable = true;
-  services.nginx.recommendedGzipSettings = true;
-  services.nginx.recommendedOptimisation = true;
-  services.nginx.recommendedProxySettings = true;
-  services.nginx.virtualHosts = {
-    "cache.example.org".locations."/".root = "/var/lib/nix-cache";
-    "hydra.example.org".locations."/".proxyPass = "http://127.0.0.1:60080";
-  };
+          services.nginx.enable = true;
+          services.nginx.recommendedGzipSettings = true;
+          services.nginx.recommendedOptimisation = true;
+          services.nginx.recommendedProxySettings = true;
+          services.nginx.virtualHosts = {
+            "cache.example.org".locations."/".root = "/var/lib/nix-cache";
+            "hydra.example.org".locations."/".proxyPass = "http://127.0.0.1:60080";
+          };
 
-  services.hydra.enable = true;
-  services.hydra.hydraURL = "http://hydra.example.org";
-  services.hydra.notificationSender = "hydra@example.org";
-  services.hydra.port = 60080;
-  services.hydra.useSubstitutes = true;
-  # Look for nix-store --generate-binary-cache-key in the nix-store manpage
-  # for more information on how to generate a keypair for your cache.
-  services.hydra.extraConfig = "
-    store_uri = file:///var/lib/nix-cache?secret-key=/run/keys/cache.example.org-1/sk
-    binary_cache_public_uri http://cache.example.org
-  ";
-  users.users.hydra.extraGroups = [ "keys" ];
-  users.users.hydra-queue-runner.extraGroups = [ "keys" ];
+          services.hydra.enable = true;
+          services.hydra.hydraURL = "http://hydra.example.org";
+          services.hydra.notificationSender = "hydra@example.org";
+          services.hydra.port = 60080;
+          services.hydra.useSubstitutes = true;
+          # Look for nix-store --generate-binary-cache-key in the nix-store manpage
+          # for more information on how to generate a keypair for your cache.
+          services.hydra.extraConfig = "
+            store_uri = file:///var/lib/nix-cache?secret-key=/run/keys/cache.example.org-1/sk
+            binary_cache_public_uri http://cache.example.org
+          ";
+          users.users.hydra.extraGroups = [ "keys" ];
+          users.users.hydra-queue-runner.extraGroups = [ "keys" ];
 
-  services.postgresql.enable = true;
+          services.postgresql.enable = true;
         };
       };
-    
-      testScript = "machine.wait_for_unit(\"multi-user.target\"); expected = len(\"Success\"); result = machine.succeed(\"nc -v -4 localhost 60080 -w 1 -z\"); assert expected == result, f\"The permission should be: {expected} but is {result} \"";  
+
+      # Disable linting for simpler debugging of the testScript
+      skipLint = true;
+
+      testScript = "
+machine.wait_for_unit(\"nginx.service\");
+machine.wait_for_unit(\"postgresql.service\");
+machine.wait_for_unit(\"hydra-server.service\");
+
+# expected = \"Connection to localhost (127.0.0.1) 60080 port [tcp/*] succeeded!\"; 
+# machine.wait_until_succeeds(\"nc -v -4 localhost 60080 -w 1 -z\"); 
+# result = machine.succeed(\"nc -v -4 localhost 60080 -w 1 -z\");
+# print(result)
+# assert expected == result, f\"Should be: {expected} but is {result}\"
+      ";  
     })
 )
 '
@@ -22659,6 +22709,82 @@ Refs.:
 - https://gist.github.com/joepie91/c26f01a787af87a96f967219234a8723
 - https://nixos.wiki/wiki/Hydra
 - https://search.nixos.org/options?channel=22.05&show=services.hydra.enable&from=0&size=50&sort=relevance&type=packages&query=hydra
+
+
+```bash
+nix \
+run \
+--impure \
+--expr \
+'
+(
+  with builtins.getFlake "github:NixOS/nixpkgs/cdd2ef009676ac92b715ff26630164bb88fec4e0";
+  with legacyPackages.${builtins.currentSystem};
+  with lib;
+    (nixosTest ({
+      name = "nixos-test-hydra";
+      nodes = {
+        machine = { config, pkgs, ... }: {
+          nix.package = pkgs.nix;
+          nix.trustedUsers = [ "hydra" ];
+          nix.binaryCaches = [ "http://cache.example.org" "https://cache.nixos.org" ];
+
+          nix.buildMachines = [
+            { 
+              hostName = "localhost"; 
+              maxJobs = 4; 
+              sshKey = "/var/run/keys/hydra_rsa"; 
+              supportedFeatures = [ "builtin" "big-parallel" "kvm" ]; 
+              system = "x86_64-linux,i686-linux"; 
+            }
+          ];
+
+          services.nginx.enable = true;
+          services.nginx.recommendedGzipSettings = true;
+          services.nginx.recommendedOptimisation = true;
+          services.nginx.recommendedProxySettings = true;
+          services.nginx.virtualHosts = {
+            "cache.example.org".locations."/".root = "/var/lib/nix-cache";
+            "hydra.example.org".locations."/".proxyPass = "http://127.0.0.1:60080";
+          };
+
+          services.hydra.enable = true;
+          services.hydra.hydraURL = "http://hydra.example.org";
+          services.hydra.notificationSender = "hydra@example.org";
+          services.hydra.port = 60080;
+          services.hydra.useSubstitutes = true;
+          # Look for nix-store --generate-binary-cache-key in the nix-store manpage
+          # for more information on how to generate a keypair for your cache.
+          services.hydra.extraConfig = "
+            store_uri = file:///var/lib/nix-cache?secret-key=/run/keys/cache.example.org-1/sk
+            binary_cache_public_uri http://cache.example.org
+          ";
+          users.users.hydra.extraGroups = [ "keys" ];
+          users.users.hydra-queue-runner.extraGroups = [ "keys" ];
+
+          services.postgresql.enable = true;
+        };
+      };
+
+      # Disable linting for simpler debugging of the testScript
+      skipLint = true;
+
+      testScript = "
+machine.wait_for_unit(\"nginx.service\");
+machine.wait_for_unit(\"postgresql.service\");
+machine.wait_for_unit(\"hydra-server.service\");
+
+# expected = \"Connection to localhost (127.0.0.1) 60080 port [tcp/*] succeeded!\"; 
+# machine.wait_until_succeeds(\"nc -v -4 localhost 60080 -w 1 -z\"); 
+# result = machine.succeed(\"nc -v -4 localhost 60080 -w 1 -z\");
+# print(result)
+# assert expected == result, f\"Should be: {expected} but is {result}\"
+      ";  
+    })).driverInteractive
+)
+'
+```
+
 
 TODO: 
 ```bash
@@ -22736,7 +22862,7 @@ run \
 '
 (
   let
-    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b");
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/107d5ef05c0b1119749e381451389eded30fb0d5");
     pkgs = import nixpkgs { };    
   in
     pkgs.nixosTest ({
@@ -22744,7 +22870,7 @@ run \
       nodes = {
         server = { config, pkgs, ... }: {
           virtualisation.graphics = true;
-          nixpkgs.config.allowUnfree = true;
+          # nixpkgs.config.allowUnfree = true;
           nix = {
             extraOptions = "experimental-features = nix-command flakes";
             settings.sandbox = true;
@@ -22777,7 +22903,7 @@ run \
           };         
         };
       };
-      testScript = "start_all(); server.shell_interact();";
+      testScript = "start_all(); server.succeed(\"hello\");";
     })
 ).driverInteractive
 '
@@ -23563,7 +23689,7 @@ Refs.:
 EXPR=$(cat <<-'EOF'
 (
   let
-    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/d50918bc1c43dea8fd5282dcaca3ebc7144e210f");
+    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/cdd2ef009676ac92b715ff26630164bb88fec4e0");
     pkgs = import nixpkgs { };    
 
   pyScript = pkgs.writeTextDir "pyScript.py" ''
@@ -25626,7 +25752,7 @@ RUN mkdir -pv "$HOME"/.local/bin \
 
 FROM localhost/busybox-ca-certificates-nix:latest as hellow
 
-RUN nix develop nixpkgs#path nixpkgs#hello --profile ./hellow
+RUN nix develop nixpkgs#hello --profile ./hellow
 
 EOF
 
@@ -25666,7 +25792,7 @@ run \
 --interactive=true \
 --mount=type=tmpfs,tmpfs-size=5G,destination=/tmp \
 --privileged=true \
---publish=5000:5000 \
+--publish=5001:5001 \
 --rm=true \
 --tty=true \
 localhost/busybox-ca-certificates-nix:latest \
@@ -25680,7 +25806,7 @@ sh
 
 ```bash
 cat > Containerfile << 'EOF'
-FROM docker.io/library/alpine as builder
+FROM docker.io/library/alpine AS builder
 
 RUN apk update \
  && apk add --no-cache ca-certificates
@@ -25715,7 +25841,7 @@ RUN mkdir -pv "$HOME"/.local/bin \
  && echo 
 
 
-FROM builder as nix-develop-hello
+FROM builder AS nix-develop-hello
 
 RUN \
  nix develop nixpkgs#hello --profile ./develop-hello \
@@ -25734,7 +25860,7 @@ RUN \
  --verbose
 
 
-FROM nix-develop-hello:latest as nix-develop-hello-network-none
+FROM nix-develop-hello:latest AS nix-develop-hello-network-none
 
 RUN nix develop ./develop-hello --command \
  sh \
@@ -30288,6 +30414,21 @@ writeReferencesToFile
 ```
 
 TODO: closureInfo
+
+
+1)
+```bash
+nix repl --expr 'import <nixpkgs> {}'
+```
+
+2)
+```bash
+closureInfo { rootPaths = [ hello ]; }
+
+closureInfo { rootPaths = [ hello.inputDerivation ]; }
+```
+
+
 ```bash
 nix-store --load-db $out/registration
 
@@ -32662,9 +32803,14 @@ TODO: it is a Rust template
 nixConfig
 --no-accept-flake-config
 ```bash
-mkdir risczero
-cd risczero
-nix flake init -t github:cspr-rad/risc0pkgs#default
+#  > /dev/null 2>&1
+#  1 > /dev/null 2 > /dev/null
+
+mkdir risczero \
+&& cd risczero \
+&& nix flake init -t github:cspr-rad/risc0pkgs#default 2> /dev/null
+
+ 2> /dev/null
 
 git init
 git add -A
@@ -33921,9 +34067,21 @@ Refs.:
 - https://jorel.dev/NixOS4Noobs/options.html#method-3-using-the-nix-repl
 
 
+Other really trick one to be found:
 ```bash
 ls -alh $(nix build --no-link --print-out-paths nixpkgs#sound-theme-freedesktop)/share/sounds/freedesktop/stereo
 ```
+
+Other really trick ones to be found:
+```bash
+# TODO: why the versions are different?
+nix shell 'nixpkgs#nodePackages."@angular/cli"' --command npx --version
+nix run 'nixpkgs#nodePackages."@angular/cli"' -- --version
+
+nix shell 'nixpkgs#nodePackages."@angular/cli"' --command ng --version
+```
+Refs.:
+- https://discourse.nixos.org/t/how-do-i-install-scoped-packages-via-nix/47343/4
 
 #### The nix-locate
 
@@ -39835,6 +39993,51 @@ install linux \
 && rm -v nix-installer
 ```
 
+```bash
+(test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)) \
+&& (test -G /nix/var/nix || sudo -k chown -Rv "$USER": /nix) \
+&& (test $(stat -c %a /nix/var/nix) -eq 0755 || sudo -k chmod -v 0755 /nix/var/nix) \
+&& 
+
+DETERMINATE_SYSTEMS_NIX_TAG="v0.38.1" \
+&& NIX_VERSION="2.26.3" \
+&& curl \
+--proto '=https' \
+--tlsv1.2 \
+-sSf \
+-L \
+https://install.determinate.systems/nix/tag/"${DETERMINATE_SYSTEMS_NIX_TAG}" \
+--output nix-installer \
+&& echo 1ae2dcf78aeca9c4ea94f3080d1a00cbdd2b3f82d28440eee5fcdf24932c1feb'  'nix-installer | sha256sum -c \
+&& chmod -v +x nix-installer \
+&& ./nix-installer \
+install linux \
+--no-confirm \
+--logger pretty \
+--diagnostic-endpoint="" \
+--nix-package-url https://releases.nixos.org/nix/nix-"${NIX_VERSION}"/nix-"${NIX_VERSION}"-x86_64-linux.tar.xz \
+&& . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
+&& nix flake --version \
+&& rm -v nix-installer  \
+&& sudo -i nix registry pin nixpkgs github:NixOS/nixpkgs/cdd2ef009676ac92b715ff26630164bb88fec4e0 \
+&& sudo -i nix run nixpkgs#nix-info -- --markdown \
+&& sudo -i nix flake metadata nixpkgs \
+&& sudo -i nix run nixpkgs#hello \
+&& sudo -i nix profile install nixpkgs#hello \
+&& hello \
+&& sudo -i nix build --no-link --print-out-paths nixpkgs#pkgsStatic.hello
+
+# 
+# sudo -i nix build --no-link --print-out-paths nixpkgs#pkgsStatic.sqlite
+# sudo -i nix build --no-link --print-out-paths nixpkgs#pkgsCross.riscv64.pkgsStatic.sqlite
+# sudo -i nix build --no-link --print-out-paths nixpkgs#pkgsCross.riscv64.ffmpeg
+```
+
+TODO: Alpine Linux only works with `--init none`
+
+
+Can the `--nix-package-url` be not dependent of the architecture?
+
 TODO: 
 ```bash
 --log-directive nix_installer=trace 
@@ -39890,7 +40093,7 @@ keep-env-derivations = true
 Do set an `name` for `nix develop .#devShells.$system.default`, 
 it is used in `bash-prompt-prefix`: 
 ```bash
-nix eval --raw nixpkgs#mkShell.__functionArgs
+nix eval --json nixpkgs#mkShell.__functionArgs
 ```
 
 TODO: test it!
