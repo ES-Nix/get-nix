@@ -755,7 +755,7 @@ nix eval --json nixpkgs#lib.platforms | jq .
 nix eval --json nixpkgs#google-chrome.meta.platforms
 
 nix eval --impure --expr '((builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}.stdenv.isDarwin)'
-nix eval  nixpkgs#stdenv.isDarwin
+nix eval nixpkgs#stdenv.isDarwin
 
 nix eval --raw --impure --expr \
 '(let pkgs = (builtins.getFlake "github:NixOS/nixpkgs").legacyPackages.${builtins.currentSystem}; in pkgs.hello)'
@@ -20585,6 +20585,9 @@ nix eval --system aarch64-linux --impure --raw --expr 'builtins.currentSystem'
 ```bash
 nix eval nixpkgs#stdenv.isLinux
 nix eval nixpkgs#stdenv.is64bit
+
+nix eval nixpkgs#stdenv.initialPath
+
 nix eval --raw nixpkgs#stdenv.cc.bintools.dynamicLinker
 nix eval nixpkgs#stdenv.hostPlatform.isLittleEndian
 nix eval nixpkgs#stdenv.hostPlatform.parsed.cpu.significantByte.name
@@ -34334,6 +34337,9 @@ libc.printf
 
 ##### LD_LIBRARY_PATH python3Full manylinux1Package manylinux2010Package manylinux2014Package
 
+
+
+
 ```bash
 nix \
 shell \
@@ -35451,6 +35457,7 @@ Other C examples inlined in nix expression:
 - [Arguing with Linus Torvalds - Steven Rostedt](https://www.youtube.com/embed/0pHImHVrI2I?start=645&end=800&version=3), start=645&end=800
 
 
+## nix derivation python3 RAM use parameterized
 
 ```bash
 EXPR=$(cat <<-'EOF'
@@ -35494,6 +35501,11 @@ build \
 "$EXPR"
 ```
 
+```bash
+docker run -it --rm --cpus="2" --memory="1GB" alpine
+```
+
+### C hello world
 
 
 ```bash
@@ -35524,7 +35536,7 @@ in
         installPhase = ''
           runHook preInstall
           mkdir -p $out/bin
-          cp hello-world-c-inline  $out/bin/hello-world-c-inline
+          cp hello-world-c-inline $out/bin/hello-world-c-inline
           runHook postInstall
         '';        
         dontUnpack = true;
@@ -35532,7 +35544,6 @@ in
 )
 EOF
 )
-
 
 
 nix \
@@ -35584,6 +35595,245 @@ let
    nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
    pkgs = import nixpkgs {};
 
+   easy = pkgs.writeText "easy.c" ''
+    #include <stdio.h>
+     void (*(*f[])())();
+
+     int main (int argc, char **argv) {
+       printf ("Memory: %p\n", &f);
+       return 0;
+     }
+   '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "easy";
+        src = easy;
+        buildPhase = ''
+          $CC ${easy} -o easy
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp easy $out/bin/easy
+          runHook postInstall
+        '';
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://stackoverflow.com/questions/34548762/c-isnt-that-hard-void-f
+- https://www.quora.com/How-can-the-function-void-function-void-f-declare-another-function-as-a-parameter
+
+
+
+
+
+TODO: C++ examples [Lightning Talk: How to Win at Coding Interviews - David Stone - CppCon 2022](https://www.youtube.com/watch?v=y872bCqQ_P0)
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  goldieLocks = pkgs.writeText "goldie_locks.c" ''
+    #include <stdio.h>
+    int goldie_locks(void (*bed)(int)) { (*bed)(23); }
+    
+    void minus3(int x) {
+      printf("-3 is %d\n", x - 3);
+    }
+
+    void plus4(int x) {
+      printf("+4 is %d\n", x + 4);
+    }
+
+    void just_right(int x) {
+      printf("%d is just right!\n", x);
+    }
+    
+    int main (int argc, char **argv) {
+      goldie_locks(minus3);
+      goldie_locks(plus4);
+      goldie_locks(just_right);
+      return 0;
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "goldie_locks";
+        src = goldieLocks;
+        buildPhase = ''
+          $CC ${goldieLocks} -o goldie_locks
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp goldie_locks $out/bin/goldie_locks
+          runHook postInstall
+        '';        
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- [Arguing with Linus Torvalds - Steven Rostedt](https://www.youtube.com/embed/0pHImHVrI2I?start=645&end=800&version=3), start=645&end=800
+
+
+
+#### C geteuid getuid
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
+  # Create a C program that prints Hello World
+  getidsFile = pkgs.writeText "getids.c" ''
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <sys/types.h>
+    #include <unistd.h>
+    #include <errno.h>
+    
+    int main() {
+        int t;
+    
+        printf("before, geteuid() returned %d\n", geteuid());
+        printf("before, getuid() returned %d\n", getuid());
+    
+        t = setuid(geteuid());
+        if (t < 0) {
+            perror("Error with setuid() - errno " + errno);
+            exit(1);
+        }
+    
+        printf("after, geteuid() returned %d\n", geteuid());
+        printf("after, getuid() returned %d\n", getuid());
+    
+        // setreuid(geteuid(), geteuid());
+    
+        printf("finally, geteuid() returned %d\n", geteuid());
+        printf("finally, getuid() returned %d\n", getuid());
+    
+        printf("did work fine, look who I am:\n");
+        system("/bin/bash -c whoami");
+    }
+  '';
+
+in 
+  pkgs.stdenv.mkDerivation {
+        name = "getids";
+        src = getidsFile;
+        buildPhase = ''
+          $CC ${getidsFile} -o get1ds
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+          cp get1ds $out/bin/getids
+          runHook postInstall
+        '';
+        dontUnpack = true;
+      }
+)
+EOF
+)
+
+
+nix \
+build \
+--no-link \
+--print-build-logs \
+--impure \
+--expr \
+"$EXPR"
+
+
+ldd $(
+nix \
+build \
+--no-link \
+--print-build-logs \
+--print-out-paths \
+--impure \
+--expr \
+"$EXPR"
+)/bin/getids
+
+
+#nix \
+#develop \
+#--impure \
+#--expr \
+#"$EXPR" \
+#--command \
+#sh \
+#'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
+
+nix \
+run \
+--impure \
+--expr \
+"$EXPR"
+```
+Refs.:
+- https://unix.stackexchange.com/questions/548480/why-doesnt-setuid-work-with-non-root-users/548507#548507
+
+
+
+### C++ hello world
+
+
+```bash
+EXPR=$(cat <<-'EOF'
+(
+let
+   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
+   pkgs = import nixpkgs {};
+
   # Create a C++ program that prints Hello World
   helloWorld = pkgs.writeText "hello.cpp" ''
     #include <iostream>
@@ -35600,7 +35850,7 @@ in
         installPhase = ''
           runHook preInstall
           mkdir -p $out/bin
-          cp hello-world-cpp-inline  $out/bin/hello-world-cpp-inline
+          cp hello-world-cpp-inline $out/bin/hello-world-cpp-inline
           runHook postInstall
         '';        
         dontUnpack = true;
@@ -35608,7 +35858,6 @@ in
 )
 EOF
 )
-
 
 
 nix \
@@ -35652,7 +35901,10 @@ TODO: boost
 https://stackoverflow.com/a/23668329 
 https://stackoverflow.com/questions/41413791/unable-to-link-against-boost-libraries
 
- 
+
+### Rust hello world
+
+
 ```bash
 EXPR=$(cat <<-'EOF'
 (
@@ -35676,7 +35928,7 @@ in
         installPhase = ''
           runHook preInstall
           mkdir -p $out/bin
-          cp hello-world-rust-inline  $out/bin/hello-world-rust-inline
+          cp hello-world-rust-inline $out/bin/hello-world-rust-inline
           runHook postInstall
         '';        
         dontUnpack = true;
@@ -35684,7 +35936,6 @@ in
 )
 EOF
 )
-
 
 
 nix \
@@ -35757,7 +36008,7 @@ in
         installPhase = ''
           runHook preInstall
           mkdir -p $out/bin
-          cp example-itertools  $out/bin/example-itertools
+          cp example-itertools $out/bin/example-itertools
           runHook postInstall
         '';        
         dontUnpack = true;
@@ -35765,7 +36016,6 @@ in
 )
 EOF
 )
-
 
 
 nix \
@@ -35809,240 +36059,6 @@ Refs.:
 - https://doc.rust-lang.org/rust-by-example/hello.html#hello-world
 - https://stackoverflow.com/a/29202217
 - https://stackoverflow.com/a/53985748
-
-
-```bash
-EXPR=$(cat <<-'EOF'
-(
-let
-   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
-   pkgs = import nixpkgs {};
-
-   easy = pkgs.writeText "easy.c" ''
-    #include <stdio.h>
-     void (*(*f[])())();
-
-     int main (int argc, char **argv) {
-       printf ("Memory: %p\n", &f);
-       return 0;
-     }
-   '';
-
-in 
-  pkgs.stdenv.mkDerivation {
-        name = "easy";
-        src = easy;
-        buildPhase = ''
-          $CC ${easy} -o easy
-        '';
-        installPhase = ''
-          runHook preInstall
-          mkdir -p $out/bin
-          cp easy  $out/bin/easy
-          runHook postInstall
-        '';
-        dontUnpack = true;
-      }
-)
-EOF
-)
-
-
-nix \
-build \
---no-link \
---print-build-logs \
---impure \
---expr \
-"$EXPR"
-
-
-nix \
-run \
---impure \
---expr \
-"$EXPR"
-```
-Refs.:
-- https://stackoverflow.com/questions/34548762/c-isnt-that-hard-void-f
-- https://www.quora.com/How-can-the-function-void-function-void-f-declare-another-function-as-a-parameter
-
-
-
-TODO: C++ examples [Lightning Talk: How to Win at Coding Interviews - David Stone - CppCon 2022](https://www.youtube.com/watch?v=y872bCqQ_P0)
-```bash
-EXPR=$(cat <<-'EOF'
-(
-let
-   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
-   pkgs = import nixpkgs {};
-
-  # Create a C program that prints Hello World
-  goldieLocks = pkgs.writeText "goldie_locks.c" ''
-    #include <stdio.h>
-    int goldie_locks(void (*bed)(int)) { (*bed)(23); }
-    
-    void minus3(int x) {
-      printf("-3 is %d\n", x - 3);
-    }
-
-    void plus4(int x) {
-      printf("+4 is %d\n", x + 4);
-    }
-
-    void just_right(int x) {
-      printf("%d is just right!\n", x);
-    }
-    
-    int main (int argc, char **argv) {
-      goldie_locks(minus3);
-      goldie_locks(plus4);
-      goldie_locks(just_right);
-      return 0;
-    }
-  '';
-
-in 
-  pkgs.stdenv.mkDerivation {
-        name = "goldie_locks";
-        src = goldieLocks;
-        buildPhase = ''
-          $CC ${goldieLocks} -o goldie_locks
-        '';
-        installPhase = ''
-          runHook preInstall
-          mkdir -p $out/bin
-          cp goldie_locks  $out/bin/goldie_locks
-          runHook postInstall
-        '';        
-        dontUnpack = true;
-      }
-)
-EOF
-)
-
-
-nix \
-build \
---no-link \
---print-build-logs \
---impure \
---expr \
-"$EXPR"
-
-
-nix \
-run \
---impure \
---expr \
-"$EXPR"
-```
-Refs.:
-- [Arguing with Linus Torvalds - Steven Rostedt](https://www.youtube.com/embed/0pHImHVrI2I?start=645&end=800&version=3), start=645&end=800
-
-
-
-#### C
-
-
-```bash
-EXPR=$(cat <<-'EOF'
-(
-let
-   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
-   pkgs = import nixpkgs {};
-
-  # Create a C program that prints Hello World
-  helloWorld = pkgs.writeText "hello.c" ''
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <sys/types.h>
-    #include <unistd.h>
-    #include <errno.h>
-    
-    int main() {
-        int t;
-    
-        printf("before, geteuid() returned %d\n", geteuid());
-        printf("before, getuid() returned %d\n", getuid());
-    
-        t = setuid(geteuid());
-        if (t < 0) {
-            perror("Error with setuid() - errno " + errno);
-            exit(1);
-        }
-    
-        printf("after, geteuid() returned %d\n", geteuid());
-        printf("after, getuid() returned %d\n", getuid());
-    
-        // setreuid(geteuid(), geteuid());
-    
-        printf("finally, geteuid() returned %d\n", geteuid());
-        printf("finally, getuid() returned %d\n", getuid());
-    
-        printf("did work fine, look who I am:\n");
-        system("/bin/bash -c whoami");
-    }
-  '';
-
-in 
-  pkgs.stdenv.mkDerivation {
-        name = "hello-world-c-inline";
-        src = helloWorld;
-        buildPhase = ''
-          $CC ${helloWorld} -o hello-world-c-inline
-        '';
-        installPhase = ''
-          runHook preInstall
-          mkdir -p $out/bin
-          cp hello-world-c-inline $out/bin/hello-world-c-inline
-          runHook postInstall
-        '';
-        dontUnpack = true;
-      }
-)
-EOF
-)
-
-
-nix \
-build \
---no-link \
---print-build-logs \
---impure \
---expr \
-"$EXPR"
-
-
-ldd $(
-nix \
-build \
---no-link \
---print-build-logs \
---print-out-paths \
---impure \
---expr \
-"$EXPR"
-)/bin/hello-world-c-inline
-
-
-#nix \
-#develop \
-#--impure \
-#--expr \
-#"$EXPR" \
-#--command \
-#sh \
-#'cd "$TMPDIR" && source $stdenv/setup && genericBuild'
-
-nix \
-run \
---impure \
---expr \
-"$EXPR"
-```
-Refs.:
-- https://unix.stackexchange.com/questions/548480/why-doesnt-setuid-work-with-non-root-users/548507#548507
 
 
 
@@ -36619,7 +36635,7 @@ in
         installPhase = ''
           runHook preInstall
           mkdir -p $out/bin
-          cp test_glut  $out/bin/test_glut
+          cp test_glut $out/bin/test_glut
           runHook postInstall
         '';        
         dontUnpack = true;
@@ -36770,6 +36786,18 @@ let
   pkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b").legacyPackages.${builtins.currentSystem};
 in 
   map (drv: [("closure-" + baseNameOf drv) drv]) [ pkgs.hello ]
+'
+
+nix \
+eval \
+--json \
+--impure \
+--expr \
+'
+let
+  pkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b").legacyPackages.${builtins.currentSystem};
+in 
+  map (drv: [("closure-" + baseNameOf drv) drv]) [ pkgs.hello.inputDerivation ]
 '
 ```
 Refs.:
@@ -39996,47 +40024,71 @@ install linux \
 ```bash
 (test -d /nix/var/nix || (sudo mkdir -pv -m 0755 /nix/var/nix && sudo -k chown -Rv "$USER": /nix)) \
 && (test -G /nix/var/nix || sudo -k chown -Rv "$USER": /nix) \
-&& (test $(stat -c %a /nix/var/nix) -eq 0755 || sudo -k chmod -v 0755 /nix/var/nix) \
-&& 
+&& (test $(stat -c %a /nix/var/nix) -eq 0755 || sudo -k chmod -v 0755 /nix/var/nix)
+```
 
-DETERMINATE_SYSTEMS_NIX_TAG="v0.38.1" \
-&& NIX_VERSION="2.26.3" \
+
+TODO: test it, determinate-nixd version is from version >= 3
+
+```bash
+# v0.38.1
+# 2.26.3
+DETERMINATE_SYSTEMS="v3.1.1" \
+&& NIX_VERSION="2.29.0" \
+&& KERNEL=$(uname) \
+&& case "$KERNEL" in \
+  Darwin) KERNEL="darwin" ;; \
+  Linux) KERNEL="linux" ;; \
+  *) echo "Unsupported kernel: $KERNEL" && exit 1 ;; \
+  esac \
+&& ARCH=$(uname -m) \
+&& case "$ARCH" in \
+  x86_64) ARCH="x86_64-$KERNEL" ;; \
+  arm64) ARCH="aarch64-$KERNEL" ;; \
+  *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+  esac \
 && curl \
 --proto '=https' \
 --tlsv1.2 \
 -sSf \
 -L \
-https://install.determinate.systems/nix/tag/"${DETERMINATE_SYSTEMS_NIX_TAG}" \
+https://install.determinate.systems/nix/tag/"${DETERMINATE_SYSTEMS}" \
 --output nix-installer \
-&& echo 1ae2dcf78aeca9c4ea94f3080d1a00cbdd2b3f82d28440eee5fcdf24932c1feb'  'nix-installer | sha256sum -c \
 && chmod -v +x nix-installer \
 && ./nix-installer \
-install linux \
---no-confirm \
---logger pretty \
---diagnostic-endpoint="" \
---nix-package-url https://releases.nixos.org/nix/nix-"${NIX_VERSION}"/nix-"${NIX_VERSION}"-x86_64-linux.tar.xz \
+    install linux \
+    --no-confirm \
+    --logger pretty \
+    --diagnostic-endpoint="" \
+    --nix-package-url https://releases.nixos.org/nix/nix-"${NIX_VERSION}"/nix-"${NIX_VERSION}"-"${ARCH}".tar.xz \
 && . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
 && nix flake --version \
-&& rm -v nix-installer  \
-&& sudo -i nix registry pin nixpkgs github:NixOS/nixpkgs/cdd2ef009676ac92b715ff26630164bb88fec4e0 \
+&& rm -v nix-installer \
+&& sudo -i nix registry pin nixpkgs github:NixOS/nixpkgs/7c43f080a7f28b2774f3b3f43234ca11661bf334 \
 && sudo -i nix run nixpkgs#nix-info -- --markdown \
 && sudo -i nix flake metadata nixpkgs \
 && sudo -i nix run nixpkgs#hello \
 && sudo -i nix profile install nixpkgs#hello \
 && hello \
 && sudo -i nix build --no-link --print-out-paths nixpkgs#pkgsStatic.hello
+```
+Refs.:
+- https://github.com/DeterminateSystems/nix-installer
+- https://github.com/DeterminateSystems/nix-installer/releases/tag/v0.38.1
+- https://nixos.org/download/
 
-# 
+
+```bash
+echo 1ae2dcf78aeca9c4ea94f3080d1a00cbdd2b3f82d28440eee5fcdf24932c1feb'  'nix-installer | sha256sum -c
+```
+
+```bash
 # sudo -i nix build --no-link --print-out-paths nixpkgs#pkgsStatic.sqlite
 # sudo -i nix build --no-link --print-out-paths nixpkgs#pkgsCross.riscv64.pkgsStatic.sqlite
 # sudo -i nix build --no-link --print-out-paths nixpkgs#pkgsCross.riscv64.ffmpeg
 ```
 
 TODO: Alpine Linux only works with `--init none`
-
-
-Can the `--nix-package-url` be not dependent of the architecture?
 
 TODO: 
 ```bash
