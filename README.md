@@ -35140,7 +35140,7 @@ The nix language fu/nix-fu:
 - about java https://github.com/NixOS/nix/issues/6379
 - (pkgs.lowPrio config.boot.kernelPackages.perf)  https://github.com/TUM-DSE/doctor-cluster-config/blob/fbc549f574c4d3b0031e94996814e135fe04822a/modules/tracing.nix#L19
 - https://github.com/NixOS/nixpkgs/blob/30439d93eb8b19861ccbe3e581abf97bdc91b093/pkgs/applications/virtualization/podman/default.nix#L122-L135
-
+- https://github.com/nix-community/robotnix/blob/89db1507c091cc0ec2b76b107b0a35dc2366239d/modules/pixel/default.nix#L11-L16
 
 
 TODO: revise it!
@@ -40056,7 +40056,7 @@ https://install.determinate.systems/nix/tag/"${DETERMINATE_SYSTEMS}" \
 --output nix-installer \
 && chmod -v +x nix-installer \
 && ./nix-installer \
-    install linux \
+    install "$KERNEL" \
     --no-confirm \
     --logger pretty \
     --diagnostic-endpoint="" \
