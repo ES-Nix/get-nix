@@ -4549,11 +4549,17 @@ github:NixOS/nixpkgs/43d259f8d726113fac056e8bb17d5ac2dea3e0a8#hello \
 ```
 
 TODO: probably only solvable when fine-grained impurity is done it will be possible?
+
 ```bash
 export NIX_STATE_DIR="$HOME"
 export NIX_STATE_DIR="$HOME"
 ```
 
+TOOD: other impurities
+> Yes, but we also need to be aware that --impure does do so much more than just reading exactly the one environment variable you actually want to be read.
+> 
+> All of a sudden ~/.config/nixpkgs/overlay.nix is considered, or a config.nix in the same folder…
+https://discourse.nixos.org/t/find-source-of-a-deprecation-warning/28334/8
 
 
 
