@@ -436,7 +436,7 @@ build \
 
 TODO: Broken:
 ```bash
-nix \             
+nix \
 build \
 --no-link \
 --print-build-logs \

@@ -859,7 +859,7 @@ show-derivation \
 
 ```bash
 command -v jq >/dev/null || nix profile install github:NixOS/nixpkgs/4aceab3cadf9fef6f70b9f6a9df964218650db0a#jq \
-&& nix \       
+&& nix \
 show-derivation \
 --impure \
 --expr \
@@ -1489,10 +1489,10 @@ build \
 
 TODO: what is the difference?
 ```bash
-nix \                                                                                                                                   
-shell \                                   
---impure \                                 
---expr \                                    
+nix \
+shell \
+--impure \
+--expr \
 '                               
 (                                    
   let
@@ -3150,7 +3150,7 @@ build \
 3.4.21
 
 ```bash
-nix \                                                                                                                                            
+nix \
 build \
 --print-out-paths \
 --impure \
@@ -5226,7 +5226,7 @@ nix build --no-link --max-jobs 0 --print-out-paths --print-build-logs nixpkgs#py
 
 
 ```bash
-ldd \ 
+ldd \
 "$(
      nix build --no-link --max-jobs 0 --print-out-paths --print-build-logs nixpkgs#python3Packages.pandas
 )"/lib/python3.10/site-packages/pandas/_libs/window/aggregations.cpython-310-x86_64-linux-gnu.so
@@ -5316,7 +5316,7 @@ EOF
 )
 
 
-ldd \ 
+ldd \
 "$(
   nix \
   build \

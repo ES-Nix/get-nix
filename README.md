@@ -997,11 +997,11 @@ build \
 
 
 ```bash
-nix \   
+nix \
 build \
 --max-jobs auto \
 --print-build-logs \
---file - \                  
+--file - \
 <<'EOF'
     let                                                                  
       nix = builtins.getFlake "github:NixOS/nix/6a5210f48e20dc7ed0d2f8ea36d9dfb7f7da0821"; 
@@ -2897,7 +2897,7 @@ USER abcuser
 WORKDIR /home/abcuser
 ENV USER="abcuser"
 
-RUN git clone --branch master --single-branch https://github.com/NixOS/nix.git \ 
+RUN git clone --branch master --single-branch https://github.com/NixOS/nix.git \
  && cd nix \
  && git checkout 222c38370fcf3ae52bc1883aafcadbbad3df7d1c
  
@@ -7775,7 +7775,7 @@ NIX_REMOTE=local?root=$BUILD_HOME/rootfs/ \
 	nix \
 	build \
 	--impure \
-	--expr \ 
+	--expr \
 	'
 	  with import <nixpkgs> {}; 
 	  nix.override { storeDir = "'$TARGET_HOME'/nix/store"; stateDir = "'$TARGET_HOME'/nix/var"; confDir = "'$TARGET_HOME'/nix/etc"; }
@@ -20103,7 +20103,7 @@ $(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.ni
 ```
 
 ```bash
-nix-store --query --requisites --include-outputs --force-realise \       
+nix-store --query --requisites --include-outputs --force-realise \
 $(nix build --no-link --print-build-logs --print-out-paths nixpkgs#pkgsStatic.nix) \
  | tr ',' '\n'
 ```
@@ -25507,7 +25507,7 @@ build \
           ${pkgs.coreutils}/bin/mkdir -pv -m1777 ./tmp
           
           ${pkgs.coreutils}/bin/mkdir -pv -m0700 ./home/appuser
-          ${pkgs.coreutils}/bin/echo \ 
+          ${pkgs.coreutils}/bin/echo \
           appuser:x:1000:100:The application user:/home/appuser:${pkgs.bashInteractive}/bin/bash \
           > ./etc/passwd
         "; 
@@ -27281,7 +27281,7 @@ RUN mkdir -pv /tmp/outputs \
         --print-build-logs \
         --print-out-paths \
         github:NixOS/nixpkgs/3c5319ad3aa51551182ac82ea17ab1c6b0f0df89#pkgsStatic.busybox)/bin/busybox \
-      /tmp/outputs/busybox \      
+      /tmp/outputs/busybox \
     && echo \
     && cp -v $(nix \
          build \
@@ -27949,7 +27949,7 @@ podman \
 run \
 --interactive=true \
 --tty=true \
---rm=true \ 
+--rm=true \
 localhost/nix:latest
 ```
 
