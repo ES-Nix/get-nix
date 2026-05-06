@@ -1419,7 +1419,7 @@ run \
 --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
 -ti \
 --rm \
-ubuntu:23.04
+ubuntu:24.04
 
 apt-get update \
 && apt-get install -y --no-install-recommends x11-apps \
@@ -22703,11 +22703,11 @@ machine.wait_for_unit(\"nginx.service\");
 machine.wait_for_unit(\"postgresql.service\");
 machine.wait_for_unit(\"hydra-server.service\");
 
-# expected = \"Connection to localhost (127.0.0.1) 60080 port [tcp/*] succeeded!\"; 
-# machine.wait_until_succeeds(\"nc -v -4 localhost 60080 -w 1 -z\"); 
-# result = machine.succeed(\"nc -v -4 localhost 60080 -w 1 -z\");
-# print(result)
-# assert expected == result, f\"Should be: {expected} but is {result}\"
+expected = \"Connection to localhost (127.0.0.1) 60080 port [tcp/*] succeeded!\"; 
+machine.wait_until_succeeds(\"nc -v -4 localhost 60080 -w 1 -z\"); 
+result = machine.succeed(\"nc -v -4 localhost 60080 -w 1 -z 2>&1\").strip();
+print(result)
+assert expected == result, f\"Should be: {expected} but is {result}\"
       ";  
     })
 )
@@ -31770,7 +31770,12 @@ cat $(nix build --no-link --print-out-paths --print-build-logs nixpkgs#stdenv)/s
 ```
 
 ```bash
-podman run -it --rm ubuntu bash<<'COMMANDS'
+podman \
+run \
+--interactive=true \
+--tty=false \
+--rm ubuntu \
+bash <<'COMMANDS'
 apt-get update \
 && apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget \
 && cd "$(mktemp -d)" \
@@ -32813,18 +32818,14 @@ nixConfig
 --no-accept-flake-config
 ```bash
 #  > /dev/null 2>&1
-#  1 > /dev/null 2 > /dev/null
+#  1> /dev/null 2> /dev/null
 
 mkdir risczero \
 && cd risczero \
-&& nix flake init -t github:cspr-rad/risc0pkgs#default 2> /dev/null
-
- 2> /dev/null
-
-git init
-git add -A
-
-nix build .#risc0package
+&& nix flake init -t github:cspr-rad/risc0pkgs#default 2> /dev/null \
+&& git init \
+&& git add -A \
+&& nix build .#risc0package 2> /dev/null
 ```
 Refs.:
 - https://github.com/NixOS/nix/issues/7071
@@ -37684,8 +37685,7 @@ in
         '';
         installPhase = ''
           runHook preInstall
-          #mkdir -p $out/bin
-          
+          # mkdir -p $out/bin
           runHook postInstall
         '';
         dontUnpack = true;
@@ -37693,7 +37693,6 @@ in
 )
 EOF
 )
-
 
 
 nix \
@@ -37954,195 +37953,6 @@ Refs.:
 
 
 
-
-```bash
-EXPR=$(cat <<-'EOF'
-(
-let
-   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
-   pkgs = import nixpkgs {};
-
-  # Creates a XeLaTeX test for font
-  fontspecTest = pkgs.writeTextDir "fontspec-test.tex" ''
-    \documentclass{beamer}
-    
-    \usetheme{Madrid}
-    \usepackage{tikz}
-    \usetikzlibrary{positioning}
-    \setbeamercovered{dynamic}
-    \usetikzlibrary{shapes,arrows, positioning, calc}  
-    \usetikzlibrary{overlay-beamer-styles}
-    
-    
-    \begin{document}
-    
-    \newcommand{\myani}{1-}
-    
-    \begin{frame}[label=foo]
-    \transduration<\myani>{1}
-    \begin{center}
-    \begin{tikzpicture}[auto]
-        \draw(-2.7,1.5) node[sloped,above] {Start A};
-        
-        \draw[->,thick] (-2,0.5)  -- node[below] {T} (4,0.5) ;
-        
-        \draw[visible on=<1>,gray,-,thick,dashed] (-1.7,1.7)  -- (3.7,1.7);
-        \draw[visible on=<1>] (1,1.8) node[sloped,above] {text};
-        
-        \draw[visible on=<2>,gray,-,thick,dashed] (-1.7,1.7)  -- (-0.3,1.7);
-        \draw[visible on=<2>,gray,-,thick,dashed] (2.3,1.7)  -- (3.7,1.7); 
-        \draw[visible on=<2>](3,2.5) node[sloped,above] {text};
-        \draw[visible on=<2>](1,1.68) node[sloped,above] {Point};
-        \draw[visible on=<2>](1,1.18) node[sloped,above] {C};
-        
-        \draw(4.7,1.90) node[sloped,above] {Point};
-        \draw(4.7,1.45) node[sloped,above] {B};
-    \end{tikzpicture}
-    \end{center}
-    \end{frame}
-    
-    \foreach \x in {0,...,10}{
-    \againframe{foo}
-    }
-    
-    \renewcommand{\myani}{1}
-    \againframe{foo}
-    
-    \begin{frame}
-    content
-    \end{frame}
-    \end{document}
-  '';
-  tex = pkgs.texlive.combine {
-      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
-  };
-in 
-  pkgs.stdenvNoCC.mkDerivation {
-          name = "xelatex-fontspec-test";
-          src = fontspecTest;
-          buildInputs = [ pkgs.coreutils tex ];
-          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
-
-          buildPhase = ''
-            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
-            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
-
-            xelatex fontspec-test.tex 
-          '';
-          installPhase = ''
-            mkdir -p $out
-            cp -v fontspec-test.pdf $out/
-          '';
-          dontPatchELF = true;
-          dontFixup = true;
-      }
-)
-EOF
-)
-
-nix \
-build \
---no-link \
---print-build-logs \
---print-out-paths \
---impure \
---expr \
-"$EXPR"
-
-
-file $(
-nix \
-build \
---no-link \
---print-build-logs \
---print-out-paths \
---impure \
---expr \
-"$EXPR"
-)/fontspec-test.pdf
-```
-Refs.:
-- https://stackoverflow.com/q/67824609
-
-
-
-
-```bash
-EXPR=$(cat <<-'EOF'
-(
-let
-   nixpkgs = (builtins.getFlake "github:NixOS/nixpkgs/ea4c80b39be4c09702b0cb3b42eab59e2ba4f24b"); 
-   pkgs = import nixpkgs {};
-
-  # Creates a XeLaTeX test for font
-  pendulumAnimation = pkgs.writeTextDir "pendulum-animation.tex" ''
-    \documentclass[border=10pt]{standalone}
-    \usepackage{animate}
-    \usepackage{tikz}
-    
-    \pgfmathsetmacro{\pendulumswing}{40}
-    \pgfmathsetmacro{\pendulumlength}{5}
-    
-    \begin{document}
-        \begin{animateinline}[controls, palindrome]{45}
-            \multiframe{45}{rt=0+4}{%
-                \begin{tikzpicture}[line width=1pt]
-                    \draw[dashed] (0:0) -- (90:{-\pendulumlength}) coordinate (o);
-                    \draw[dashed] ({90-\pendulumswing}:{-\pendulumlength}) coordinate (a)
-                        arc[start angle={90-\pendulumswing}, end angle={90+\pendulumswing}, radius={-\pendulumlength}] coordinate (b);
-                    \draw[dashed, red] (a) -- (a |- o) coordinate (c) node[below] {$-x_m$};
-                    \draw[dashed, red] (b) -- (b |- o) coordinate (d) node[below] {$x_m$};
-                    \draw[-stealth, red] ([xshift=-1cm]c) -- ([xshift=1cm]d);
-                    
-                    % variable \rt goes from 0 to 180
-                    % cos(\rt) returns a value between -1 and 1 following a (co)sine curve
-                    \pgfmathsetmacro{\pendulumangle}{cos(\rt)*\pendulumswing}
-                    \draw (0:0) -- ({90+\pendulumangle}:{-\pendulumlength})
-                          node[circle, fill=blue, text=white] {$\mathbf{m}$};
-                \end{tikzpicture}%
-            }%
-        \end{animateinline}
-    \end{document}
-  '';
-  tex = pkgs.texlive.combine {
-      inherit (pkgs.texlive) scheme-full xetex fontspec euenc;
-  };
-in 
-  pkgs.stdenvNoCC.mkDerivation {
-          name = "pendulum-animation";
-          src = pendulumAnimation;
-          buildInputs = [ pkgs.coreutils tex ];
-          FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.lmodern ]; };
-
-          buildPhase = ''
-            export PATH="${pkgs.lib.makeBinPath [ pkgs.coreutils tex ] }";
-            export HOME="$TEMPDIR"; # Fontconfig error: No writable cache directories
-
-            xelatex pendulum-animation.tex 
-          '';
-          installPhase = ''
-            mkdir -p $out
-            cp -v pendulum-animation.pdf $out/
-          '';
-          dontPatchELF = true;
-          dontFixup = true;
-      }
-)
-EOF
-)
-
-nix \
-build \
---no-link \
---print-build-logs \
---print-out-paths \
---impure \
---expr \
-"$EXPR"
-
-```
-Refs.:
-- https://tex.stackexchange.com/a/660779
 
 
 ```bash

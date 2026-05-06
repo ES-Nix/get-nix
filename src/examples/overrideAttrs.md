@@ -636,9 +636,13 @@ EOF
 
 
 ```bash
-git clone https://github.com/containers/podman.git
-nix shell nixpkgs#go nixpkgs#pkg-config
-make podman-remote-static
+git clone --branch v5.8.0 --depth 1 https://github.com/containers/podman.git \
+&& cd podman \
+&& nix shell nixpkgs#go nixpkgs#pkg-config \
+&& make podman-remote-static \
+&& ls -alh bin/podman-remote-static \
+&& ldd bin/podman-remote-static \
+&& file bin/podman-remote-static
 ```
 
 ```bash
